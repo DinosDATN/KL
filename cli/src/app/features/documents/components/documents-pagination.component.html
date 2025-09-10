@@ -1,0 +1,119 @@
+<!-- Pagination Container -->
+<div *ngIf="totalPages > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 transition-colors duration-200">
+  
+  <!-- Results Info and Items Per Page -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    
+    <!-- Results Info -->
+    <div class="text-gray-600 dark:text-gray-400 text-sm">
+      Hiển thị <strong class="text-gray-900 dark:text-white">{{ startItem }}</strong> - 
+      <strong class="text-gray-900 dark:text-white">{{ endItem }}</strong> 
+      trong tổng số <strong class="text-gray-900 dark:text-white">{{ totalItems }}</strong> tài liệu
+    </div>
+    
+    <!-- Items Per Page Selector -->
+    <div class="flex items-center gap-2">
+      <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+        Hiển thị:
+      </label>
+      <select
+        [ngModel]="itemsPerPage"
+        (ngModelChange)="onItemsPerPageChange($event)"
+        class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-lg 
+               bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm
+               focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
+               transition-colors duration-200"
+      >
+        <option *ngFor="let option of itemsPerPageOptions" [value]="option">
+          {{ option }} tài liệu
+        </option>
+      </select>
+    </div>
+  </div>
+  
+  <!-- Pagination Controls -->
+  <div *ngIf="totalPages > 1" class="flex flex-col sm:flex-row justify-center items-center gap-4">
+    
+    <!-- Mobile Pagination (Simple) -->
+    <div class="flex sm:hidden items-center gap-2">
+      <button
+        (click)="onPageChange(currentPage - 1)"
+        [disabled]="currentPage === 1"
+        class="px-3 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 
+               bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 
+               rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 
+               disabled:opacity-50 disabled:cursor-not-allowed 
+               transition-colors duration-200"
+      >
+        Trước
+      </button>
+      
+      <span class="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
+        {{ currentPage }} / {{ totalPages }}
+      </span>
+      
+      <button
+        (click)="onPageChange(currentPage + 1)"
+        [disabled]="currentPage === totalPages"
+        class="px-3 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 
+               bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 
+               rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 
+               disabled:opacity-50 disabled:cursor-not-allowed 
+               transition-colors duration-200"
+      >
+        Sau
+      </button>
+    </div>
+    
+    <!-- Desktop Pagination (Full) -->
+    <div class="hidden sm:flex items-center gap-2">
+      
+      <!-- Previous Button -->
+      <button
+        (click)="onPageChange(currentPage - 1)"
+        [disabled]="currentPage === 1"
+        class="px-4 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 
+               bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 
+               rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 
+               disabled:opacity-50 disabled:cursor-not-allowed 
+               transition-colors duration-200 flex items-center gap-1"
+      >
+        <span class="text-xs">◀</span> Trước
+      </button>
+      
+      <!-- Page Numbers -->
+      <ng-container *ngFor="let page of getVisiblePages()">
+        <!-- Ellipsis -->
+        <span *ngIf="page < 0" class="px-2 py-2 text-gray-500 dark:text-gray-400 text-sm">
+          ...
+        </span>
+        
+        <!-- Page Button -->
+        <button
+          *ngIf="page > 0"
+          (click)="onPageChange(page)"
+          class="px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 min-w-[40px]"
+          [ngClass]="{
+            'bg-blue-600 text-white shadow-md': currentPage === page,
+            'text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600': currentPage !== page
+          }"
+        >
+          {{ page }}
+        </button>
+      </ng-container>
+      
+      <!-- Next Button -->
+      <button
+        (click)="onPageChange(currentPage + 1)"
+        [disabled]="currentPage === totalPages"
+        class="px-4 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 
+               bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 
+               rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 
+               disabled:opacity-50 disabled:cursor-not-allowed 
+               transition-colors duration-200 flex items-center gap-1"
+      >
+        Sau <span class="text-xs">▶</span>
+      </button>
+    </div>
+  </div>
+</div>

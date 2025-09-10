@@ -1,0 +1,97 @@
+<!-- Documents Banner -->
+<div class="relative overflow-hidden bg-gradient-to-br from-green-600 via-teal-600 to-blue-700 
+           dark:from-green-800 dark:via-teal-800 dark:to-blue-900 transition-all duration-300">
+  
+  <!-- Background Pattern -->
+  <div class="absolute inset-0 opacity-10">
+    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent 
+               dark:via-gray-200 transform -skew-y-6 scale-150"></div>
+  </div>
+  
+  <!-- Floating Icons Background -->
+  <div class="absolute inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute top-10 left-10 text-4xl text-white opacity-20 animate-bounce" style="animation-delay: 0s;">📚</div>
+    <div class="absolute top-20 right-20 text-3xl text-white opacity-20 animate-bounce" style="animation-delay: 1s;">📄</div>
+    <div class="absolute bottom-20 left-20 text-3xl text-white opacity-20 animate-bounce" style="animation-delay: 2s;">📝</div>
+    <div class="absolute bottom-10 right-10 text-4xl text-white opacity-20 animate-bounce" style="animation-delay: 0.5s;">📊</div>
+    <div class="absolute top-1/2 left-1/4 text-2xl text-white opacity-20 animate-bounce" style="animation-delay: 1.5s;">💬</div>
+    <div class="absolute top-1/3 right-1/3 text-2xl text-white opacity-20 animate-bounce" style="animation-delay: 2.5s;">💯</div>
+  </div>
+  
+  <!-- Banner Content -->
+  <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
+    <div class="text-center">
+      
+      <!-- Main Title -->
+      <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
+        <span class="bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
+          Khám phá
+        </span>
+        <br>
+        <span class="text-white">Tài liệu học tập</span>
+      </h1>
+      
+      <!-- Subtitle -->
+      <p class="text-xl md:text-2xl text-green-100 dark:text-green-200 mb-6 max-w-3xl mx-auto leading-relaxed">
+        Bộ sưu tập tài liệu chất lượng và cập nhật liên tục từ các chuyên gia hàng đầu
+      </p>
+      
+      <!-- Stats -->
+      <div class="flex flex-wrap justify-center gap-8 mb-8">
+        <div class="text-center">
+          <div class="text-3xl md:text-4xl font-bold text-white" *ngIf="!loading; else loadingStats">
+            {{ totalDocuments }}+
+          </div>
+          <ng-template #loadingStats>
+            <div class="w-12 h-8 bg-white bg-opacity-20 rounded animate-pulse mx-auto"></div>
+          </ng-template>
+          <div class="text-green-200 dark:text-green-300 text-sm font-medium mt-1">
+            Tài liệu
+          </div>
+        </div>
+        
+        <div class="text-center">
+          <div class="text-3xl md:text-4xl font-bold text-white">15+</div>
+          <div class="text-green-200 dark:text-green-300 text-sm font-medium mt-1">
+            Chủ đề
+          </div>
+        </div>
+        
+        <div class="text-center">
+          <div class="text-3xl md:text-4xl font-bold text-white">8K+</div>
+          <div class="text-green-200 dark:text-green-300 text-sm font-medium mt-1">
+            Lượt đọc
+          </div>
+        </div>
+        
+        <div class="text-center">
+          <div class="text-3xl md:text-4xl font-bold text-white">4.9</div>
+          <div class="text-green-200 dark:text-green-300 text-sm font-medium mt-1">
+            Đánh giá ⭐
+          </div>
+        </div>
+      </div>
+      
+      <!-- CTA Button -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <button class="bg-white text-green-700 hover:bg-green-50 px-8 py-3 rounded-lg font-semibold 
+                       transition-all duration-200 transform hover:scale-105 shadow-lg">
+          Bắt đầu đọc ngay
+        </button>
+        <button class="border-2 border-white text-white hover:bg-white hover:text-green-700 
+                       px-8 py-3 rounded-lg font-semibold transition-all duration-200 
+                       transform hover:scale-105">
+          Xem tài liệu mới nhất
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Bottom Wave -->
+  <div class="absolute bottom-0 left-0 w-full overflow-hidden">
+    <svg class="relative block w-full h-12" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
+      <path d="M985.66,92.83C906.67,72,823.78,31,743.84,14.19c-82.26-17.34-168.06-16.33-250.45.39-57.84,11.73-114,31.07-172,41.86A600.21,600.21,0,0,1,0,27.35V120H1200V95.8C1132.19,118.92,1055.71,111.31,985.66,92.83Z" 
+            class="fill-gray-50 dark:fill-gray-900"></path>
+    </svg>
+  </div>
+</div>

@@ -1,0 +1,158 @@
+<!-- Loading State -->
+<div *ngIf="loading" class="flex items-center justify-center min-h-screen">
+  <div class="text-center">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+    <p class="text-gray-600 dark:text-gray-400">Đang tải bài tập...</p>
+  </div>
+</div>
+
+<!-- Error State -->
+<div *ngIf="error" class="flex items-center justify-center min-h-screen">
+  <div class="text-center">
+    <svg class="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    </svg>
+    <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Lỗi tải dữ liệu</h2>
+    <p class="text-gray-600 dark:text-gray-400">{{ error }}</p>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div *ngIf="!loading && !error && problem" class="min-h-screen bg-gray-50 dark:bg-gray-900">
+  
+  <!-- Desktop Layout (2 columns) -->
+  <div class="hidden lg:flex h-screen">
+    
+    <!-- Left Panel - Problem Description & Test Cases -->
+    <div class="w-1/2 flex flex-col border-r border-gray-200 dark:border-gray-700">
+      
+      <!-- Tab Header -->
+      <div class="flex bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <button
+          (click)="setActiveTab('description')"
+          [class]="'flex-1 px-4 py-3 text-sm font-medium text-center border-b-2 transition-colors ' + 
+                   (activeTab === 'description' 
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' 
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300')"
+        >
+          <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          Mô tả bài tập
+        </button>
+        <button
+          (click)="setActiveTab('test-cases')"
+          [class]="'flex-1 px-4 py-3 text-sm font-medium text-center border-b-2 transition-colors ' + 
+                   (activeTab === 'test-cases' 
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' 
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300')"
+        >
+          <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+          </svg>
+          Test Cases ({{ testCases.length }})
+        </button>
+      </div>
+      
+      <!-- Tab Content -->
+      <div class="flex-1 overflow-y-auto">
+        <div *ngIf="activeTab === 'description'" class="h-full">
+          <app-problem-description 
+            [problem]="problem"
+            [categoryName]="getCategoryName()"
+            [tagNames]="getProblemTagNames()"
+          ></app-problem-description>
+        </div>
+        <div *ngIf="activeTab === 'test-cases'" class="p-4">
+          <app-test-cases [testCases]="testCases"></app-test-cases>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Right Panel - Code Editor -->
+    <div class="w-1/2 flex flex-col">
+      <app-code-editor 
+        [problem]="problem" 
+        [starterCodes]="starterCodes" 
+        [testCases]="testCases">
+      </app-code-editor>
+    </div>
+  </div>
+  
+  <!-- Mobile Layout (Stacked) -->
+  <div class="lg:hidden">
+    
+    <!-- Mobile Header -->
+    <div class="bg-white dark:bg-gray-800 sticky top-0 z-10 border-b border-gray-200 dark:border-gray-700">
+      <div class="px-4 py-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <button class="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+              </svg>
+            </button>
+            <div>
+              <h1 class="text-lg font-semibold text-gray-900 dark:text-white truncate">{{ problem.title }}</h1>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="text-xs px-2 py-0.5 rounded-full" 
+                      [ngClass]="problem.difficulty === 'Easy' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 
+                                 problem.difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' : 
+                                 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'">
+                  {{ problem.difficulty === 'Easy' ? 'Dễ' : problem.difficulty === 'Medium' ? 'Trung bình' : 'Khó' }}
+                </span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">{{ getCategoryName() }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Mobile Tabs -->
+      <div class="flex bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <button
+          (click)="setActiveTab('description')"
+          [class]="'flex-1 px-4 py-3 text-sm font-medium text-center border-b-2 transition-colors ' + 
+                   (activeTab === 'description' 
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' 
+                    : 'border-transparent text-gray-500 dark:text-gray-400')"
+        >
+          Đề bài
+        </button>
+        <button
+          (click)="setActiveTab('test-cases')"
+          [class]="'flex-1 px-4 py-3 text-sm font-medium text-center border-b-2 transition-colors ' + 
+                   (activeTab === 'test-cases' 
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' 
+                    : 'border-transparent text-gray-500 dark:text-gray-400')"
+        >
+          Test Cases ({{ testCases.length }})
+        </button>
+      </div>
+    </div>
+    
+    <!-- Mobile Content -->
+    <div class="pb-20"> <!-- Bottom padding for floating action bar -->
+      <div *ngIf="activeTab === 'description'">
+        <app-problem-description 
+          [problem]="problem"
+          [categoryName]="getCategoryName()"
+          [tagNames]="getProblemTagNames()"
+        ></app-problem-description>
+      </div>
+      <div *ngIf="activeTab === 'test-cases'" class="p-4">
+        <app-test-cases [testCases]="testCases"></app-test-cases>
+      </div>
+    </div>
+    
+    <!-- Mobile Floating Code Editor Button -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
+      <button class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+        </svg>
+        Bắt đầu code
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,152 @@
+<!-- Filters Container -->
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-200">
+  <div class="space-y-6">
+    
+    <!-- Clear Filters Button -->
+    <div *ngIf="hasActiveFilters" class="pb-4 border-b border-gray-200 dark:border-gray-700">
+      <button
+        (click)="onClearFilters()"
+        class="w-full bg-red-50 hover:bg-red-100 dark:bg-red-900 dark:hover:bg-red-800 text-red-700 dark:text-red-300 px-4 py-2 rounded-lg transition-colors duration-200 text-sm font-medium flex items-center justify-center gap-2"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+        </svg>
+        Xóa tất cả bộ lọc
+      </button>
+    </div>
+    
+    <!-- Search -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        Tìm kiếm
+      </label>
+      <input
+        type="text"
+        [(ngModel)]="filters.searchTerm"
+        (input)="onFilterChange()"
+        placeholder="Tìm theo tên, mô tả..."
+        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 text-sm"
+      />
+    </div>
+    
+    <!-- Category Filter -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        Chủ đề
+      </label>
+      <select
+        [(ngModel)]="filters.selectedCategory"
+        (change)="onFilterChange()"
+        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 text-sm"
+      >
+        <option [ngValue]="null">Tất cả chủ đề</option>
+        <option *ngFor="let category of categories" [ngValue]="category.id">
+          {{ category.name }}
+        </option>
+      </select>
+    </div>
+    
+    <!-- Difficulty Filter -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        Độ khó
+      </label>
+      <select
+        [(ngModel)]="filters.selectedDifficulty"
+        (change)="onFilterChange()"
+        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 text-sm"
+      >
+        <option *ngFor="let difficulty of difficulties" [value]="difficulty.value">
+          {{ difficulty.label }}
+        </option>
+      </select>
+    </div>
+    
+    <!-- Tags Filter -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        Tags
+      </label>
+      <div class="space-y-2 max-h-48 overflow-y-auto">
+        <label *ngFor="let tag of tags" class="flex items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 rounded p-2 transition-colors duration-200">
+          <input
+            type="checkbox"
+            [checked]="isTagSelected(tag.id)"
+            (change)="onTagToggle(tag.id)"
+            class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+          />
+          <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">{{ tag.name }}</span>
+        </label>
+      </div>
+    </div>
+    
+    <!-- Sort By -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        Sắp xếp theo
+      </label>
+      <select
+        [(ngModel)]="filters.sortBy"
+        (change)="onFilterChange()"
+        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 text-sm"
+      >
+        <option *ngFor="let option of sortOptions" [value]="option.value">
+          {{ option.label }}
+        </option>
+      </select>
+    </div>
+    
+    <!-- Special Filters -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        Bộ lọc đặc biệt
+      </label>
+      <div class="space-y-2">
+        <label class="flex items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 rounded p-2 transition-colors duration-200">
+          <input
+            type="checkbox"
+            [(ngModel)]="filters.showNew"
+            (change)="onFilterChange()"
+            class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+          />
+          <span class="ml-2 text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1">
+            Bài mới
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+              NEW
+            </span>
+          </span>
+        </label>
+        
+        <label class="flex items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 rounded p-2 transition-colors duration-200">
+          <input
+            type="checkbox"
+            [(ngModel)]="filters.showPopular"
+            (change)="onFilterChange()"
+            class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+          />
+          <span class="ml-2 text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1">
+            Phổ biến
+            <svg class="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+            </svg>
+          </span>
+        </label>
+        
+        <label class="flex items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 rounded p-2 transition-colors duration-200">
+          <input
+            type="checkbox"
+            [(ngModel)]="filters.showPremium"
+            (change)="onFilterChange()"
+            class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+          />
+          <span class="ml-2 text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1">
+            Premium
+            <svg class="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path>
+            </svg>
+          </span>
+        </label>
+      </div>
+    </div>
+  </div>
+</div>

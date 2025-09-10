@@ -1,0 +1,430 @@
+<!-- Course Detail Page Container -->
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+  
+  <!-- Loading State -->
+  <div *ngIf="loading" class="animate-pulse">
+    <!-- Loading Banner -->
+    <div class="relative bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 dark:from-gray-800 dark:via-gray-700 dark:to-gray-900 overflow-hidden">
+      <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+          <div class="space-y-4">
+            <div class="h-8 bg-white/20 rounded-lg w-3/4"></div>
+            <div class="h-4 bg-white/20 rounded w-full"></div>
+            <div class="h-4 bg-white/20 rounded w-2/3"></div>
+          </div>
+          <div class="h-64 bg-white/20 rounded-lg"></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Loading Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Left Panel Loading -->
+        <div class="lg:col-span-2 space-y-6">
+          <div class="bg-white dark:bg-gray-800 rounded-lg p-6 space-y-4">
+            <div class="h-6 bg-gray-300 dark:bg-gray-600 rounded w-1/4"></div>
+            <div class="space-y-2">
+              <div class="h-4 bg-gray-300 dark:bg-gray-600 rounded"></div>
+              <div class="h-4 bg-gray-300 dark:bg-gray-600 rounded w-5/6"></div>
+              <div class="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4"></div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Right Panel Loading -->
+        <div class="lg:col-span-1">
+          <div class="bg-white dark:bg-gray-800 rounded-lg p-6 space-y-4">
+            <div class="h-6 bg-gray-300 dark:bg-gray-600 rounded w-2/3"></div>
+            <div class="h-12 bg-gray-300 dark:bg-gray-600 rounded"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Content When Not Loading -->
+  <div *ngIf="!loading && course">
+    
+    <!-- Course Banner/Header -->
+    <div class="relative bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 dark:from-gray-800 dark:via-gray-700 dark:to-gray-900 overflow-hidden">
+      <!-- Animated Background Elements -->
+      <div class="absolute inset-0 overflow-hidden">
+        <!-- Floating Shapes -->
+        <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-white/5 rounded-full blur-3xl animate-pulse"></div>
+        <div class="absolute top-3/4 right-1/4 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div class="absolute top-1/2 left-3/4 w-48 h-48 bg-purple-400/10 rounded-full blur-2xl animate-pulse delay-500"></div>
+      </div>
+      
+      <!-- Banner Content -->
+      <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+          
+          <!-- Left Column - Course Info -->
+          <div class="text-white space-y-6">
+            
+            <!-- Breadcrumb -->
+            <nav class="flex items-center space-x-2 text-sm">
+              <a href="/courses" class="text-blue-200 hover:text-white transition-colors">Khóa học</a>
+              <span class="text-blue-300">›</span>
+              <span *ngIf="category" class="text-blue-200">{{ category.name }}</span>
+              <span *ngIf="category" class="text-blue-300">›</span>
+              <span class="text-white font-medium">{{ course.title }}</span>
+            </nav>
+            
+            <!-- Course Title -->
+            <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">
+              {{ course.title }}
+            </h1>
+            
+            <!-- Short Description -->
+            <p class="text-lg md:text-xl text-blue-100 leading-relaxed">
+              {{ course.description }}
+            </p>
+            
+            <!-- Course Meta Info -->
+            <div class="flex flex-wrap items-center gap-4 text-sm">
+              <!-- Instructor -->
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                  <i class="icon-user text-white"></i>
+                </div>
+                <span>Bởi <strong>{{ instructor?.name }}</strong></span>
+              </div>
+              
+              <!-- Rating -->
+              <div class="flex items-center gap-2">
+                <div class="flex items-center">
+                  <span *ngFor="let star of generateStarsArray(course.rating); let i = index" 
+                        class="text-yellow-400"
+                        [ngClass]="{
+                          'text-yellow-400': i < Math.floor(course.rating),
+                          'text-blue-300': i >= Math.floor(course.rating)
+                        }">
+                    ⭐
+                  </span>
+                </div>
+                <span>{{ course.rating.toFixed(1) }} ({{ course.students.toLocaleString() }} học viên)</span>
+              </div>
+              
+              <!-- Level Badge -->
+              <div class="px-3 py-1 rounded-full text-xs font-medium"
+                   [ngClass]="{
+                     'bg-green-100 text-green-800': course.level === 'Beginner',
+                     'bg-yellow-100 text-yellow-800': course.level === 'Intermediate',
+                     'bg-red-100 text-red-800': course.level === 'Advanced'
+                   }">
+                {{ course.level === 'Beginner' ? 'Cơ bản' : course.level === 'Intermediate' ? 'Trung cấp' : 'Nâng cao' }}
+              </div>
+            </div>
+            
+          </div>
+          
+          <!-- Right Column - Course Thumbnail -->
+          <div class="relative">
+            <div class="relative overflow-hidden rounded-2xl shadow-2xl bg-white/10 backdrop-blur-sm border border-white/20">
+              <img 
+                [src]="course.thumbnail || 'https://placehold.co/600x400?text=Course'"
+                [alt]="course.title"
+                class="w-full h-64 lg:h-80 object-cover"
+              />
+              
+              <!-- Play Button Overlay -->
+              <div class="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/30 transition-colors cursor-pointer group">
+                <div class="w-20 h-20 bg-white/90 rounded-full flex items-center justify-center group-hover:bg-white transition-colors">
+                  <i class="icon-play text-blue-600 text-2xl ml-1"></i>
+                </div>
+              </div>
+              
+              <!-- Premium Badge -->
+              <div *ngIf="course.is_premium" 
+                   class="absolute top-4 left-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                PREMIUM
+              </div>
+              
+              <!-- Discount Badge -->
+              <div *ngIf="course.discount && course.discount > 0" 
+                   class="absolute top-4 right-4 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                -{{ course.discount }}%
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+    
+    <!-- Main Content Area -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      
+      <!-- Two-Column Layout -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Left Panel - Main Content (2/3) -->
+        <div class="lg:col-span-2 space-y-8">
+          
+          <!-- Course Description -->
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              Mô tả khóa học
+            </h2>
+            <div class="prose dark:prose-invert max-w-none">
+              <p class="text-gray-700 dark:text-gray-300 leading-relaxed">
+                {{ course.description }}
+              </p>
+              <!-- Additional detailed description could go here -->
+              <p class="text-gray-700 dark:text-gray-300 leading-relaxed mt-4">
+                Khóa học này sẽ giúp bạn nắm vững các kiến thức cơ bản và nâng cao, 
+                từ lý thuyết đến thực hành với các ví dụ cụ thể. Phù hợp cho người mới bắt đầu 
+                cũng như những ai muốn nâng cao kỹ năng của mình.
+              </p>
+            </div>
+          </div>
+          
+          <!-- Course Content/Curriculum -->
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+              Nội dung khóa học
+            </h2>
+
+            <!-- Course Curriculum Overview -->
+            <div *ngIf="courseModules.length > 0" class="space-y-4">
+              <!-- Start Learning Button -->
+              <div class="text-center mb-8">
+                <button 
+                  *ngIf="selectedLesson"
+                  (click)="selectLesson(selectedLesson)"
+                  class="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-8 py-4 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg">
+                  <i class="icon-play"></i>
+                  Bắt đầu học
+                </button>
+              </div>
+              
+              <!-- Modules and Lessons List -->
+              <div class="space-y-4">
+                <div *ngFor="let module of courseModules; let moduleIndex = index" 
+                     class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                  <div class="p-4 bg-gray-50 dark:bg-gray-750 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                      Chương {{ moduleIndex + 1 }}: {{ module.title }}
+                    </h3>
+                  </div>
+
+                  <div class="p-4">
+                    <div class="space-y-3">
+                      <div *ngFor="let lesson of getModuleLessons(module.id); let lessonIndex = index"
+                           class="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-600 last:border-0">
+                        <div class="flex items-center gap-3">
+                          <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center text-sm font-medium">
+                            {{ lessonIndex + 1 }}
+                          </div>
+                          <div>
+                            <div class="font-medium text-gray-900 dark:text-white">{{ lesson.title }}</div>
+                            <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                              <span class="inline-flex items-center gap-1"
+                                    [ngClass]="{
+                                      'text-blue-600 dark:text-blue-400': lesson.type === 'video',
+                                      'text-emerald-600 dark:text-emerald-400': lesson.type === 'document',
+                                      'text-amber-600 dark:text-amber-400': lesson.type === 'quiz' || lesson.type === 'exercise'
+                                    }">
+                                <i class="icon-play" *ngIf="lesson.type === 'video'"></i>
+                                <i class="icon-file" *ngIf="lesson.type === 'document'"></i>
+                                <i class="icon-edit" *ngIf="lesson.type === 'quiz' || lesson.type === 'exercise'"></i>
+                                {{ lesson.type === 'video' ? 'Video' : (lesson.type === 'document' ? 'Tài liệu' : 'Quiz') }}
+                              </span>
+                              <span>•</span>
+                              <span>{{ lesson.duration || 'N/A' }} phút</span>
+                            </div>
+                          </div>
+                        </div>
+                        <button 
+                          (click)="selectLesson(lesson)"
+                          class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
+                          <i class="icon-play"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Default content when no modules -->
+            <div *ngIf="courseModules.length === 0" class="text-center py-8">
+              <div class="text-gray-400 dark:text-gray-500 text-4xl mb-4">📚</div>
+              <p class="text-gray-600 dark:text-gray-400">Nội dung khóa học đang được cập nhật...</p>
+            </div>
+          </div>
+          
+          <!-- Instructor Info -->
+          <div *ngIf="instructor" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              Giảng viên
+            </h2>
+            <div class="flex items-start gap-4">
+              <div class="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                <i class="icon-user text-blue-600 dark:text-blue-400 text-2xl"></i>
+              </div>
+              <div class="flex-1">
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">{{ instructor.name }}</h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-3">{{ instructor.email }}</p>
+                <div class="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                  <span class="flex items-center gap-1">
+                    <i class="icon-award"></i>
+                    Chuyên gia {{ category?.name }}
+                  </span>
+                  <span class="flex items-center gap-1">
+                    <i class="icon-users"></i>
+                    {{ instructor.subscription_status === 'premium' ? 'Premium' : 'Cơ bản' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Right Panel - Summary Card (1/3) -->
+        <div class="lg:col-span-1">
+          <div class="sticky top-4">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+              
+              <!-- Course Thumbnail -->
+              <div class="relative">
+                <img 
+                  [src]="course.thumbnail || 'https://placehold.co/600x400?text=Course'"
+                  [alt]="course.title"
+                  class="w-full h-48 object-cover"
+                />
+                <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+              </div>
+              
+              <!-- Price Section -->
+              <div class="p-6 space-y-6">
+                <div class="text-center">
+                  <!-- Current Price -->
+                  <div *ngIf="course.price === 0" class="text-3xl font-bold text-green-600 dark:text-green-400 mb-2">
+                    Miễn phí
+                  </div>
+                  <div *ngIf="course.price && course.price > 0" class="space-y-1">
+                    <div class="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                      {{ formatPrice(course.price) }}
+                    </div>
+                    <!-- Original Price (if discounted) -->
+                    <div *ngIf="course.discount && course.discount > 0 && course.original_price" 
+                         class="text-lg text-gray-500 dark:text-gray-400 line-through">
+                      {{ formatPrice(course.original_price) }}
+                    </div>
+                  </div>
+                  
+                  <!-- Discount Badge -->
+                  <div *ngIf="course.discount && course.discount > 0" 
+                       class="inline-block bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 text-sm font-medium px-3 py-1 rounded-full mt-2">
+                    Giảm {{ course.discount }}%
+                  </div>
+                </div>
+                
+                <!-- Course Quick Info -->
+                <div class="space-y-3 py-4 border-t border-b border-gray-200 dark:border-gray-700">
+                  <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                      <i class="icon-play"></i>
+                      Tổng số bài học
+                    </span>
+                    <span class="text-gray-900 dark:text-white font-medium">{{ getTotalLessons() || course.duration || 'N/A' }}</span>
+                  </div>
+                  
+                  <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                      <i class="icon-clock"></i>
+                      Thời lượng
+                    </span>
+                    <span class="text-gray-900 dark:text-white font-medium">{{ formatDuration(getTotalDuration() || course.duration) }}</span>
+                  </div>
+                  
+                  <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                      <i class="icon-users"></i>
+                      Học viên
+                    </span>
+                    <span class="text-gray-900 dark:text-white font-medium">{{ course.students.toLocaleString() }}</span>
+                  </div>
+                  
+                  <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                      <i class="icon-award"></i>
+                      Cấp độ
+                    </span>
+                    <span class="text-gray-900 dark:text-white font-medium">
+                      {{ course.level === 'Beginner' ? 'Cơ bản' : course.level === 'Intermediate' ? 'Trung cấp' : 'Nâng cao' }}
+                    </span>
+                  </div>
+                  
+                  <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                      <i class="icon-star"></i>
+                      Đánh giá
+                    </span>
+                    <div class="flex items-center gap-1">
+                      <span class="text-yellow-500">⭐</span>
+                      <span class="text-gray-900 dark:text-white font-medium">{{ course.rating.toFixed(1) }}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Enrollment Button -->
+                <button 
+                  (click)="onEnrollClick()"
+                  class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 focus:ring-4 focus:ring-blue-500/25 focus:outline-none shadow-lg">
+                  {{ course.price === 0 ? 'Học ngay' : 'Đăng ký khóa học' }}
+                </button>
+                
+                <!-- Additional Info -->
+                <div class="text-center">
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">✓ Truy cập trọn đời</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">✓ Chứng chỉ hoàn thành</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+      
+      <!-- Related Courses Section -->
+      <div *ngIf="relatedCourses.length > 0" class="mt-16">
+        <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-8 text-center">
+          Khóa học liên quan
+        </h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <app-course-card 
+            *ngFor="let relatedCourse of relatedCourses"
+            [course]="relatedCourse"
+            [instructorName]="getInstructorName(relatedCourse.instructor_id)"
+            (enrollClick)="onRelatedCourseClick(relatedCourse)"
+            class="animate-fade-in cursor-pointer flex"
+            (click)="onRelatedCourseClick(relatedCourse)">
+          </app-course-card>
+        </div>
+      </div>
+      
+    </div>
+    
+  </div>
+  
+  <!-- Course Not Found State -->
+  <div *ngIf="!loading && !course" class="text-center py-16">
+    <div class="text-gray-400 dark:text-gray-500 text-6xl mb-4">❌</div>
+    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+      Không tìm thấy khóa học
+    </h2>
+    <p class="text-gray-600 dark:text-gray-400 mb-6">
+      Khóa học bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.
+    </p>
+    <a href="/courses" 
+       class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 font-medium">
+      Quay về danh sách khóa học
+    </a>
+  </div>
+  
+</div>

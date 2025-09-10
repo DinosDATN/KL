@@ -1,0 +1,207 @@
+<!-- Course Page Container -->
+<div
+  class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200"
+>
+  <!-- Banner Section -->
+  <app-courses-banner [totalCourses]="courses.length" [loading]="loading">
+  </app-courses-banner>
+
+  <!-- Top Search Section -->
+  <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        
+        <!-- Search Title -->
+        <div>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            Tìm kiếm khóa học
+          </h2>
+          <p class="text-gray-600 dark:text-gray-400">
+            Khám phá {{ filteredCourses.length }} khóa học phù hợp với bạn
+          </p>
+        </div>
+        
+        <!-- Top Search Bar -->
+        <div class="lg:w-96">
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <i class="icon-search text-gray-400 text-lg"></i>
+            </div>
+            <input
+              type="text"
+              [(ngModel)]="topSearchTerm"
+              (input)="onTopSearchChange()"
+              placeholder="Tìm kiếm khóa học theo tên, mô tả..."
+              class="w-full pl-12 pr-4 py-4 border border-gray-300 dark:border-gray-600 rounded-lg 
+                     bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-lg
+                     placeholder-gray-500 dark:placeholder-gray-400 
+                     focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
+                     transition-all duration-200 shadow-sm hover:shadow-md"
+            />
+            <!-- Clear Search Button -->
+            <button
+              *ngIf="topSearchTerm"
+              (click)="clearTopSearch()"
+              class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors duration-200"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- 12-Column Grid Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <!-- Left Panel - Filters (3/12) -->
+      <div class="lg:col-span-3">
+        <app-course-filters
+          [categories]="categories"
+          [filters]="filters"
+          (filtersChange)="onFiltersChange($event)"
+          (clearFilters)="onClearFilters()"
+        >
+        </app-course-filters>
+      </div>
+
+      <!-- Right Panel - Courses Content (9/12) -->
+      <div class="lg:col-span-9">
+        <!-- Mobile Filters Button (Hidden on Desktop) -->
+        <div class="lg:hidden mb-6">
+          <button
+            (click)="toggleMobileFilters()"
+            class="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 flex items-center justify-center gap-2 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
+          >
+            <i class="icon-settings"></i>
+            Bộ lọc & Tìm kiếm
+          </button>
+        </div>
+
+        <!-- Mobile Filter Modal -->
+        <div *ngIf="mobileFiltersOpen" class="lg:hidden fixed inset-0 z-50">
+          <!-- Overlay -->
+          <div
+            class="absolute inset-0 bg-black bg-opacity-50"
+            (click)="closeMobileFilters()"
+          ></div>
+
+          <!-- Filter Panel -->
+          <div
+            class="absolute top-0 left-0 w-80 max-w-[85vw] h-full bg-white dark:bg-gray-800 shadow-xl overflow-y-auto"
+          >
+            <!-- Mobile Filter Header -->
+            <div
+              class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700"
+            >
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                Bộ lọc khóa học
+              </h3>
+              <button
+                (click)="closeMobileFilters()"
+                class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+              >
+                <i class="icon-x text-xl"></i>
+              </button>
+            </div>
+
+            <!-- Mobile Filter Content -->
+            <div class="p-4">
+              <app-course-filters
+                [categories]="categories"
+                [filters]="filters"
+                (filtersChange)="onFiltersChange($event); closeMobileFilters()"
+                (clearFilters)="onClearFilters(); closeMobileFilters()"
+              >
+              </app-course-filters>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div *ngIf="loading" class="space-y-6">
+          <!-- Loading Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div *ngFor="let i of [1, 2, 3, 4, 5, 6]" class="animate-pulse">
+              <div
+                class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"
+              >
+                <div
+                  class="h-48 bg-gray-300 dark:bg-gray-600 rounded-t-lg"
+                ></div>
+                <div class="p-6 space-y-3">
+                  <div
+                    class="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4"
+                  ></div>
+                  <div
+                    class="h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/2"
+                  ></div>
+                  <div
+                    class="h-3 bg-gray-300 dark:bg-gray-600 rounded w-full"
+                  ></div>
+                  <div
+                    class="h-3 bg-gray-300 dark:bg-gray-600 rounded w-2/3"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Content When Not Loading -->
+        <div *ngIf="!loading">
+          <!-- Courses Grid -->
+          <div
+            *ngIf="filteredCourses.length > 0"
+            class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8 auto-rows-fr"
+          >
+            <app-course-card
+              *ngFor="let course of paginatedCourses"
+              [course]="course"
+              [instructorName]="getInstructorName(course.instructor_id)"
+              (enrollClick)="onCourseEnroll($event)"
+              class="animate-fade-in flex"
+            >
+            </app-course-card>
+          </div>
+
+          <!-- No Results State -->
+          <div *ngIf="filteredCourses.length === 0" class="text-center py-16">
+            <div class="text-gray-400 dark:text-gray-500 text-6xl mb-4">📚</div>
+            <h3
+              class="text-xl font-semibold text-gray-900 dark:text-white mb-2"
+            >
+              Không tìm thấy khóa học nào
+            </h3>
+            <p class="text-gray-600 dark:text-gray-400 mb-6">
+              Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm của bạn
+            </p>
+            <button
+              (click)="onClearFilters()"
+              class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors duration-200 font-medium"
+            >
+              Xóa tất cả bộ lọc
+            </button>
+          </div>
+
+          <!-- Pagination -->
+          <div *ngIf="filteredCourses.length > 0">
+            <app-courses-pagination
+              [currentPage]="currentPage"
+              [totalPages]="totalPages"
+              [itemsPerPage]="itemsPerPage"
+              [totalItems]="filteredCourses.length"
+              (pageChange)="changePage($event)"
+              (itemsPerPageChange)="onItemsPerPageChange($event)"
+            >
+            </app-courses-pagination>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

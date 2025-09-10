@@ -1,0 +1,146 @@
+<!-- Course Card -->
+<div class="course-card bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 
+           overflow-hidden group cursor-pointer h-full flex flex-col"
+     (click)="onEnrollClick()">
+  <!-- Course Thumbnail -->
+  <div class="relative overflow-hidden">
+    <img
+      [src]="course.thumbnail || 'https://placehold.co/600x400?text=Course'"
+      [alt]="course.title"
+      class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+    />
+
+    <!-- Premium Badge -->
+    <div
+      *ngIf="course.is_premium"
+      class="absolute top-3 left-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full"
+    >
+      PREMIUM
+    </div>
+
+    <!-- Discount Badge -->
+    <div
+      *ngIf="course.discount && course.discount > 0"
+      class="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full"
+    >
+      -{{ course.discount }}%
+    </div>
+
+    <!-- Level Badge -->
+    <div
+      class="absolute bottom-3 left-3 px-2 py-1 rounded-full text-xs font-medium"
+      [ngClass]="{
+        'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300':
+          course.level === 'Beginner',
+        'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300':
+          course.level === 'Intermediate',
+        'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300':
+          course.level === 'Advanced'
+      }"
+    >
+      {{
+        course.level === "Beginner"
+          ? "Cơ bản"
+          : course.level === "Intermediate"
+          ? "Trung cấp"
+          : "Nâng cao"
+      }}
+    </div>
+  </div>
+
+  <!-- Course Content -->
+  <div class="p-6 flex flex-col flex-grow">
+    <!-- Course Title -->
+    <h3
+      class="text-lg font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"
+    >
+      {{ course.title }}
+    </h3>
+
+    <!-- Instructor -->
+    <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+      Bởi {{ instructorName }}
+    </p>
+
+    <!-- Description -->
+    <!-- <p class="text-gray-700 dark:text-gray-300 text-sm mb-4 line-clamp-2">
+      {{ course.description }}
+    </p> -->
+
+    <!-- Course Stats -->
+    <div class="flex items-center justify-between mb-4">
+      <!-- Rating -->
+      <div class="flex items-center gap-2">
+        <div class="flex items-center">
+          <span
+            *ngFor="
+              let star of generateStarsArray(course.rating);
+              let i = index
+            "
+            class="text-yellow-400"
+            [ngClass]="{
+              'text-yellow-400': i < Math.floor(course.rating),
+              'text-gray-300 dark:text-gray-600': i >= Math.floor(course.rating)
+            }"
+          >
+            ⭐
+          </span>
+        </div>
+        <span class="text-sm text-gray-600 dark:text-gray-400">
+          {{ course.rating.toFixed(1) }}
+        </span>
+      </div>
+
+      <!-- Duration -->
+      <div
+        class="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400"
+      >
+        <i class="icon-clock"></i>
+        <span>{{ formatDuration(course.duration) }}</span>
+      </div>
+    </div>
+
+    <!-- Students Count -->
+    <div
+      class="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400 mb-4"
+    >
+      <i class="icon-users"></i>
+      <span>{{ course.students.toLocaleString() }} học viên</span>
+    </div>
+
+    <!-- Price Section -->
+    <div class="flex items-center gap-2 mb-4">
+      <!-- Current Price -->
+      <span
+        *ngIf="course.price === 0"
+        class="text-lg font-bold text-green-600 dark:text-green-400"
+      >
+        Miễn phí
+      </span>
+      <span
+        *ngIf="course.price && course.price > 0"
+        class="text-lg font-bold text-blue-600 dark:text-blue-400"
+      >
+        {{ formatPrice(course.price) }}
+      </span>
+
+      <!-- Original Price (if discounted) -->
+      <span
+        *ngIf="course.discount && course.discount > 0 && course.original_price"
+        class="text-sm text-gray-500 dark:text-gray-400 line-through"
+      >
+        {{ formatPrice(course.original_price) }}
+      </span>
+    </div>
+
+    <!-- Enroll Button -->
+    <div class="mt-auto">
+      <button
+        (click)="$event.stopPropagation(); onEnrollClick()"
+        class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors duration-200 font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+      >
+        {{ course.price === 0 ? "Xem chi tiết" : "Xem chi tiết" }}
+      </button>
+    </div>
+  </div>
+</div>

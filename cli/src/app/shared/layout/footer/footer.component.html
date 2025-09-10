@@ -1,0 +1,127 @@
+<footer class="bg-gray-900 dark:bg-gray-950 text-white transition-colors duration-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Main Footer Content -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 py-12">
+      <!-- Brand Section -->
+      <div class="lg:col-span-1">
+        <div class="flex items-center space-x-2 mb-4">
+          <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+            <span class="text-white font-bold text-sm">L</span>
+          </div>
+          <span class="text-xl font-bold">LearnCode</span>
+        </div>
+        <p class="text-gray-400 dark:text-gray-500 text-sm mb-4">
+          Nền tảng học lập trình trực tuyến hàng đầu Việt Nam. 
+          Nâng cao kỹ năng lập trình của bạn với những khóa học chất lượng.
+        </p>
+        <!-- Social Links -->
+        <div class="flex space-x-3">
+          <a 
+            *ngFor="let social of socialLinks"
+            [href]="social.href"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="w-8 h-8 bg-gray-800 dark:bg-gray-700 hover:bg-gray-700 dark:hover:bg-gray-600 rounded-lg flex items-center justify-center transition-colors">
+            <i class="text-sm" [class]="'icon-' + social.icon"></i>
+            <span class="sr-only">{{ social.name }}</span>
+          </a>
+        </div>
+      </div>
+      
+      <!-- Platform Links -->
+      <div>
+        <h3 class="text-sm font-semibold uppercase tracking-wide mb-4">{{ footerLinks.platform.title }}</h3>
+        <ul class="space-y-2">
+          <li *ngFor="let link of footerLinks.platform.links">
+            <a [routerLink]="link.href" class="text-gray-400 dark:text-gray-500 hover:text-white dark:hover:text-gray-300 text-sm transition-colors">
+              {{ link.label }}
+            </a>
+          </li>
+        </ul>
+      </div>
+      
+      <!-- Learning Links -->
+      <div>
+        <h3 class="text-sm font-semibold uppercase tracking-wide mb-4">{{ footerLinks.learning.title }}</h3>
+        <ul class="space-y-2">
+          <li *ngFor="let link of footerLinks.learning.links">
+            <a [routerLink]="link.href" class="text-gray-400 dark:text-gray-500 hover:text-white dark:hover:text-gray-300 text-sm transition-colors">
+              {{ link.label }}
+            </a>
+          </li>
+        </ul>
+      </div>
+      
+      <!-- Community Links -->
+      <div>
+        <h3 class="text-sm font-semibold uppercase tracking-wide mb-4">{{ footerLinks.community.title }}</h3>
+        <ul class="space-y-2">
+          <li *ngFor="let link of footerLinks.community.links">
+            <a [routerLink]="link.href" class="text-gray-400 dark:text-gray-500 hover:text-white dark:hover:text-gray-300 text-sm transition-colors">
+              {{ link.label }}
+            </a>
+          </li>
+        </ul>
+      </div>
+      
+      <!-- Support Links -->
+      <div>
+        <h3 class="text-sm font-semibold uppercase tracking-wide mb-4">{{ footerLinks.support.title }}</h3>
+        <ul class="space-y-2">
+          <li *ngFor="let link of footerLinks.support.links">
+            <a [routerLink]="link.href" class="text-gray-400 hover:text-white text-sm transition-colors">
+              {{ link.label }}
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+    
+    <!-- Newsletter Subscription -->
+    <div class="border-t border-gray-800 dark:border-gray-700 py-8">
+      <div class="lg:flex lg:items-center lg:justify-between">
+        <div class="lg:w-1/2">
+          <h3 class="text-lg font-semibold mb-2">Đăng ký nhận tin tức</h3>
+          <p class="text-gray-400 dark:text-gray-500 text-sm mb-4 lg:mb-0">
+            Nhận thông tin về những khóa học mới, bài viết hữu ích và sự kiện đặc biệt.
+          </p>
+        </div>
+        <div class="lg:w-1/2 lg:pl-8">
+          <div class="flex flex-col sm:flex-row gap-3">
+            <input 
+              type="email" 
+              placeholder="Nhập email của bạn..." 
+              class="flex-1 px-4 py-2 bg-gray-800 dark:bg-gray-700 border border-gray-700 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-white placeholder-gray-400 dark:placeholder-gray-500">
+            <button class="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-200 whitespace-nowrap">
+              Đăng ký
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Bottom Footer -->
+    <div class="border-t border-gray-800 dark:border-gray-700 py-6">
+      <div class="lg:flex lg:items-center lg:justify-between">
+        <div class="text-center lg:text-left">
+          <p class="text-gray-400 dark:text-gray-500 text-sm">
+            © {{ currentYear }} LearnCode. Tất cả các quyền được bảo lưu.
+          </p>
+        </div>
+        <div class="mt-4 lg:mt-0">
+          <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-6 text-center">
+            <a routerLink="/privacy" class="text-gray-400 dark:text-gray-500 hover:text-white dark:hover:text-gray-300 text-sm transition-colors">
+              Chính sách bảo mật
+            </a>
+            <a routerLink="/terms" class="text-gray-400 dark:text-gray-500 hover:text-white dark:hover:text-gray-300 text-sm transition-colors">
+              Điều khoản sử dụng
+            </a>
+            <a routerLink="/cookies" class="text-gray-400 dark:text-gray-500 hover:text-white dark:hover:text-gray-300 text-sm transition-colors">
+              Chính sách Cookie
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>

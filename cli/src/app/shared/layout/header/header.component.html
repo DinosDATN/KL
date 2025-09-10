@@ -1,0 +1,215 @@
+<div #sentinel style="height: 1px; width: 100%"></div>
+<div [style.height]="showCompactSticky ? '4rem' : '0px'"></div>
+<header
+  [ngClass]="{
+    'bg-white dark:bg-gray-800 shadow-lg border-b border-gray-200 dark:border-gray-700 transition-colors duration-200': true,
+    'fixed top-0 left-0 w-full z-50 animate-fade-in': showCompactSticky,
+    relative: !showCompactSticky
+  }"
+>
+  <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center h-16">
+      <!-- Logo and Brand -->
+      <div class="flex items-center gap-4">
+        <div class="flex-shrink-0">
+          <a routerLink="/" class="flex items-center gap-2">
+            <div
+              class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center"
+            >
+              <span class="text-white font-bold text-sm">L</span>
+            </div>
+            <span class="text-xl font-bold text-gray-900 dark:text-white"
+              >L-FYS</span
+            >
+          </a>
+        </div>
+
+        <!-- Desktop Navigation -->
+        <div class="hidden md:flex gap-6 ml-8">
+          <a
+            *ngFor="let item of navigationItems"
+            [routerLink]="item.link"
+            routerLinkActive="text-blue-600 border-blue-600"
+            class="inline-flex items-center px-2 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white hover:border-gray-300 dark:hover:border-gray-600 transition-colors duration-200"
+          >
+            <i class="mr-1" [class]="'icon-' + item.icon"></i>
+            {{ item.label }}
+          </a>
+        </div>
+      </div>
+
+      <!-- Right side items -->
+      <div class="flex items-center gap-3">
+        <!-- Theme Toggle -->
+        <button
+          (click)="themeService.toggleTheme()"
+          class="p-2 text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200"
+        >
+          <i
+            class="text-xl"
+            [class]="themeService.isDarkMode() ? 'icon-sun' : 'icon-moon'"
+          ></i>
+          <span class="sr-only">Toggle theme</span>
+        </button>
+
+        <!-- Notifications -->
+        <div class="relative">
+          <button
+            (click)="toggleNotification()"
+            class="p-2 text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors relative"
+          >
+            <i class="icon-bell text-xl"></i>
+            <span class="sr-only">Notifications</span>
+            <span
+              *ngIf="notificationsUnread()"
+              class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"
+            ></span>
+          </button>
+
+          <!-- Notification Dialog + Overlay -->
+          <ng-container *ngIf="isNotificationOpen">
+            <div class="fixed inset-0 z-40" (click)="closeNotification()"></div>
+            <div
+              class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50"
+            >
+              <div
+                class="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700"
+              >
+                <span class="font-semibold text-gray-800 dark:text-gray-100"
+                  >Thông báo</span
+                >
+                <button
+                  (click)="markAllAsRead()"
+                  class="text-xs text-blue-600 hover:underline"
+                >
+                  Đánh dấu đã đọc
+                </button>
+              </div>
+              <div class="max-h-80 overflow-y-auto">
+                <div
+                  *ngIf="notifications.length === 0"
+                  class="px-4 py-6 text-center text-gray-400"
+                >
+                  Không có thông báo nào.
+                </div>
+                <div
+                  *ngFor="let n of notifications"
+                  class="flex items-start gap-2 px-4 py-3 border-b border-gray-100 dark:border-gray-700 last:border-b-0 group hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <div class="flex-1">
+                    <div
+                      class="font-medium text-gray-800 dark:text-gray-100"
+                      [ngClass]="{ 'font-normal text-gray-400': n.read }"
+                    >
+                      {{ n.title }}
+                    </div>
+                    <div class="text-xs text-gray-400 mt-1">{{ n.time }}</div>
+                  </div>
+                  <button
+                    (click)="removeNotification(n.id)"
+                    class="text-gray-300 hover:text-red-500 transition-colors ml-2"
+                    title="Xóa"
+                  >
+                    <i class="icon-x"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="px-4 py-2 text-right">
+                <button
+                  (click)="closeNotification()"
+                  class="px-3 py-1 text-sm rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+
+        <!-- User Menu -->
+        <div class="relative">
+          <button
+            (click)="toggleUserMenu()"
+            class="flex items-center gap-2 p-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            <img
+              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSK1UhUMG9MTojpNTLV0XoDh-3cWX2XxTcPng&s"
+              alt="User"
+              class="w-8 h-8 rounded-full"
+            />
+            <span
+              class="hidden md:block text-gray-700 dark:text-gray-300 font-medium"
+              >Phan Duy Khang</span
+            >
+            <i
+              class="icon-chevron-down text-gray-400 dark:text-gray-500 ml-1"
+            ></i>
+          </button>
+
+          <!-- User Dropdown + Overlay -->
+          <ng-container *ngIf="isUserMenuOpen">
+            <!-- Overlay to close menu when clicking outside -->
+            <div class="fixed inset-0 z-40" (click)="closeMenus()"></div>
+            <div
+              class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50"
+            >
+              <a
+                *ngFor="let item of userMenuItems"
+                [routerLink]="item.link"
+                (click)="closeMenus()"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <i class="mr-3" [class]="'icon-' + item.icon"></i>
+                {{ item.label }}
+              </a>
+            </div>
+          </ng-container>
+        </div>
+
+        <!-- Mobile menu button -->
+        <button
+          (click)="toggleMenu()"
+          class="md:hidden p-2 text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+        >
+          <i class="text-xl" [class]="isMenuOpen ? 'icon-x' : 'icon-menu'"></i>
+          <span class="sr-only">Menu</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Navigation Menu -->
+    <div *ngIf="isMenuOpen" class="md:hidden fixed inset-0 z-50">
+      <div
+        class="absolute inset-0 bg-black bg-opacity-40"
+        (click)="toggleMenu()"
+      ></div>
+      <div
+        class="relative w-64 h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-lg flex flex-col"
+      >
+        <div
+          class="flex items-center h-16 px-4 border-b border-gray-200 dark:border-gray-700"
+        >
+          <span class="text-xl font-bold text-gray-900 dark:text-white"
+            >LearnCode</span
+          >
+          <button class="ml-auto p-2" (click)="toggleMenu()">
+            <i class="icon-x text-gray-400 dark:text-gray-300 text-xl"></i>
+          </button>
+        </div>
+        <div class="flex-1 overflow-y-auto px-2 pt-4 pb-3 space-y-1">
+          <!-- Mobile Navigation Links -->
+          <a
+            *ngFor="let item of navigationItems"
+            [routerLink]="item.link"
+            routerLinkActive="bg-blue-50 border-blue-500 text-blue-700"
+            (click)="closeMenus()"
+            class="flex items-center px-3 py-2 text-base font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 border-l-4 border-transparent transition-colors"
+          >
+            <i class="mr-3" [class]="'icon-' + item.icon"></i>
+            {{ item.label }}
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>

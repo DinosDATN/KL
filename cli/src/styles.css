@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Icon placeholders using emoji/symbols */
+.icon-home::before { content: '🏠'; }
+.icon-book::before { content: '📚'; }
+.icon-code::before { content: '💻'; }
+.icon-file-text::before { content: '📝'; }
+.icon-message-circle::before { content: '💬'; }
+.icon-trophy::before { content: '🏆'; }
+.icon-user::before { content: '👤'; }
+.icon-settings::before { content: '⚙️'; }
+.icon-log-out::before { content: '🚪'; }
+.icon-search::before { content: '🔍'; }
+.icon-bell::before { content: '🔔'; }
+.icon-chevron-down::before { content: '▼'; }
+.icon-menu::before { content: '☰'; }
+.icon-x::before { content: '✗'; }
+.icon-play-circle::before { content: '▶️'; }
+.icon-map::before { content: '🗺'; }
+.icon-calendar::before { content: '📅'; }
+.icon-trending-up::before { content: '📈'; }
+.icon-facebook::before { content: 'f'; }
+.icon-twitter::before { content: 't'; }
+.icon-linkedin::before { content: 'in'; }
+.icon-github::before { content: 'gh'; }
+.icon-youtube::before { content: 'yt'; }
+.icon-clock::before { content: '⏰'; }
+.icon-users::before { content: '👥'; }
+.icon-play::before { content: '▶️'; }
+.icon-star::before { content: '⭐'; }
+.icon-thumbs-up::before { content: '👍'; }
+.icon-thumbs-down::before { content: '👎'; }
+.icon-check-circle::before { content: '✅'; }
+.icon-heart::before { content: '♥️'; }
+.icon-user-plus::before { content: '👤+'; }
+.icon-award::before { content: '🏅'; }
+.icon-medal::before { content: '🏅'; }
+.icon-sun::before { content: '☀️'; }
+.icon-moon::before { content: '🌙'; }
+
+/* Custom styles for better visual appeal */
+body {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* Focus styles */
+*:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Animation utilities */
+.transition-all {
+  transition: all 0.3s ease;
+}
+
+/* You can add global styles to this file, and also import other style files */

@@ -1,0 +1,49 @@
+/* Document Card Styling */
+.document-card {
+  transition: all 0.3s ease;
+  min-height: 480px; /* Ensures consistent height */
+}
+
+.document-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Dark mode hover effect */
+@media (prefers-color-scheme: dark) {
+  .document-card:hover {
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Line clamp utility for description */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Smooth transitions for all interactive elements */
+.document-card button,
+.document-card img {
+  transition: all 0.3s ease;
+}
+
+/* Icon placeholders for cases where custom icons aren't available */
+.icon-clock::before {
+  content: '🕒';
+  font-size: 0.875rem;
+}
+
+.icon-users::before {
+  content: '👥';
+  font-size: 0.875rem;
+}

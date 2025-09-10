@@ -1,0 +1,138 @@
+<div class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+  <!-- Header -->
+  <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+    <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+      </svg>
+      Test Cases
+    </h3>
+    <button
+      (click)="showAddTestCase()"
+      class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1"
+    >
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+      </svg>
+      Thêm Test Case
+    </button>
+  </div>
+
+  <!-- Test Cases List -->
+  <div class="p-4 space-y-4">
+    <!-- Existing Test Cases -->
+    <div *ngFor="let testCase of testCases; let i = index" 
+         class="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Test Case {{ i + 1 }}
+          </span>
+          <span *ngIf="testCase.is_sample" 
+                class="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 text-xs px-2 py-0.5 rounded-full">
+            Sample
+          </span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            (click)="editTestCase(testCase)"
+            class="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium"
+          >
+            Sửa
+          </button>
+          <button
+            (click)="deleteTestCase(testCase)"
+            class="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium"
+          >
+            Xóa
+          </button>
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Input</label>
+          <pre class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded p-3 text-sm font-mono overflow-x-auto">{{ testCase.input }}</pre>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expected Output</label>
+          <pre class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded p-3 text-sm font-mono overflow-x-auto">{{ testCase.expected_output }}</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="testCases.length === 0" class="text-center py-8">
+      <svg class="w-12 h-12 mx-auto text-gray-400 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+      </svg>
+      <p class="text-gray-500 dark:text-gray-400">Chưa có test case nào</p>
+      <p class="text-sm text-gray-400 dark:text-gray-500">Thêm test case để kiểm tra code của bạn</p>
+    </div>
+  </div>
+
+  <!-- Add/Edit Form -->
+  <div *ngIf="showAddForm" class="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800">
+    <h4 class="text-md font-semibold text-gray-900 dark:text-white mb-4">
+      {{ editingTestCase ? 'Sửa Test Case' : 'Thêm Test Case Mới' }}
+    </h4>
+    
+    <div class="space-y-4">
+      <!-- Input -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Input *
+        </label>
+        <textarea
+          [(ngModel)]="newTestCase.input"
+          placeholder="Nhập dữ liệu đầu vào..."
+          rows="4"
+          class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm font-mono bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        ></textarea>
+      </div>
+      
+      <!-- Expected Output -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Expected Output *
+        </label>
+        <textarea
+          [(ngModel)]="newTestCase.expected_output"
+          placeholder="Nhập kết quả mong đợi..."
+          rows="4"
+          class="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm font-mono bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        ></textarea>
+      </div>
+      
+      <!-- Is Sample -->
+      <div class="flex items-center gap-2">
+        <input
+          type="checkbox"
+          [(ngModel)]="newTestCase.is_sample"
+          id="is-sample"
+          class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+        >
+        <label for="is-sample" class="text-sm text-gray-700 dark:text-gray-300">
+          Đây là test case mẫu
+        </label>
+      </div>
+      
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-3 pt-2">
+        <button
+          (click)="saveTestCase()"
+          [disabled]="!newTestCase.input?.trim() || !newTestCase.expected_output?.trim()"
+          class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+        >
+          {{ editingTestCase ? 'Cập nhật' : 'Thêm' }}
+        </button>
+        <button
+          (click)="cancelEdit()"
+          class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+        >
+          Hủy
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
