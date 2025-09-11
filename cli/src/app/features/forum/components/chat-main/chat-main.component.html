@@ -1,6 +1,6 @@
 <!-- Chat Header (Fixed) -->
 <div
-  class="chat-header-fixed flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-white to-blue-50/30 dark:from-gray-800 dark:to-blue-900/10 backdrop-blur-sm"
+  class="chat-header-fixed flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-white to-blue-50/30 dark:from-gray-800 dark:to-blue-900/10 backdrop-blur-sm z-[-10]"
 >
   <div class="flex items-center gap-3">
     <!-- Room Avatar -->
@@ -136,8 +136,9 @@
 <div
   #messagesContainer
   class="chat-messages-scroll flex-1 p-4 space-y-4 overflow-y-auto overflow-x-hidden"
-  (scroll)="onScroll($event)"
 >
+  <!-- (scroll)="onScroll($event)" -->
+
   <!-- Date Separator -->
   <div
     *ngFor="let group of getGroupedMessages(); trackBy: trackByDate"
@@ -164,19 +165,16 @@
       <!-- Message Bubble -->
       <div
         [class]="
-          'message-bubble flex items-end gap-2 max-w-xs lg:max-w-md xl:max-w-lg ' +
+          'group message-bubble flex items-end gap-2 max-w-xs lg:max-w-md xl:max-w-lg ' +
           (message.sender_id === currentUser.id
             ? 'flex-row-reverse'
             : 'flex-row')
         "
       >
         <!-- User Avatar (for others) -->
-        <div
-          *ngIf="message.sender_id !== currentUser.id"
-          class="flex-shrink-0 mb-1"
-        >
+        <div *ngIf="message.sender_id !== currentUser.id" class="flex-shrink-0">
           <div
-            class="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center"
+            class="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center mb-8"
           >
             <img
               *ngIf="getSender(message)?.avatar_url; else senderInitials"
@@ -390,7 +388,7 @@
 <div
   class="chat-input-fixed p-4 border-t border-gray-200 dark:border-gray-700 bg-gradient-to-r from-white to-blue-50/30 dark:from-gray-800 dark:to-blue-900/10 backdrop-blur-sm"
 >
-  <div class="flex items-end gap-3">
+  <div class="flex items-center justify-center gap-3">
     <!-- File Upload Button -->
     <button
       type="button"
@@ -457,7 +455,7 @@
 <!-- Members Sidebar (if shown) -->
 <div
   *ngIf="showMembers"
-  class="absolute right-0 top-0 h-full w-80 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 shadow-lg z-10"
+  class="absolute right-0 top-0 h-full w-80 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 shadow-lg z-50"
 >
   <div class="p-4 border-b border-gray-200 dark:border-gray-700">
     <div class="flex items-center justify-between">
