@@ -1,13 +1,13 @@
-version: '3.8'
+version: "3.8"
 
 services:
   mysql:
-    image: mysql:8.0
+    image: mariadb:10.4
     container_name: api_mysql
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: api_db
+      MYSQL_DATABASE: lfysdb
       MYSQL_USER: api_user
       MYSQL_PASSWORD: api_password
     ports:

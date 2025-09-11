@@ -25,7 +25,7 @@ CREATE TABLE users (
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_email (email),
     INDEX idx_role (role)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng hồ sơ người dùng (User Profiles)
 -- Chứa thông tin bổ sung cho người dùng, như tiểu sử, ngày sinh, giới tính, v.v.
@@ -52,7 +52,7 @@ CREATE TABLE user_profiles (
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_user_id (user_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng thống kê người dùng (User Stats)
 -- Chứa các chỉ số thống kê của người dùng, như điểm kinh nghiệm, cấp độ, v.v.
@@ -72,7 +72,7 @@ CREATE TABLE user_stats (
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_user_id (user_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng mục tiêu người dùng (User Goals)
 CREATE TABLE user_goals (
@@ -89,7 +89,7 @@ CREATE TABLE user_goals (
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_user_id (user_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng thành tích (Achievements)
 CREATE TABLE achievements (
@@ -101,7 +101,7 @@ CREATE TABLE achievements (
     rarity ENUM('common', 'rare', 'epic', 'legendary') NOT NULL, -- Độ hiếm của thành tích
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng thành tích người dùng (User Achievements)
 CREATE TABLE user_achievements (
@@ -115,7 +115,7 @@ CREATE TABLE user_achievements (
     FOREIGN KEY (achievement_id) REFERENCES achievements(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     UNIQUE(user_id, achievement_id),
     INDEX idx_user_id (user_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng nhật ký hoạt động người dùng (User Activity Log)
 CREATE TABLE user_activity_log (
@@ -130,7 +130,7 @@ CREATE TABLE user_activity_log (
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_user_activity (user_id, type)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- ===============================
 -- Bảng Danh mục course (Course Categories)
@@ -141,7 +141,7 @@ CREATE TABLE course_categories (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_name (name)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng khóa học (Courses)
 CREATE TABLE courses (
@@ -167,7 +167,7 @@ CREATE TABLE courses (
     INDEX idx_instructor_id (instructor_id),
     INDEX idx_category_id (category_id),
     INDEX idx_status (status)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng đăng ký khóa học (Course Enrollments)
 CREATE TABLE course_enrollments (
@@ -186,7 +186,7 @@ CREATE TABLE course_enrollments (
     UNIQUE(user_id, course_id),
     INDEX idx_user_id (user_id),
     INDEX idx_course_id (course_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng trình độ của giảng viên (Instructor Qualifications)
 CREATE TABLE instructor_qualifications (
@@ -200,7 +200,7 @@ CREATE TABLE instructor_qualifications (
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_user_id (user_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng đánh giá từ học viên (Testimonials)
 CREATE TABLE testimonials (
@@ -216,7 +216,7 @@ CREATE TABLE testimonials (
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (instructor_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_instructor_id (instructor_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- ===============================
 -- II. DOCUMENTS & ANIMATION
@@ -228,7 +228,7 @@ CREATE TABLE topics (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_name (name)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng danh mục tài liệu (Document Categories)
 CREATE TABLE document_categories (
@@ -238,7 +238,7 @@ CREATE TABLE document_categories (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_name (name)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng tài liệu (Documents)
 CREATE TABLE documents (
@@ -260,7 +260,7 @@ CREATE TABLE documents (
     FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     INDEX idx_created_by (created_by),
     INDEX idx_topic_id (topic_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng liên kết tài liệu với danh mục (Document Category Links)
 CREATE TABLE document_category_links (
@@ -273,7 +273,7 @@ CREATE TABLE document_category_links (
     FOREIGN KEY (category_id) REFERENCES document_categories(id) ON DELETE CASCADE ON UPDATE CASCADE,
     UNIQUE(document_id, category_id),
     INDEX idx_document_category (document_id, category_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng mô-đun tài liệu (Document Modules)
 CREATE TABLE document_modules (
@@ -285,7 +285,7 @@ CREATE TABLE document_modules (
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_document_id (document_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng bài học trong mô-đun tài liệu (Document Lessons)
 CREATE TABLE document_lessons (
@@ -299,7 +299,7 @@ CREATE TABLE document_lessons (
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (module_id) REFERENCES document_modules(id) ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_module_id (module_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng liên kết người dùng với bài học tài liệu (Document Lesson Completions)
 CREATE TABLE document_lesson_completions (
@@ -311,7 +311,7 @@ CREATE TABLE document_lesson_completions (
     FOREIGN KEY (lesson_id) REFERENCES document_lessons(id) ON DELETE CASCADE ON UPDATE CASCADE,
     UNIQUE(user_id, lesson_id),
     INDEX idx_user_id (user_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng liên kết người dùng với tài liệu (Document Completions)
 CREATE TABLE document_completions (
@@ -323,7 +323,7 @@ CREATE TABLE document_completions (
     FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE ON UPDATE CASCADE,
     UNIQUE(user_id, document_id),
     INDEX idx_user_id (user_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng hiệu ứng hoạt hình (Animations)
 CREATE TABLE animations (
@@ -341,7 +341,7 @@ CREATE TABLE animations (
     CHECK (document_id IS NOT NULL OR lesson_id IS NOT NULL),
     INDEX idx_document_id (document_id),
     INDEX idx_lesson_id (lesson_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- ===============================
 -- III. PROBLEMS & CODE
@@ -354,7 +354,7 @@ CREATE TABLE problem_categories (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_name (name)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng bài tập (Problems)
 CREATE TABLE problems (
@@ -380,7 +380,7 @@ CREATE TABLE problems (
     FOREIGN KEY (category_id) REFERENCES problem_categories(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     INDEX idx_category_id (category_id),
     INDEX idx_difficulty (difficulty)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng tags chứa các thẻ cho bài tập
 CREATE TABLE tags (
@@ -389,7 +389,7 @@ CREATE TABLE tags (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_name (name)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng liên kết bài tập với thẻ (Problem Tags)
 CREATE TABLE problem_tags (
@@ -398,7 +398,7 @@ CREATE TABLE problem_tags (
     PRIMARY KEY (problem_id, tag_id),
     FOREIGN KEY (problem_id) REFERENCES problems(id) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE ON UPDATE CASCADE
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng ví dụ bài tập (Problem Examples)
 CREATE TABLE problem_examples (
@@ -411,7 +411,7 @@ CREATE TABLE problem_examples (
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (problem_id) REFERENCES problems(id) ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_problem_id (problem_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng ràng buộc bài tập (Problem Constraints)
 CREATE TABLE problem_constraints (
@@ -422,7 +422,7 @@ CREATE TABLE problem_constraints (
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (problem_id) REFERENCES problems(id) ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_problem_id (problem_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng starter codes chứa mã khởi đầu cho bài tập
 CREATE TABLE starter_codes (
@@ -435,7 +435,7 @@ CREATE TABLE starter_codes (
     FOREIGN KEY (problem_id) REFERENCES problems(id) ON DELETE CASCADE ON UPDATE CASCADE,
     UNIQUE(problem_id, language),
     INDEX idx_problem_id (problem_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng mã nộp bài (Submission Codes)
 CREATE TABLE submission_codes (
@@ -443,7 +443,7 @@ CREATE TABLE submission_codes (
     source_code TEXT NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng nộp bài (Submissions)
 CREATE TABLE submissions (
@@ -461,7 +461,7 @@ CREATE TABLE submissions (
     FOREIGN KEY (problem_id) REFERENCES problems(id) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (code_id) REFERENCES submission_codes(id) ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_user_problem (user_id, problem_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng bình luận bài tập (Problem Comments)
 CREATE TABLE problem_comments (
@@ -474,7 +474,7 @@ CREATE TABLE problem_comments (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (problem_id) REFERENCES problems(id) ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_problem_id (problem_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng test cases chứa các trường hợp kiểm tra cho bài tập
 CREATE TABLE test_cases (
@@ -487,7 +487,7 @@ CREATE TABLE test_cases (
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (problem_id) REFERENCES problems(id) ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_problem_id (problem_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- ===============================
 -- IV. GAMIFICATION & HINT
@@ -500,7 +500,7 @@ CREATE TABLE badge_categories (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_name (name)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng huy hiệu (Badges)
 CREATE TABLE badges (
@@ -513,7 +513,7 @@ CREATE TABLE badges (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (category_id) REFERENCES badge_categories(id) ON DELETE RESTRICT ON UPDATE CASCADE
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng cấp độ (Levels)
 CREATE TABLE levels (
@@ -526,7 +526,7 @@ CREATE TABLE levels (
     icon TEXT,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng bảng xếp hạng (Leaderboard Entries)
 CREATE TABLE leaderboard_entries (
@@ -539,7 +539,7 @@ CREATE TABLE leaderboard_entries (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     UNIQUE(user_id, type),
     INDEX idx_user_id (user_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng thống kê trò chơi (Game Stats)
 CREATE TABLE game_stats (
@@ -553,7 +553,7 @@ CREATE TABLE game_stats (
     FOREIGN KEY (level_id) REFERENCES levels(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     FOREIGN KEY (next_level_id) REFERENCES levels(id) ON DELETE SET NULL ON UPDATE CASCADE,
     INDEX idx_user_id (user_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng người dùng huy hiệu (User Badges)
 CREATE TABLE user_badges (
@@ -565,7 +565,7 @@ CREATE TABLE user_badges (
     FOREIGN KEY (badge_id) REFERENCES badges(id) ON DELETE CASCADE ON UPDATE CASCADE,
     UNIQUE(user_id, badge_id),
     INDEX idx_user_id (user_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng gợi ý (Hints)
 CREATE TABLE hints (
@@ -577,7 +577,7 @@ CREATE TABLE hints (
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (problem_id) REFERENCES problems(id) ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_problem_id (problem_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng sử dụng gợi ý (User Hint Usage)
 CREATE TABLE user_hint_usage (
@@ -589,7 +589,7 @@ CREATE TABLE user_hint_usage (
     FOREIGN KEY (hint_id) REFERENCES hints(id) ON DELETE CASCADE ON UPDATE CASCADE,
     UNIQUE(user_id, hint_id),
     INDEX idx_user_id (user_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- ===============================
 -- V. CHAT REALTIME
@@ -610,7 +610,7 @@ CREATE TABLE chat_rooms (
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE SET NULL ON UPDATE CASCADE,
     INDEX idx_type (type)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 CREATE TABLE chat_messages (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -626,11 +626,8 @@ CREATE TABLE chat_messages (
     FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (reply_to) REFERENCES chat_messages(id) ON DELETE SET NULL ON UPDATE CASCADE,
     INDEX idx_room_id (room_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
-ALTER TABLE chat_rooms
-ADD CONSTRAINT fk_last_message
-FOREIGN KEY (last_message_id) REFERENCES chat_messages(id) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- Bảng thành viên phòng trò chuyện (Chat Room Members)
 CREATE TABLE chat_room_members (
@@ -643,7 +640,7 @@ CREATE TABLE chat_room_members (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     UNIQUE(room_id, user_id),
     INDEX idx_room_id (room_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng reactions cho tin nhắn trò chuyện (Chat Reactions)
 CREATE TABLE chat_reactions (
@@ -656,7 +653,7 @@ CREATE TABLE chat_reactions (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     UNIQUE(message_id, user_id, reaction_type),
     INDEX idx_message_id (message_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng mentions trong tin nhắn trò chuyện (Message Mentions)
 CREATE TABLE message_mentions (
@@ -668,7 +665,7 @@ CREATE TABLE message_mentions (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     UNIQUE(message_id, user_id),
     INDEX idx_message_id (message_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- ===============================
 -- VI. CONTEST SYSTEM
@@ -685,7 +682,7 @@ CREATE TABLE contests (
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_start_time (start_time)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng vấn đề cuộc thi (Contest Problems)
 CREATE TABLE contest_problems (
@@ -699,7 +696,7 @@ CREATE TABLE contest_problems (
     FOREIGN KEY (problem_id) REFERENCES problems(id) ON DELETE CASCADE ON UPDATE CASCADE,
     UNIQUE(contest_id, problem_id),
     INDEX idx_contest_id (contest_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng người dùng tham gia cuộc thi (User Contests)
 CREATE TABLE user_contests (
@@ -711,7 +708,7 @@ CREATE TABLE user_contests (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     UNIQUE(contest_id, user_id),
     INDEX idx_contest_id (contest_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng nộp bài cuộc thi (Contest Submissions)
 CREATE TABLE contest_submissions (
@@ -727,7 +724,7 @@ CREATE TABLE contest_submissions (
     FOREIGN KEY (contest_problem_id) REFERENCES contest_problems(id) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (code_id) REFERENCES submission_codes(id) ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_contest_user (contest_problem_id, user_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- ===============================
 -- VII. ADMIN & SUPPORT
@@ -739,7 +736,7 @@ CREATE TABLE admins (
     assigned_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_user_id (user_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 CREATE TABLE reports (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -750,7 +747,7 @@ CREATE TABLE reports (
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_user_id (user_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 CREATE TABLE notifications (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -761,7 +758,7 @@ CREATE TABLE notifications (
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_user_id (user_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- ===============================
 -- VIII. AI & MACHINE LEARNING
@@ -778,7 +775,7 @@ CREATE TABLE ai_messages (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (related_problem_id) REFERENCES problems(id) ON DELETE SET NULL ON UPDATE CASCADE,
     INDEX idx_user_id (user_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 CREATE TABLE ai_code_reviews (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -789,7 +786,7 @@ CREATE TABLE ai_code_reviews (
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_submission_id (submission_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- ===============================
 -- IX. COURSE MODULES & LESSONS
@@ -804,7 +801,7 @@ CREATE TABLE course_modules (
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_course_id (course_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng lesson cho course
 CREATE TABLE course_lessons (
@@ -818,7 +815,7 @@ CREATE TABLE course_lessons (
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (module_id) REFERENCES course_modules(id) ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_module_id (module_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng ngôn ngữ cho course (nhiều ngôn ngữ/course)
 CREATE TABLE course_languages (
@@ -830,7 +827,7 @@ CREATE TABLE course_languages (
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE ON UPDATE CASCADE,
     UNIQUE(course_id, language),
     INDEX idx_course_id (course_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng đánh giá khóa học (Course Reviews)
 CREATE TABLE course_reviews (
@@ -847,7 +844,7 @@ CREATE TABLE course_reviews (
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_course_id (course_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng khóa học liên quan (Related Courses)
 CREATE TABLE related_courses (
@@ -858,7 +855,7 @@ CREATE TABLE related_courses (
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (related_course_id) REFERENCES courses(id) ON DELETE CASCADE ON UPDATE CASCADE,
     UNIQUE(course_id, related_course_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng thanh toán (Payments)
 CREATE TABLE payments (
@@ -876,7 +873,7 @@ CREATE TABLE payments (
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE SET NULL ON UPDATE CASCADE,
     FOREIGN KEY (hint_id) REFERENCES hints(id) ON DELETE SET NULL ON UPDATE CASCADE,
     INDEX idx_user_id (user_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- ===============================
 -- X. ADDITIONAL FEATURES (Ưu Tiên Cao & Trung Bình)
@@ -895,7 +892,7 @@ CREATE TABLE quizzes (
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (lesson_id) REFERENCES course_lessons(id) ON DELETE CASCADE ON UPDATE CASCADE,  -- Hoặc document_lessons nếu cần
     INDEX idx_lesson_id (lesson_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng Câu Hỏi Quiz
 CREATE TABLE quiz_questions (
@@ -911,7 +908,7 @@ CREATE TABLE quiz_questions (
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_quiz_id (quiz_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng Kết Quả Quiz Của Người Dùng
 CREATE TABLE user_quiz_results (
@@ -924,7 +921,7 @@ CREATE TABLE user_quiz_results (
     FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE ON UPDATE CASCADE,
     UNIQUE(user_id, quiz_id),
     INDEX idx_user_id (user_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng Forums (Diễn Đàn/Discussions)
 CREATE TABLE forums (
@@ -937,7 +934,7 @@ CREATE TABLE forums (
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_type (type)
     -- FOREIGN KEY (related_id) REFERENCES courses(id) OR problems(id) - Sử dụng dynamic nếu cần
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng Posts Trong Forum
 CREATE TABLE forum_posts (
@@ -951,7 +948,7 @@ CREATE TABLE forum_posts (
     FOREIGN KEY (forum_id) REFERENCES forums(id) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_forum_id (forum_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng Votes Cho Posts
 CREATE TABLE forum_votes (
@@ -964,7 +961,7 @@ CREATE TABLE forum_votes (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     UNIQUE(post_id, user_id),
     INDEX idx_post_id (post_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng Recommendations (Personalized Recommendations)
 CREATE TABLE user_recommendations (
@@ -978,7 +975,7 @@ CREATE TABLE user_recommendations (
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_user_id (user_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng Translations (Multi-Language Support)
 CREATE TABLE translations (
@@ -991,7 +988,7 @@ CREATE TABLE translations (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE(entity_type, entity_id, language, field)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng Referrals (Social Sharing & Invites)
 CREATE TABLE referrals (
@@ -1005,5 +1002,8 @@ CREATE TABLE referrals (
     FOREIGN KEY (referred_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     UNIQUE(referrer_id, referred_id),
     INDEX idx_referrer_id (referrer_id)
-);
+)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
+ALTER TABLE chat_rooms
+ADD CONSTRAINT fk_last_message
+FOREIGN KEY (last_message_id) REFERENCES chat_messages(id) ON DELETE SET NULL ON UPDATE CASCADE;
