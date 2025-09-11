@@ -1,4 +1,4 @@
-<app-header></app-header>
+<app-header *ngIf="!currentUrl.startsWith('/forum')"></app-header>
 <div
   class="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors duration-200"
 >
@@ -9,8 +9,8 @@
       <router-outlet></router-outlet>
     </div>
   </main>
-  <app-footer></app-footer>
-  
+  <app-footer *ngIf="!currentUrl.startsWith('/forum')"></app-footer>
+
   <!-- Back to Top Button -->
   <app-back-to-top></app-back-to-top>
 </div>

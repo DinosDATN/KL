@@ -109,20 +109,36 @@ export const mockDocuments: Document[] = [
     updated_at: '2024-06-04T14:00:00Z',
   },
   {
-    id: 5,
-    title: 'Vue.js Fundamentals',
-    description: 'Tài liệu cơ bản về Vue.js framework',
-    content: '<h2>Vue.js</h2><p>Vue.js là framework...</p>',
+    id: 11,
+    title: 'Docker cho Developer',
+    description: 'Học Docker từ cơ bản đến nâng cao',
+    content: '<h2>Docker</h2><p>Docker là công cụ...</p>',
     topic_id: 1,
-    level: 'Beginner',
-    duration: 75,
-    students: 140,
-    rating: 4.4,
-    thumbnail_url: '/assets/docs/vuejs.png',
+    level: 'Intermediate',
+    duration: 100,
+    students: 60,
+    rating: 4.2,
+    thumbnail_url: '/assets/docs/docker.png',
     created_by: 1,
     is_deleted: false,
-    created_at: '2024-06-05T16:00:00Z',
-    updated_at: '2024-06-05T16:00:00Z',
+    created_at: '2024-06-11T10:00:00Z',
+    updated_at: '2024-06-11T10:00:00Z',
+  },
+  {
+    id: 12,
+    title: 'Big Data Overview',
+    description: 'Tổng quan về Big Data',
+    content: '<h2>Big Data</h2><p>Big Data là...</p>',
+    topic_id: 2,
+    level: 'Advanced',
+    duration: 180,
+    students: 30,
+    rating: 4.1,
+    thumbnail_url: '/assets/docs/bigdata.png',
+    created_by: 2,
+    is_deleted: false,
+    created_at: '2024-06-12T10:00:00Z',
+    updated_at: '2024-06-12T10:00:00Z',
   },
   {
     id: 6,
@@ -277,6 +293,20 @@ export const mockDocumentCategoryLinks: DocumentCategoryLink[] = [
     created_at: '2024-06-10T12:00:00Z',
     updated_at: '2024-06-10T12:00:00Z',
   },
+  {
+    id: 11,
+    document_id: 11,
+    category_id: 1,
+    created_at: '2024-06-11T10:00:00Z',
+    updated_at: '2024-06-11T10:00:00Z',
+  },
+  {
+    id: 12,
+    document_id: 12,
+    category_id: 2,
+    created_at: '2024-06-12T10:00:00Z',
+    updated_at: '2024-06-12T10:00:00Z',
+  },
 ];
 
 export const mockDocumentModules: DocumentModule[] = [
@@ -295,6 +325,22 @@ export const mockDocumentModules: DocumentModule[] = [
     position: 1,
     created_at: '2024-06-02T10:00:00Z',
     updated_at: '2024-06-02T10:00:00Z',
+  },
+  {
+    id: 3,
+    document_id: 11,
+    title: 'Docker Basics',
+    position: 1,
+    created_at: '2024-06-11T10:10:00Z',
+    updated_at: '2024-06-11T10:10:00Z',
+  },
+  {
+    id: 4,
+    document_id: 12,
+    title: 'Big Data Concepts',
+    position: 1,
+    created_at: '2024-06-12T10:10:00Z',
+    updated_at: '2024-06-12T10:10:00Z',
   },
 ];
 
@@ -329,14 +375,38 @@ export const mockDocumentLessons: DocumentLesson[] = [
     created_at: '2024-06-02T10:10:00Z',
     updated_at: '2024-06-02T10:10:00Z',
   },
+  {
+    id: 4,
+    module_id: 3,
+    title: 'Cài đặt Docker',
+    content: '...',
+    code_example: 'docker run hello-world',
+    position: 1,
+    created_at: '2024-06-11T10:20:00Z',
+    updated_at: '2024-06-11T10:20:00Z',
+  },
+  {
+    id: 5,
+    module_id: 4,
+    title: 'Big Data là gì?',
+    content: '...',
+    code_example: 'hadoop version',
+    position: 1,
+    created_at: '2024-06-12T10:20:00Z',
+    updated_at: '2024-06-12T10:20:00Z',
+  },
 ];
 
 export const mockDocumentCompletions: DocumentCompletion[] = [
   { id: 1, user_id: 1, document_id: 1, completed_at: '2024-06-10T10:00:00Z' },
+  { id: 2, user_id: 2, document_id: 11, completed_at: '2024-06-11T12:00:00Z' },
+  { id: 3, user_id: 1, document_id: 12, completed_at: '2024-06-12T12:00:00Z' },
 ];
 
 export const mockDocumentLessonCompletions: DocumentLessonCompletion[] = [
   { id: 1, user_id: 1, lesson_id: 1, completed_at: '2024-06-10T10:10:00Z' },
+  { id: 2, user_id: 2, lesson_id: 4, completed_at: '2024-06-11T12:10:00Z' },
+  { id: 3, user_id: 1, lesson_id: 5, completed_at: '2024-06-12T12:10:00Z' },
 ];
 
 export const mockAnimations: Animation[] = [
@@ -350,5 +420,27 @@ export const mockAnimations: Animation[] = [
     embed_code: '<iframe ...></iframe>',
     created_at: '2024-06-01T09:30:00Z',
     updated_at: '2024-06-01T09:30:00Z',
+  },
+  {
+    id: 2,
+    document_id: 11,
+    lesson_id: 4,
+    title: 'Docker Container Run',
+    type: 'animation',
+    description: 'Mô phỏng chạy container',
+    embed_code: '<iframe ...></iframe>',
+    created_at: '2024-06-11T10:30:00Z',
+    updated_at: '2024-06-11T10:30:00Z',
+  },
+  {
+    id: 3,
+    document_id: 12,
+    lesson_id: 5,
+    title: 'Big Data Pipeline',
+    type: 'animation',
+    description: 'Mô phỏng pipeline Big Data',
+    embed_code: '<iframe ...></iframe>',
+    created_at: '2024-06-12T10:30:00Z',
+    updated_at: '2024-06-12T10:30:00Z',
   },
 ];

@@ -1,0 +1,330 @@
+<!-- Modal Overlay -->
+<div
+  class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+  (click)="close()"
+>
+  <!-- Modal Content -->
+  <div
+    class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden"
+    (click)="$event.stopPropagation()"
+  >
+    <!-- Modal Header -->
+    <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white">
+          Tạo nhóm mới
+        </h2>
+        <button
+          (click)="close()"
+          class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            ></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="p-6 overflow-y-auto max-h-[60vh]">
+      <form (ngSubmit)="createGroup()" #groupForm="ngForm">
+        <!-- Group Name -->
+        <div class="mb-6">
+          <label
+            for="groupName"
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          >
+            Tên nhóm *
+          </label>
+          <input
+            id="groupName"
+            type="text"
+            [(ngModel)]="groupName"
+            name="groupName"
+            required
+            maxlength="50"
+            placeholder="Nhập tên nhóm..."
+            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+          />
+          <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            {{ groupName.length }}/50 ký tự
+          </div>
+        </div>
+
+        <!-- Group Description -->
+        <div class="mb-6">
+          <label
+            for="groupDescription"
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          >
+            Mô tả nhóm
+          </label>
+          <textarea
+            id="groupDescription"
+            [(ngModel)]="groupDescription"
+            name="groupDescription"
+            rows="3"
+            maxlength="200"
+            placeholder="Mô tả về mục đích và nội dung của nhóm..."
+            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 resize-none"
+          ></textarea>
+          <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            {{ groupDescription.length }}/200 ký tự
+          </div>
+        </div>
+
+        <!-- Privacy Setting -->
+        <div class="mb-6">
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3"
+          >
+            Quyền riêng tư
+          </label>
+          <div class="space-y-3">
+            <label class="flex items-center cursor-pointer">
+              <input
+                type="radio"
+                [(ngModel)]="isPublic"
+                name="privacy"
+                [value]="true"
+                class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600"
+              />
+              <div class="ml-3">
+                <div class="text-sm font-medium text-gray-900 dark:text-white">
+                  Công khai
+                </div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                  Mọi người có thể tìm thấy và tham gia nhóm
+                </div>
+              </div>
+            </label>
+            <label class="flex items-center cursor-pointer">
+              <input
+                type="radio"
+                [(ngModel)]="isPublic"
+                name="privacy"
+                [value]="false"
+                class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600"
+              />
+              <div class="ml-3">
+                <div class="text-sm font-medium text-gray-900 dark:text-white">
+                  Riêng tư
+                </div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                  Chỉ những người được mời mới có thể tham gia
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Member Selection -->
+        <div class="mb-6">
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3"
+          >
+            Thêm thành viên ({{ selectedUsers.length }})
+          </label>
+
+          <!-- Search Users -->
+          <div class="relative mb-3">
+            <div
+              class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+            >
+              <svg
+                class="w-4 h-4 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                ></path>
+              </svg>
+            </div>
+            <input
+              type="text"
+              [(ngModel)]="userSearchTerm"
+              name="userSearch"
+              placeholder="Tìm kiếm người dùng..."
+              class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+            />
+          </div>
+
+          <!-- Selected Users -->
+          <div *ngIf="selectedUsers.length > 0" class="mb-3">
+            <div class="flex flex-wrap gap-2">
+              <div
+                *ngFor="let user of selectedUsers"
+                class="inline-flex items-center gap-2 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 px-3 py-1 rounded-full text-sm"
+              >
+                <div
+                  class="w-6 h-6 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center"
+                >
+                  <img
+                    *ngIf="user.avatar_url; else userInitials"
+                    [src]="user.avatar_url"
+                    [alt]="user.name"
+                    class="w-full h-full rounded-full object-cover"
+                  />
+                  <ng-template #userInitials>
+                    <span class="text-white text-xs font-medium">
+                      {{ getUserInitials(user.name) }}
+                    </span>
+                  </ng-template>
+                </div>
+                <span>{{ user.name }}</span>
+                <button
+                  type="button"
+                  (click)="removeUser(user)"
+                  class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200"
+                >
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    ></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Available Users List -->
+          <div
+            class="max-h-40 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg"
+          >
+            <div
+              *ngIf="getFilteredUsers().length === 0"
+              class="p-4 text-center text-gray-500 dark:text-gray-400"
+            >
+              Không tìm thấy người dùng
+            </div>
+            <div
+              *ngFor="let user of getFilteredUsers()"
+              class="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-600 last:border-b-0 cursor-pointer"
+              (click)="toggleUser(user)"
+            >
+              <div class="flex items-center gap-3">
+                <div
+                  [class]="
+                    'relative ' +
+                    (user.is_online ? 'online-indicator' : 'offline-indicator')
+                  "
+                >
+                  <div
+                    class="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center"
+                  >
+                    <img
+                      *ngIf="user.avatar_url; else availableUserInitials"
+                      [src]="user.avatar_url"
+                      [alt]="user.name"
+                      class="w-full h-full rounded-full object-cover"
+                    />
+                    <ng-template #availableUserInitials>
+                      <span class="text-white text-sm font-medium">
+                        {{ getUserInitials(user.name) }}
+                      </span>
+                    </ng-template>
+                  </div>
+                </div>
+                <div>
+                  <div class="font-medium text-gray-900 dark:text-white">
+                    {{ user.name }}
+                  </div>
+                  <div class="text-sm text-gray-500 dark:text-gray-400">
+                    {{ user.is_online ? "Đang online" : "Offline" }}
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center">
+                <input
+                  type="checkbox"
+                  [checked]="isUserSelected(user)"
+                  (change)="toggleUser(user)"
+                  class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Modal Footer -->
+    <div
+      class="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
+    >
+      <div class="flex items-center justify-between">
+        <div class="text-sm text-gray-500 dark:text-gray-400">
+          {{ selectedUsers.length }} thành viên được chọn
+        </div>
+        <div class="flex items-center gap-3">
+          <button
+            type="button"
+            (click)="close()"
+            class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-200"
+          >
+            Hủy
+          </button>
+          <button
+            type="button"
+            (click)="createGroup()"
+            [disabled]="!groupName.trim() || isCreating"
+            [class]="
+              'px-6 py-2 rounded-lg font-medium transition-all duration-200 ' +
+              (groupName.trim() && !isCreating
+                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed')
+            "
+          >
+            <span *ngIf="!isCreating">Tạo nhóm</span>
+            <span *ngIf="isCreating" class="flex items-center gap-2">
+              <svg
+                class="animate-spin w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                ></circle>
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              Đang tạo...
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

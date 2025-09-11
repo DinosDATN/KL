@@ -221,9 +221,9 @@ export class DocumentsComponent implements OnInit {
   }
   
   onDocumentView(document: Document): void {
-    // Navigate to document detail page (will be implemented later)
+    // Navigate to document detail page
     console.log('Viewing document:', document);
-    // this.router.navigate(['/documents', document.id]);
+    this.router.navigate(['/documents', document.id]);
   }
   
   toggleMobileFilters(): void {

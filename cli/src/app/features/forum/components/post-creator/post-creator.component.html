@@ -1,0 +1,399 @@
+<div
+  class="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-4"
+  *ngIf="isOpen"
+  (click)="onClose()"
+>
+  <!-- Modal Card -->
+  <div
+    class="w-full sm:max-w-3xl bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+    (click)="$event.stopPropagation()"
+  >
+    <!-- Header -->
+    <div
+      class="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700"
+    >
+      <div class="flex items-center space-x-3">
+        <div
+          class="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg"
+        ></div>
+        <div>
+          <div class="font-semibold text-gray-900 dark:text-white">
+            Tạo bài viết mới
+          </div>
+          <div class="text-xs text-gray-500 dark:text-gray-400">
+            Chia sẻ câu hỏi hoặc nội dung với cộng đồng
+          </div>
+        </div>
+      </div>
+      <button
+        (click)="onClose()"
+        class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+      >
+        ✕
+      </button>
+    </div>
+
+    <!-- Error Message -->
+    <div
+      *ngIf="errorMessage"
+      class="mx-4 sm:mx-6 mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg"
+    >
+      <div class="flex items-center">
+        <div class="text-red-600 dark:text-red-400 text-sm flex items-center">
+          <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          {{ errorMessage }}
+        </div>
+        <button
+          type="button"
+          (click)="clearError()"
+          class="ml-auto text-red-500 hover:text-red-700"
+        >
+          ×
+        </button>
+      </div>
+    </div>
+
+    <!-- Form -->
+    <form
+      [formGroup]="postForm"
+      (ngSubmit)="onSubmit()"
+      class="px-4 sm:px-6 py-4 space-y-4"
+    >
+      <!-- Title -->
+      <div>
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >Tiêu đề</label
+        >
+        <input
+          type="text"
+          formControlName="title"
+          placeholder="Nhập tiêu đề mô tả rõ nội dung..."
+          class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+        />
+        <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          Tối thiểu 10 ký tự, tối đa 200 ký tự
+        </div>
+        <div
+          *ngIf="
+            postForm.get('title')?.touched && postForm.get('title')?.errors
+          "
+          class="mt-1 text-xs text-red-600 dark:text-red-400"
+        >
+          <span *ngIf="postForm.get('title')?.errors?.['required']"
+            >Tiêu đề là bắt buộc</span
+          >
+          <span *ngIf="postForm.get('title')?.errors?.['minlength']"
+            >Tiêu đề phải có ít nhất 10 ký tự</span
+          >
+          <span *ngIf="postForm.get('title')?.errors?.['maxlength']"
+            >Tiêu đề không được vượt quá 200 ký tự</span
+          >
+        </div>
+      </div>
+
+      <!-- Category & Type -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="sm:col-span-2">
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >Danh mục</label
+          >
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <button
+              type="button"
+              *ngFor="let c of categories"
+              (click)="postForm.patchValue({ categoryId: c.id })"
+              [class]="
+                'flex items-center space-x-2 px-3 py-2 rounded-lg border text-sm transition ' +
+                (postForm.value.categoryId === c.id
+                  ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                  : 'border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700')
+              "
+            >
+              <span>{{ c.icon }}</span>
+              <span>{{ c.name }}</span>
+            </button>
+          </div>
+
+          <div
+            *ngIf="
+              postForm.get('categoryId')?.touched &&
+              postForm.get('categoryId')?.errors
+            "
+            class="mt-1 text-xs text-red-600 dark:text-red-400"
+          >
+            <span *ngIf="postForm.get('categoryId')?.errors?.['required']"
+              >Vui lòng chọn danh mục</span
+            >
+          </div>
+        </div>
+        <div class="sm:col-span-1">
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >Loại bài viết</label
+          >
+          <label class="inline-flex items-center space-x-2">
+            <input
+              type="checkbox"
+              formControlName="isQuestion"
+              class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <span class="text-sm text-gray-700 dark:text-gray-300"
+              >Đánh dấu là câu hỏi</span
+            >
+          </label>
+        </div>
+      </div>
+
+      <!-- Tags -->
+      <div>
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >Thẻ (tối đa 5)</label
+        >
+        <div class="relative">
+          <div class="flex flex-wrap gap-2 mb-2">
+            <span
+              *ngFor="let tag of selectedTags"
+              class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+            >
+              {{ tag.name }}
+              <button
+                type="button"
+                class="ml-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-200"
+                (click)="removeTag(tag.id)"
+              >
+                ×
+              </button>
+            </span>
+          </div>
+
+          <input
+            type="text"
+            placeholder="Tìm và thêm thẻ..."
+            [value]="tagSearchTerm"
+            (input)="
+              tagSearchTerm = $any($event.target).value; showTagDropdown = true
+            "
+            (focus)="showTagDropdown = true"
+            class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+          />
+
+          <div
+            *ngIf="showTagDropdown && filteredTags.length > 0"
+            class="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-auto"
+          >
+            <button
+              type="button"
+              *ngFor="let tag of filteredTags"
+              (click)="addTag(tag)"
+              class="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+            >
+              <span
+                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium mr-2"
+                [class]="tag.color"
+                >#</span
+              >
+              {{ tag.name }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Editor -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+            >Nội dung</label
+          >
+          <div class="text-xs text-gray-500 dark:text-gray-400">
+            {{ currentWordCount }} / {{ maxWordCount }} từ
+          </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="flex items-center gap-2 mb-2">
+          <button
+            type="button"
+            (click)="insertFormatting('bold')"
+            class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            B
+          </button>
+          <button
+            type="button"
+            (click)="insertFormatting('italic')"
+            class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            <em>I</em>
+          </button>
+          <button
+            type="button"
+            (click)="insertFormatting('code')"
+            class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            {{ "{" }} {{ "}" }}
+          </button>
+          <button
+            type="button"
+            (click)="insertFormatting('quote')"
+            class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            “”
+          </button>
+          <button
+            type="button"
+            (click)="insertFormatting('list')"
+            class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            •
+          </button>
+          <button
+            type="button"
+            (click)="insertFormatting('link')"
+            class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            🔗
+          </button>
+
+          <div class="ml-auto flex items-center gap-2">
+            <button
+              type="button"
+              (click)="togglePreview()"
+              class="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              {{ showPreview ? "Ẩn xem trước" : "Xem trước" }}
+            </button>
+          </div>
+        </div>
+
+        <div
+          class="grid grid-cols-1 gap-4"
+          [class.sm:grid-cols-2]="showPreview"
+        >
+          <textarea
+            id="post-content"
+            formControlName="content"
+            rows="10"
+            (focus)="editorFocused = true"
+            (blur)="editorFocused = false"
+            placeholder="Mô tả chi tiết nội dung, kèm ví dụ, log, hình ảnh..."
+            class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+          ></textarea>
+
+          <div
+            *ngIf="showPreview"
+            class="prose prose-sm dark:prose-invert max-w-none bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-3"
+          >
+            <div
+              [innerHTML]="formatPreviewContent(postForm.value.content || '')"
+            ></div>
+          </div>
+        </div>
+
+        <div
+          *ngIf="
+            postForm.get('content')?.touched && postForm.get('content')?.errors
+          "
+          class="mt-1 text-xs text-red-600 dark:text-red-400"
+        >
+          <span *ngIf="postForm.get('content')?.errors?.['required']"
+            >Nội dung là bắt buộc</span
+          >
+          <span *ngIf="postForm.get('content')?.errors?.['minlength']"
+            >Nội dung phải có ít nhất 20 ký tự</span
+          >
+        </div>
+
+        <div
+          *ngIf="currentWordCount > maxWordCount"
+          class="mt-1 text-xs text-red-600 dark:text-red-400"
+        >
+          Vượt quá giới hạn {{ maxWordCount }} từ
+        </div>
+      </div>
+
+      <!-- Attachments -->
+      <div>
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >Tệp đính kèm (tối đa 5)</label
+        >
+        <div class="flex items-center gap-3">
+          <label
+            class="inline-flex items-center px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg cursor-pointer"
+          >
+            📎 <span class="ml-2">Chọn tệp</span>
+            <input
+              type="file"
+              multiple
+              (change)="onFileSelect($event)"
+              class="hidden"
+            />
+          </label>
+          <div class="text-xs text-gray-500 dark:text-gray-400">
+            JPG, PNG, GIF, PDF, TXT • Tối đa 5MB mỗi tệp
+          </div>
+        </div>
+
+        <div
+          *ngIf="selectedFiles.length > 0"
+          class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2"
+        >
+          <div
+            *ngFor="let file of selectedFiles; let i = index"
+            class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-lg"
+          >
+            <div class="flex items-center gap-2 text-sm">
+              <span>{{ getFileIcon(file.type) }}</span>
+              <span
+                class="text-gray-700 dark:text-gray-300 truncate max-w-[12rem]"
+                >{{ file.name }}</span
+              >
+              <span class="text-gray-500 dark:text-gray-400"
+                >• {{ formatFileSize(file.size) }}</span
+              >
+            </div>
+            <button
+              type="button"
+              class="text-gray-500 hover:text-red-600"
+              (click)="removeFile(i)"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div
+        class="flex items-center justify-end gap-3 pt-2 border-t border-gray-200 dark:border-gray-700"
+      >
+        <button
+          type="button"
+          (click)="onClose()"
+          class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+        >
+          Hủy
+        </button>
+        <button
+          type="submit"
+          [disabled]="
+            isSubmitting || postForm.invalid || currentWordCount > maxWordCount
+          "
+          class="px-4 py-2 rounded-lg text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {{ isSubmitting ? "Đang đăng..." : "Đăng bài" }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

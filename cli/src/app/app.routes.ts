@@ -43,10 +43,17 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'documents/:id',
+        loadComponent: () =>
+          import('./features/documents/document-detail/document-detail.component').then(
+            (m) => m.DocumentDetailComponent
+          ),
+      },
+      {
         path: 'forum',
         loadComponent: () =>
-          import('./features/placeholder/placeholder.component').then(
-            (m) => m.PlaceholderComponent
+          import('./features/forum/forum.component').then(
+            (m) => m.ForumComponent
           ),
       },
       {

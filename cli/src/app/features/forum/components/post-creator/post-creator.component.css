@@ -1,0 +1,245 @@
+:host {
+  display: block;
+}
+
+/* Modal overlay animations */
+.modal-overlay {
+  animation: fade-in 0.3s ease;
+}
+
+.modal-card {
+  animation: slide-up 0.3s ease;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@media (min-width: 640px) {
+  .modal-card {
+    animation: scale-in 0.3s ease;
+  }
+  
+  @keyframes scale-in {
+    from {
+      transform: scale(0.95);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+}
+
+/* Form styles */
+.form-control {
+  @apply w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg;
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+  @apply text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500;
+  transition: all 0.2s ease;
+}
+
+.form-control:focus {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+/* Textarea resize handle */
+textarea.form-control {
+  resize: vertical;
+  min-height: 120px;
+}
+
+/* Tag dropdown styling */
+.tag-dropdown {
+  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.tag-item {
+  transition: all 0.15s ease;
+}
+
+.tag-item:hover {
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+.dark .tag-item:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Selected tags styling */
+.selected-tag {
+  animation: tag-pop-in 0.2s ease;
+}
+
+@keyframes tag-pop-in {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Editor toolbar */
+.editor-toolbar {
+  @apply flex items-center gap-1 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600;
+}
+
+.editor-tool-btn {
+  @apply px-2 py-1 text-sm font-medium rounded hover:bg-gray-200 dark:hover:bg-gray-600;
+  @apply text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200;
+  transition: all 0.15s ease;
+}
+
+.editor-tool-btn:active {
+  transform: scale(0.95);
+}
+
+/* File attachment styling */
+.file-item {
+  @apply flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600;
+  transition: all 0.2s ease;
+}
+
+.file-item:hover {
+  @apply bg-gray-100 dark:bg-gray-600;
+  transform: translateX(2px);
+}
+
+.file-remove-btn {
+  @apply w-6 h-6 flex items-center justify-center rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20;
+  transition: all 0.2s ease;
+}
+
+/* Progress indicator (for future use) */
+.progress-bar {
+  @apply h-1 bg-blue-500 rounded-full transition-all duration-300;
+}
+
+/* Preview pane styling */
+.preview-pane {
+  @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-4;
+  min-height: 240px;
+}
+
+.preview-pane h1, .preview-pane h2, .preview-pane h3 {
+  @apply font-semibold text-gray-900 dark:text-white mb-2;
+}
+
+.preview-pane h1 {
+  @apply text-xl;
+}
+
+.preview-pane h2 {
+  @apply text-lg;
+}
+
+.preview-pane h3 {
+  @apply text-base;
+}
+
+.preview-pane p {
+  @apply text-gray-700 dark:text-gray-300 mb-3;
+}
+
+.preview-pane code {
+  @apply bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-1 py-0.5 rounded text-sm font-mono;
+}
+
+.preview-pane blockquote {
+  @apply border-l-4 border-gray-300 dark:border-gray-600 pl-4 italic text-gray-600 dark:text-gray-400;
+}
+
+.preview-pane ul, .preview-pane ol {
+  @apply pl-6 mb-3;
+}
+
+.preview-pane li {
+  @apply mb-1;
+}
+
+/* Loading spinner for submit button */
+.spinner {
+  @apply inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2;
+}
+
+/* Category selection styling */
+.category-btn {
+  @apply flex items-center space-x-2 px-3 py-2 rounded-lg border text-sm transition-all duration-200;
+}
+
+.category-btn:not(.selected) {
+  @apply border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700;
+}
+
+.category-btn.selected {
+  @apply border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300;
+  transform: scale(1.02);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+}
+
+/* Error states */
+.form-control.error {
+  @apply border-red-500 focus:ring-red-500;
+}
+
+.error-message {
+  @apply text-red-600 dark:text-red-400 text-sm mt-1;
+}
+
+/* Success states */
+.form-control.success {
+  @apply border-green-500;
+}
+
+/* Word count indicator */
+.word-count {
+  @apply text-xs text-gray-500 dark:text-gray-400;
+}
+
+.word-count.warning {
+  @apply text-yellow-600 dark:text-yellow-400;
+}
+
+.word-count.error {
+  @apply text-red-600 dark:text-red-400;
+}
+
+/* Accessibility improvements */
+.focus-visible {
+  @apply focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 focus:outline-none;
+}
+
+/* Mobile specific styles */
+@media (max-width: 640px) {
+  .modal-card {
+    @apply max-h-[90vh] overflow-y-auto;
+  }
+  
+  .category-grid {
+    @apply grid-cols-1;
+  }
+  
+  .toolbar-compact {
+    @apply flex-wrap;
+  }
+}
