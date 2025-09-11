@@ -6,6 +6,10 @@ const { sequelize, testConnection } = require("./config/sequelize");
 
 // Import routes
 const userRoutes = require("./routes/userRoutes");
+const homepageRoutes = require("./routes/homepageRoutes");
+const courseRoutes = require("./routes/courseRoutes");
+const problemRoutes = require("./routes/problemRoutes");
+const documentRoutes = require("./routes/documentRoutes");
 
 // Create Express app
 const app = express();
@@ -32,7 +36,20 @@ app.get("/health", (req, res) => {
 
 // API routes
 const apiPrefix = process.env.API_PREFIX || "/api/v1";
+
+// Core resource routes
 app.use(apiPrefix + "/users", userRoutes);
+app.use(apiPrefix + "/courses", courseRoutes);
+app.use(apiPrefix + "/problems", problemRoutes);
+app.use(apiPrefix + "/documents", documentRoutes);
+
+// Homepage-specific routes
+app.use(apiPrefix + "/homepage", homepageRoutes);
+
+// Alternative homepage routes (for direct access)
+app.use(apiPrefix + "/overview", (req, res, next) => req.originalUrl = req.originalUrl.replace('/overview', '/homepage/overview'), homepageRoutes);
+app.use(apiPrefix + "/leaderboard", (req, res, next) => req.originalUrl = req.originalUrl.replace('/leaderboard', '/homepage/leaderboard'), homepageRoutes);
+app.use(apiPrefix + "/testimonials", (req, res, next) => req.originalUrl = req.originalUrl.replace('/testimonials', '/homepage/testimonials'), homepageRoutes);
 
 // Catch-all route for undefined endpoints
 app.use((req, res) => {

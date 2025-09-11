@@ -3,28 +3,19 @@ const { sequelize } = require('../config/sequelize');
 
 const User = sequelize.define('User', {
   id: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.BIGINT,
     primaryKey: true,
     autoIncrement: true
   },
-  first_name: {
-    type: DataTypes.STRING(50),
+  name: {
+    type: DataTypes.STRING(255),
     allowNull: false,
     validate: {
-      notEmpty: true,
-      len: [1, 50]
-    }
-  },
-  last_name: {
-    type: DataTypes.STRING(50),
-    allowNull: false,
-    validate: {
-      notEmpty: true,
-      len: [1, 50]
+      notEmpty: true
     }
   },
   email: {
-    type: DataTypes.STRING(100),
+    type: DataTypes.STRING(255),
     allowNull: false,
     unique: true,
     validate: {
@@ -32,20 +23,41 @@ const User = sequelize.define('User', {
       notEmpty: true
     }
   },
-  phone: {
-    type: DataTypes.STRING(20),
-    allowNull: true,
-    validate: {
-      len: [0, 20]
-    }
+  password: {
+    type: DataTypes.STRING(255),
+    allowNull: true // NULL for OAuth users
   },
-  date_of_birth: {
-    type: DataTypes.DATEONLY,
+  avatar_url: {
+    type: DataTypes.TEXT,
     allowNull: true
   },
-  status: {
-    type: DataTypes.ENUM('active', 'inactive', 'suspended'),
-    defaultValue: 'active'
+  role: {
+    type: DataTypes.ENUM('user', 'creator', 'admin'),
+    defaultValue: 'user',
+    allowNull: false
+  },
+  is_active: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+    allowNull: false
+  },
+  is_online: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    allowNull: false
+  },
+  last_seen_at: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  subscription_status: {
+    type: DataTypes.ENUM('free', 'premium'),
+    defaultValue: 'free',
+    allowNull: false
+  },
+  subscription_end_date: {
+    type: DataTypes.DATEONLY,
+    allowNull: true
   }
 }, {
   tableName: 'users',
@@ -57,20 +69,32 @@ const User = sequelize.define('User', {
       fields: ['email']
     },
     {
-      fields: ['status']
+      fields: ['role']
+    },
+    {
+      fields: ['is_active']
+    },
+    {
+      fields: ['subscription_status']
     }
   ]
 });
 
 // Instance methods
-User.prototype.getFullName = function() {
-  return `${this.first_name} ${this.last_name}`;
+User.prototype.getDisplayName = function() {
+  return this.name;
 };
 
 User.prototype.toJSON = function() {
   const values = { ...this.get() };
-  // You can exclude sensitive fields here if needed
+  // Exclude sensitive fields
+  delete values.password;
   return values;
+};
+
+User.prototype.isPremium = function() {
+  return this.subscription_status === 'premium' && 
+    (!this.subscription_end_date || new Date(this.subscription_end_date) > new Date());
 };
 
 // Class methods
@@ -79,7 +103,25 @@ User.findByEmail = function(email) {
 };
 
 User.findActiveUsers = function() {
-  return this.findAll({ where: { status: 'active' } });
+  return this.findAll({ where: { is_active: true } });
+};
+
+User.findCreators = function() {
+  return this.findAll({ 
+    where: { 
+      role: 'creator',
+      is_active: true 
+    } 
+  });
+};
+
+User.findOnlineUsers = function() {
+  return this.findAll({ 
+    where: { 
+      is_online: true,
+      is_active: true 
+    } 
+  });
 };
 
 module.exports = User;
