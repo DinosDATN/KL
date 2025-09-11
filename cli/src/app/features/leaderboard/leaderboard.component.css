@@ -1,0 +1,142 @@
+/* Animations */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-in-up {
+  animation: slideInUp 0.5s ease-out;
+}
+
+/* Hover animations for podium cards */
+.podium-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.podium-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Custom scrollbar for search input */
+input[type="text"]::-webkit-scrollbar {
+  width: 4px;
+}
+
+input[type="text"]::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+input[type="text"]::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.5);
+  border-radius: 4px;
+}
+
+/* Gradient text for rank numbers */
+.rank-gradient {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Trophy icons for top 3 */
+.trophy-gold {
+  color: #fbbf24;
+}
+
+.trophy-silver {
+  color: #9ca3af;
+}
+
+.trophy-bronze {
+  color: #cd7c2f;
+}
+
+/* Progress bar animation */
+.progress-bar {
+  transition: width 0.6s ease-in-out;
+}
+
+/* Badge hover effect */
+.badge-hover {
+  transition: all 0.2s ease;
+}
+
+.badge-hover:hover {
+  transform: scale(1.05);
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .podium-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .controls-grid {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .search-input {
+    width: 100%;
+  }
+}
+
+/* Dark mode specific adjustments */
+@media (prefers-color-scheme: dark) {
+  .glass-effect {
+    backdrop-filter: blur(10px);
+    background: rgba(17, 24, 39, 0.8);
+  }
+}
+
+/* Custom focus styles */
+button:focus,
+input:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Loading skeleton animation */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Leaderboard row animations */
+.leaderboard-row {
+  transition: all 0.2s ease;
+}
+
+.leaderboard-row:hover {
+  transform: translateX(2px);
+}
+
+/* Badge rarity glow effects */
+.badge-legendary {
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+}
+
+.badge-epic {
+  box-shadow: 0 0 8px rgba(147, 51, 234, 0.4);
+}
+
+.badge-rare {
+  box-shadow: 0 0 6px rgba(59, 130, 246, 0.3);
+}

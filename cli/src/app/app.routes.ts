@@ -59,8 +59,8 @@ export const routes: Routes = [
       {
         path: 'leaderboard',
         loadComponent: () =>
-          import('./features/placeholder/placeholder.component').then(
-            (m) => m.PlaceholderComponent
+          import('./features/leaderboard/leaderboard.component').then(
+            (m) => m.LeaderboardComponent
           ),
       },
       {
@@ -89,6 +89,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/placeholder/placeholder.component').then(
             (m) => m.PlaceholderComponent
+          ),
+      },
+      {
+        path: 'profile',
+        loadComponent: () =>
+          import('./features/profile/profile.component').then(
+            (m) => m.ProfileComponent
           ),
       },
     ],

@@ -1,0 +1,227 @@
+<div
+  class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200"
+>
+  <!-- Hero -->
+  <section
+    class="bg-gradient-to-br from-blue-600 via-purple-600 to-blue-700 dark:from-blue-800 dark:via-purple-800 dark:to-blue-900 text-white"
+  >
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div class="flex flex-col md:flex-row md:items-center gap-6">
+        <div class="flex-1">
+          <h1 class="text-3xl md:text-4xl font-bold">Bảng xếp hạng</h1>
+          <p class="mt-2 text-blue-100">
+            Khám phá top học viên xuất sắc nhất theo tuần/tháng
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button
+            (click)="setPeriod('weekly')"
+            [ngClass]="
+              period() === 'weekly'
+                ? 'bg-white text-blue-700'
+                : 'bg-white/10 text-white hover:bg-white/20'
+            "
+            class="px-4 py-2 rounded-lg font-medium transition"
+          >
+            Tuần
+          </button>
+          <button
+            (click)="setPeriod('monthly')"
+            [ngClass]="
+              period() === 'monthly'
+                ? 'bg-white text-blue-700'
+                : 'bg-white/10 text-white hover:bg-white/20'
+            "
+            class="px-4 py-2 rounded-lg font-medium transition"
+          >
+            Tháng
+          </button>
+        </div>
+      </div>
+
+      <!-- Podium Top 3 -->
+      <div class="grid md:grid-cols-3 gap-6 mt-8">
+        <div
+          *ngFor="let row of top3(); let i = index"
+          class="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border border-white/10"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div
+                class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-xl font-bold"
+              >
+                {{ row.rank }}
+              </div>
+              <div>
+                <div class="font-semibold">{{ row.user.name }}</div>
+                <div class="text-sm text-blue-100">
+                  Cấp {{ row.stat?.level }} •
+                  {{ formatNumber(row.entry?.xp ?? row.stat?.xp ?? 0) }} XP
+                </div>
+              </div>
+            </div>
+            <span
+              class="px-2 py-1 text-xs rounded-full bg-yellow-300 text-gray-900"
+              *ngIf="row.user.subscription_status === 'premium'"
+              >Premium</span
+            >
+          </div>
+          <div class="mt-4">
+            <div class="w-full h-2 bg-white/20 rounded-full overflow-hidden">
+              <div
+                class="h-2 bg-gradient-to-r from-yellow-300 to-orange-400"
+                [style.width]="getXpPercent(row)"
+              ></div>
+            </div>
+          </div>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <span
+              *ngFor="let b of row.badges"
+              class="px-2 py-1 text-xs rounded-full"
+              [ngClass]="getRarityColor(b.rarity)"
+              >{{ b.name }}</span
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Controls -->
+  <section class="py-6 bg-white dark:bg-gray-800 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div
+        class="flex flex-col md:flex-row md:items-center gap-4 justify-between"
+      >
+        <div class="flex items-center gap-2">
+          <input
+            type="text"
+            placeholder="Tìm theo tên..."
+            class="w-64 max-w-full px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            (input)="handleSearchInput($event)"
+          />
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-gray-600 dark:text-gray-300">Sắp xếp:</span>
+          <button
+            (click)="setSort('xp')"
+            class="px-3 py-1 rounded-md text-sm"
+            [ngClass]="
+              sortKey() === 'xp'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200'
+            "
+          >
+            XP
+          </button>
+          <button
+            (click)="setSort('level')"
+            class="px-3 py-1 rounded-md text-sm"
+            [ngClass]="
+              sortKey() === 'level'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200'
+            "
+          >
+            Cấp
+          </button>
+          <button
+            (click)="setSort('rank')"
+            class="px-3 py-1 rounded-md text-sm"
+            [ngClass]="
+              sortKey() === 'rank'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200'
+            "
+          >
+            Hạng
+          </button>
+          <span
+            class="ml-2 text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+            >{{ sortDir() === "desc" ? "↓" : "↑" }}</span
+          >
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- List -->
+  <section class="py-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div
+        class="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+      >
+        <div
+          class="hidden md:grid grid-cols-12 gap-4 px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 border-b dark:border-gray-700"
+        >
+          <div class="col-span-1">Hạng</div>
+          <div class="col-span-4">Học viên</div>
+          <div class="col-span-2">Cấp</div>
+          <div class="col-span-2">XP</div>
+          <div class="col-span-3">Huy hiệu</div>
+        </div>
+        <div
+          *ngFor="let row of rest()"
+          class="grid grid-cols-12 gap-4 px-4 md:px-6 py-4 border-b dark:border-gray-700 items-center hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+        >
+          <div
+            class="col-span-2 md:col-span-1 font-semibold text-gray-900 dark:text-gray-100"
+          >
+            {{ row.rank }}
+          </div>
+          <div class="col-span-10 md:col-span-4 flex items-center gap-3">
+            <img
+              [src]="
+                row.user.avatar_url ||
+                'https://i.pravatar.cc/150?img=' + row.user.id
+              "
+              [alt]="row.user.name"
+              class="w-9 h-9 rounded-full object-cover"
+            />
+            <div class="min-w-0">
+              <div
+                class="font-medium text-gray-900 dark:text-gray-100 truncate"
+              >
+                {{ row.user.name }}
+              </div>
+              <div
+                class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2"
+              >
+                <span
+                  class="w-2 h-2 rounded-full"
+                  [ngClass]="
+                    row.user.is_online ? 'bg-green-500' : 'bg-gray-400'
+                  "
+                ></span>
+                <span>{{ row.user.is_online ? "Online" : "Offline" }}</span>
+                <span
+                  *ngIf="row.user.subscription_status === 'premium'"
+                  class="bg-yellow-500 text-white text-[10px] px-1.5 py-0.5 rounded"
+                  >Premium</span
+                >
+              </div>
+            </div>
+          </div>
+          <div
+            class="col-span-6 md:col-span-2 text-gray-700 dark:text-gray-300"
+          >
+            Cấp {{ row.stat?.level ?? "—" }}
+          </div>
+          <div
+            class="col-span-6 md:col-span-2 font-semibold text-blue-600 dark:text-blue-400"
+          >
+            {{ formatNumber(row.entry?.xp ?? row.stat?.xp ?? 0) }}
+          </div>
+          <div class="col-span-12 md:col-span-3 flex flex-wrap gap-2">
+            <span
+              *ngFor="let b of row.badges"
+              class="px-2 py-1 text-xs rounded-full"
+              [ngClass]="getRarityColor(b.rarity)"
+              >{{ b.name }}</span
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
