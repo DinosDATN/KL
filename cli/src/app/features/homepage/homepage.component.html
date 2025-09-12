@@ -1,24 +1,40 @@
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+<div
+  class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200"
+>
   <!-- Hero Section -->
-  <section class="relative bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800 dark:from-blue-800 dark:via-purple-800 dark:to-blue-900 overflow-hidden">
+  <section
+    class="relative bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800 dark:from-blue-800 dark:via-purple-800 dark:to-blue-900 overflow-hidden"
+  >
     <div class="absolute inset-0 bg-black/20"></div>
     <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
       <div class="text-center">
-        <h1 class="text-4xl md:text-6xl font-bold text-white mb-6 animate-fade-in">
+        <h1
+          class="text-4xl md:text-6xl font-bold text-white mb-6 animate-fade-in"
+        >
           Nền tảng học tập lập trình
-          <span class="bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent block mt-2">
+          <span
+            class="bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent block mt-2"
+          >
             Hàng đầu Việt Nam
           </span>
         </h1>
-        <p class="text-xl text-blue-100 dark:text-blue-200 mb-8 max-w-3xl mx-auto leading-relaxed">
-          Khám phá hàng nghìn khóa học, bài tập và tài liệu lập trình chất lượng cao. 
-          Tham gia cộng đồng 10,000+ lập trình viên Việt Nam.
+        <p
+          class="text-xl text-blue-100 dark:text-blue-200 mb-8 max-w-3xl mx-auto leading-relaxed"
+        >
+          Khám phá hàng nghìn khóa học, bài tập và tài liệu lập trình chất lượng
+          cao. Tham gia cộng đồng 10,000+ lập trình viên Việt Nam.
         </p>
-        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <button class="bg-white hover:bg-gray-100 text-blue-600 font-bold py-3 px-8 rounded-full transition-all transform hover:scale-105 shadow-lg">
+        <div
+          class="flex flex-col sm:flex-row gap-4 justify-center items-center"
+        >
+          <button
+            class="bg-white hover:bg-gray-100 text-blue-600 font-bold py-3 px-8 rounded-full transition-all transform hover:scale-105 shadow-lg"
+          >
             Bắt đầu học ngay
           </button>
-          <button class="border-2 border-white text-white hover:bg-white hover:text-blue-600 font-bold py-3 px-8 rounded-full transition-all">
+          <button
+            class="border-2 border-white text-white hover:bg-white hover:text-blue-600 font-bold py-3 px-8 rounded-full transition-all"
+          >
             Xem video giới thiệu
           </button>
         </div>
@@ -27,59 +43,187 @@
   </section>
 
   <!-- Overview Stats Section -->
-  <section class="py-16 bg-white dark:bg-gray-800 transition-colors duration-200" *ngIf="overview">
+  <section
+    class="py-16 bg-white dark:bg-gray-800 transition-colors duration-200"
+  >
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="text-center mb-12">
-        <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Cộng đồng lập trình Việt Nam</h2>
-        <p class="text-gray-600 dark:text-gray-300">Con số ấn tượng về nền tảng học tập của chúng tôi</p>
+        <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+          Cộng đồng lập trình Việt Nam
+        </h2>
+        <p class="text-gray-600 dark:text-gray-300">
+          Con số ấn tượng về nền tảng học tập của chúng tôi
+        </p>
       </div>
-      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-        <div class="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl transition-transform hover:scale-105">
-          <div class="text-3xl font-bold text-blue-600 dark:text-blue-400">{{ formatNumber(overview.totalUsers) }}</div>
-          <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">Học viên</div>
+
+      <!-- Loading State -->
+      <div
+        *ngIf="isLoadingOverview"
+        class="flex justify-center items-center py-20"
+      >
+        <div
+          class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
+        ></div>
+        <span class="ml-3 text-gray-600 dark:text-gray-300"
+          >Đang tải thông tin...</span
+        >
+      </div>
+
+      <!-- Error State -->
+      <div *ngIf="overviewError" class="text-center py-20">
+        <div class="text-red-500 dark:text-red-400 mb-4">
+          <i class="text-4xl mb-2 block">⚠️</i>
+          <p class="text-lg font-semibold mb-2">
+            Không thể tải thông tin tổng quan
+          </p>
+          <p class="text-sm">{{ overviewError }}</p>
         </div>
-        <div class="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl transition-transform hover:scale-105">
-          <div class="text-3xl font-bold text-green-600 dark:text-green-400">{{ formatNumber(overview.totalCourses) }}</div>
-          <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">Khóa học</div>
+        <button
+          (click)="retryFailedRequests()"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
+        >
+          Thử lại
+        </button>
+      </div>
+      <!-- Overview Stats Data -->
+      <div
+        *ngIf="overview && !isLoadingOverview && !overviewError"
+        class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6"
+      >
+        <div
+          class="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl transition-transform hover:scale-105"
+        >
+          <div class="text-3xl font-bold text-blue-600 dark:text-blue-400">
+            {{ formatNumber(overview.totalUsers) }}
+          </div>
+          <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+            Học viên
+          </div>
         </div>
-        <div class="text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl transition-transform hover:scale-105">
-          <div class="text-3xl font-bold text-purple-600 dark:text-purple-400">{{ formatNumber(overview.totalProblems) }}</div>
-          <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">Bài tập</div>
+        <div
+          class="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl transition-transform hover:scale-105"
+        >
+          <div class="text-3xl font-bold text-green-600 dark:text-green-400">
+            {{ formatNumber(overview.totalCourses) }}
+          </div>
+          <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+            Khóa học
+          </div>
         </div>
-        <div class="text-center p-6 bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 rounded-xl transition-transform hover:scale-105">
-          <div class="text-3xl font-bold text-yellow-600 dark:text-yellow-400">{{ formatNumber(overview.totalDocuments) }}</div>
-          <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">Tài liệu</div>
+        <div
+          class="text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl transition-transform hover:scale-105"
+        >
+          <div class="text-3xl font-bold text-purple-600 dark:text-purple-400">
+            {{ formatNumber(overview.totalProblems) }}
+          </div>
+          <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+            Bài tập
+          </div>
         </div>
-        <div class="text-center p-6 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-xl transition-transform hover:scale-105">
-          <div class="text-3xl font-bold text-red-600 dark:text-red-400">{{ formatNumber(overview.totalSubmissions) }}</div>
-          <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">Lượt nộp</div>
+        <div
+          class="text-center p-6 bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 rounded-xl transition-transform hover:scale-105"
+        >
+          <div class="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
+            {{ formatNumber(overview.totalDocuments) }}
+          </div>
+          <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+            Tài liệu
+          </div>
         </div>
-        <div class="text-center p-6 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 rounded-xl transition-transform hover:scale-105">
-          <div class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{{ formatNumber(overview.totalBadges) }}</div>
-          <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">Huy hiệu</div>
+        <div
+          class="text-center p-6 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-xl transition-transform hover:scale-105"
+        >
+          <div class="text-3xl font-bold text-red-600 dark:text-red-400">
+            {{ formatNumber(overview.totalSubmissions) }}
+          </div>
+          <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+            Lượt nộp
+          </div>
+        </div>
+        <div
+          class="text-center p-6 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 rounded-xl transition-transform hover:scale-105"
+        >
+          <div class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
+            {{ formatNumber(overview.totalBadges) }}
+          </div>
+          <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+            Huy hiệu
+          </div>
         </div>
       </div>
     </div>
   </section>
 
   <!-- Featured Courses Section -->
-  <section class="py-16 bg-gray-50 dark:bg-gray-900 transition-colors duration-200" *ngIf="featuredCourses.length > 0">
+  <section
+    class="py-16 bg-gray-50 dark:bg-gray-900 transition-colors duration-200"
+  >
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center mb-12">
         <div>
-          <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Khóa học nổi bật</h2>
-          <p class="text-gray-600 dark:text-gray-300">Những khóa học được yêu thích nhất</p>
+          <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+            Khóa học nổi bật
+          </h2>
+          <p class="text-gray-600 dark:text-gray-300">
+            Những khóa học được yêu thích nhất
+          </p>
         </div>
-        <a routerLink="/courses" class="text-blue-600 dark:text-blue-400 hover:underline font-semibold">
+        <a
+          routerLink="/courses"
+          class="text-blue-600 dark:text-blue-400 hover:underline font-semibold"
+          *ngIf="!isLoadingCourses"
+        >
           Xem tất cả →
         </a>
       </div>
-      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <div *ngFor="let course of featuredCourses" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group">
-          <div class="relative h-48 bg-gradient-to-br from-blue-400 to-purple-500 overflow-hidden">
+
+      <!-- Loading State -->
+      <div
+        *ngIf="isLoadingCourses"
+        class="flex justify-center items-center py-20"
+      >
+        <div
+          class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
+        ></div>
+        <span class="ml-3 text-gray-600 dark:text-gray-300"
+          >Đang tải khóa học...</span
+        >
+      </div>
+
+      <!-- Error State -->
+      <div *ngIf="coursesError" class="text-center py-20">
+        <div class="text-red-500 dark:text-red-400 mb-4">
+          <i class="text-4xl mb-2 block">⚠️</i>
+          <p class="text-lg font-semibold mb-2">
+            Không thể tải khóa học nổi bật
+          </p>
+          <p class="text-sm">{{ coursesError }}</p>
+        </div>
+        <button
+          (click)="retryFailedRequests()"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
+        >
+          Thử lại
+        </button>
+      </div>
+      <!-- Courses Grid -->
+      <div
+        *ngIf="featuredCourses.length > 0 && !isLoadingCourses && !coursesError"
+        class="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+      >
+        <div
+          *ngFor="let course of featuredCourses"
+          class="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group"
+        >
+          <div
+            class="relative h-48 bg-gradient-to-br from-blue-400 to-purple-500 overflow-hidden"
+          >
             <div class="absolute inset-0 bg-black/20"></div>
             <div class="absolute top-4 right-4">
-              <span *ngIf="course.is_premium" class="bg-yellow-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
+              <span
+                *ngIf="course.is_premium"
+                class="bg-yellow-500 text-white text-xs px-2 py-1 rounded-full font-semibold"
+              >
                 Premium
               </span>
             </div>
@@ -88,9 +232,13 @@
             </div>
           </div>
           <div class="p-6">
-            <p class="text-gray-600 dark:text-gray-300 mb-4 line-clamp-2">{{ course.description }}</p>
+            <p class="text-gray-600 dark:text-gray-300 mb-4 line-clamp-2">
+              {{ course.description }}
+            </p>
             <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+              <div
+                class="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400"
+              >
                 <span class="flex items-center">
                   <i class="mr-1">⏰</i>
                   {{ formatDuration(course.duration) }}
@@ -102,16 +250,30 @@
               </div>
               <div class="flex items-center">
                 <div class="flex text-yellow-400 mr-2">
-                  <span *ngFor="let star of getRatingStars(course.rating); let i = index" class="text-sm">
+                  <span
+                    *ngFor="
+                      let star of getRatingStars(course.rating);
+                      let i = index
+                    "
+                    class="text-sm"
+                  >
                     <span *ngIf="star === 'full'">★</span>
                     <span *ngIf="star === 'half'">⭐</span>
-                    <span *ngIf="star === 'empty'" class="text-gray-300 dark:text-gray-600">☆</span>
+                    <span
+                      *ngIf="star === 'empty'"
+                      class="text-gray-300 dark:text-gray-600"
+                      >☆</span
+                    >
                   </span>
                 </div>
-                <span class="text-sm text-gray-600 dark:text-gray-300">({{ course.rating }})</span>
+                <span class="text-sm text-gray-600 dark:text-gray-300"
+                  >({{ course.rating }})</span
+                >
               </div>
             </div>
-            <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors">
+            <button
+              class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors"
+            >
               Bắt đầu học
             </button>
           </div>
@@ -121,29 +283,89 @@
   </section>
 
   <!-- Featured Problems Section -->
-  <section class="py-16 bg-white dark:bg-gray-800 transition-colors duration-200" *ngIf="featuredProblems.length > 0">
+  <section
+    class="py-16 bg-white dark:bg-gray-800 transition-colors duration-200"
+  >
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center mb-12">
         <div>
-          <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Bài tập thách thức</h2>
-          <p class="text-gray-600 dark:text-gray-300">Thử thách với các bài tập hấp dẫn</p>
+          <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+            Bài tập thách thức
+          </h2>
+          <p class="text-gray-600 dark:text-gray-300">
+            Thử thách với các bài tập hấp dẫn
+          </p>
         </div>
-        <a routerLink="/problems" class="text-blue-600 dark:text-blue-400 hover:underline font-semibold">
+        <a
+          routerLink="/problems"
+          class="text-blue-600 dark:text-blue-400 hover:underline font-semibold"
+          *ngIf="!isLoadingProblems"
+        >
           Xem tất cả →
         </a>
       </div>
-      <div class="grid md:grid-cols-2 gap-6">
-        <div *ngFor="let problem of featuredProblems" class="bg-white dark:bg-gray-700 border dark:border-gray-600 rounded-xl p-6 hover:shadow-lg transition-all duration-300">
+
+      <!-- Loading State -->
+      <div
+        *ngIf="isLoadingProblems"
+        class="flex justify-center items-center py-20"
+      >
+        <div
+          class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
+        ></div>
+        <span class="ml-3 text-gray-600 dark:text-gray-300"
+          >Đang tải bài tập...</span
+        >
+      </div>
+
+      <!-- Error State -->
+      <div *ngIf="problemsError" class="text-center py-20">
+        <div class="text-red-500 dark:text-red-400 mb-4">
+          <i class="text-4xl mb-2 block">⚠️</i>
+          <p class="text-lg font-semibold mb-2">
+            Không thể tải bài tập nổi bật
+          </p>
+          <p class="text-sm">{{ problemsError }}</p>
+        </div>
+        <button
+          (click)="retryFailedRequests()"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
+        >
+          Thử lại
+        </button>
+      </div>
+      <!-- Problems Grid -->
+      <div
+        *ngIf="
+          featuredProblems.length > 0 && !isLoadingProblems && !problemsError
+        "
+        class="grid md:grid-cols-2 gap-6"
+      >
+        <div
+          *ngFor="let problem of featuredProblems"
+          class="bg-white dark:bg-gray-700 border dark:border-gray-600 rounded-xl p-6 hover:shadow-lg transition-all duration-300"
+        >
           <div class="flex items-start justify-between mb-4">
             <div class="flex-1">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">{{ problem.title }}</h3>
-              <p class="text-gray-600 dark:text-gray-300 text-sm mb-3">{{ problem.description }}</p>
+              <h3
+                class="text-lg font-semibold text-gray-900 dark:text-white mb-2"
+              >
+                {{ problem.title }}
+              </h3>
+              <p class="text-gray-600 dark:text-gray-300 text-sm mb-3">
+                {{ problem.description }}
+              </p>
             </div>
-            <span class="px-3 py-1 text-xs font-semibold rounded-full" [ngClass]="getDifficultyColor(problem.difficulty)">
+            <span
+              class="px-3 py-1 text-xs font-semibold rounded-full"
+              [ngClass]="getDifficultyColor(problem.difficulty)"
+            >
               {{ problem.difficulty }}
             </span>
           </div>
-          <div class="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">
+          <div
+            class="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4"
+          >
             <div class="flex items-center space-x-4">
               <span class="flex items-center">
                 <i class="mr-1">⏰</i>
@@ -151,11 +373,17 @@
               </span>
               <span class="flex items-center">
                 <i class="mr-1">✅</i>
-                {{ problem.acceptance.toFixed(1) }}%
+                {{
+                  (problem.acceptance &&
+                    (problem.acceptance | number : "1.1-1")) ||
+                    "0.0"
+                }}%
               </span>
             </div>
             <div class="flex items-center space-x-2">
-              <span class="flex items-center text-green-600 dark:text-green-400">
+              <span
+                class="flex items-center text-green-600 dark:text-green-400"
+              >
                 <i class="mr-1">👍</i>
                 {{ problem.likes }}
               </span>
@@ -165,7 +393,9 @@
               </span>
             </div>
           </div>
-          <button class="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-semibold py-2 rounded-lg transition-all">
+          <button
+            class="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-semibold py-2 rounded-lg transition-all"
+          >
             Giải bài tập
           </button>
         </div>
@@ -174,46 +404,114 @@
   </section>
 
   <!-- Leaderboard Section -->
-  <section class="py-16 bg-gray-50 dark:bg-gray-900 transition-colors duration-200" *ngIf="leaderboard.length > 0">
+  <section
+    class="py-16 bg-gray-50 dark:bg-gray-900 transition-colors duration-200"
+  >
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center mb-12">
         <div>
-          <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Bảng xếp hạng</h2>
-          <p class="text-gray-600 dark:text-gray-300">Top học viên xuất sắc nhất</p>
+          <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+            Bảng xếp hạng
+          </h2>
+          <p class="text-gray-600 dark:text-gray-300">
+            Top học viên xuất sắc nhất
+          </p>
         </div>
-        <a routerLink="/leaderboard" class="text-blue-600 dark:text-blue-400 hover:underline font-semibold">
+        <a
+          routerLink="/leaderboard"
+          class="text-blue-600 dark:text-blue-400 hover:underline font-semibold"
+          *ngIf="!isLoadingLeaderboard"
+        >
           Xem toàn bộ →
         </a>
       </div>
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-        <div *ngFor="let user of leaderboard; let i = index" class="flex items-center p-6 border-b dark:border-gray-700 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+
+      <!-- Loading/Error States -->
+      <div
+        *ngIf="isLoadingLeaderboard"
+        class="flex justify-center items-center py-20"
+      >
+        <div
+          class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
+        ></div>
+        <span class="ml-3 text-gray-600 dark:text-gray-300"
+          >Đang tải bảng xếp hạng...</span
+        >
+      </div>
+
+      <div *ngIf="leaderboardError" class="text-center py-20">
+        <div class="text-red-500 dark:text-red-400 mb-4">
+          <i class="text-4xl mb-2 block">⚠️</i>
+          <p class="text-lg font-semibold mb-2">Không thể tải bảng xếp hạng</p>
+          <p class="text-sm">{{ leaderboardError }}</p>
+        </div>
+        <button
+          (click)="retryFailedRequests()"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
+        >
+          Thử lại
+        </button>
+      </div>
+      <!-- Leaderboard Data -->
+      <div
+        *ngIf="
+          leaderboard.length > 0 && !isLoadingLeaderboard && !leaderboardError
+        "
+        class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden"
+      >
+        <div
+          *ngFor="let user of leaderboard; let i = index"
+          class="flex items-center p-6 border-b dark:border-gray-700 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+        >
           <div class="flex items-center space-x-4 flex-1">
-            <div class="w-8 h-8 flex items-center justify-center rounded-full" 
-                 [ngClass]="{
-                   'bg-yellow-500 text-white': i === 0,
-                   'bg-gray-400 text-white': i === 1,
-                   'bg-yellow-600 text-white': i === 2,
-                   'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300': i > 2
-                 }">
+            <div
+              class="w-8 h-8 flex items-center justify-center rounded-full"
+              [ngClass]="{
+                'bg-yellow-500 text-white': i === 0,
+                'bg-gray-400 text-white': i === 1,
+                'bg-yellow-600 text-white': i === 2,
+                'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300':
+                  i > 2
+              }"
+            >
               <span class="font-bold text-sm">{{ i + 1 }}</span>
             </div>
-            <img [src]="user.avatar_url" [alt]="user.name" class="w-12 h-12 rounded-full object-cover">
+            <img
+              [src]="user.avatar_url"
+              [alt]="user.name"
+              class="w-12 h-12 rounded-full object-cover"
+            />
             <div class="flex-1">
-              <div class="font-semibold text-gray-900 dark:text-white">{{ user.name }}</div>
-              <div class="text-sm text-gray-500 dark:text-gray-400 flex items-center space-x-2">
-                <span class="w-2 h-2 rounded-full" [ngClass]="user.is_online ? 'bg-green-500' : 'bg-gray-400'"></span>
-                <span>{{ user.is_online ? 'Online' : 'Offline' }}</span>
-                <span *ngIf="user.subscription_status === 'premium'" class="bg-yellow-500 text-white text-xs px-2 py-0.5 rounded-full">Premium</span>
+              <div class="font-semibold text-gray-900 dark:text-white">
+                {{ user.name }}
+              </div>
+              <div
+                class="text-sm text-gray-500 dark:text-gray-400 flex items-center space-x-2"
+              >
+                <span
+                  class="w-2 h-2 rounded-full"
+                  [ngClass]="user.is_online ? 'bg-green-500' : 'bg-gray-400'"
+                ></span>
+                <span>{{ user.is_online ? "Online" : "Offline" }}</span>
+                <span
+                  *ngIf="user.subscription_status === 'premium'"
+                  class="bg-yellow-500 text-white text-xs px-2 py-0.5 rounded-full"
+                  >Premium</span
+                >
               </div>
             </div>
           </div>
           <div class="flex items-center space-x-6 text-sm">
             <div class="text-center">
-              <div class="font-semibold text-gray-900 dark:text-white">{{ user.level }}</div>
+              <div class="font-semibold text-gray-900 dark:text-white">
+                {{ user.level }}
+              </div>
               <div class="text-gray-500 dark:text-gray-400">Level</div>
             </div>
             <div class="text-center">
-              <div class="font-semibold text-blue-600 dark:text-blue-400">{{ formatNumber(user.xp) }}</div>
+              <div class="font-semibold text-blue-600 dark:text-blue-400">
+                {{ formatNumber(user.xp) }}
+              </div>
               <div class="text-gray-500 dark:text-gray-400">XP</div>
             </div>
           </div>
@@ -223,52 +521,127 @@
   </section>
 
   <!-- Testimonials Section -->
-  <section class="py-16 bg-white dark:bg-gray-800 transition-colors duration-200" *ngIf="testimonials.length > 0">
+  <section
+    class="py-16 bg-white dark:bg-gray-800 transition-colors duration-200"
+  >
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="text-center mb-12">
-        <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Đánh giá từ học viên</h2>
-        <p class="text-gray-600 dark:text-gray-300">Những phản hồi tích cực từ cộng đồng</p>
+        <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+          Đánh giá từ học viên
+        </h2>
+        <p class="text-gray-600 dark:text-gray-300">
+          Những phản hồi tích cực từ cộng đồng
+        </p>
       </div>
-      <div class="grid md:grid-cols-2 gap-8">
-        <div *ngFor="let testimonial of testimonials" class="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-6 rounded-xl">
+
+      <!-- Loading/Error States -->
+      <div
+        *ngIf="isLoadingTestimonials"
+        class="flex justify-center items-center py-20"
+      >
+        <div
+          class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
+        ></div>
+        <span class="ml-3 text-gray-600 dark:text-gray-300"
+          >Đang tải đánh giá...</span
+        >
+      </div>
+
+      <div *ngIf="testimonialsError" class="text-center py-20">
+        <div class="text-red-500 dark:text-red-400 mb-4">
+          <i class="text-4xl mb-2 block">⚠️</i>
+          <p class="text-lg font-semibold mb-2">Không thể tải đánh giá</p>
+          <p class="text-sm">{{ testimonialsError }}</p>
+        </div>
+        <button
+          (click)="retryFailedRequests()"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
+        >
+          Thử lại
+        </button>
+      </div>
+      <!-- Testimonials Data -->
+      <div
+        *ngIf="
+          testimonials.length > 0 &&
+          !isLoadingTestimonials &&
+          !testimonialsError
+        "
+        class="grid md:grid-cols-2 gap-8"
+      >
+        <div
+          *ngFor="let testimonial of testimonials"
+          class="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-6 rounded-xl"
+        >
           <div class="flex items-start space-x-4 mb-4">
-            <img [src]="testimonial.student_avatar" [alt]="testimonial.student_name" class="w-12 h-12 rounded-full object-cover">
+            <img
+              [src]="testimonial.student_avatar"
+              [alt]="testimonial.student_name"
+              class="w-12 h-12 rounded-full object-cover"
+            />
             <div class="flex-1">
-              <div class="font-semibold text-gray-900 dark:text-white">{{ testimonial.student_name }}</div>
-              <div class="text-sm text-gray-600 dark:text-gray-300">{{ testimonial.course_title }}</div>
+              <div class="font-semibold text-gray-900 dark:text-white">
+                {{ testimonial.student_name }}
+              </div>
+              <div class="text-sm text-gray-600 dark:text-gray-300">
+                {{ testimonial.course_title }}
+              </div>
               <div class="flex items-center mt-1">
                 <div class="flex text-yellow-400 mr-2">
-                  <span *ngFor="let star of getRatingStars(testimonial.rating); let i = index" class="text-sm">
+                  <span
+                    *ngFor="
+                      let star of getRatingStars(testimonial.rating);
+                      let i = index
+                    "
+                    class="text-sm"
+                  >
                     <span *ngIf="star === 'full'">★</span>
                     <span *ngIf="star === 'half'">⭐</span>
-                    <span *ngIf="star === 'empty'" class="text-gray-300 dark:text-gray-600">☆</span>
+                    <span
+                      *ngIf="star === 'empty'"
+                      class="text-gray-300 dark:text-gray-600"
+                      >☆</span
+                    >
                   </span>
                 </div>
-                <span class="text-sm text-gray-600 dark:text-gray-300">({{ testimonial.rating }})</span>
+                <span class="text-sm text-gray-600 dark:text-gray-300"
+                  >({{ testimonial.rating }})</span
+                >
               </div>
             </div>
           </div>
-          <p class="text-gray-700 dark:text-gray-300 italic mb-2">"{{ testimonial.comment }}"</p>
-          <div class="text-xs text-gray-500 dark:text-gray-400">{{ testimonial.date }}</div>
+          <p class="text-gray-700 dark:text-gray-300 italic mb-2">
+            "{{ testimonial.comment }}"
+          </p>
+          <div class="text-xs text-gray-500 dark:text-gray-400">
+            {{ testimonial.date }}
+          </div>
         </div>
       </div>
     </div>
   </section>
 
   <!-- Call to Action Section -->
-  <section class="py-20 bg-gradient-to-r from-blue-600 to-purple-700 dark:from-blue-700 dark:to-purple-800">
+  <section
+    class="py-20 bg-gradient-to-r from-blue-600 to-purple-700 dark:from-blue-700 dark:to-purple-800"
+  >
     <div class="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
       <h2 class="text-3xl md:text-4xl font-bold text-white mb-6">
         Sẵn sàng bắt đầu hành trình lập trình?
       </h2>
       <p class="text-xl text-blue-100 dark:text-blue-200 mb-8">
-        Tham gia cùng hàng nghìn bạn học khác để xây dựng sự nghiệp trong lĩnh vực công nghệ
+        Tham gia cùng hàng nghìn bạn học khác để xây dựng sự nghiệp trong lĩnh
+        vực công nghệ
       </p>
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <button class="bg-white hover:bg-gray-100 text-blue-600 font-bold py-4 px-8 rounded-full transition-all transform hover:scale-105 shadow-lg">
+        <button
+          class="bg-white hover:bg-gray-100 text-blue-600 font-bold py-4 px-8 rounded-full transition-all transform hover:scale-105 shadow-lg"
+        >
           Đăng ký miễn phí
         </button>
-        <button class="border-2 border-white text-white hover:bg-white hover:text-blue-600 font-bold py-4 px-8 rounded-full transition-all">
+        <button
+          class="border-2 border-white text-white hover:bg-white hover:text-blue-600 font-bold py-4 px-8 rounded-full transition-all"
+        >
           Xem bảng giá
         </button>
       </div>
