@@ -1,4 +1,4 @@
--- Insert course categories
+/* -- Insert course categories
 INSERT INTO course_categories (id, name, description, created_at, updated_at) VALUES
 (1, 'Web Development', 'Learn to build modern web applications', NOW(), NOW()),
 (2, 'Data Science', 'Data analysis, machine learning, and AI', NOW(), NOW()),
@@ -57,4 +57,4 @@ INSERT INTO course_enrollments (id, user_id, course_id, progress, status, start_
 (1, 201, 1, 80, 'in-progress', '2024-02-10', null, 5, NOW(), NOW()),
 (2, 202, 2, 100, 'completed', '2024-03-10', '2024-04-01', 4, NOW(), NOW()),
 (3, 203, 3, 45, 'in-progress', '2024-03-15', null, null, NOW(), NOW()),
-(4, 204, 4, 100, 'completed', '2024-03-20', '2024-04-15', 5, NOW(), NOW());
+(4, 204, 4, 100, 'completed', '2024-03-20', '2024-04-15', 5, NOW(), NOW()); */

@@ -16,6 +16,7 @@ const courseRoutes = require("./routes/courseRoutes");
 const problemRoutes = require("./routes/problemRoutes");
 const documentRoutes = require("./routes/documentRoutes");
 const leaderboardRoutes = require("./routes/leaderboardRoutes");
+const contestRoutes = require("./routes/contestRoutes");
 
 // Create Express app
 const app = express();
@@ -53,6 +54,7 @@ app.use(apiPrefix + "/courses", courseRoutes);
 app.use(apiPrefix + "/problems", problemRoutes);
 app.use(apiPrefix + "/documents", documentRoutes);
 app.use(apiPrefix + "/leaderboard", leaderboardRoutes);
+app.use(apiPrefix + "/contests", contestRoutes);
 
 // Homepage-specific routes
 app.use(apiPrefix + "/homepage", homepageRoutes);

@@ -17,6 +17,10 @@ const BadgeCategory = require('./BadgeCategory');
 const Badge = require('./Badge');
 const UserBadge = require('./UserBadge');
 const LeaderboardEntry = require('./LeaderboardEntry');
+const Contest = require('./Contest');
+const ContestProblem = require('./ContestProblem');
+const UserContest = require('./UserContest');
+const ContestSubmission = require('./ContestSubmission');
 
 // Define associations
 Problem.belongsTo(ProblemCategory, {
@@ -180,6 +184,121 @@ LeaderboardEntry.belongsTo(User, {
   as: 'User'
 });
 
+// Contest associations
+// Contest belongs to User (creator)
+Contest.belongsTo(User, {
+  foreignKey: 'created_by',
+  as: 'Creator'
+});
+
+User.hasMany(Contest, {
+  foreignKey: 'created_by',
+  as: 'CreatedContests'
+});
+
+// Contest has many Problems through ContestProblem
+Contest.belongsToMany(Problem, {
+  through: ContestProblem,
+  foreignKey: 'contest_id',
+  otherKey: 'problem_id',
+  as: 'Problems'
+});
+
+Problem.belongsToMany(Contest, {
+  through: ContestProblem,
+  foreignKey: 'problem_id',
+  otherKey: 'contest_id',
+  as: 'Contests'
+});
+
+// ContestProblem associations
+ContestProblem.belongsTo(Contest, {
+  foreignKey: 'contest_id',
+  as: 'Contest'
+});
+
+ContestProblem.belongsTo(Problem, {
+  foreignKey: 'problem_id',
+  as: 'Problem'
+});
+
+Contest.hasMany(ContestProblem, {
+  foreignKey: 'contest_id',
+  as: 'ContestProblems'
+});
+
+Problem.hasMany(ContestProblem, {
+  foreignKey: 'problem_id',
+  as: 'ContestProblems'
+});
+
+// User-Contest participation
+User.belongsToMany(Contest, {
+  through: UserContest,
+  foreignKey: 'user_id',
+  otherKey: 'contest_id',
+  as: 'ParticipatedContests'
+});
+
+Contest.belongsToMany(User, {
+  through: UserContest,
+  foreignKey: 'contest_id',
+  otherKey: 'user_id',
+  as: 'Participants'
+});
+
+// UserContest associations
+UserContest.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'User'
+});
+
+UserContest.belongsTo(Contest, {
+  foreignKey: 'contest_id',
+  as: 'Contest'
+});
+
+User.hasMany(UserContest, {
+  foreignKey: 'user_id',
+  as: 'UserContests'
+});
+
+Contest.hasMany(UserContest, {
+  foreignKey: 'contest_id',
+  as: 'UserContests'
+});
+
+// Contest Submission associations
+ContestSubmission.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'User'
+});
+
+ContestSubmission.belongsTo(ContestProblem, {
+  foreignKey: 'contest_problem_id',
+  as: 'ContestProblem'
+});
+
+ContestSubmission.belongsTo(SubmissionCode, {
+  foreignKey: 'code_id',
+  as: 'Code'
+});
+
+User.hasMany(ContestSubmission, {
+  foreignKey: 'user_id',
+  as: 'ContestSubmissions'
+});
+
+ContestProblem.hasMany(ContestSubmission, {
+  foreignKey: 'contest_problem_id',
+  as: 'ContestSubmissions'
+});
+
+SubmissionCode.hasMany(ContestSubmission, {
+  foreignKey: 'code_id',
+  as: 'ContestSubmissions'
+});
+
 module.exports = {
   Problem,
   ProblemCategory,
@@ -199,5 +318,9 @@ module.exports = {
   BadgeCategory,
   Badge,
   UserBadge,
-  LeaderboardEntry
+  LeaderboardEntry,
+  Contest,
+  ContestProblem,
+  UserContest,
+  ContestSubmission
 };
