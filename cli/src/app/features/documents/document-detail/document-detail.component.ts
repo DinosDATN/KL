@@ -11,15 +11,7 @@ import {
   DocumentCategoryLink,
   Animation,
 } from '../../../core/models/document.model';
-import {
-  mockDocuments,
-  mockDocumentModules,
-  mockDocumentLessons,
-  mockTopics,
-  mockDocumentCategories,
-  mockDocumentCategoryLinks,
-  mockAnimations,
-} from '../../../core/services/document-mock-data';
+import { DocumentService } from '../../../core/services/document.service';
 import { ThemeService } from '../../../core/services/theme.service';
 
 @Component({
@@ -39,14 +31,16 @@ export class DocumentDetailComponent implements OnInit {
   document: Document | null = null;
   documentModules: DocumentModule[] = [];
   documentLessons: DocumentLesson[] = [];
-  topicName: string = '';
-  categoryNames: string[] = [];
+  topic: Topic | null = null;
+  categories: DocumentCategory[] = [];
   animations: Animation[] = [];
+  creator: any = null;
 
   // UI State
   loading: boolean = true;
   selectedModuleId: number | null = null;
   selectedLessonId: number | null = null;
+  error: string | null = null;
 
   // Navigation
   breadcrumbs = [
@@ -58,6 +52,7 @@ export class DocumentDetailComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
+    private documentService: DocumentService,
     public themeService: ThemeService
   ) {}
 
@@ -72,70 +67,53 @@ export class DocumentDetailComponent implements OnInit {
 
   private loadDocument(documentId: number): void {
     this.loading = true;
+    this.error = null;
 
-    // Simulate API call delay
-    setTimeout(() => {
-      // Load document
-      this.document =
-        mockDocuments.find((doc) => doc.id === documentId && !doc.is_deleted) ||
-        null;
+    // Use the getDocumentDetails API which returns all related data in one call
+    this.documentService.getDocumentDetails(documentId).subscribe({
+      next: (data) => {
+        this.document = data.document;
+        this.topic = data.topic;
+        this.categories = data.categories;
+        this.documentModules = data.modules.sort(
+          (a, b) => a.position - b.position
+        );
+        this.documentLessons = data.lessons.sort(
+          (a, b) => a.position - b.position
+        );
+        this.animations = data.animations;
+        this.creator = data.creator;
 
-      if (!this.document) {
-        this.router.navigate(['/documents']);
-        return;
-      }
+        // Update breadcrumb
+        this.breadcrumbs[2].label = this.document.title;
 
-      // Update breadcrumb
-      this.breadcrumbs[2].label = this.document.title;
+        // Auto-select first module and lesson
+        this.autoSelectFirstModuleAndLesson();
 
-      // Load related data
-      this.loadRelatedData(documentId);
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading document details:', error);
+        this.error = 'Failed to load document details. Please try again.';
+        this.loading = false;
 
-      this.loading = false;
-    }, 500);
+        // If document not found, navigate back to documents
+        if (error.message.includes('not found') || error.status === 404) {
+          this.router.navigate(['/documents']);
+        }
+      },
+    });
   }
 
-  private loadRelatedData(documentId: number): void {
-    // Load modules for this document
-    this.documentModules = mockDocumentModules
-      .filter((module) => module.document_id === documentId)
-      .sort((a, b) => a.position - b.position);
-
-    // Load lessons for modules
-    const moduleIds = this.documentModules.map((m) => m.id);
-    this.documentLessons = mockDocumentLessons
-      .filter((lesson) => moduleIds.includes(lesson.module_id))
-      .sort((a, b) => a.position - b.position);
-
-    // Load topic name
-    if (this.document) {
-      const topic = mockTopics.find((t) => t.id === this.document!.topic_id);
-      this.topicName = topic ? topic.name : 'Unknown Topic';
-
-      // Load category names
-      const categoryIds = mockDocumentCategoryLinks
-        .filter((link) => link.document_id === documentId)
-        .map((link) => link.category_id);
-
-      this.categoryNames = categoryIds.map((id) => {
-        const category = mockDocumentCategories.find((c) => c.id === id);
-        return category ? category.name : 'Unknown Category';
-      });
-
-      // Load animations
-      this.animations = mockAnimations.filter(
-        (anim) => anim.document_id === documentId
+  private autoSelectFirstModuleAndLesson(): void {
+    // Auto-select first module and lesson
+    if (this.documentModules.length > 0) {
+      this.selectedModuleId = this.documentModules[0].id;
+      const firstModuleLessons = this.documentLessons.filter(
+        (l) => l.module_id === this.selectedModuleId
       );
-
-      // Auto-select first module and lesson
-      if (this.documentModules.length > 0) {
-        this.selectedModuleId = this.documentModules[0].id;
-        const firstModuleLessons = this.documentLessons.filter(
-          (l) => l.module_id === this.selectedModuleId
-        );
-        if (firstModuleLessons.length > 0) {
-          this.selectedLessonId = firstModuleLessons[0].id;
-        }
+      if (firstModuleLessons.length > 0) {
+        this.selectedLessonId = firstModuleLessons[0].id;
       }
     }
   }
@@ -199,5 +177,36 @@ export class DocumentDetailComponent implements OnInit {
 
   onBack(): void {
     this.router.navigate(['/documents']);
+  }
+
+  // Helper methods for template
+  get topicName(): string {
+    return this.topic ? this.topic.name : 'Unknown Topic';
+  }
+
+  get categoryNames(): string[] {
+    return this.categories.map((cat) => cat.name);
+  }
+
+  get creatorName(): string {
+    return this.creator ? this.creator.name : 'Unknown Creator';
+  }
+
+  get hasContent(): boolean {
+    return (
+      (Array.isArray(this.documentModules) &&
+        this.documentModules.length > 0) ||
+      (this.document != null &&
+        this.document.content != null &&
+        this.document.content !== '')
+    );
+  }
+
+  get totalLessons(): number {
+    return this.documentLessons.length;
+  }
+
+  get totalModules(): number {
+    return this.documentModules.length;
   }
 }

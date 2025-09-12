@@ -2,18 +2,14 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { 
   Document, 
   DocumentCategory, 
   DocumentCategoryLink,
   Topic 
 } from '../../core/models/document.model';
-import { 
-  mockDocuments, 
-  mockDocumentCategories, 
-  mockDocumentCategoryLinks,
-  mockTopics 
-} from '../../core/services/document-mock-data';
+import { DocumentService } from '../../core/services/document.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { DocumentCardComponent } from './components/document-card.component';
 import { DocumentFiltersComponent, DocumentFilters } from './components/document-filters.component';
@@ -69,7 +65,8 @@ export class DocumentsComponent implements OnInit {
   
   constructor(
     public themeService: ThemeService,
-    private router: Router
+    private router: Router,
+    private documentService: DocumentService
   ) {}
   
   ngOnInit(): void {
@@ -79,15 +76,44 @@ export class DocumentsComponent implements OnInit {
   private loadData(): void {
     this.loading = true;
     
-    // Simulate API call delay
-    setTimeout(() => {
-      this.documents = mockDocuments.filter(doc => !doc.is_deleted);
-      this.categories = mockDocumentCategories;
-      this.topics = mockTopics;
-      this.categoryLinks = mockDocumentCategoryLinks;
-      this.applyFilters();
-      this.loading = false;
-    }, 500);
+    console.log('DocumentsComponent: Starting to load data...');
+    
+    // Load all required data in parallel
+    forkJoin({
+      documents: this.documentService.getDocuments({ limit: 1000 }), // Get all documents initially
+      categories: this.documentService.getDocumentCategories(),
+      topics: this.documentService.getTopics(),
+      categoryLinks: this.documentService.getDocumentCategoryLinks()
+    }).subscribe({
+      next: (data) => {
+        console.log('DocumentsComponent: Received all data:', data);
+        
+        this.documents = data.documents.documents.filter(doc => !doc.is_deleted);
+        this.categories = data.categories;
+        this.topics = data.topics;
+        this.categoryLinks = data.categoryLinks;
+        
+        console.log('DocumentsComponent: Processed data:', {
+          documentsCount: this.documents.length,
+          categoriesCount: this.categories.length,
+          topicsCount: this.topics.length,
+          categoryLinksCount: this.categoryLinks.length
+        });
+        
+        this.applyFilters();
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading document data:', error);
+        // Fallback to empty arrays on error
+        this.documents = [];
+        this.categories = [];
+        this.topics = [];
+        this.categoryLinks = [];
+        this.applyFilters();
+        this.loading = false;
+      }
+    });
   }
   
   onTopSearchChange(): void {
