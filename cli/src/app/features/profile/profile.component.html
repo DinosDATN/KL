@@ -1,265 +1,435 @@
 <div
   class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200"
 >
-  <!-- Header Hero -->
-  <section
-    class="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-700 dark:to-purple-800 text-white"
+  <!-- Loading State -->
+  <div
+    *ngIf="isLoading && !user"
+    class="flex items-center justify-center min-h-screen"
   >
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
-      <div class="flex flex-col md:flex-row items-start md:items-center gap-6">
-        <img
-          [src]="user.avatar_url || 'https://i.pravatar.cc/150?img=12'"
-          alt="{{ user.name }}"
-          class="w-24 h-24 md:w-28 md:h-28 rounded-full ring-4 ring-white/30 shadow-lg object-cover"
-        />
-        <div class="flex-1">
-          <div class="flex items-center gap-3 flex-wrap">
-            <h1 class="text-2xl md:text-3xl font-bold">{{ user.name }}</h1>
-            <span
-              *ngIf="user.subscription_status === 'premium'"
-              class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-400 text-gray-900"
-              >Premium</span
+    <div
+      class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
+    ></div>
+  </div>
+
+  <!-- Profile Content -->
+  <div *ngIf="user && userProfile">
+    <!-- Header Hero -->
+    <section
+      class="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-700 dark:to-purple-800 text-white"
+    >
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
+        <div
+          class="flex flex-col md:flex-row items-start md:items-center gap-6"
+        >
+          <!-- Avatar with Upload -->
+          <div class="relative group">
+            <img
+              [src]="getAvatarUrl()"
+              [alt]="user.name"
+              class="w-24 h-24 md:w-28 md:h-28 rounded-full ring-4 ring-white/30 shadow-lg object-cover cursor-pointer transition-opacity group-hover:opacity-80"
+              (click)="onAvatarClick()"
+            />
+            <div
+              class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+              (click)="onAvatarClick()"
             >
-            <span
-              class="flex items-center text-sm"
-              [ngClass]="user.is_online ? 'text-green-200' : 'text-gray-200'"
+              <div class="bg-black/50 rounded-full p-2">
+                <svg
+                  class="w-6 h-6 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                  ></path>
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                  ></path>
+                </svg>
+              </div>
+            </div>
+            <input
+              #avatarFileInput
+              type="file"
+              accept="image/*"
+              class="hidden"
+              (change)="onAvatarSelected($event)"
+            />
+            <!-- Upload indicator -->
+            <div
+              *ngIf="isUploading"
+              class="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full"
             >
+              <div
+                class="animate-spin rounded-full h-6 w-6 border-b-2 border-white"
+              ></div>
+            </div>
+          </div>
+
+          <div class="flex-1">
+            <div class="flex items-center gap-3 flex-wrap">
+              <h1 class="text-2xl md:text-3xl font-bold">{{ user.name }}</h1>
               <span
-                class="w-2 h-2 rounded-full mr-1"
-                [ngClass]="user.is_online ? 'bg-green-300' : 'bg-gray-300'"
-              ></span>
-              {{ user.is_online ? "Online" : "Offline" }}
-            </span>
+                *ngIf="user.subscription_status === 'premium'"
+                class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-400 text-gray-900"
+                >Premium</span
+              >
+              <span
+                class="flex items-center text-sm"
+                [ngClass]="user.is_online ? 'text-green-200' : 'text-gray-200'"
+              >
+                <span
+                  class="w-2 h-2 rounded-full mr-1"
+                  [ngClass]="user.is_online ? 'bg-green-300' : 'bg-gray-300'"
+                ></span>
+                {{ user.is_online ? "Online" : "Offline" }}
+              </span>
+            </div>
+            <p class="mt-2 text-blue-100 dark:text-blue-200">
+              {{ userProfile.bio || "No bio available" }}
+            </p>
+            <div class="mt-3 flex flex-wrap gap-3 text-sm text-blue-100/90">
+              <a
+                *ngIf="userProfile.github_url"
+                [href]="userProfile.github_url"
+                target="_blank"
+                class="hover:underline"
+                >GitHub</a
+              >
+              <a
+                *ngIf="userProfile.linkedin_url"
+                [href]="userProfile.linkedin_url"
+                target="_blank"
+                class="hover:underline"
+                >LinkedIn</a
+              >
+              <a
+                *ngIf="userProfile.website_url"
+                [href]="userProfile.website_url"
+                target="_blank"
+                class="hover:underline"
+                >Website</a
+              >
+            </div>
+            <!-- Profile Completion -->
+            <div class="mt-3">
+              <div class="flex items-center gap-2 text-sm text-blue-100/90">
+                <span>Profile completion:</span>
+                <div class="flex-1 max-w-32 bg-white/20 rounded-full h-2">
+                  <div
+                    class="bg-white rounded-full h-2 transition-all"
+                    [style.width.%]="getProfileCompletion()"
+                  ></div>
+                </div>
+                <span class="font-semibold">{{ getProfileCompletion() }}%</span>
+              </div>
+            </div>
           </div>
-          <p class="mt-2 text-blue-100 dark:text-blue-200">
-            {{ userProfile.bio }}
-          </p>
-          <div class="mt-3 flex flex-wrap gap-3 text-sm text-blue-100/90">
-            <a
-              *ngIf="userProfile.github_url"
-              [href]="userProfile.github_url"
-              target="_blank"
-              class="hover:underline"
-              >GitHub</a
-            >
-            <a
-              *ngIf="userProfile.linkedin_url"
-              [href]="userProfile.linkedin_url"
-              target="_blank"
-              class="hover:underline"
-              >LinkedIn</a
-            >
-            <a
-              *ngIf="userProfile.website_url"
-              [href]="userProfile.website_url"
-              target="_blank"
-              class="hover:underline"
-              >Website</a
-            >
-          </div>
-        </div>
-        <div class="grid grid-cols-3 gap-4 text-center w-full md:w-auto">
-          <div class="bg-white/10 rounded-lg p-3">
-            <div class="text-xl font-bold">{{ userStat.level }}</div>
-            <div class="text-xs opacity-80">Level</div>
-          </div>
-          <div class="bg-white/10 rounded-lg p-3">
-            <div class="text-xl font-bold">{{ formatNumber(userStat.xp) }}</div>
-            <div class="text-xs opacity-80">XP</div>
-          </div>
-          <div class="bg-white/10 rounded-lg p-3">
-            <div class="text-xl font-bold">#{{ userStat.rank }}</div>
-            <div class="text-xs opacity-80">Rank</div>
+
+          <div
+            class="grid grid-cols-3 gap-4 text-center w-full md:w-auto"
+            *ngIf="userStat"
+          >
+            <div class="bg-white/10 rounded-lg p-3">
+              <div class="text-xl font-bold">{{ userStat?.level || 1 }}</div>
+              <div class="text-xs opacity-80">Level</div>
+            </div>
+            <div class="bg-white/10 rounded-lg p-3">
+              <div class="text-xl font-bold">
+                {{ formatNumber(userStat?.xp || 0) }}
+              </div>
+              <div class="text-xs opacity-80">XP</div>
+            </div>
+            <div class="bg-white/10 rounded-lg p-3">
+              <div class="text-xl font-bold">
+                #{{ userStat?.rank || "N/A" }}
+              </div>
+              <div class="text-xs opacity-80">Rank</div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- Tabs -->
-  <div class="bg-white dark:bg-gray-800 shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <nav class="flex gap-6 overflow-x-auto no-scrollbar" aria-label="Tabs">
-        <button
-          (click)="setActiveTab('overview')"
-          [ngClass]="
-            activeTab === 'overview'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white'
-          "
-          class="py-4 border-b-2 font-medium"
-        >
-          Tổng quan
-        </button>
-        <button
-          (click)="setActiveTab('activity')"
-          [ngClass]="
-            activeTab === 'activity'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white'
-          "
-          class="py-4 border-b-2 font-medium"
-        >
-          Hoạt động
-        </button>
-        <button
-          (click)="setActiveTab('achievements')"
-          [ngClass]="
-            activeTab === 'achievements'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white'
-          "
-          class="py-4 border-b-2 font-medium"
-        >
-          Thành tựu
-        </button>
-        <button
-          (click)="setActiveTab('courses')"
-          [ngClass]="
-            activeTab === 'courses'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white'
-          "
-          class="py-4 border-b-2 font-medium"
-        >
-          Khóa học
-        </button>
-        <button
-          (click)="setActiveTab('settings')"
-          [ngClass]="
-            activeTab === 'settings'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white'
-          "
-          class="py-4 border-b-2 font-medium"
-        >
-          Cài đặt
-        </button>
-      </nav>
+    <!-- Tabs -->
+    <div class="bg-white dark:bg-gray-800 shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <nav class="flex gap-6 overflow-x-auto no-scrollbar" aria-label="Tabs">
+          <button
+            (click)="setActiveTab('overview')"
+            [ngClass]="
+              activeTab === 'overview'
+                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white'
+            "
+            class="py-4 border-b-2 font-medium"
+          >
+            Tổng quan
+          </button>
+          <button
+            (click)="setActiveTab('activity')"
+            [ngClass]="
+              activeTab === 'activity'
+                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white'
+            "
+            class="py-4 border-b-2 font-medium"
+          >
+            Hoạt động
+          </button>
+          <button
+            (click)="setActiveTab('achievements')"
+            [ngClass]="
+              activeTab === 'achievements'
+                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white'
+            "
+            class="py-4 border-b-2 font-medium"
+          >
+            Thành tựu
+          </button>
+          <button
+            (click)="setActiveTab('courses')"
+            [ngClass]="
+              activeTab === 'courses'
+                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white'
+            "
+            class="py-4 border-b-2 font-medium"
+          >
+            Khóa học
+          </button>
+          <button
+            (click)="setActiveTab('settings')"
+            [ngClass]="
+              activeTab === 'settings'
+                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white'
+            "
+            class="py-4 border-b-2 font-medium"
+          >
+            Cài đặt
+          </button>
+        </nav>
+      </div>
     </div>
-  </div>
 
-  <!-- Content -->
-  <section class="py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <!-- Overview Tab -->
-      <div *ngIf="activeTab === 'overview'" class="space-y-8">
-        <!-- Stats Cards -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div
-            class="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20"
-          >
-            <div class="text-sm text-gray-600 dark:text-gray-300">
-              Khóa học đã hoàn thành
-            </div>
-            <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              {{ userStat.courses_completed }}
-            </div>
-          </div>
-          <div
-            class="p-4 rounded-xl bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20"
-          >
-            <div class="text-sm text-gray-600 dark:text-gray-300">Giờ học</div>
-            <div class="text-2xl font-bold text-green-600 dark:text-green-400">
-              {{ userStat.hours_learned }}
-            </div>
-          </div>
-          <div
-            class="p-4 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20"
-          >
-            <div class="text-sm text-gray-600 dark:text-gray-300">
-              Bài đã giải
+    <!-- Content -->
+    <section class="py-8">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Overview Tab -->
+        <div *ngIf="activeTab === 'overview'" class="space-y-8">
+          <!-- Stats Cards -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div
+              class="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20"
+            >
+              <div class="text-sm text-gray-600 dark:text-gray-300">
+                Khóa học đã hoàn thành
+              </div>
+              <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {{ userStat?.courses_completed || 0 }}
+              </div>
             </div>
             <div
-              class="text-2xl font-bold text-purple-600 dark:text-purple-400"
+              class="p-4 rounded-xl bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20"
             >
-              {{ userStat.problems_solved }}
-            </div>
-          </div>
-          <div
-            class="p-4 rounded-xl bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20"
-          >
-            <div class="text-sm text-gray-600 dark:text-gray-300">
-              Chuỗi ngày
+              <div class="text-sm text-gray-600 dark:text-gray-300">
+                Giờ học
+              </div>
+              <div
+                class="text-2xl font-bold text-green-600 dark:text-green-400"
+              >
+                {{ userStat?.hours_learned || 0 }}
+              </div>
             </div>
             <div
-              class="text-2xl font-bold text-yellow-600 dark:text-yellow-400"
+              class="p-4 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20"
             >
-              {{ userStat.current_streak }} ngày
+              <div class="text-sm text-gray-600 dark:text-gray-300">
+                Bài đã giải
+              </div>
+              <div
+                class="text-2xl font-bold text-purple-600 dark:text-purple-400"
+              >
+                {{ userStat?.problems_solved || 0 }}
+              </div>
+            </div>
+            <div
+              class="p-4 rounded-xl bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20"
+            >
+              <div class="text-sm text-gray-600 dark:text-gray-300">
+                Chuỗi ngày
+              </div>
+              <div
+                class="text-2xl font-bold text-yellow-600 dark:text-yellow-400"
+              >
+                {{ userStat?.current_streak || 0 }} ngày
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- Goals & Progress -->
-        <div class="grid md:grid-cols-2 gap-6">
+          <!-- Goals & Progress -->
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
+              <h3 class="text-lg font-semibold mb-4">Mục tiêu</h3>
+              <div class="space-y-4">
+                <div *ngFor="let goal of userGoals" class="">
+                  <div class="flex justify-between text-sm mb-1">
+                    <span class="text-gray-700 dark:text-gray-300">{{
+                      goal.title
+                    }}</span>
+                    <span class="text-gray-500 dark:text-gray-400"
+                      >{{ goal.current }}/{{ goal.target }}
+                      {{ goal.unit }}</span
+                    >
+                  </div>
+                  <div
+                    class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden"
+                  >
+                    <div
+                      class="h-2 bg-gradient-to-r from-blue-500 to-purple-600"
+                      [style.width.%]="
+                        getProgressPercentage(goal.current, goal.target)
+                      "
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
+              <h3 class="text-lg font-semibold mb-4">Lần nộp gần đây</h3>
+              <div class="space-y-4">
+                <div
+                  *ngFor="let item of getRecentSubmissions()"
+                  class="flex items-center justify-between"
+                >
+                  <div class="flex-1 min-w-0">
+                    <div class="font-medium truncate">
+                      {{ item.problem.title }}
+                    </div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">
+                      {{ formatDateTime(item.submission.submitted_at) }}
+                    </div>
+                  </div>
+                  <span
+                    class="px-2 py-1 text-xs rounded-full"
+                    [ngClass]="getStatusColor(item.submission.status)"
+                  >
+                    {{ item.submission.status }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Courses in progress -->
           <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-            <h3 class="text-lg font-semibold mb-4">Mục tiêu</h3>
-            <div class="space-y-4">
-              <div *ngFor="let goal of userGoals" class="">
-                <div class="flex justify-between text-sm mb-1">
-                  <span class="text-gray-700 dark:text-gray-300">{{
-                    goal.title
-                  }}</span>
-                  <span class="text-gray-500 dark:text-gray-400"
-                    >{{ goal.current }}/{{ goal.target }} {{ goal.unit }}</span
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold">Khóa học đang học</h3>
+              <a
+                routerLink="/courses"
+                class="text-blue-600 dark:text-blue-400 hover:underline text-sm"
+                >Xem tất cả →</a
+              >
+            </div>
+            <div class="grid md:grid-cols-2 gap-6">
+              <div
+                *ngFor="let item of getUserCourses()"
+                class="border dark:border-gray-700 rounded-lg p-4"
+              >
+                <div class="flex items-center justify-between mb-2">
+                  <div class="font-semibold">{{ item.course.title }}</div>
+                  <span
+                    class="text-xs px-2 py-1 rounded-full"
+                    [ngClass]="
+                      item.course.is_premium
+                        ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+                        : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                    "
+                    >{{ item.course.is_premium ? "Premium" : "Miễn phí" }}</span
                   >
                 </div>
                 <div
                   class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden"
                 >
                   <div
-                    class="h-2 bg-gradient-to-r from-blue-500 to-purple-600"
-                    [style.width.%]="
-                      getProgressPercentage(goal.current, goal.target)
-                    "
+                    class="h-2 bg-gradient-to-r from-green-500 to-blue-600"
+                    [style.width.%]="item.enrollment.progress"
                   ></div>
                 </div>
-              </div>
-            </div>
-          </div>
-          <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-            <h3 class="text-lg font-semibold mb-4">Lần nộp gần đây</h3>
-            <div class="space-y-4">
-              <div
-                *ngFor="let item of getRecentSubmissions()"
-                class="flex items-center justify-between"
-              >
-                <div class="flex-1 min-w-0">
-                  <div class="font-medium truncate">
-                    {{ item.problem.title }}
-                  </div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400">
-                    {{ formatDateTime(item.submission.submitted_at) }}
-                  </div>
+                <div class="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                  Tiến độ: {{ item.enrollment.progress }}%
                 </div>
-                <span
-                  class="px-2 py-1 text-xs rounded-full"
-                  [ngClass]="getStatusColor(item.submission.status)"
-                >
-                  {{ item.submission.status }}
-                </span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Courses in progress -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold">Khóa học đang học</h3>
-            <a
-              routerLink="/courses"
-              class="text-blue-600 dark:text-blue-400 hover:underline text-sm"
-              >Xem tất cả →</a
-            >
+        <!-- Activity Tab -->
+        <div *ngIf="activeTab === 'activity'" class="space-y-4">
+          <div
+            *ngFor="let log of userActivityLogs"
+            class="bg-white dark:bg-gray-800 rounded-xl shadow p-4 flex items-start gap-4"
+          >
+            <div class="text-2xl">{{ getActivityIcon(log.type) }}</div>
+            <div class="flex-1">
+              <div class="font-medium">{{ log.title }}</div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">
+                {{ formatDateTime(log.date) }}
+              </div>
+            </div>
           </div>
-          <div class="grid md:grid-cols-2 gap-6">
+        </div>
+
+        <!-- Achievements Tab -->
+        <div
+          *ngIf="activeTab === 'achievements'"
+          class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
+        >
+          <div
+            *ngFor="let item of getUserAchievements()"
+            class="bg-white dark:bg-gray-800 rounded-xl shadow p-6"
+          >
+            <div class="flex items-center gap-4">
+              <div class="text-3xl">🏅</div>
+              <div class="flex-1">
+                <div class="font-semibold">{{ item.achievement.title }}</div>
+                <div class="text-sm text-gray-600 dark:text-gray-300">
+                  {{ item.achievement.description }}
+                </div>
+                <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Nhận: {{ formatDate(item.dateEarned) }}
+                </div>
+              </div>
+              <span
+                class="px-2 py-1 text-xs rounded-full"
+                [ngClass]="getRarityColor(item.achievement.rarity)"
+                >{{ item.achievement.rarity }}</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- Courses Tab -->
+        <div *ngIf="activeTab === 'courses'" class="grid md:grid-cols-2 gap-6">
+          <div
+            *ngFor="let item of getUserCourses()"
+            class="bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden"
+          >
             <div
-              *ngFor="let item of getUserCourses()"
-              class="border dark:border-gray-700 rounded-lg p-4"
-            >
+              class="h-28 bg-gradient-to-r from-blue-500 to-purple-600"
+            ></div>
+            <div class="p-6">
               <div class="flex items-center justify-between mb-2">
-                <div class="font-semibold">{{ item.course.title }}</div>
+                <div class="font-semibold text-lg">{{ item.course.title }}</div>
                 <span
                   class="text-xs px-2 py-1 rounded-full"
                   [ngClass]="
@@ -279,135 +449,647 @@
                 ></div>
               </div>
               <div class="mt-2 text-xs text-gray-600 dark:text-gray-400">
-                Tiến độ: {{ item.enrollment.progress }}%
+                Tiến độ: {{ item.enrollment.progress }}% — Trạng thái:
+                {{ item.enrollment.status }}
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Activity Tab -->
-      <div *ngIf="activeTab === 'activity'" class="space-y-4">
-        <div
-          *ngFor="let log of userActivityLogs"
-          class="bg-white dark:bg-gray-800 rounded-xl shadow p-4 flex items-start gap-4"
-        >
-          <div class="text-2xl">{{ getActivityIcon(log.type) }}</div>
-          <div class="flex-1">
-            <div class="font-medium">{{ log.title }}</div>
-            <div class="text-xs text-gray-500 dark:text-gray-400">
-              {{ formatDateTime(log.date) }}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Achievements Tab -->
-      <div
-        *ngIf="activeTab === 'achievements'"
-        class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
-      >
-        <div
-          *ngFor="let item of getUserAchievements()"
-          class="bg-white dark:bg-gray-800 rounded-xl shadow p-6"
-        >
-          <div class="flex items-center gap-4">
-            <div class="text-3xl">🏅</div>
-            <div class="flex-1">
-              <div class="font-semibold">{{ item.achievement.title }}</div>
-              <div class="text-sm text-gray-600 dark:text-gray-300">
-                {{ item.achievement.description }}
-              </div>
-              <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Nhận: {{ formatDate(item.dateEarned) }}
-              </div>
-            </div>
-            <span
-              class="px-2 py-1 text-xs rounded-full"
-              [ngClass]="getRarityColor(item.achievement.rarity)"
-              >{{ item.achievement.rarity }}</span
-            >
-          </div>
-        </div>
-      </div>
-
-      <!-- Courses Tab -->
-      <div *ngIf="activeTab === 'courses'" class="grid md:grid-cols-2 gap-6">
-        <div
-          *ngFor="let item of getUserCourses()"
-          class="bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden"
-        >
-          <div class="h-28 bg-gradient-to-r from-blue-500 to-purple-600"></div>
-          <div class="p-6">
-            <div class="flex items-center justify-between mb-2">
-              <div class="font-semibold text-lg">{{ item.course.title }}</div>
-              <span
-                class="text-xs px-2 py-1 rounded-full"
-                [ngClass]="
-                  item.course.is_premium
-                    ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-                    : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
-                "
-                >{{ item.course.is_premium ? "Premium" : "Miễn phí" }}</span
-              >
-            </div>
-            <div
-              class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden"
-            >
-              <div
-                class="h-2 bg-gradient-to-r from-green-500 to-blue-600"
-                [style.width.%]="item.enrollment.progress"
-              ></div>
-            </div>
-            <div class="mt-2 text-xs text-gray-600 dark:text-gray-400">
-              Tiến độ: {{ item.enrollment.progress }}% — Trạng thái:
-              {{ item.enrollment.status }}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Settings Tab -->
-      <div
-        *ngIf="activeTab === 'settings'"
-        class="bg-white dark:bg-gray-800 rounded-xl shadow p-6 space-y-6"
-      >
-        <h3 class="text-lg font-semibold">Tùy chỉnh giao diện</h3>
-        <div class="flex flex-wrap gap-4 items-center">
-          <button
-            (click)="themeService.toggleTheme()"
-            class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
+        <!-- Settings Tab -->
+        <div *ngIf="activeTab === 'settings'" class="space-y-6">
+          <!-- Messages -->
+          <div
+            *ngIf="errorMessage"
+            class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg"
           >
-            Chuyển {{ themeService.isDarkMode() ? "Light" : "Dark" }} mode
-          </button>
-          <div class="text-sm text-gray-600 dark:text-gray-300">
-            Chế độ hiện tại:
-            <span class="font-semibold">{{
-              themeService.isDarkMode() ? "Dark" : "Light"
-            }}</span>
+            {{ errorMessage }}
           </div>
-        </div>
-        <div class="grid sm:grid-cols-2 gap-4 text-sm">
-          <div class="space-y-1">
-            <div class="text-gray-500 dark:text-gray-400">Email</div>
-            <div class="font-medium">{{ user.email }}</div>
+          <div
+            *ngIf="successMessage"
+            class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-3 rounded-lg"
+          >
+            {{ successMessage }}
           </div>
-          <div class="space-y-1">
-            <div class="text-gray-500 dark:text-gray-400">Điện thoại</div>
-            <div class="font-medium">{{ userProfile.phone || "—" }}</div>
-          </div>
-          <div class="space-y-1">
-            <div class="text-gray-500 dark:text-gray-400">Địa chỉ</div>
-            <div class="font-medium">{{ userProfile.address || "—" }}</div>
-          </div>
-          <div class="space-y-1">
-            <div class="text-gray-500 dark:text-gray-400">Ngôn ngữ</div>
-            <div class="font-medium">
-              {{ userProfile.preferred_language.toUpperCase() }}
+
+          <!-- Basic Profile Information -->
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold">Thông tin cơ bản</h3>
+              <button
+                *ngIf="editMode !== 'basic'"
+                (click)="startEdit('basic')"
+                class="px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Chỉnh sửa
+              </button>
             </div>
+
+            <!-- View Mode -->
+            <div
+              *ngIf="editMode !== 'basic'"
+              class="grid sm:grid-cols-2 gap-4 text-sm"
+            >
+              <div class="space-y-1">
+                <div class="text-gray-500 dark:text-gray-400">Tên</div>
+                <div class="font-medium">{{ user.name }}</div>
+              </div>
+              <div class="space-y-1">
+                <div class="text-gray-500 dark:text-gray-400">Email</div>
+                <div class="font-medium">{{ user.email }}</div>
+              </div>
+            </div>
+
+            <!-- Edit Mode -->
+            <form
+              *ngIf="editMode === 'basic'"
+              [formGroup]="basicProfileForm"
+              (ngSubmit)="saveBasicProfile()"
+              class="space-y-4"
+            >
+              <div class="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >Tên</label
+                  >
+                  <input
+                    type="text"
+                    formControlName="name"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Nhập tên của bạn"
+                  />
+                  <div
+                    *ngIf="basicProfileForm.get('name')?.errors?.['required']"
+                    class="text-red-500 text-xs mt-1"
+                  >
+                    Tên là bắt buộc
+                  </div>
+                  <div
+                    *ngIf="basicProfileForm.get('name')?.errors?.['minlength']"
+                    class="text-red-500 text-xs mt-1"
+                  >
+                    Tên phải có ít nhất 2 ký tự
+                  </div>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >Email</label
+                  >
+                  <input
+                    type="email"
+                    formControlName="email"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Nhập email của bạn"
+                  />
+                  <div
+                    *ngIf="basicProfileForm.get('email')?.errors?.['required']"
+                    class="text-red-500 text-xs mt-1"
+                  >
+                    Email là bắt buộc
+                  </div>
+                  <div
+                    *ngIf="basicProfileForm.get('email')?.errors?.['email']"
+                    class="text-red-500 text-xs mt-1"
+                  >
+                    Email không hợp lệ
+                  </div>
+                </div>
+              </div>
+              <div class="flex gap-2">
+                <button
+                  type="submit"
+                  [disabled]="basicProfileForm.invalid || isLoading"
+                  class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <div
+                    *ngIf="isLoading"
+                    class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"
+                  ></div>
+                  Lưu
+                </button>
+                <button
+                  type="button"
+                  (click)="cancelEdit()"
+                  class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Profile Details -->
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold">Chi tiết hồ sơ</h3>
+              <button
+                *ngIf="editMode !== 'details'"
+                (click)="startEdit('details')"
+                class="px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Chỉnh sửa
+              </button>
+            </div>
+
+            <!-- View Mode -->
+            <div
+              *ngIf="editMode !== 'details'"
+              class="grid sm:grid-cols-2 gap-4 text-sm"
+            >
+              <div class="space-y-1">
+                <div class="text-gray-500 dark:text-gray-400">Giới thiệu</div>
+                <div class="font-medium">{{ userProfile.bio || "—" }}</div>
+              </div>
+              <div class="space-y-1">
+                <div class="text-gray-500 dark:text-gray-400">Ngày sinh</div>
+                <div class="font-medium">
+                  {{ userProfile.birthday || "—" }}
+                </div>
+              </div>
+              <div class="space-y-1">
+                <div class="text-gray-500 dark:text-gray-400">Giới tính</div>
+                <div class="font-medium">{{ userProfile.gender || "—" }}</div>
+              </div>
+              <div class="space-y-1">
+                <div class="text-gray-500 dark:text-gray-400">Điện thoại</div>
+                <div class="font-medium">{{ userProfile.phone || "—" }}</div>
+              </div>
+              <div class="space-y-1 sm:col-span-2">
+                <div class="text-gray-500 dark:text-gray-400">Địa chỉ</div>
+                <div class="font-medium">{{ userProfile.address || "—" }}</div>
+              </div>
+              <div class="space-y-1">
+                <div class="text-gray-500 dark:text-gray-400">Website</div>
+                <div class="font-medium">
+                  <a
+                    *ngIf="userProfile.website_url"
+                    [href]="userProfile.website_url"
+                    target="_blank"
+                    class="text-blue-600 dark:text-blue-400 hover:underline"
+                    >{{ userProfile.website_url }}</a
+                  >
+                  <span *ngIf="!userProfile.website_url">—</span>
+                </div>
+              </div>
+              <div class="space-y-1">
+                <div class="text-gray-500 dark:text-gray-400">GitHub</div>
+                <div class="font-medium">
+                  <a
+                    *ngIf="userProfile.github_url"
+                    [href]="userProfile.github_url"
+                    target="_blank"
+                    class="text-blue-600 dark:text-blue-400 hover:underline"
+                    >{{ userProfile.github_url }}</a
+                  >
+                  <span *ngIf="!userProfile.github_url">—</span>
+                </div>
+              </div>
+              <div class="space-y-1 sm:col-span-2">
+                <div class="text-gray-500 dark:text-gray-400">LinkedIn</div>
+                <div class="font-medium">
+                  <a
+                    *ngIf="userProfile.linkedin_url"
+                    [href]="userProfile.linkedin_url"
+                    target="_blank"
+                    class="text-blue-600 dark:text-blue-400 hover:underline"
+                    >{{ userProfile.linkedin_url }}</a
+                  >
+                  <span *ngIf="!userProfile.linkedin_url">—</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Edit Mode -->
+            <form
+              *ngIf="editMode === 'details'"
+              [formGroup]="detailsForm"
+              (ngSubmit)="saveProfileDetails()"
+              class="space-y-4"
+            >
+              <div>
+                <label
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  >Giới thiệu</label
+                >
+                <textarea
+                  formControlName="bio"
+                  rows="3"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Viết vài dòng về bản thân..."
+                ></textarea>
+              </div>
+              <div class="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >Ngày sinh</label
+                  >
+                  <input
+                    type="date"
+                    formControlName="birthday"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >Giới tính</label
+                  >
+                  <select
+                    formControlName="gender"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">Chọn giới tính</option>
+                    <option value="male">Nam</option>
+                    <option value="female">Nữ</option>
+                    <option value="other">Khác</option>
+                  </select>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >Điện thoại</label
+                  >
+                  <input
+                    type="tel"
+                    formControlName="phone"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="+84..."
+                  />
+                  <div
+                    *ngIf="detailsForm.get('phone')?.errors?.['pattern']"
+                    class="text-red-500 text-xs mt-1"
+                  >
+                    Số điện thoại không hợp lệ
+                  </div>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >Địa chỉ</label
+                  >
+                  <input
+                    type="text"
+                    formControlName="address"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Địa chỉ của bạn"
+                  />
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >Website</label
+                  >
+                  <input
+                    type="url"
+                    formControlName="website_url"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="https://your-website.com"
+                  />
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >GitHub</label
+                  >
+                  <input
+                    type="url"
+                    formControlName="github_url"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="https://github.com/username"
+                  />
+                </div>
+              </div>
+              <div>
+                <label
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  >LinkedIn</label
+                >
+                <input
+                  type="url"
+                  formControlName="linkedin_url"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="https://linkedin.com/in/username"
+                />
+              </div>
+              <div class="flex gap-2">
+                <button
+                  type="submit"
+                  [disabled]="detailsForm.invalid || isLoading"
+                  class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <div
+                    *ngIf="isLoading"
+                    class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"
+                  ></div>
+                  Lưu
+                </button>
+                <button
+                  type="button"
+                  (click)="cancelEdit()"
+                  class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Settings -->
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold">Cài đặt</h3>
+              <button
+                *ngIf="editMode !== 'settings'"
+                (click)="startEdit('settings')"
+                class="px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Chỉnh sửa
+              </button>
+            </div>
+
+            <!-- View Mode -->
+            <div
+              *ngIf="editMode !== 'settings'"
+              class="grid sm:grid-cols-2 gap-4 text-sm"
+            >
+              <div class="space-y-1">
+                <div class="text-gray-500 dark:text-gray-400">Ngôn ngữ</div>
+                <div class="font-medium">
+                  {{ userProfile.preferred_language?.toUpperCase() }}
+                </div>
+              </div>
+              <div class="space-y-1">
+                <div class="text-gray-500 dark:text-gray-400">Giao diện</div>
+                <div class="font-medium">{{ userProfile.theme_mode }}</div>
+              </div>
+              <div class="space-y-1">
+                <div class="text-gray-500 dark:text-gray-400">Bố cục</div>
+                <div class="font-medium">{{ userProfile.layout }}</div>
+              </div>
+              <div class="space-y-1">
+                <div class="text-gray-500 dark:text-gray-400">Thông báo</div>
+                <div class="font-medium">
+                  {{ userProfile.notifications ? "Bật" : "Tắt" }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Edit Mode -->
+            <form
+              *ngIf="editMode === 'settings'"
+              [formGroup]="settingsForm"
+              (ngSubmit)="saveSettings()"
+              class="space-y-4"
+            >
+              <div class="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >Ngôn ngữ</label
+                  >
+                  <select
+                    formControlName="preferred_language"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="vi">Tiếng Việt</option>
+                    <option value="en">English</option>
+                  </select>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >Giao diện</label
+                  >
+                  <select
+                    formControlName="theme_mode"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="light">Sáng</option>
+                    <option value="dark">Tối</option>
+                    <option value="system">Theo hệ thống</option>
+                  </select>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >Bố cục</label
+                  >
+                  <select
+                    formControlName="layout"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="expanded">Mở rộng</option>
+                    <option value="compact">Compact</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Privacy Settings -->
+              <div class="space-y-3">
+                <h4 class="font-medium text-gray-900 dark:text-gray-100">
+                  Quyền riêng tư
+                </h4>
+                <div class="space-y-2">
+                  <label class="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      formControlName="notifications"
+                      class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                    />
+                    <span class="text-sm text-gray-700 dark:text-gray-300"
+                      >Nhận thông báo</span
+                    >
+                  </label>
+                  <label class="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      formControlName="visibility_profile"
+                      class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                    />
+                    <span class="text-sm text-gray-700 dark:text-gray-300"
+                      >Hiển thị hồ sơ công khai</span
+                    >
+                  </label>
+                  <label class="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      formControlName="visibility_achievements"
+                      class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                    />
+                    <span class="text-sm text-gray-700 dark:text-gray-300"
+                      >Hiển thị thành tựu</span
+                    >
+                  </label>
+                  <label class="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      formControlName="visibility_progress"
+                      class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                    />
+                    <span class="text-sm text-gray-700 dark:text-gray-300"
+                      >Hiển thị tiến độ học tập</span
+                    >
+                  </label>
+                  <label class="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      formControlName="visibility_activity"
+                      class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                    />
+                    <span class="text-sm text-gray-700 dark:text-gray-300"
+                      >Hiển thị hoạt động</span
+                    >
+                  </label>
+                </div>
+              </div>
+
+              <div class="flex gap-2">
+                <button
+                  type="submit"
+                  [disabled]="settingsForm.invalid || isLoading"
+                  class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <div
+                    *ngIf="isLoading"
+                    class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"
+                  ></div>
+                  Lưu
+                </button>
+                <button
+                  type="button"
+                  (click)="cancelEdit()"
+                  class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Change Password -->
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold">Đổi mật khẩu</h3>
+              <button
+                *ngIf="editMode !== 'password'"
+                (click)="startEdit('password')"
+                class="px-3 py-1 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                Đổi mật khẩu
+              </button>
+            </div>
+
+            <div
+              *ngIf="editMode !== 'password'"
+              class="text-sm text-gray-600 dark:text-gray-400"
+            >
+              Bạn có thể thay đổi mật khẩu để bảo mật tài khoản tốt hơn.
+            </div>
+
+            <!-- Password Change Form -->
+            <form
+              *ngIf="editMode === 'password'"
+              [formGroup]="passwordForm"
+              (ngSubmit)="changePassword()"
+              class="space-y-4"
+            >
+              <div>
+                <label
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  >Mật khẩu hiện tại</label
+                >
+                <input
+                  type="password"
+                  formControlName="current_password"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Nhập mật khẩu hiện tại"
+                />
+                <div
+                  *ngIf="passwordForm.get('current_password')?.errors?.['required']"
+                  class="text-red-500 text-xs mt-1"
+                >
+                  Mật khẩu hiện tại là bắt buộc
+                </div>
+              </div>
+
+              <div class="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >Mật khẩu mới</label
+                  >
+                  <input
+                    type="password"
+                    formControlName="new_password"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Nhập mật khẩu mới"
+                  />
+                  <div
+                    *ngIf="passwordForm.get('new_password')?.errors?.['required']"
+                    class="text-red-500 text-xs mt-1"
+                  >
+                    Mật khẩu mới là bắt buộc
+                  </div>
+                  <div
+                    *ngIf="passwordForm.get('new_password')?.errors?.['minlength']"
+                    class="text-red-500 text-xs mt-1"
+                  >
+                    Mật khẩu phải có ít nhất 6 ký tự
+                  </div>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >Xác nhận mật khẩu mới</label
+                  >
+                  <input
+                    type="password"
+                    formControlName="confirm_password"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Xác nhận mật khẩu mới"
+                  />
+                  <div
+                    *ngIf="passwordForm.get('confirm_password')?.errors?.['required']"
+                    class="text-red-500 text-xs mt-1"
+                  >
+                    Xác nhận mật khẩu là bắt buộc
+                  </div>
+                  <div
+                    *ngIf="passwordForm.errors?.['mismatch']"
+                    class="text-red-500 text-xs mt-1"
+                  >
+                    Mật khẩu xác nhận không khớp
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex gap-2">
+                <button
+                  type="submit"
+                  [disabled]="passwordForm.invalid || isLoading"
+                  class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <div
+                    *ngIf="isLoading"
+                    class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"
+                  ></div>
+                  Đổi mật khẩu
+                </button>
+                <button
+                  type="button"
+                  (click)="cancelEdit()"
+                  class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  Hủy
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
+  </div>
 </div>

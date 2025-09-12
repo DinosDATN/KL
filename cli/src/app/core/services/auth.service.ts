@@ -183,6 +183,21 @@ export class AuthService {
     
     this.currentUserSubject.next(null);
     this.isAuthenticatedSubject.next(false);
+    
+    // Clear profile data if ProfileService is available
+    // Note: We use dynamic import to avoid circular dependency
+    import('./profile.service').then(({ ProfileService }) => {
+      // Get the ProfileService instance from the injector if available
+      // This is a workaround to clear profile data without creating circular dependency
+      try {
+        const profileService = new ProfileService(this.http);
+        profileService.clearProfile();
+      } catch (error) {
+        // Ignore error if ProfileService is not available
+      }
+    }).catch(() => {
+      // Ignore error if profile.service cannot be imported
+    });
   }
 
   /**
