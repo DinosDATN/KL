@@ -1,7 +1,8 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
-import { Observable, throwError, timeout, retry, catchError } from 'rxjs';
+import { Observable, throwError, timeout, retry, catchError, of } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { isPlatformBrowser } from '@angular/common';
 
 import { environment } from '../../../environments/environment';
 import { Course } from '../models/course.model';
@@ -49,14 +50,30 @@ interface Achievement {
 export class HomepageService {
   private readonly apiUrl = environment.apiUrl;
 
-  constructor(private http: HttpClient) {
-    if (environment.enableLogging) {
+  constructor(
+    private http: HttpClient,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {
+    if (environment.enableLogging && isPlatformBrowser(this.platformId)) {
       console.log('HomepageService initialized with API URL:', this.apiUrl);
     }
   }
 
   // Get platform overview statistics
   getOverview(): Observable<OverviewStats> {
+    // Return empty data during SSR
+    if (!isPlatformBrowser(this.platformId)) {
+      return of({
+        totalUsers: 0,
+        totalCourses: 0,
+        totalDocuments: 0,
+        totalProblems: 0,
+        totalSubmissions: 0,
+        totalBadges: 0,
+        totalAchievements: 0
+      });
+    }
+
     return this.http.get<ApiResponse<OverviewStats>>(`${this.apiUrl}/homepage/overview`)
       .pipe(
         timeout(environment.apiTimeout),
@@ -68,6 +85,11 @@ export class HomepageService {
 
   // Get featured courses
   getFeaturedCourses(limit: number = 6): Observable<Course[]> {
+    // Return empty data during SSR
+    if (!isPlatformBrowser(this.platformId)) {
+      return of([]);
+    }
+
     const params = new HttpParams().set('limit', limit.toString());
     
     return this.http.get<ApiResponse<Course[]>>(`${this.apiUrl}/homepage/courses/featured`, { params })
@@ -81,6 +103,10 @@ export class HomepageService {
 
   // Get featured documents
   getFeaturedDocuments(limit: number = 6): Observable<Document[]> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return this.handleSSR([]);
+    }
+
     const params = new HttpParams().set('limit', limit.toString());
     
     return this.http.get<ApiResponse<Document[]>>(`${this.apiUrl}/homepage/documents/featured`, { params })
@@ -94,6 +120,10 @@ export class HomepageService {
 
   // Get featured problems
   getFeaturedProblems(limit: number = 6): Observable<Problem[]> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return this.handleSSR([]);
+    }
+
     const params = new HttpParams().set('limit', limit.toString());
     
     return this.http.get<ApiResponse<Problem[]>>(`${this.apiUrl}/homepage/problems/featured`, { params })
@@ -107,6 +137,10 @@ export class HomepageService {
 
   // Get leaderboard
   getLeaderboard(limit: number = 5): Observable<LeaderboardUser[]> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return this.handleSSR([]);
+    }
+
     const params = new HttpParams().set('limit', limit.toString());
     
     return this.http.get<ApiResponse<LeaderboardUser[]>>(`${this.apiUrl}/homepage/leaderboard`, { params })
@@ -120,6 +154,10 @@ export class HomepageService {
 
   // Get testimonials
   getTestimonials(limit: number = 6): Observable<Testimonial[]> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return this.handleSSR([]);
+    }
+
     const params = new HttpParams().set('limit', limit.toString());
     
     return this.http.get<ApiResponse<Testimonial[]>>(`${this.apiUrl}/homepage/testimonials`, { params })
@@ -133,6 +171,10 @@ export class HomepageService {
 
   // Get featured achievements
   getFeaturedAchievements(limit: number = 6): Observable<Achievement[]> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return this.handleSSR([]);
+    }
+
     const params = new HttpParams().set('limit', limit.toString());
     
     return this.http.get<ApiResponse<Achievement[]>>(`${this.apiUrl}/homepage/achievements/featured`, { params })
@@ -180,6 +222,10 @@ export class HomepageService {
   }
 
   // Private helper methods
+  private handleSSR<T>(fallbackData: T): Observable<T> {
+    return of(fallbackData);
+  }
+
   private handleSuccessResponse<T>(response: ApiResponse<T>): T {
     if (response.success && response.data) {
       return response.data;

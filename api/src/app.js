@@ -4,12 +4,16 @@ require("dotenv").config();
 
 const { sequelize, testConnection } = require("./config/sequelize");
 
+// Import models with associations
+require('./models');
+
 // Import routes
 const userRoutes = require("./routes/userRoutes");
 const homepageRoutes = require("./routes/homepageRoutes");
 const courseRoutes = require("./routes/courseRoutes");
 const problemRoutes = require("./routes/problemRoutes");
 const documentRoutes = require("./routes/documentRoutes");
+const leaderboardRoutes = require("./routes/leaderboardRoutes");
 
 // Create Express app
 const app = express();
@@ -42,6 +46,7 @@ app.use(apiPrefix + "/users", userRoutes);
 app.use(apiPrefix + "/courses", courseRoutes);
 app.use(apiPrefix + "/problems", problemRoutes);
 app.use(apiPrefix + "/documents", documentRoutes);
+app.use(apiPrefix + "/leaderboard", leaderboardRoutes);
 
 // Homepage-specific routes
 app.use(apiPrefix + "/homepage", homepageRoutes);

@@ -1,5 +1,5 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Subject, takeUntil, finalize } from 'rxjs';
 import { HomepageService } from '../../core/services/homepage.service';
@@ -49,11 +49,15 @@ export class HomepageComponent implements OnInit, OnDestroy {
   
   constructor(
     private homepageService: HomepageService,
-    public themeService: ThemeService
+    public themeService: ThemeService,
+    @Inject(PLATFORM_ID) private platformId: Object
   ) {}
   
   ngOnInit(): void {
-    this.loadHomepageData();
+    // Only load data in browser, not during SSR
+    if (isPlatformBrowser(this.platformId)) {
+      this.loadHomepageData();
+    }
   }
   
   private loadHomepageData(): void {

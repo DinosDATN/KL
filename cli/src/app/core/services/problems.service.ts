@@ -1,5 +1,8 @@
-import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, of, map, catchError } from 'rxjs';
+import { isPlatformBrowser } from '@angular/common';
+import { environment } from '../../../environments/environment';
 import {
   Problem,
   ProblemCategory,
@@ -31,16 +34,40 @@ import {
   providedIn: 'root'
 })
 export class ProblemsService {
-  constructor() { }
+  private readonly apiUrl = environment.apiUrl;
+
+  constructor(
+    private http: HttpClient,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) { }
 
   // Problem operations
   getProblems(): Observable<Problem[]> {
-    return of(mockProblems);
+    // Return mock data during SSR
+    if (!isPlatformBrowser(this.platformId)) {
+      return of(mockProblems);
+    }
+
+    return this.http.get<{success: boolean, data: Problem[]}>(`${this.apiUrl}/problems`)
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error fetching problems:', error);
+          return of(mockProblems); // Fallback to mock data
+        })
+      );
   }
 
   getProblemById(id: number): Observable<Problem | null> {
-    const problem = mockProblems.find(p => p.id === id);
-    return of(problem || null);
+    return this.http.get<{success: boolean, data: Problem}>(`${this.apiUrl}/problems/${id}`)
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error fetching problem:', error);
+          const problem = mockProblems.find(p => p.id === id);
+          return of(problem || null);
+        })
+      );
   }
 
   getProblemsByCategory(categoryId: number): Observable<Problem[]> {
@@ -63,7 +90,19 @@ export class ProblemsService {
 
   // Category operations
   getCategories(): Observable<ProblemCategory[]> {
-    return of(mockProblemCategories);
+    // Return mock data during SSR
+    if (!isPlatformBrowser(this.platformId)) {
+      return of(mockProblemCategories);
+    }
+
+    return this.http.get<{success: boolean, data: ProblemCategory[]}>(`${this.apiUrl}/problems/data/categories`)
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error fetching categories:', error);
+          return of(mockProblemCategories);
+        })
+      );
   }
 
   getCategoryById(id: number): Observable<ProblemCategory | null> {
@@ -73,7 +112,19 @@ export class ProblemsService {
 
   // Tag operations
   getTags(): Observable<Tag[]> {
-    return of(mockTags);
+    // Return mock data during SSR
+    if (!isPlatformBrowser(this.platformId)) {
+      return of(mockTags);
+    }
+
+    return this.http.get<{success: boolean, data: Tag[]}>(`${this.apiUrl}/problems/data/tags`)
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error fetching tags:', error);
+          return of(mockTags);
+        })
+      );
   }
 
   getTagById(id: number): Observable<Tag | null> {
@@ -82,12 +133,19 @@ export class ProblemsService {
   }
 
   getProblemTags(problemId: number): Observable<Tag[]> {
-    const problemTagIds = mockProblemTags
-      .filter(pt => pt.problem_id === problemId)
-      .map(pt => pt.tag_id);
-    
-    const tags = mockTags.filter(tag => problemTagIds.includes(tag.id));
-    return of(tags);
+    return this.http.get<{success: boolean, data: Tag[]}>(`${this.apiUrl}/problems/${problemId}/tags`)
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error fetching problem tags:', error);
+          // Fallback to mock data
+          const problemTagIds = mockProblemTags
+            .filter(pt => pt.problem_id === problemId)
+            .map(pt => pt.tag_id);
+          const tags = mockTags.filter(tag => problemTagIds.includes(tag.id));
+          return of(tags);
+        })
+      );
   }
 
   getTagNamesByProblemId(problemId: number): string[] {
@@ -114,8 +172,15 @@ export class ProblemsService {
 
   // Starter codes
   getStarterCodes(problemId: number): Observable<StarterCode[]> {
-    const codes = mockStarterCodes.filter(sc => sc.problem_id === problemId);
-    return of(codes);
+    return this.http.get<{success: boolean, data: StarterCode[]}>(`${this.apiUrl}/problems/${problemId}/starter-codes`)
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error fetching starter codes:', error);
+          const codes = mockStarterCodes.filter(sc => sc.problem_id === problemId);
+          return of(codes);
+        })
+      );
   }
 
   getStarterCodeByLanguage(problemId: number, language: string): Observable<StarterCode | null> {
@@ -127,8 +192,15 @@ export class ProblemsService {
 
   // Test cases
   getTestCases(problemId: number): Observable<TestCase[]> {
-    const testCases = mockTestCases.filter(tc => tc.problem_id === problemId);
-    return of(testCases);
+    return this.http.get<{success: boolean, data: TestCase[]}>(`${this.apiUrl}/problems/${problemId}/test-cases`)
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error fetching test cases:', error);
+          const testCases = mockTestCases.filter(tc => tc.problem_id === problemId);
+          return of(testCases);
+        })
+      );
   }
 
   getTestCasesByProblemId(problemId: number): TestCase[] {
@@ -220,5 +292,51 @@ export class ProblemsService {
 
   getHardProblems(): Observable<Problem[]> {
     return this.getProblemsByDifficulty('Hard');
+  }
+
+  // Code execution methods
+  executeCode(sourceCode: string, language: string, input: string = ''): Observable<any> {
+    return this.http.post<{success: boolean, data: any}>(`${this.apiUrl}/problems/execute`, {
+      sourceCode,
+      language,
+      input
+    }).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error executing code:', error);
+        throw error;
+      })
+    );
+  }
+
+  submitCode(problemId: number, sourceCode: string, language: string, userId?: number): Observable<any> {
+    return this.http.post<{success: boolean, data: any}>(`${this.apiUrl}/problems/${problemId}/submit`, {
+      sourceCode,
+      language,
+      userId
+    }).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error submitting code:', error);
+        throw error;
+      })
+    );
+  }
+
+  getSupportedLanguages(): Observable<any[]> {
+    return this.http.get<{success: boolean, data: any[]}>(`${this.apiUrl}/problems/data/languages`)
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error fetching supported languages:', error);
+          // Return default languages as fallback
+          return of([
+            { id: 'python', name: 'Python 3', judgeId: 71 },
+            { id: 'javascript', name: 'JavaScript (Node.js)', judgeId: 63 },
+            { id: 'java', name: 'Java', judgeId: 62 },
+            { id: 'cpp', name: 'C++', judgeId: 54 }
+          ]);
+        })
+      );
   }
 }

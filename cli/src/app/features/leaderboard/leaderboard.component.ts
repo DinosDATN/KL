@@ -1,7 +1,8 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, computed, signal, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ThemeService } from '../../core/services/theme.service';
+import { LeaderboardService, LeaderboardRow } from '../../core/services/leaderboard.service';
 import { User, UserProfile, UserStat } from '../../core/models/user.model';
 import {
   LeaderboardEntry,
@@ -9,25 +10,8 @@ import {
   Badge,
   UserBadge,
 } from '../../core/models/gamification.model';
-import {
-  mockLeaderboardUsers,
-  mockLeaderboardProfiles,
-  mockLeaderboardStats,
-  mockLeaderboardEntries,
-  mockLevels,
-  mockLeaderboardBadges,
-  mockLeaderboardUserBadges,
-} from '../../core/services/leaderboard-mock-data';
-
-interface LeaderboardRow {
-  rank: number;
-  user: User;
-  profile?: UserProfile;
-  stat?: UserStat;
-  entry?: LeaderboardEntry;
-  level?: Level;
-  badges: Badge[];
-}
+import { Subject } from 'rxjs';
+import { takeUntil, finalize } from 'rxjs/operators';
 
 @Component({
   selector: 'app-leaderboard',
@@ -36,15 +20,14 @@ interface LeaderboardRow {
   templateUrl: './leaderboard.component.html',
   styleUrls: ['./leaderboard.component.css'],
 })
-export class LeaderboardComponent implements OnInit {
-  // Mock data
-  users: User[] = mockLeaderboardUsers;
-  profiles: UserProfile[] = mockLeaderboardProfiles;
-  stats: UserStat[] = mockLeaderboardStats;
-  entries: LeaderboardEntry[] = mockLeaderboardEntries;
-  levels: Level[] = mockLevels;
-  badges: Badge[] = mockLeaderboardBadges;
-  userBadges: UserBadge[] = mockLeaderboardUserBadges;
+export class LeaderboardComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
+  
+  // API data
+  leaderboardData = signal<LeaderboardRow[]>([]);
+  levels = signal<Level[]>([]);
+  isLoading = signal<boolean>(false);
+  error = signal<string | null>(null);
 
   // UI state
   period = signal<'weekly' | 'monthly'>('weekly');
@@ -54,72 +37,77 @@ export class LeaderboardComponent implements OnInit {
 
   // Derived rows
   rows = computed<LeaderboardRow[]>(() => {
-    const type = this.period();
+    const data = this.leaderboardData();
     const query = this.search().trim().toLowerCase();
 
-    const rows: LeaderboardRow[] = this.users
-      .map((u) => {
-        const profile = this.profiles.find((p) => p.user_id === u.id);
-        const stat = this.stats.find((s) => s.user_id === u.id);
-        const entry = this.entries.find(
-          (e) => e.user_id === u.id && e.type === type
-        );
-        const level = stat
-          ? this.levels
-              .filter((lv) => lv.level <= (stat?.level ?? 0))
-              .sort((a, b) => b.level - a.level)[0]
-          : undefined;
-        const badges = this.userBadges
-          .filter((ub) => ub.user_id === u.id)
-          .map((ub) => this.badges.find((b) => b.id === ub.badge_id))
-          .filter((b): b is Badge => !!b);
+    // Filter by search if provided
+    let filteredData = data;
+    if (query) {
+      filteredData = data.filter(row => 
+        row.user.name.toLowerCase().includes(query)
+      );
+    }
 
-        return {
-          rank: stat?.rank ?? 9999,
-          user: u,
-          profile,
-          stat,
-          entry,
-          level,
-          badges,
-        };
-      })
-      // filter by search
-      .filter((r) => !query || r.user.name.toLowerCase().includes(query))
-      // sort by selected key
-      .sort((a, b) => {
-        const dir = this.sortDir() === 'desc' ? -1 : 1;
-        const key = this.sortKey();
-        let va = 0,
-          vb = 0;
-        if (key === 'xp') {
-          va = a.entry?.xp ?? a.stat?.xp ?? 0;
-          vb = b.entry?.xp ?? b.stat?.xp ?? 0;
-        } else if (key === 'level') {
-          va = a.stat?.level ?? 0;
-          vb = b.stat?.level ?? 0;
-        } else if (key === 'rank') {
-          va = a.stat?.rank ?? 9999;
-          vb = b.stat?.rank ?? 9999;
-        }
-        if (va === vb) return a.user.id - b.user.id; // stable
-        return va < vb ? 1 * dir : -1 * dir;
-      })
-      // re-assign ranks based on sort if using xp/level
-      .map((r, i) => ({ ...r, rank: i + 1 }));
-
-    return rows;
+    return filteredData;
   });
 
   top3 = computed<LeaderboardRow[]>(() => this.rows().slice(0, 3));
   rest = computed<LeaderboardRow[]>(() => this.rows().slice(3));
 
-  constructor(public themeService: ThemeService) {}
+  constructor(
+    public themeService: ThemeService,
+    private leaderboardService: LeaderboardService,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {}
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    // Only load data in browser, not during SSR
+    if (isPlatformBrowser(this.platformId)) {
+      this.loadLeaderboardData();
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  loadLeaderboardData(): void {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    this.leaderboardService.getLeaderboard(
+      this.period(),
+      50, // limit
+      this.search(),
+      this.sortKey(),
+      this.sortDir()
+    )
+    .pipe(
+      takeUntil(this.destroy$),
+      finalize(() => this.isLoading.set(false))
+    )
+    .subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.leaderboardData.set(response.data.entries);
+          this.levels.set(response.data.levels);
+          this.error.set(null);
+        } else {
+          this.error.set('Failed to load leaderboard data');
+        }
+      },
+      error: (error) => {
+        console.error('Error loading leaderboard:', error);
+        this.error.set('An error occurred while loading the leaderboard');
+        this.leaderboardData.set([]);
+      }
+    });
+  }
 
   setPeriod(p: 'weekly' | 'monthly') {
     this.period.set(p);
+    this.loadLeaderboardData();
   }
   setSort(key: 'xp' | 'level' | 'rank') {
     if (this.sortKey() === key) {
@@ -128,6 +116,7 @@ export class LeaderboardComponent implements OnInit {
       this.sortKey.set(key);
       this.sortDir.set('desc');
     }
+    this.loadLeaderboardData();
   }
 
   getRarityColor(rarity: Badge['rarity']): string {
@@ -150,11 +139,17 @@ export class LeaderboardComponent implements OnInit {
   }
 
   getXpPercent(row: any): string {
-    const xp = row.entry?.xp ?? row.stat?.xp ?? 0;
+    const xp = row.entry?.xp ?? row.stats?.xp ?? 0;
     return Math.min((xp / 5000) * 100, 100) + '%';
   }
   handleSearchInput(event: Event) {
     const value = (event.target as HTMLInputElement).value;
     this.search.set(value);
+    // Simple debounce - in a real app you might want to use a proper debounce operator
+    setTimeout(() => {
+      if (this.search() === value) {
+        this.loadLeaderboardData();
+      }
+    }, 500);
   }
 }

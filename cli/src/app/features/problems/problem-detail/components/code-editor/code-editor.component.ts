@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, AfterViewIni
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MockJudgeService, Language, ExecutionResult, SubmissionResult } from '../../../../../core/services/mock-judge.service';
+import { ProblemsService } from '../../../../../core/services/problems.service';
 import { StarterCode, TestCase } from '../../../../../core/models/problem.model';
 import { ThemeService } from '../../../../../core/services/theme.service';
 
@@ -48,6 +49,7 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,
     public mockJudgeService: MockJudgeService,
+    private problemsService: ProblemsService,
     private themeService: ThemeService
   ) {
     this.selectedLanguage = this.mockJudgeService.supportedLanguages[0];
@@ -223,7 +225,8 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     this.isExecuting = true;
     this.executionResult = null;
     
-    this.mockJudgeService.executeCode(
+    // Try real API first, fallback to mock service
+    this.problemsService.executeCode(
       this.currentCode, 
       this.selectedLanguage.id, 
       this.customInput
@@ -233,8 +236,22 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
         this.isExecuting = false;
       },
       error: (error) => {
-        console.error('Execution error:', error);
-        this.isExecuting = false;
+        console.error('Real execution failed, falling back to mock:', error);
+        // Fallback to mock service
+        this.mockJudgeService.executeCode(
+          this.currentCode, 
+          this.selectedLanguage.id, 
+          this.customInput
+        ).subscribe({
+          next: (result) => {
+            this.executionResult = result;
+            this.isExecuting = false;
+          },
+          error: (fallbackError) => {
+            console.error('Mock execution also failed:', fallbackError);
+            this.isExecuting = false;
+          }
+        });
       }
     });
   }
@@ -245,19 +262,35 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     this.isSubmitting = true;
     this.submissionResult = null;
     
-    this.mockJudgeService.submitCode(
+    // Try real API first, fallback to mock service
+    this.problemsService.submitCode(
+      this.problem?.id || 1,
       this.currentCode,
       this.selectedLanguage.id,
-      this.problem?.id || 1,
-      this.testCases
+      undefined // userId - can be added later when user authentication is implemented
     ).subscribe({
       next: (result) => {
         this.submissionResult = result;
         this.isSubmitting = false;
       },
       error: (error) => {
-        console.error('Submission error:', error);
-        this.isSubmitting = false;
+        console.error('Real submission failed, falling back to mock:', error);
+        // Fallback to mock service
+        this.mockJudgeService.submitCode(
+          this.currentCode,
+          this.selectedLanguage.id,
+          this.problem?.id || 1,
+          this.testCases
+        ).subscribe({
+          next: (result) => {
+            this.submissionResult = result;
+            this.isSubmitting = false;
+          },
+          error: (fallbackError) => {
+            console.error('Mock submission also failed:', fallbackError);
+            this.isSubmitting = false;
+          }
+        });
       }
     });
   }

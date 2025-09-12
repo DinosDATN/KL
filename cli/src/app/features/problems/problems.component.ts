@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { 
@@ -73,11 +73,15 @@ export class ProblemsComponent implements OnInit {
   constructor(
     public themeService: ThemeService,
     private router: Router,
-    private problemsService: ProblemsService
+    private problemsService: ProblemsService,
+    @Inject(PLATFORM_ID) private platformId: Object
   ) {}
   
   ngOnInit(): void {
-    this.loadData();
+    // Only load data in browser, not during SSR
+    if (isPlatformBrowser(this.platformId)) {
+      this.loadData();
+    }
   }
   
   private loadData(): void {
@@ -285,9 +289,8 @@ export class ProblemsComponent implements OnInit {
   }
   
   onProblemView(problem: Problem): void {
-    // Navigate to problem detail page (will be implemented later)
-    console.log('Viewing problem:', problem);
-    // this.router.navigate(['/problems', problem.id]);
+    // Navigate to problem detail page
+    this.router.navigate(['/problems', problem.id]);
   }
   
   toggleMobileFilters(): void {
