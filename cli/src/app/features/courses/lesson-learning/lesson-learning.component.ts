@@ -1,19 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subject, takeUntil, finalize } from 'rxjs';
 import { Course, CourseCategory } from '../../../core/models/course.model';
 import {
   CourseModule,
   CourseLesson,
 } from '../../../core/models/course-module.model';
 import { User } from '../../../core/models/user.model';
-import {
-  mockCourses,
-  mockCourseCategories,
-  mockInstructors,
-  mockCourseModules,
-  mockCourseLessons,
-} from '../../../core/services/courses-mock-data';
+import { CoursesService } from '../../../core/services/courses.service';
 import { LessonViewerComponent } from '../components/lesson-viewer/lesson-viewer.component';
 
 @Component({
@@ -23,7 +18,7 @@ import { LessonViewerComponent } from '../components/lesson-viewer/lesson-viewer
   templateUrl: './lesson-learning.component.html',
   styleUrl: './lesson-learning.component.css',
 })
-export class LessonLearningComponent implements OnInit {
+export class LessonLearningComponent implements OnInit, OnDestroy {
   course: Course | null = null;
   instructor: User | null = null;
   category: CourseCategory | null = null;
@@ -31,13 +26,21 @@ export class LessonLearningComponent implements OnInit {
   courseLessons: CourseLesson[] = [];
   currentLesson: CourseLesson | null = null;
   loading = true;
+  error: string | null = null;
   sidebarOpen = false;
 
   // Progress tracking
   completedLessons = new Set<number>();
   currentLessonIndex = 0;
+  
+  // Subscription management
+  private destroy$ = new Subject<void>();
 
-  constructor(private route: ActivatedRoute, private router: Router) {}
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private coursesService: CoursesService
+  ) {}
 
   ngOnInit(): void {
     this.route.paramMap.subscribe((params) => {
@@ -52,59 +55,47 @@ export class LessonLearningComponent implements OnInit {
     });
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+  
   private loadLearningData(courseId: number, lessonId: number): void {
     this.loading = true;
+    this.error = null;
 
-    setTimeout(() => {
-      // Find course
-      this.course = mockCourses.find((c) => c.id === courseId) || null;
-
-      if (this.course) {
-        // Find instructor
-        this.instructor =
-          mockInstructors.find((i) => i.id === this.course!.instructor_id) ||
-          null;
-
-        // Find category
-        this.category =
-          mockCourseCategories.find((c) => c.id === this.course!.category_id) ||
-          null;
-
-        // Find course modules
-        this.courseModules = mockCourseModules.filter(
-          (m) => m.course_id === courseId
-        );
-
-        // Find course lessons
-        const moduleIds = this.courseModules.map((m) => m.id);
-        this.courseLessons = mockCourseLessons
-          .filter((l) => moduleIds.includes(l.module_id))
-          .sort((a, b) => {
-            const moduleA = this.courseModules.find(
-              (m) => m.id === a.module_id
-            );
-            const moduleB = this.courseModules.find(
-              (m) => m.id === b.module_id
-            );
+    this.coursesService.getCourseDetails(courseId)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.loading = false)
+      )
+      .subscribe({
+        next: (data) => {
+          this.course = data.course;
+          this.instructor = data.instructor;
+          this.category = data.category;
+          this.courseModules = data.modules;
+          this.courseLessons = data.lessons.sort((a, b) => {
+            const moduleA = this.courseModules.find((m) => m.id === a.module_id);
+            const moduleB = this.courseModules.find((m) => m.id === b.module_id);
             if (moduleA && moduleB && moduleA.position !== moduleB.position) {
               return (moduleA.position || 0) - (moduleB.position || 0);
             }
             return (a.position || 0) - (b.position || 0);
           });
 
-        // Find current lesson
-        this.currentLesson =
-          this.courseLessons.find((l) => l.id === lessonId) || null;
-        this.currentLessonIndex = this.courseLessons.findIndex(
-          (l) => l.id === lessonId
-        );
+          // Find current lesson
+          this.currentLesson = this.courseLessons.find((l) => l.id === lessonId) || null;
+          this.currentLessonIndex = this.courseLessons.findIndex((l) => l.id === lessonId);
 
-        // Load progress (simulate from localStorage)
-        this.loadProgress();
-      }
-
-      this.loading = false;
-    }, 300);
+          // Load progress (simulate from localStorage)
+          this.loadProgress();
+        },
+        error: (error) => {
+          console.error('Failed to load learning data:', error);
+          this.error = error.message;
+        }
+      });
   }
 
   private loadProgress(): void {

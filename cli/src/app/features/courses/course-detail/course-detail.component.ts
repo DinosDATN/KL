@@ -1,17 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subject, takeUntil, finalize } from 'rxjs';
 import { Course, CourseCategory } from '../../../core/models/course.model';
-import { CourseModule, CourseLesson } from '../../../core/models/course-module.model';
+import { CourseModule, CourseLesson, CourseReview } from '../../../core/models/course-module.model';
 import { User } from '../../../core/models/user.model';
-import { 
-  mockCourses, 
-  mockCourseCategories, 
-  mockInstructors, 
-  mockCourseModules, 
-  mockCourseLessons,
-  mockCourseReviews 
-} from '../../../core/services/courses-mock-data';
+import { CoursesService } from '../../../core/services/courses.service';
 import { CourseCardComponent } from '../components/course-card/course-card.component';
 import { LessonViewerComponent } from '../components/lesson-viewer/lesson-viewer.component';
 
@@ -22,21 +16,28 @@ import { LessonViewerComponent } from '../components/lesson-viewer/lesson-viewer
   templateUrl: './course-detail.component.html',
   styleUrl: './course-detail.component.css'
 })
-export class CourseDetailComponent implements OnInit {
+export class CourseDetailComponent implements OnInit, OnDestroy {
   course: Course | null = null;
   instructor: User | null = null;
   category: CourseCategory | null = null;
   courseModules: CourseModule[] = [];
   courseLessons: CourseLesson[] = [];
   relatedCourses: Course[] = [];
-  loading = true;
-  Math = Math;
-  mockInstructors = mockInstructors;
+  courseReviews: CourseReview[] = [];
   selectedLesson: CourseLesson | null = null;
+  
+  loading = true;
+  error: string | null = null;
+  
+  // Subscription management
+  private destroy$ = new Subject<void>();
+  
+  Math = Math;
 
   constructor(
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private coursesService: CoursesService
   ) {}
 
   ngOnInit(): void {
@@ -50,39 +51,38 @@ export class CourseDetailComponent implements OnInit {
     });
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+  
   private loadCourseDetail(courseId: number): void {
     this.loading = true;
+    this.error = null;
     
-    // Simulate loading delay
-    setTimeout(() => {
-      // Find course
-      this.course = mockCourses.find(c => c.id === courseId) || null;
-      
-      if (this.course) {
-        // Find instructor
-        this.instructor = mockInstructors.find(i => i.id === this.course!.instructor_id) || null;
-        
-        // Find category
-        this.category = mockCourseCategories.find(c => c.id === this.course!.category_id) || null;
-        
-        // Find course modules
-        this.courseModules = mockCourseModules.filter(m => m.course_id === courseId);
-        
-        // Find course lessons
-        const moduleIds = this.courseModules.map(m => m.id);
-        this.courseLessons = mockCourseLessons.filter(l => moduleIds.includes(l.module_id));
-        
-        // Select first lesson by position if available
-        this.selectedLesson = this.courseLessons.sort((a,b) => (a.position||0) - (b.position||0))[0] || null;
-        
-        // Find related courses (same category, excluding current course)
-        this.relatedCourses = mockCourses
-          .filter(c => c.category_id === this.course!.category_id && c.id !== courseId)
-          .slice(0, 3);
-      }
-      
-      this.loading = false;
-    }, 500);
+    this.coursesService.getCourseDetails(courseId)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.loading = false)
+      )
+      .subscribe({
+        next: (data) => {
+          this.course = data.course;
+          this.instructor = data.instructor;
+          this.category = data.category;
+          this.courseModules = data.modules;
+          this.courseLessons = data.lessons;
+          this.relatedCourses = data.relatedCourses;
+          this.courseReviews = data.reviews;
+          
+          // Select first lesson by position if available
+          this.selectedLesson = this.courseLessons.sort((a,b) => (a.position||0) - (b.position||0))[0] || null;
+        },
+        error: (error) => {
+          console.error('Failed to load course details:', error);
+          this.error = error.message;
+        }
+      });
   }
 
   onEnrollClick(): void {
@@ -121,8 +121,7 @@ export class CourseDetailComponent implements OnInit {
   }
 
   getCourseReviews() {
-    if (!this.course) return [];
-    return mockCourseReviews.filter(r => r.course_id === this.course!.id);
+    return this.courseReviews;
   }
 
   getAverageRating(): number {
@@ -142,7 +141,15 @@ export class CourseDetailComponent implements OnInit {
   }
 
   getInstructorName(instructorId: number): string {
-    const instructor = mockInstructors.find(i => i.id === instructorId);
-    return instructor ? instructor.name : 'Unknown Instructor';
+    // For related courses, we'll load the instructor name from the instructor data
+    // This is a simple implementation - in a more complex system, you might want to cache instructor data
+    if (this.instructor && this.instructor.id === instructorId) {
+      return this.instructor.name;
+    }
+    
+    // If we don't have the instructor data, we'll need to make an API call or return a default
+    // For now, we'll return a placeholder and let the course card handle the display
+    return 'Loading...';
   }
+
 }

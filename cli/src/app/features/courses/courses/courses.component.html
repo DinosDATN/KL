@@ -7,24 +7,29 @@
   </app-courses-banner>
 
   <!-- Top Search Section -->
-  <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-200">
+  <div
+    class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-200"
+  >
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-        
+      <div
+        class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6"
+      >
         <!-- Search Title -->
         <div>
           <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             Tìm kiếm khóa học
           </h2>
           <p class="text-gray-600 dark:text-gray-400">
-            Khám phá {{ filteredCourses.length }} khóa học phù hợp với bạn
+            Khám phá {{ totalItems || 0 }} khóa học phù hợp với bạn
           </p>
         </div>
-        
+
         <!-- Top Search Bar -->
         <div class="lg:w-96">
           <div class="relative">
-            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+            <div
+              class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"
+            >
               <i class="icon-search text-gray-400 text-lg"></i>
             </div>
             <input
@@ -32,11 +37,7 @@
               [(ngModel)]="topSearchTerm"
               (input)="onTopSearchChange()"
               placeholder="Tìm kiếm khóa học theo tên, mô tả..."
-              class="w-full pl-12 pr-4 py-4 border border-gray-300 dark:border-gray-600 rounded-lg 
-                     bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-lg
-                     placeholder-gray-500 dark:placeholder-gray-400 
-                     focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
-                     transition-all duration-200 shadow-sm hover:shadow-md"
+              class="w-full pl-12 pr-4 py-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-lg placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
             />
             <!-- Clear Search Button -->
             <button
@@ -44,8 +45,18 @@
               (click)="clearTopSearch()"
               class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors duration-200"
             >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                ></path>
               </svg>
             </button>
           </div>
@@ -156,11 +167,11 @@
         <div *ngIf="!loading">
           <!-- Courses Grid -->
           <div
-            *ngIf="filteredCourses.length > 0"
+            *ngIf="courses.length > 0"
             class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8 auto-rows-fr"
           >
             <app-course-card
-              *ngFor="let course of paginatedCourses"
+              *ngFor="let course of courses"
               [course]="course"
               [instructorName]="getInstructorName(course.instructor_id)"
               (enrollClick)="onCourseEnroll($event)"
@@ -170,7 +181,7 @@
           </div>
 
           <!-- No Results State -->
-          <div *ngIf="filteredCourses.length === 0" class="text-center py-16">
+          <div *ngIf="courses.length === 0 && !loading" class="text-center py-16">
             <div class="text-gray-400 dark:text-gray-500 text-6xl mb-4">📚</div>
             <h3
               class="text-xl font-semibold text-gray-900 dark:text-white mb-2"
@@ -189,12 +200,12 @@
           </div>
 
           <!-- Pagination -->
-          <div *ngIf="filteredCourses.length > 0">
+          <div *ngIf="courses.length > 0">
             <app-courses-pagination
               [currentPage]="currentPage"
               [totalPages]="totalPages"
               [itemsPerPage]="itemsPerPage"
-              [totalItems]="filteredCourses.length"
+              [totalItems]="totalItems"
               (pageChange)="changePage($event)"
               (itemsPerPageChange)="onItemsPerPageChange($event)"
             >

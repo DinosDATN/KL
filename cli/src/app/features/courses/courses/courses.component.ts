@@ -1,10 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Subject, takeUntil, finalize, forkJoin } from 'rxjs';
 import { Course, CourseCategory } from '../../../core/models/course.model';
 import { User } from '../../../core/models/user.model';
-import { mockCourses, mockCourseCategories, mockInstructors } from '../../../core/services/courses-mock-data';
+import { CoursesService } from '../../../core/services/courses.service';
 import { ThemeService } from '../../../core/services/theme.service';
 import { CourseCardComponent } from '../components/course-card/course-card.component';
 import { CourseFiltersComponent, CourseFilters } from '../components/course-filters/course-filters.component';
@@ -18,9 +19,8 @@ import { CoursesPaginationComponent } from '../components/courses-pagination/cou
   templateUrl: './courses.component.html',
   styleUrl: './courses.component.css'
 })
-export class CoursesComponent implements OnInit {
+export class CoursesComponent implements OnInit, OnDestroy {
   courses: Course[] = [];
-  filteredCourses: Course[] = [];
   categories: CourseCategory[] = [];
   instructors: User[] = [];
   
@@ -40,129 +40,129 @@ export class CoursesComponent implements OnInit {
   currentPage: number = 1;
   itemsPerPage: number = 9;
   totalPages: number = 0;
+  totalItems: number = 0;
   
-  // Loading state
+  // Loading states
   loading: boolean = false;
+  loadingCategories: boolean = false;
+  loadingInstructors: boolean = false;
+  
+  // Error states
+  error: string | null = null;
+  categoriesError: string | null = null;
+  instructorsError: string | null = null;
   
   // Mobile filter state
   mobileFiltersOpen: boolean = false;
+  
+  // Subscription management
+  private destroy$ = new Subject<void>();
   
   // Expose Math to template
   Math = Math;
   
   constructor(
     public themeService: ThemeService,
-    private router: Router
+    private router: Router,
+    private coursesService: CoursesService
   ) {}
   
   ngOnInit(): void {
-    this.loadData();
+    this.loadInitialData();
   }
   
-  private loadData(): void {
-    this.loading = true;
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+  
+  private loadInitialData(): void {
+    // Load categories and instructors for filters
+    this.loadCategories();
+    this.loadInstructors();
     
-    // Simulate API call delay
-    setTimeout(() => {
-      this.courses = mockCourses.filter(course => course.status === 'published' && !course.is_deleted);
-      this.categories = mockCourseCategories;
-      this.instructors = mockInstructors;
-      this.applyFilters();
-      this.loading = false;
-    }, 500);
+    // Load courses
+    this.loadCourses();
+  }
+  
+  private loadCategories(): void {
+    this.loadingCategories = true;
+    this.categoriesError = null;
+    
+    this.coursesService.getCourseCategories()
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.loadingCategories = false)
+      )
+      .subscribe({
+        next: (categories) => {
+          this.categories = categories;
+        },
+        error: (error) => {
+          console.error('Failed to load categories:', error);
+          this.categoriesError = error.message;
+        }
+      });
+  }
+  
+  private loadInstructors(): void {
+    this.loadingInstructors = true;
+    this.instructorsError = null;
+    
+    this.coursesService.getInstructors()
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.loadingInstructors = false)
+      )
+      .subscribe({
+        next: (instructors) => {
+          this.instructors = instructors;
+        },
+        error: (error) => {
+          console.error('Failed to load instructors:', error);
+          this.instructorsError = error.message;
+        }
+      });
+  }
+  
+  private loadCourses(): void {
+    this.loading = true;
+    this.error = null;
+    
+    const filters = {
+      page: this.currentPage,
+      limit: this.itemsPerPage,
+      search: this.filters.searchTerm || undefined,
+      level: this.filters.selectedLevel || undefined,
+      category_id: this.filters.selectedCategory || undefined,
+      priceRange: this.filters.selectedPriceRange || undefined,
+      sortBy: this.filters.sortBy || undefined
+    };
+    
+    this.coursesService.getAllCourses(filters)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.loading = false)
+      )
+      .subscribe({
+        next: (response) => {
+          this.courses = response.data;
+          this.totalItems = response.pagination.total_items;
+          this.totalPages = response.pagination.total_pages;
+          this.currentPage = response.pagination.current_page;
+        },
+        error: (error) => {
+          console.error('Failed to load courses:', error);
+          this.error = error.message;
+          this.courses = [];
+        }
+      });
   }
   
   applyFilters(): void {
-    let filtered = [...this.courses];
-    
-    // Enhanced search filter - search across multiple fields
-    if (this.filters.searchTerm.trim()) {
-      const term = this.filters.searchTerm.toLowerCase().trim();
-      filtered = filtered.filter(course => {
-        // Get instructor name for search
-        const instructorName = this.getInstructorName(course.instructor_id).toLowerCase();
-        // Get category name for search
-        const categoryName = this.getCategoryName(course.category_id).toLowerCase();
-        
-        return course.title.toLowerCase().includes(term) ||
-               (course.description && course.description.toLowerCase().includes(term)) ||
-               instructorName.includes(term) ||
-               categoryName.includes(term) ||
-               course.level.toLowerCase().includes(term);
-      });
-    }
-    
-    // Category filter
-    if (this.filters.selectedCategory !== null) {
-      filtered = filtered.filter(course => course.category_id === this.filters.selectedCategory);
-    }
-    
-    // Level filter
-    if (this.filters.selectedLevel) {
-      filtered = filtered.filter(course => course.level === this.filters.selectedLevel);
-    }
-    
-    // Price range filter
-    if (this.filters.selectedPriceRange) {
-      filtered = this.filterByPriceRange(filtered, this.filters.selectedPriceRange);
-    }
-    
-    // Sort
-    filtered = this.sortCourses(filtered, this.filters.sortBy);
-    
-    this.filteredCourses = filtered;
-    this.totalPages = Math.ceil(filtered.length / this.itemsPerPage);
-    
-    // Keep current page within valid range
-    if (this.currentPage > this.totalPages && this.totalPages > 0) {
-      this.currentPage = this.totalPages;
-    } else if (this.currentPage < 1) {
-      this.currentPage = 1;
-    }
-  }
-  
-  private filterByPriceRange(courses: Course[], range: string): Course[] {
-    switch (range) {
-      case 'free':
-        return courses.filter(course => course.price === 0);
-      case 'paid':
-        return courses.filter(course => (course.price || 0) > 0);
-      case 'discounted':
-        return courses.filter(course => (course.discount || 0) > 0);
-      case 'under-500k':
-        return courses.filter(course => (course.price || 0) > 0 && (course.price || 0) < 500000);
-      case '500k-1m':
-        return courses.filter(course => (course.price || 0) >= 500000 && (course.price || 0) < 1000000);
-      case 'over-1m':
-        return courses.filter(course => (course.price || 0) >= 1000000);
-      default:
-        return courses;
-    }
-  }
-  
-  private sortCourses(courses: Course[], sortBy: string): Course[] {
-    return courses.sort((a, b) => {
-      switch (sortBy) {
-        case 'title':
-          return a.title.localeCompare(b.title);
-        case 'rating':
-          return b.rating - a.rating;
-        case 'students':
-          return b.students - a.students;
-        case 'duration':
-          return (a.duration || 0) - (b.duration || 0);
-        case 'price':
-          return (a.price || 0) - (b.price || 0);
-        default:
-          return 0;
-      }
-    });
-  }
-  
-  get paginatedCourses(): Course[] {
-    const start = (this.currentPage - 1) * this.itemsPerPage;
-    const end = start + this.itemsPerPage;
-    return this.filteredCourses.slice(start, end);
+    // Reset to first page when filters change
+    this.currentPage = 1;
+    this.loadCourses();
   }
   
   onFiltersChange(newFilters: CourseFilters): void {
@@ -185,15 +185,16 @@ export class CoursesComponent implements OnInit {
   }
   
   changePage(page: number): void {
-    if (page >= 1 && page <= this.totalPages) {
+    if (page >= 1 && page <= this.totalPages && page !== this.currentPage) {
       this.currentPage = page;
+      this.loadCourses();
     }
   }
   
   onItemsPerPageChange(newItemsPerPage: number): void {
     this.itemsPerPage = newItemsPerPage;
-    this.totalPages = Math.ceil(this.filteredCourses.length / this.itemsPerPage);
     this.currentPage = 1; // Reset to first page
+    this.loadCourses();
   }
   
   getInstructorName(instructorId: number): string {
@@ -233,6 +234,19 @@ export class CoursesComponent implements OnInit {
   
   closeMobileFilters(): void {
     this.mobileFiltersOpen = false;
+  }
+  
+  // Retry methods
+  retryLoadCourses(): void {
+    this.loadCourses();
+  }
+  
+  retryLoadCategories(): void {
+    this.loadCategories();
+  }
+  
+  retryLoadInstructors(): void {
+    this.loadInstructors();
   }
   
   // Top search methods
