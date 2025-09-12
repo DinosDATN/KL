@@ -137,7 +137,7 @@
       <app-chat-sidebar
         [rooms]="getFilteredRooms()"
         [selectedRoom]="selectedRoom"
-        [currentUser]="currentUser"
+        [currentUser]="currentUser!"
         [onlineUsers]="onlineUsers"
         [searchTerm]="searchTerm"
         [activeFilter]="activeFilter"
@@ -243,11 +243,11 @@
         class="flex-1 min-h-0"
         [room]="selectedRoom"
         [messages]="getRoomMessages(selectedRoom.id)"
-        [currentUser]="currentUser"
+        [currentUser]="currentUser!"
         [roomMembers]="getRoomMembers(selectedRoom.id)"
         [reactions]="reactions"
         [typingUsers]="typingUsers"
-        [isRoomAdmin]="isRoomAdmin(selectedRoom.id, currentUser.id)"
+        [isRoomAdmin]="currentUser ? isRoomAdmin(selectedRoom.id, currentUser.id) : false"
         (sendMessage)="onSendMessage($event)"
         (reactToMessage)="
           onReactToMessage($event.messageId, $event.reactionType)
@@ -270,7 +270,7 @@
 <app-create-group-modal
   *ngIf="showCreateGroupModal"
   [users]="users"
-  [currentUser]="currentUser"
+  [currentUser]="currentUser!"
   (groupCreated)="onGroupCreated($event)"
   (modalClosed)="onCloseModal()"
 ></app-create-group-modal>

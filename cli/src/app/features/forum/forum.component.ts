@@ -23,12 +23,8 @@ import { User } from '../../core/models/user.model';
 
 // Services and Data
 import { ThemeService } from '../../core/services/theme.service';
-import {
-  mockChatRooms,
-  mockChatMessages,
-  mockChatRoomMembers,
-  mockChatReactions,
-} from '../../core/services/chat-mock-data';
+import { ChatService } from '../../core/services/chat.service';
+import { AuthService } from '../../core/services/auth.service';
 import { mockUsers } from '../../core/services/user-mock-data';
 
 // Components
@@ -67,14 +63,14 @@ interface CreatePostRequest {
 export class ForumComponent implements OnInit, OnDestroy {
   // Data
   chatRooms: ChatRoom[] = [];
-  messages: ChatMessage[] = [];
+  messages: {[roomId: number]: ChatMessage[]} = {};
   users: User[] = [];
   roomMembers: ChatRoomMember[] = [];
   reactions: ChatReaction[] = [];
 
   // Current state
   selectedRoom: ChatRoom | null = null;
-  currentUser: User;
+  currentUser: User | null = null;
   onlineUsers: User[] = [];
 
   // UI State
@@ -99,18 +95,18 @@ export class ForumComponent implements OnInit, OnDestroy {
   constructor(
     public themeService: ThemeService,
     public router: Router,
+    private chatService: ChatService,
+    private authService: AuthService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
-    // Set current user (in real app, this would come from auth service)
-    this.currentUser = mockUsers[0];
+    // Get current user from auth service
+    this.currentUser = this.authService.getCurrentUser();
   }
 
   ngOnInit(): void {
-    this.loadInitialData();
+    this.initializeChat();
     this.checkScreenSize();
-    // Chỉ chạy realtime simulation ở trình duyệt
     if (isPlatformBrowser(this.platformId)) {
-      this.setupRealtimeSimulation();
       window.addEventListener('resize', this.onResize.bind(this));
     }
   }
@@ -118,126 +114,43 @@ export class ForumComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    this.chatService.disconnect();
     if (isPlatformBrowser(this.platformId)) {
       window.removeEventListener('resize', this.onResize.bind(this));
     }
   }
 
-  private loadInitialData(): void {
-    // Load mock data
-    this.chatRooms = [...mockChatRooms];
-    this.messages = [...mockChatMessages];
+  private initializeChat(): void {
+    if (!this.currentUser) {
+      console.error('No authenticated user found');
+      return;
+    }
+
+    // Initialize chat service
+    this.chatService.initializeChat();
+
+    // Subscribe to rooms
+    this.chatService.getRoomsForCurrentUser()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(rooms => {
+        this.chatRooms = rooms;
+        // Auto-select first room if available and no room is selected
+        if (rooms.length > 0 && !this.selectedRoom) {
+          this.selectRoom(rooms[0]);
+        }
+      });
+
+    // Subscribe to online users
+    this.chatService.onlineUsers$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(users => {
+        this.onlineUsers = users;
+      });
+
+    // Load mock users for now (until user management is implemented)
     this.users = [...mockUsers];
-    this.roomMembers = [...mockChatRoomMembers];
-    this.reactions = [...mockChatReactions];
-
-    // Filter online users
-    this.onlineUsers = this.users.filter((user) => user.is_online);
-
-    // Auto-select first room if available
-    if (this.chatRooms.length > 0) {
-      this.selectRoom(this.chatRooms[0]);
-    }
   }
 
-  private setupRealtimeSimulation(): void {
-    // Simulate real-time typing indicators
-    setInterval(() => {
-      if (Math.random() < 0.1) {
-        // 10% chance
-        this.simulateTyping();
-      }
-    }, 3000);
-
-    // Simulate new messages occasionally
-    setInterval(() => {
-      if (Math.random() < 0.05) {
-        // 5% chance
-        this.simulateNewMessage();
-      }
-    }, 10000);
-
-    // Simulate online status changes
-    setInterval(() => {
-      if (Math.random() < 0.1) {
-        // 10% chance
-        this.simulateOnlineStatusChange();
-      }
-    }, 15000);
-  }
-
-  private simulateTyping(): void {
-    const availableUsers = this.users.filter(
-      (u) => u.id !== this.currentUser.id
-    );
-    const typingUser =
-      availableUsers[Math.floor(Math.random() * availableUsers.length)];
-
-    if (!this.typingUsers.includes(typingUser)) {
-      this.typingUsers.push(typingUser);
-
-      // Remove after 2-5 seconds
-      setTimeout(() => {
-        this.typingUsers = this.typingUsers.filter(
-          (u) => u.id !== typingUser.id
-        );
-      }, 2000 + Math.random() * 3000);
-    }
-  }
-
-  private simulateNewMessage(): void {
-    if (!this.selectedRoom) return;
-
-    const availableUsers = this.users.filter(
-      (u) => u.id !== this.currentUser.id
-    );
-    const sender =
-      availableUsers[Math.floor(Math.random() * availableUsers.length)];
-
-    const sampleMessages = [
-      'Chào mọi người! 👋',
-      'Có ai online không?',
-      'Mình vừa hoàn thành bài tập!',
-      'Cần hỗ trợ một chút về phần này',
-      'Thanks mọi người đã giúp đỡ! 🙏',
-      'Hẹn gặp lại vào buổi học tới',
-      'Ai đã xem video mới chưa?',
-      'Có link tài liệu không ạ?',
-    ];
-
-    const newMessage: ChatMessage = {
-      id: Date.now(),
-      room_id: this.selectedRoom.id,
-      sender_id: sender.id,
-      content:
-        sampleMessages[Math.floor(Math.random() * sampleMessages.length)],
-      time_stamp: new Date().toISOString(),
-      type: 'text',
-      is_edited: false,
-      sent_at: new Date().toISOString(),
-    };
-
-    this.messages.push(newMessage);
-
-    // Update room's last message and unread count
-    const room = this.chatRooms.find((r) => r.id === this.selectedRoom!.id);
-    if (room) {
-      room.last_message_id = newMessage.id;
-      room.unread_count += 1;
-      room.updated_at = new Date().toISOString();
-    }
-  }
-
-  private simulateOnlineStatusChange(): void {
-    const user = this.users[Math.floor(Math.random() * this.users.length)];
-    if (user.id === this.currentUser.id) return;
-
-    user.is_online = !user.is_online;
-    user.last_seen_at = new Date().toISOString();
-
-    // Update online users list
-    this.onlineUsers = this.users.filter((u) => u.is_online);
-  }
 
   // Event Handlers
   onSelectRoom(room: ChatRoom): void {
@@ -250,56 +163,17 @@ export class ForumComponent implements OnInit, OnDestroy {
   }
 
   onSendMessage(content: string): void {
-    if (!this.selectedRoom || !content.trim()) return;
+    if (!this.selectedRoom || !content.trim() || !this.currentUser) return;
 
-    const newMessage: ChatMessage = {
-      id: Date.now(),
-      room_id: this.selectedRoom.id,
-      sender_id: this.currentUser.id,
-      content: content.trim(),
-      time_stamp: new Date().toISOString(),
-      type: 'text',
-      is_edited: false,
-      sent_at: new Date().toISOString(),
-    };
-
-    this.messages.push(newMessage);
-
-    // Update room's last message
-    const room = this.chatRooms.find((r) => r.id === this.selectedRoom!.id);
-    if (room) {
-      room.last_message_id = newMessage.id;
-      room.updated_at = new Date().toISOString();
-    }
+    // Send message via chat service (Socket.IO)
+    this.chatService.sendMessage(this.selectedRoom.id, content.trim());
   }
 
   onReactToMessage(messageId: number, reactionType: string): void {
-    const existingReaction = this.reactions.find(
-      (r) => r.message_id === messageId && r.user_id === this.currentUser.id
-    );
-
-    if (existingReaction) {
-      if (existingReaction.reaction_type === reactionType) {
-        // Remove reaction
-        this.reactions = this.reactions.filter(
-          (r) => r.id !== existingReaction.id
-        );
-      } else {
-        // Update reaction
-        existingReaction.reaction_type = reactionType as any;
-        existingReaction.reacted_at = new Date().toISOString();
-      }
-    } else {
-      // Add new reaction
-      const newReaction: ChatReaction = {
-        id: Date.now(),
-        message_id: messageId,
-        user_id: this.currentUser.id,
-        reaction_type: reactionType as any,
-        reacted_at: new Date().toISOString(),
-      };
-      this.reactions.push(newReaction);
-    }
+    if (!this.currentUser) return;
+    
+    // Send reaction via chat service (Socket.IO)
+    this.chatService.addReaction(messageId, reactionType);
   }
 
   onCreateGroup(): void {
@@ -312,43 +186,27 @@ export class ForumComponent implements OnInit, OnDestroy {
     isPublic: boolean;
     selectedUsers: User[];
   }): void {
-    const newRoom: ChatRoom = {
-      id: Date.now(),
+    if (!this.currentUser) return;
+
+    // Create room via chat service
+    const roomData = {
       name: groupData.name,
-      type: 'group',
       description: groupData.description,
-      avatar_url: null,
-      unread_count: 0,
-      last_message_id: null,
+      type: 'group',
       is_public: groupData.isPublic,
-      created_by: this.currentUser.id,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      memberIds: groupData.selectedUsers.map(user => user.id)
     };
 
-    this.chatRooms.unshift(newRoom);
-
-    // Add members
-    const members: ChatRoomMember[] = [
-      {
-        id: Date.now(),
-        room_id: newRoom.id,
-        user_id: this.currentUser.id,
-        joined_at: new Date().toISOString(),
-        is_admin: true,
+    this.chatService.createRoom(roomData).subscribe({
+      next: (room) => {
+        this.selectRoom(room);
+        this.showCreateGroupModal = false;
       },
-      ...groupData.selectedUsers.map((user, index) => ({
-        id: Date.now() + index + 1,
-        room_id: newRoom.id,
-        user_id: user.id,
-        joined_at: new Date().toISOString(),
-        is_admin: false,
-      })),
-    ];
-
-    this.roomMembers.push(...members);
-    this.selectRoom(newRoom);
-    this.showCreateGroupModal = false;
+      error: (error) => {
+        console.error('Error creating room:', error);
+        // You might want to show an error message to the user
+      }
+    });
   }
 
   onCloseModal(): void {
@@ -361,8 +219,21 @@ export class ForumComponent implements OnInit, OnDestroy {
 
   private selectRoom(room: ChatRoom): void {
     this.selectedRoom = room;
+    
+    // Join room via socket
+    this.chatService.joinRoom(room.id);
+    
+    // Load messages for the room
+    this.chatService.loadRoomMessages(room.id).subscribe();
+    
+    // Subscribe to messages for this room
+    this.chatService.getMessagesForRoom(room.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(messages => {
+        this.messages[room.id] = messages;
+      });
 
-    // Mark room as read
+    // Mark room as read (reset unread count)
     room.unread_count = 0;
   }
 
@@ -379,14 +250,34 @@ export class ForumComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Typing indicators
+  onStartTyping(roomId: number): void {
+    if (this.selectedRoom && this.selectedRoom.id === roomId) {
+      this.chatService.startTyping(roomId);
+    }
+  }
+
+  onStopTyping(roomId: number): void {
+    if (this.selectedRoom && this.selectedRoom.id === roomId) {
+      this.chatService.stopTyping(roomId);
+    }
+  }
+
+  getTypingUsers(roomId: number): User[] {
+    // Subscribe to typing users for the selected room
+    if (this.selectedRoom && this.selectedRoom.id === roomId) {
+      this.chatService.getTypingUsersForRoom(roomId)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(users => {
+          this.typingUsers = users;
+        });
+    }
+    return this.typingUsers;
+  }
+
   // Helper methods
   getRoomMessages(roomId: number): ChatMessage[] {
-    return this.messages
-      .filter((m) => m.room_id === roomId)
-      .sort(
-        (a, b) =>
-          new Date(a.time_stamp).getTime() - new Date(b.time_stamp).getTime()
-      );
+    return this.messages[roomId] || [];
   }
 
   getUser(userId: number): User | undefined {

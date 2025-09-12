@@ -12,6 +12,10 @@ const ProblemComment = require('./ProblemComment');
 const User = require('./User');
 const UserProfile = require('./UserProfile');
 const UserStats = require('./UserStats');
+const ChatRoom = require('./ChatRoom');
+const ChatMessage = require('./ChatMessage');
+const ChatRoomMember = require('./ChatRoomMember');
+const ChatReaction = require('./ChatReaction');
 const Level = require('./Level');
 const BadgeCategory = require('./BadgeCategory');
 const Badge = require('./Badge');
@@ -299,6 +303,95 @@ SubmissionCode.hasMany(ContestSubmission, {
   as: 'ContestSubmissions'
 });
 
+// Chat Room associations
+ChatRoom.belongsTo(User, {
+  foreignKey: 'created_by',
+  as: 'Creator'
+});
+
+User.hasMany(ChatRoom, {
+  foreignKey: 'created_by',
+  as: 'CreatedRooms'
+});
+
+// Chat Room Members associations
+ChatRoom.belongsToMany(User, {
+  through: ChatRoomMember,
+  foreignKey: 'room_id',
+  otherKey: 'user_id',
+  as: 'Members'
+});
+
+User.belongsToMany(ChatRoom, {
+  through: ChatRoomMember,
+  foreignKey: 'user_id',
+  otherKey: 'room_id',
+  as: 'ChatRooms'
+});
+
+ChatRoomMember.belongsTo(ChatRoom, {
+  foreignKey: 'room_id',
+  as: 'Room'
+});
+
+ChatRoomMember.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'User'
+});
+
+// Chat Messages associations
+ChatRoom.hasMany(ChatMessage, {
+  foreignKey: 'room_id',
+  as: 'Messages'
+});
+
+ChatMessage.belongsTo(ChatRoom, {
+  foreignKey: 'room_id',
+  as: 'Room'
+});
+
+ChatMessage.belongsTo(User, {
+  foreignKey: 'sender_id',
+  as: 'Sender'
+});
+
+User.hasMany(ChatMessage, {
+  foreignKey: 'sender_id',
+  as: 'SentMessages'
+});
+
+// Self-referencing for reply_to
+ChatMessage.belongsTo(ChatMessage, {
+  foreignKey: 'reply_to',
+  as: 'ReplyToMessage'
+});
+
+ChatMessage.hasMany(ChatMessage, {
+  foreignKey: 'reply_to',
+  as: 'Replies'
+});
+
+// Chat Reactions associations
+ChatMessage.hasMany(ChatReaction, {
+  foreignKey: 'message_id',
+  as: 'Reactions'
+});
+
+ChatReaction.belongsTo(ChatMessage, {
+  foreignKey: 'message_id',
+  as: 'Message'
+});
+
+ChatReaction.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'User'
+});
+
+User.hasMany(ChatReaction, {
+  foreignKey: 'user_id',
+  as: 'Reactions'
+});
+
 module.exports = {
   Problem,
   ProblemCategory,
@@ -322,5 +415,9 @@ module.exports = {
   Contest,
   ContestProblem,
   UserContest,
-  ContestSubmission
+  ContestSubmission,
+  ChatRoom,
+  ChatMessage,
+  ChatRoomMember,
+  ChatReaction
 };

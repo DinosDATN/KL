@@ -1,3 +1,5 @@
+import { User } from './user.model';
+
 export interface ChatRoom {
   id: number;
   name: string;
@@ -31,6 +33,7 @@ export interface ChatRoomMember {
   user_id: number;
   joined_at: string;
   is_admin: boolean;
+  User?: User; // For associations
 }
 
 export interface ChatReaction {

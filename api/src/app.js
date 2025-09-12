@@ -1,4 +1,6 @@
 const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
 const cors = require("cors");
 const path = require("path");
 require("dotenv").config();
@@ -17,9 +19,23 @@ const problemRoutes = require("./routes/problemRoutes");
 const documentRoutes = require("./routes/documentRoutes");
 const leaderboardRoutes = require("./routes/leaderboardRoutes");
 const contestRoutes = require("./routes/contestRoutes");
+const chatRoutes = require("./routes/chatRoutes");
 
-// Create Express app
+// Create Express app and HTTP server
 const app = express();
+const server = http.createServer(app);
+
+// Create Socket.IO instance
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CLIENT_URL || "http://localhost:4200",
+    methods: ["GET", "POST"]
+  }
+});
+
+// Import and setup Socket.IO chat handler
+const { handleConnection } = require('./socket/chatHandler');
+handleConnection(io);
 
 // Middleware
 app.use(cors());
@@ -55,6 +71,7 @@ app.use(apiPrefix + "/problems", problemRoutes);
 app.use(apiPrefix + "/documents", documentRoutes);
 app.use(apiPrefix + "/leaderboard", leaderboardRoutes);
 app.use(apiPrefix + "/contests", contestRoutes);
+app.use(apiPrefix + "/chat", chatRoutes);
 
 // Homepage-specific routes
 app.use(apiPrefix + "/homepage", homepageRoutes);
@@ -93,14 +110,15 @@ const startServer = async () => {
     await testConnection();
 
     // Sync database (create tables if they don't exist)
-    await sequelize.sync({ alter: process.env.NODE_ENV === "development" });
-    console.log("✅ Database synchronized successfully");
+    // await sequelize.sync({ alter: process.env.NODE_ENV === "development" });
+    console.log("✅ Database connection ready");
 
-    // Start server
-    app.listen(PORT, () => {
+    // Start server with Socket.IO
+    server.listen(PORT, () => {
       console.log(`🚀 Server is running on port ${PORT}`);
       console.log(`📍 Health check: http://localhost:${PORT}/health`);
       console.log(`📍 API base URL: http://localhost:${PORT}${apiPrefix}`);
+      console.log(`💬 Socket.IO server is ready`);
     });
   } catch (error) {
     console.error("❌ Failed to start server:", error);
