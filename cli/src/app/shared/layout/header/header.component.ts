@@ -93,6 +93,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     { label: 'Trang chủ', link: '/', icon: 'home' },
     { label: 'Khóa học', link: '/courses', icon: 'book' },
     { label: 'Bài tập', link: '/problems', icon: 'code' },
+    { label: 'Cuộc thi', link: '/contests', icon: 'award' },
     { label: 'Tài liệu', link: '/documents', icon: 'file-text' },
     { label: 'Diễn đàn', link: '/forum', icon: 'message-circle' },
     { label: 'Xếp hạng', link: '/leaderboard', icon: 'trophy' },

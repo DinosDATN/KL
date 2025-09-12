@@ -111,6 +111,20 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'contests',
+        loadComponent: () =>
+          import('./features/contests/contests/contests.component').then(
+            (m) => m.ContestsComponent
+          ),
+      },
+      {
+        path: 'contests/:id',
+        loadComponent: () =>
+          import('./features/contests/contest-detail/contest-detail.component').then(
+            (m) => m.ContestDetailComponent
+          ),
+      },
+      {
         path: 'profile',
         loadComponent: () =>
           import('./features/profile/profile.component').then(

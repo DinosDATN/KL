@@ -1,0 +1,210 @@
+<!-- Contests Page Container -->
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+  
+  <!-- Banner Section -->
+  <app-contest-banner 
+    [totalContests]="totalContests" 
+    [loading]="loading"
+    [activeContests]="activeContests"
+    [upcomingContests]="upcomingContests">
+  </app-contest-banner>
+
+  <!-- Top Search Section -->
+  <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        
+        <!-- Search Title -->
+        <div>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            Danh sách cuộc thi
+          </h2>
+          <p class="text-gray-600 dark:text-gray-400">
+            Khám phá {{ filteredContests.length }} cuộc thi phù hợp với bạn
+          </p>
+        </div>
+        
+        <!-- Top Search Bar -->
+        <div class="lg:w-96">
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+            </div>
+            <input
+              type="text"
+              [(ngModel)]="topSearchTerm"
+              (input)="onTopSearchChange()"
+              placeholder="Tìm kiếm cuộc thi theo tên, mô tả..."
+              class="w-full pl-12 pr-4 py-4 border border-gray-300 dark:border-gray-600 rounded-lg 
+                     bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-lg
+                     placeholder-gray-500 dark:placeholder-gray-400 
+                     focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
+                     transition-all duration-200 shadow-sm hover:shadow-md"
+            />
+            <!-- Clear Search Button -->
+            <button
+              *ngIf="topSearchTerm"
+              (click)="clearTopSearch()"
+              class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors duration-200"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- Main Content Area -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      <!-- Mobile Filter Toggle -->
+      <div class="lg:hidden">
+        <button
+          (click)="toggleMobileFilters()"
+          class="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 
+                 rounded-lg px-4 py-3 text-gray-700 dark:text-gray-300 
+                 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 
+                 flex items-center justify-center gap-2"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"></path>
+          </svg>
+          <span>Bộ lọc và sắp xếp</span>
+          <span class="text-xs ml-auto">
+            {{ mobileFiltersOpen ? '▲' : '▼' }}
+          </span>
+        </button>
+      </div>
+      
+      <!-- Filters Sidebar -->
+      <div class="lg:col-span-3">
+        <!-- Desktop Filters -->
+        <div class="hidden lg:block">
+          <app-contest-filters
+            [filters]="filters"
+            (filtersChange)="onFiltersChange($event)"
+            (clearFilters)="onClearFilters()"
+          ></app-contest-filters>
+        </div>
+        
+        <!-- Mobile Filters -->
+        <div 
+          *ngIf="mobileFiltersOpen" 
+          class="lg:hidden fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50"
+          (click)="closeMobileFilters()"
+        >
+          <div class="flex min-h-full items-center justify-center p-4">
+            <div 
+              class="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-lg shadow-xl"
+              (click)="$event.stopPropagation()"
+            >
+              <app-contest-filters
+                [filters]="filters"
+                (filtersChange)="onFiltersChange($event)"
+                (clearFilters)="onClearFilters(); closeMobileFilters()"
+              ></app-contest-filters>
+              <button
+                (click)="closeMobileFilters()"
+                class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl font-bold leading-none"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Contests Content -->
+      <div class="lg:col-span-9">
+        
+        <!-- Results Summary -->
+        <div *ngIf="!loading && filteredContests.length > 0" 
+             class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 px-4 py-3 mb-6 transition-colors duration-200">
+          <div class="flex items-center justify-between">
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              Hiển thị <strong class="text-gray-900 dark:text-white">{{ displayedContests.length }}</strong> / <strong class="text-gray-900 dark:text-white">{{ filteredContests.length }}</strong> cuộc thi
+            </p>
+          </div>
+        </div>
+        
+        <!-- Loading State -->
+        <div *ngIf="loading" class="text-center py-12">
+          <div class="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow rounded-md text-white bg-blue-500 hover:bg-blue-400 transition ease-in-out duration-150 cursor-not-allowed" disabled>
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Đang tải...
+          </div>
+        </div>
+        
+        <!-- Empty State -->
+        <div *ngIf="!loading && filteredContests.length === 0" class="text-center py-12">
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8 transition-colors duration-200">
+            <div class="text-gray-400 mb-4">
+              <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              Không tìm thấy cuộc thi
+            </h3>
+            <p class="text-gray-600 dark:text-gray-400 mb-4">
+              Không có cuộc thi nào phù hợp với tiêu chí tìm kiếm của bạn.
+            </p>
+            <button
+              (click)="onClearFilters()"
+              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 font-medium text-sm"
+            >
+              Xóa bộ lọc
+            </button>
+          </div>
+        </div>
+        
+        <!-- Contests Display -->
+        <div *ngIf="!loading && filteredContests.length > 0" class="space-y-6">
+          
+          <!-- Contest Cards Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <app-contest-card
+              *ngFor="let contest of displayedContests; trackBy: trackByContestId"
+              [contest]="contest"
+              (contestView)="onContestView($event)"
+              (contestRegister)="onContestRegister($event)"
+              (contestUnregister)="onContestUnregister($event)"
+              class="h-full"
+            ></app-contest-card>
+          </div>
+          
+          <!-- Load More Button -->
+          <div *ngIf="hasMoreContests" class="flex justify-center mt-8">
+            <button
+              (click)="loadMoreContests()"
+              [disabled]="loadingMore"
+              class="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-8 py-3 rounded-lg transition-colors duration-200 font-medium text-sm flex items-center gap-2"
+            >
+              <svg 
+                *ngIf="loadingMore" 
+                class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" 
+                xmlns="http://www.w3.org/2000/svg" 
+                fill="none" 
+                viewBox="0 0 24 24"
+              >
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              {{ loadingMore ? 'Đang tải...' : 'Tải thêm (' + (filteredContests.length - currentLoadCount) + ' cuộc thi)' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

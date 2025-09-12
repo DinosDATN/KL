@@ -1,0 +1,135 @@
+<!-- Contest Card -->
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden transition-all duration-200 hover:shadow-xl hover:scale-105 cursor-pointer group"
+     (click)="onViewContest()">
+  
+  <!-- Contest Header -->
+  <div class="p-6 pb-4">
+    <!-- Status and Creator -->
+    <div class="flex items-center justify-between mb-4">
+      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+            [ngClass]="contestService.getContestStatusColor(contest.status)">
+        <span *ngIf="contest.status === 'active'" class="w-2 h-2 bg-green-400 rounded-full animate-pulse mr-1"></span>
+        <span *ngIf="contest.status === 'upcoming'" class="w-2 h-2 bg-blue-400 rounded-full mr-1"></span>
+        <span *ngIf="contest.status === 'completed'" class="w-2 h-2 bg-gray-400 rounded-full mr-1"></span>
+        {{ contest.status === 'active' ? 'Đang diễn ra' : 
+           contest.status === 'upcoming' ? 'Sắp tới' : 
+           contest.status === 'completed' ? 'Đã kết thúc' : contest.status }}
+      </span>
+      
+      <div *ngIf="contest.Creator" class="flex items-center text-xs text-gray-500 dark:text-gray-400">
+        <img [src]="contest.Creator.avatar_url || 'https://ui-avatars.com/api/?name=' + (contest.Creator.name | slice:0:2) + '&background=3b82f6&color=ffffff'"
+             [alt]="contest.Creator.name" 
+             class="w-5 h-5 rounded-full mr-2">
+        {{ contest.Creator.name }}
+      </div>
+    </div>
+    
+    <!-- Contest Title -->
+    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+      {{ contest.title }}
+    </h3>
+    
+    <!-- Contest Description -->
+    <p *ngIf="contest.description" class="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 mb-4">
+      {{ contest.description }}
+    </p>
+  </div>
+  
+  <!-- Contest Stats -->
+  <div class="px-6 pb-4">
+    <div class="grid grid-cols-2 gap-4 text-center">
+      <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+        <div class="text-lg font-bold text-gray-900 dark:text-white">
+          {{ contest.problem_count || 0 }}
+        </div>
+        <div class="text-xs text-gray-500 dark:text-gray-400">Bài tập</div>
+      </div>
+      <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+        <div class="text-lg font-bold text-gray-900 dark:text-white">
+          {{ contest.participant_count || 0 }}
+        </div>
+        <div class="text-xs text-gray-500 dark:text-gray-400">Người tham gia</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Time Information -->
+  <div class="px-6 pb-4">
+    <div class="flex items-center justify-between text-sm">
+      <span class="text-gray-500 dark:text-gray-400">
+        Thời gian: {{ contestService.formatDuration(contest.duration) }}
+      </span>
+      <span class="font-medium" 
+            [ngClass]="{
+              'text-green-600 dark:text-green-400': contest.status === 'active',
+              'text-blue-600 dark:text-blue-400': contest.status === 'upcoming',
+              'text-gray-500 dark:text-gray-400': contest.status === 'completed'
+            }">
+        <span *ngIf="contest.status === 'active'">
+          Còn lại: {{ contestService.formatTimeRemaining(contest.time_remaining) }}
+        </span>
+        <span *ngIf="contest.status === 'upcoming'">
+          Bắt đầu trong: {{ contestService.formatTimeRemaining(contest.time_remaining) }}
+        </span>
+        <span *ngIf="contest.status === 'completed'">
+          Đã kết thúc
+        </span>
+      </span>
+    </div>
+  </div>
+  
+  <!-- Action Buttons -->
+  <div class="px-6 pb-6">
+    <div class="flex gap-2">
+      
+      <!-- View Contest Button -->
+      <button 
+        (click)="$event.stopPropagation(); onViewContest()"
+        class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+        </svg>
+        Xem chi tiết
+      </button>
+      
+      <!-- Register/Unregister Button -->
+      <button *ngIf="isAuthenticated && canRegister" 
+              (click)="$event.stopPropagation(); onRegisterToggle()"
+              class="px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 border"
+              [ngClass]="{
+                'bg-green-600 hover:bg-green-700 text-white border-green-600': !contest.is_registered,
+                'bg-white dark:bg-gray-800 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20': contest.is_registered
+              }">
+        <span *ngIf="!contest.is_registered" class="flex items-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+          </svg>
+          Tham gia
+        </span>
+        <span *ngIf="contest.is_registered" class="flex items-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+          </svg>
+          Hủy
+        </span>
+      </button>
+      
+    </div>
+    
+    <!-- Registration status for completed contests -->
+    <div *ngIf="contest.status === 'completed'" class="mt-2 text-center">
+      <span class="text-xs text-gray-500 dark:text-gray-400">
+        Cuộc thi đã kết thúc
+      </span>
+    </div>
+    
+    <!-- Login prompt for unauthenticated users -->
+    <div *ngIf="!isAuthenticated && canRegister" class="mt-2 text-center">
+      <span class="text-xs text-gray-500 dark:text-gray-400">
+        Đăng nhập để tham gia cuộc thi
+      </span>
+    </div>
+  </div>
+  
+</div>
