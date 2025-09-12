@@ -1,6 +1,25 @@
 import { Routes } from '@angular/router';
+import { AuthGuard, NoAuthGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
+  // Authentication routes (no layout)
+  {
+    path: 'auth/login',
+    loadComponent: () =>
+      import('./features/auth/login/login.component').then(
+        (m) => m.LoginComponent
+      ),
+    canActivate: [NoAuthGuard]
+  },
+  {
+    path: 'auth/register',
+    loadComponent: () =>
+      import('./features/auth/register/register.component').then(
+        (m) => m.RegisterComponent
+      ),
+    canActivate: [NoAuthGuard]
+  },
+  // Main layout routes
   {
     path: '',
     loadComponent: () =>
@@ -97,6 +116,7 @@ export const routes: Routes = [
           import('./features/profile/profile.component').then(
             (m) => m.ProfileComponent
           ),
+        canActivate: [AuthGuard]
       },
     ],
   },

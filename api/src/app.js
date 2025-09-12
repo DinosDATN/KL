@@ -8,6 +8,7 @@ const { sequelize, testConnection } = require("./config/sequelize");
 require('./models');
 
 // Import routes
+const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const homepageRoutes = require("./routes/homepageRoutes");
 const courseRoutes = require("./routes/courseRoutes");
@@ -42,6 +43,7 @@ app.get("/health", (req, res) => {
 const apiPrefix = process.env.API_PREFIX || "/api/v1";
 
 // Core resource routes
+app.use(apiPrefix + "/auth", authRoutes);
 app.use(apiPrefix + "/users", userRoutes);
 app.use(apiPrefix + "/courses", courseRoutes);
 app.use(apiPrefix + "/problems", problemRoutes);

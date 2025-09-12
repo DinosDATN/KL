@@ -129,39 +129,59 @@
         <!-- User Menu -->
         <div class="relative">
           <button
+            *ngIf="isAuthenticated"
             (click)="toggleUserMenu()"
             class="flex items-center gap-2 p-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
             <img
-              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSK1UhUMG9MTojpNTLV0XoDh-3cWX2XxTcPng&s"
-              alt="User"
+              [src]="currentUser?.avatar_url || 'https://ui-avatars.com/api/?name=' + (currentUser?.name | slice:0:2) + '&background=3b82f6&color=ffffff'"
+              [alt]="currentUser?.name || 'User'"
               class="w-8 h-8 rounded-full"
             />
             <span
               class="hidden md:block text-gray-700 dark:text-gray-300 font-medium"
-              >Phan Duy Khang</span
+              >{{ currentUser?.name }}</span
             >
             <i
               class="icon-chevron-down text-gray-400 dark:text-gray-500 ml-1"
             ></i>
           </button>
+          
+          <!-- Login/Register buttons when not authenticated -->
+          <div *ngIf="!isAuthenticated" class="flex items-center gap-2">
+            <a
+              routerLink="/auth/login"
+              class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+            >
+              Đăng nhập
+            </a>
+            <a
+              routerLink="/auth/register"
+              class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+            >
+              Đăng ký
+            </a>
+          </div>
 
           <!-- User Dropdown + Overlay -->
-          <ng-container *ngIf="isUserMenuOpen">
+          <ng-container *ngIf="isUserMenuOpen && isAuthenticated">
             <!-- Overlay to close menu when clicking outside -->
             <div class="fixed inset-0 z-40" (click)="closeMenus()"></div>
             <div
               class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50"
             >
-              <a
+              <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ currentUser?.name }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400 truncate">{{ currentUser?.email }}</p>
+              </div>
+              <button
                 *ngFor="let item of userMenuItems"
-                [routerLink]="item.link"
-                (click)="closeMenus()"
-                class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                (click)="onUserMenuItemClick(item)"
+                class="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
                 <i class="mr-3" [class]="'icon-' + item.icon"></i>
                 {{ item.label }}
-              </a>
+              </button>
             </div>
           </ng-container>
         </div>

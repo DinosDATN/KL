@@ -1,5 +1,6 @@
 const { DataTypes } = require("sequelize");
 const { sequelize } = require("../config/sequelize");
+const bcrypt = require("bcrypt");
 
 const User = sequelize.define(
   "User",
@@ -28,6 +29,12 @@ const User = sequelize.define(
     password: {
       type: DataTypes.STRING(255),
       allowNull: true, // NULL for OAuth users
+      validate: {
+        len: {
+          args: [6, 255],
+          msg: "Password must be between 6 and 255 characters long"
+        }
+      }
     },
     avatar_url: {
       type: DataTypes.TEXT,
@@ -81,6 +88,20 @@ const User = sequelize.define(
         fields: ["subscription_status"],
       },
     ],
+    hooks: {
+      beforeCreate: async (user) => {
+        if (user.password) {
+          const saltRounds = 12;
+          user.password = await bcrypt.hash(user.password, saltRounds);
+        }
+      },
+      beforeUpdate: async (user) => {
+        if (user.changed('password') && user.password) {
+          const saltRounds = 12;
+          user.password = await bcrypt.hash(user.password, saltRounds);
+        }
+      }
+    }
   }
 );
 
@@ -89,11 +110,32 @@ User.prototype.getDisplayName = function () {
   return this.name;
 };
 
+// Password validation method
+User.prototype.validatePassword = async function (candidatePassword) {
+  if (!this.password) {
+    throw new Error('User has no password set');
+  }
+  return await bcrypt.compare(candidatePassword, this.password);
+};
+
 User.prototype.toJSON = function () {
   const values = { ...this.get() };
-  // Exclude sensitive fields
+  // Exclude sensitive fields from JSON output
   delete values.password;
   return values;
+};
+
+// Method to get safe user data for auth responses
+User.prototype.toAuthJSON = function () {
+  return {
+    id: this.id,
+    name: this.name,
+    email: this.email,
+    avatar_url: this.avatar_url,
+    role: this.role,
+    subscription_status: this.subscription_status,
+    is_active: this.is_active
+  };
 };
 
 User.prototype.isPremium = function () {

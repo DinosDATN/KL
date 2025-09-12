@@ -1,8 +1,17 @@
-// ...existing code...
-import { Component, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { ThemeService } from '../../../core/services/theme.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { User } from '../../../core/models/user.model';
+import { Subscription } from 'rxjs';
+
+interface MenuItem {
+  label: string;
+  link: string;
+  icon: string;
+  action?: string;
+}
 
 @Component({
   selector: 'app-header',
@@ -11,10 +20,15 @@ import { ThemeService } from '../../../core/services/theme.service';
   templateUrl: './header.component.html',
   styleUrl: './header.component.css',
 })
-export class HeaderComponent {
+export class HeaderComponent implements AfterViewInit, OnDestroy {
   showCompactSticky = false;
   private observer?: IntersectionObserver;
   @ViewChild('sentinel', { static: true }) sentinelRef!: ElementRef;
+  
+  // Authentication state
+  currentUser: User | null = null;
+  isAuthenticated = false;
+  private authSubscription?: Subscription;
 
   ngAfterViewInit(): void {
     if (typeof window !== 'undefined' && this.sentinelRef) {
@@ -30,6 +44,7 @@ export class HeaderComponent {
 
   ngOnDestroy(): void {
     if (this.observer) this.observer.disconnect();
+    if (this.authSubscription) this.authSubscription.unsubscribe();
   }
   notificationsUnread(): boolean {
     return this.notifications.some((n) => !n.read);
@@ -59,7 +74,20 @@ export class HeaderComponent {
     },
   ];
 
-  constructor(public themeService: ThemeService) {}
+  constructor(
+    public themeService: ThemeService,
+    private authService: AuthService,
+    private router: Router
+  ) {
+    // Subscribe to authentication state changes
+    this.authSubscription = this.authService.currentUser$.subscribe(user => {
+      this.currentUser = user;
+      this.isAuthenticated = !!user;
+      
+      // Update user menu items based on authentication state
+      this.updateUserMenuItems();
+    });
+  }
 
   navigationItems = [
     { label: 'Trang chủ', link: '/', icon: 'home' },
@@ -70,7 +98,7 @@ export class HeaderComponent {
     { label: 'Xếp hạng', link: '/leaderboard', icon: 'trophy' },
   ];
 
-  userMenuItems = [
+  userMenuItems: MenuItem[] = [
     { label: 'Hồ sơ', link: '/profile', icon: 'user' },
     { label: 'Cài đặt', link: '/settings', icon: 'settings' },
     { label: 'Đăng xuất', link: '/logout', icon: 'log-out' },
@@ -103,5 +131,43 @@ export class HeaderComponent {
 
   removeNotification(id: number): void {
     this.notifications = this.notifications.filter((n) => n.id !== id);
+  }
+
+  // Authentication methods
+  logout(): void {
+    this.authService.logout().subscribe({
+      next: () => {
+        this.router.navigate(['/auth/login']);
+      },
+      error: (error) => {
+        console.error('Logout error:', error);
+        // Still navigate to login even if logout fails
+        this.router.navigate(['/auth/login']);
+      }
+    });
+  }
+
+  updateUserMenuItems(): void {
+    if (this.isAuthenticated) {
+      this.userMenuItems = [
+        { label: 'Hồ sơ', link: '/profile', icon: 'user' },
+        { label: 'Cài đặt', link: '/settings', icon: 'settings' },
+        { label: 'Đăng xuất', link: '#', icon: 'log-out', action: 'logout' }
+      ];
+    } else {
+      this.userMenuItems = [
+        { label: 'Đăng nhập', link: '/auth/login', icon: 'log-in' },
+        { label: 'Đăng ký', link: '/auth/register', icon: 'user-plus' }
+      ];
+    }
+  }
+
+  onUserMenuItemClick(item: MenuItem): void {
+    if (item.action === 'logout') {
+      this.logout();
+    } else {
+      this.router.navigate([item.link]);
+    }
+    this.closeMenus();
   }
 }
