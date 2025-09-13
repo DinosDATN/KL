@@ -1,41 +1,24 @@
-const jwt = require('jsonwebtoken');
 const { ChatRoom, ChatMessage, ChatRoomMember, ChatReaction, User } = require('../models');
+const { authenticateSocket, handleAuthError } = require('../middleware/socketAuthMiddleware');
 
 // Store active users
 const activeUsers = new Map();
 const typingUsers = new Map();
 
-// Authenticate socket connection
-const authenticateSocket = async (socket, next) => {
-  try {
-    const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '');
-    
-    if (!token) {
-      return next(new Error('Authentication error'));
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findByPk(decoded.id);
-    
-    if (!user) {
-      return next(new Error('User not found'));
-    }
-
-    socket.userId = user.id;
-    socket.user = user;
-    next();
-  } catch (error) {
-    next(new Error('Authentication error'));
-  }
-};
-
 // Handle socket connection
 const handleConnection = (io) => {
-  // Apply authentication middleware
+  // Apply authentication middleware with error handling
   io.use(authenticateSocket);
+  
+  // Handle authentication errors
+  io.engine.on('connection_error', (err) => {
+    console.error('🚫 Socket.IO connection error:', err.message);
+    console.error('🔍 Error details:', err.context);
+  });
 
   io.on('connection', (socket) => {
-    console.log(`User ${socket.user.name} connected (${socket.id})`);
+    console.log(`🔗 User ${socket.user.name} (ID: ${socket.userId}) connected (Socket ID: ${socket.id})`);
+    console.log(`📊 Active users count: ${activeUsers.size + 1}`);
 
     // Store user connection
     activeUsers.set(socket.userId, {

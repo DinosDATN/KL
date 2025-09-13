@@ -67,13 +67,20 @@ export class SocketService {
 
   connect(token: string, user: User): void {
     if (this.socket?.connected) {
+      console.log('🔗 Socket already connected');
       return;
     }
+
+    console.log('📁 Connecting to Socket.IO server...');
+    console.log('👤 User:', user.name);
+    console.log('🔑 Token provided:', !!token);
 
     this.currentUser = user;
     const serverUrl = environment.production
       ? environment.apiUrl
       : 'http://localhost:3000';
+
+    console.log('🌍 Server URL:', serverUrl);
 
     this.socket = io(serverUrl, {
       auth: {
@@ -93,12 +100,17 @@ export class SocketService {
     });
 
     this.socket.on('connect_error', (error) => {
-      console.error('Connection error:', error);
+      console.error('❌ Socket.IO connection error:', error);
+      console.error('🔍 Error details:', error.message);
+      if (error.message.includes('Authentication')) {
+        console.error('🔐 Authentication failed - check JWT token');
+      }
       this.connected.next(false);
     });
 
     // Listen for new messages
     this.socket.on('new_message', (message: ChatMessage) => {
+      console.log('📨 Received new message via Socket.IO:', message);
       this.messageSubject.next(message);
     });
 
@@ -190,13 +202,22 @@ export class SocketService {
     type: string = 'text',
     replyTo?: number
   ): void {
+    console.log('💬 Attempting to send message...');
+    console.log('📋 Room ID:', roomId);
+    console.log('💬 Content:', content);
+    console.log('🔗 Socket connected:', this.socket?.connected);
+    
     if (this.socket) {
+      console.log('🚀 Emitting send_message event...');
       this.socket.emit('send_message', {
         roomId,
         content,
         type,
         replyTo,
       });
+      console.log('✅ Message sent via Socket.IO');
+    } else {
+      console.error('❌ Socket not available');
     }
   }
 

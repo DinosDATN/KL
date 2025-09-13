@@ -93,12 +93,20 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
   }
 
   send(): void {
-    if (!this.newMessage.trim()) return;
+    console.log('📨 ChatMain: send() method called');
+    console.log('💬 NewMessage content:', this.newMessage);
+    
+    if (!this.newMessage.trim()) {
+      console.log('⚠️ ChatMain: Empty message, returning');
+      return;
+    }
 
     const messageContent = this.newMessage.trim();
+    console.log('🚀 ChatMain: Emitting sendMessage event with content:', messageContent);
 
     // If replying, include reply context (in a real app, this would be handled by the backend)
     this.sendMessage.emit(messageContent);
+    console.log('✅ ChatMain: Message emitted to parent component');
 
     this.newMessage = '';
     this.replyToMessage = null;

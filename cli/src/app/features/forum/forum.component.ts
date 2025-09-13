@@ -289,7 +289,15 @@ export class ForumComponent implements OnInit, OnDestroy {
   }
 
   onSendMessage(content: string): void {
-    if (!this.selectedRoom || !content.trim() || !this.currentUser) return;
+    console.log('📬 Forum: onSendMessage called');
+    console.log('📩 Content:', content);
+    console.log('📍 Selected room:', this.selectedRoom?.name);
+    console.log('👤 Current user:', this.currentUser?.name);
+    
+    if (!this.selectedRoom || !content.trim() || !this.currentUser) {
+      console.log('⚠️ Cannot send message - missing requirements');
+      return;
+    }
 
     // Send message via chat service (Socket.IO)
     this.chatService.sendMessage(this.selectedRoom.id, content.trim());

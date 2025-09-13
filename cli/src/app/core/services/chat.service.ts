@@ -40,7 +40,9 @@ export class ChatService {
     // Listen for new messages
     this.socketService.newMessage$.subscribe(message => {
       if (message) {
+        console.log('📬 ChatService: New message received', message);
         this.addMessageToRoom(message);
+        console.log('✅ ChatService: Message added to room', message.room_id);
       }
     });
 
@@ -154,9 +156,24 @@ export class ChatService {
     const user = this.authService.getCurrentUser();
     const token = this.authService.getToken();
     
+    console.log('🚀 Initializing chat system...');
+    console.log('👤 Current user:', user?.name);
+    console.log('🔑 Token available:', !!token);
+    console.log('🔐 User authenticated:', this.authService.isAuthenticated());
+    
     if (user && token) {
+      console.log('✅ Starting Socket.IO connection...');
       this.socketService.connect(token, user);
-      this.loadUserRooms().subscribe();
+      this.loadUserRooms().subscribe({
+        next: (rooms) => {
+          console.log(`✅ Loaded ${rooms.length} chat rooms`);
+        },
+        error: (error) => {
+          console.error('❌ Error loading chat rooms:', error);
+        }
+      });
+    } else {
+      console.log('❌ Cannot initialize chat - missing user or token');
     }
   }
 
@@ -192,6 +209,10 @@ export class ChatService {
   }
 
   sendMessage(roomId: number, content: string, type: string = 'text', replyTo?: number): void {
+    console.log('🗣️ ChatService: Sending message...');
+    console.log('🏠 Room ID:', roomId);
+    console.log('💬 Content:', content);
+    
     // Send via Socket.IO for real-time delivery
     this.socketService.sendMessage(roomId, content, type, replyTo);
   }
