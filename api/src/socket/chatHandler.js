@@ -62,6 +62,7 @@ const handleConnection = (io) => {
     // Handle joining a room
     socket.on('join_room', async (roomId) => {
       try {
+        console.log(`🚪 User ${socket.user.name} trying to join room ${roomId}`);
         const isMember = await ChatRoomMember.findOne({
           where: {
             room_id: roomId,
@@ -72,10 +73,13 @@ const handleConnection = (io) => {
         if (isMember) {
           socket.join(`room_${roomId}`);
           socket.emit('joined_room', { roomId, success: true });
+          console.log(`✅ User ${socket.user.name} successfully joined room ${roomId}`);
         } else {
+          console.log(`❌ User ${socket.user.name} not a member of room ${roomId}`);
           socket.emit('error', { message: 'Not a member of this room' });
         }
       } catch (error) {
+        console.error(`❌ Error joining room ${roomId}:`, error);
         socket.emit('error', { message: 'Error joining room' });
       }
     });
@@ -89,9 +93,11 @@ const handleConnection = (io) => {
     // Handle sending messages
     socket.on('send_message', async (data) => {
       try {
+        console.log(`💬 Message received from user ${socket.user.name}:`, data);
         const { roomId, content, type = 'text', replyTo = null } = data;
 
         if (!content || !content.trim()) {
+          console.log('❌ Empty message content');
           return socket.emit('error', { message: 'Message content is required' });
         }
 
@@ -104,6 +110,7 @@ const handleConnection = (io) => {
         });
 
         if (!isMember) {
+          console.log(`❌ User ${socket.user.name} not member of room ${roomId}`);
           return socket.emit('error', { message: 'Not a member of this room' });
         }
 
@@ -148,10 +155,13 @@ const handleConnection = (io) => {
         });
 
         // Broadcast message to all room members
+        console.log(`🚀 Broadcasting message to room_${roomId}:`, completeMessage.id);
         io.to(`room_${roomId}`).emit('new_message', completeMessage);
 
         // Stop typing indicator for this user
         clearTyping(socket, roomId);
+        
+        console.log(`✅ Message ${completeMessage.id} sent successfully by ${socket.user.name}`);
 
       } catch (error) {
         console.error('Error sending message:', error);
@@ -262,6 +272,22 @@ const handleConnection = (io) => {
           return socket.emit('error', { message: 'Room name is required' });
         }
 
+        // Validate member IDs
+        let validMemberIds = [];
+        if (memberIds && memberIds.length > 0) {
+          const uniqueMemberIds = [...new Set(memberIds.filter(id => id !== socket.userId))];
+          
+          const validUsers = await User.findAll({
+            where: {
+              id: { [require('sequelize').Op.in]: uniqueMemberIds },
+              is_active: true
+            },
+            attributes: ['id']
+          });
+          
+          validMemberIds = validUsers.map(user => user.id);
+        }
+
         const room = await ChatRoom.create({
           name: name.trim(),
           description: description?.trim(),
@@ -277,9 +303,9 @@ const handleConnection = (io) => {
           is_admin: true
         });
 
-        // Add other members
-        if (memberIds.length > 0) {
-          const memberData = memberIds.map(memberId => ({
+        // Add validated members
+        if (validMemberIds.length > 0) {
+          const memberData = validMemberIds.map(memberId => ({
             room_id: room.id,
             user_id: memberId,
             is_admin: false
@@ -296,31 +322,61 @@ const handleConnection = (io) => {
             {
               model: User,
               as: 'Creator',
-              attributes: ['id', 'name', 'email']
+              attributes: ['id', 'name', 'email', 'avatar_url']
             },
             {
               model: User,
               as: 'Members',
-              attributes: ['id', 'name', 'email', 'is_online'],
+              attributes: ['id', 'name', 'email', 'avatar_url', 'is_online'],
               through: { attributes: ['is_admin'] }
             }
           ]
         });
 
+        // Notify creator first
+        socket.emit('room_created', {
+          ...completeRoom.toJSON(),
+          isCreator: true,
+          memberCount: validMemberIds.length + 1
+        });
+
         // Notify all members about the new room
-        const allMemberIds = [socket.userId, ...memberIds];
-        allMemberIds.forEach(memberId => {
+        validMemberIds.forEach(memberId => {
           const userSocket = Array.from(io.sockets.sockets.values())
             .find(s => s.userId === memberId);
           if (userSocket) {
             userSocket.join(`room_${room.id}`);
-            userSocket.emit('room_created', completeRoom);
+            userSocket.emit('room_created', {
+              ...completeRoom.toJSON(),
+              isCreator: false,
+              memberCount: validMemberIds.length + 1
+            });
+            userSocket.emit('notification', {
+              type: 'room_invite',
+              message: `You've been added to ${room.name} by ${socket.user.name}`,
+              roomId: room.id,
+              timestamp: new Date().toISOString()
+            });
           }
         });
 
+        // Send welcome message to room
+        const welcomeMessage = await ChatMessage.create({
+          room_id: room.id,
+          sender_id: socket.userId,
+          content: `🎉 Welcome to ${room.name}! ${validMemberIds.length > 0 ? 'Let\'s start chatting!' : 'Invite some friends to join!'}`,
+          type: 'text'
+        });
+
+        // Broadcast welcome message
+        io.to(`room_${room.id}`).emit('new_message', welcomeMessage);
+
       } catch (error) {
         console.error('Error creating room:', error);
-        socket.emit('error', { message: 'Error creating room' });
+        socket.emit('error', { 
+          message: 'Error creating room',
+          details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
       }
     });
 

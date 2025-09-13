@@ -110,6 +110,11 @@ export class ChatSidebarComponent {
   }
 
   getOnlineMembersCount(room: ChatRoom): number {
+    // Use the preloaded online_member_count if available
+    if (room.online_member_count !== undefined) {
+      return room.online_member_count;
+    }
+    // Fallback to calculating from members list
     const members = this.getRoomMembers(room.id);
     return members.filter((member) => member.is_online).length;
   }

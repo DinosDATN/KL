@@ -7,7 +7,10 @@ const {
   sendMessage,
   createChatRoom,
   addReaction,
-  getRoomMembers
+  getRoomMembers,
+  searchUsers,
+  getOnlineUsers,
+  validateRoomMembers
 } = require('../controllers/chatController');
 
 // All chat routes require authentication
@@ -24,5 +27,10 @@ router.get('/rooms/:roomId/members', getRoomMembers);
 
 // Message reactions
 router.post('/messages/:messageId/reactions', addReaction);
+
+// User search and management routes
+router.get('/users/search', searchUsers);
+router.get('/users/online', getOnlineUsers);
+router.post('/rooms/validate-members', validateRoomMembers);
 
 module.exports = router;

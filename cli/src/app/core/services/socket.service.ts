@@ -6,7 +6,7 @@ import { User } from '../models/user.model';
 import { environment } from '../../../environments/environment';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class SocketService {
   private socket: Socket | null = null;
@@ -17,11 +17,18 @@ export class SocketService {
   public isConnected$ = this.connected.asObservable();
   private messageSubject = new BehaviorSubject<ChatMessage | null>(null);
   public newMessage$ = this.messageSubject.asObservable();
-  
-  private typingSubject = new BehaviorSubject<{userId: number, username: string, roomId: number} | null>(null);
+
+  private typingSubject = new BehaviorSubject<{
+    userId: number;
+    username: string;
+    roomId: number;
+  } | null>(null);
   public userTyping$ = this.typingSubject.asObservable();
-  
-  private stopTypingSubject = new BehaviorSubject<{userId: number, roomId: number} | null>(null);
+
+  private stopTypingSubject = new BehaviorSubject<{
+    userId: number;
+    roomId: number;
+  } | null>(null);
   public userStopTyping$ = this.stopTypingSubject.asObservable();
 
   private reactionSubject = new BehaviorSubject<any>(null);
@@ -30,11 +37,31 @@ export class SocketService {
   private roomCreatedSubject = new BehaviorSubject<ChatRoom | null>(null);
   public roomCreated$ = this.roomCreatedSubject.asObservable();
 
-  private userOnlineSubject = new BehaviorSubject<{userId: number, username: string} | null>(null);
+  private userOnlineSubject = new BehaviorSubject<{
+    userId: number;
+    username: string;
+  } | null>(null);
   public userOnline$ = this.userOnlineSubject.asObservable();
 
-  private userOfflineSubject = new BehaviorSubject<{userId: number, username: string} | null>(null);
+  private userOfflineSubject = new BehaviorSubject<{
+    userId: number;
+    username: string;
+  } | null>(null);
   public userOffline$ = this.userOfflineSubject.asObservable();
+
+  private notificationSubject = new BehaviorSubject<{
+    type: string;
+    message: string;
+    roomId?: number;
+    timestamp: string;
+  } | null>(null);
+  public notification$ = this.notificationSubject.asObservable();
+
+  private errorSubject = new BehaviorSubject<{
+    message: string;
+    details?: string;
+  } | null>(null);
+  public error$ = this.errorSubject.asObservable();
 
   constructor() {}
 
@@ -44,13 +71,15 @@ export class SocketService {
     }
 
     this.currentUser = user;
-    const serverUrl = environment.production ? environment.apiUrl : 'http://localhost:3000';
+    const serverUrl = environment.production
+      ? environment.apiUrl
+      : 'http://localhost:3000';
 
     this.socket = io(serverUrl, {
       auth: {
-        token: token
+        token: token,
       },
-      transports: ['websocket', 'polling']
+      transports: ['websocket', 'polling'],
     });
 
     this.socket.on('connect', () => {
@@ -74,13 +103,19 @@ export class SocketService {
     });
 
     // Listen for typing indicators
-    this.socket.on('user_typing', (data: {userId: number, username: string, roomId: number}) => {
-      this.typingSubject.next(data);
-    });
+    this.socket.on(
+      'user_typing',
+      (data: { userId: number; username: string; roomId: number }) => {
+        this.typingSubject.next(data);
+      }
+    );
 
-    this.socket.on('user_stop_typing', (data: {userId: number, roomId: number}) => {
-      this.stopTypingSubject.next(data);
-    });
+    this.socket.on(
+      'user_stop_typing',
+      (data: { userId: number; roomId: number }) => {
+        this.stopTypingSubject.next(data);
+      }
+    );
 
     // Listen for reaction updates
     this.socket.on('reaction_update', (data: any) => {
@@ -93,18 +128,37 @@ export class SocketService {
     });
 
     // Listen for user status changes
-    this.socket.on('user_online', (data: {userId: number, username: string}) => {
-      this.userOnlineSubject.next(data);
-    });
+    this.socket.on(
+      'user_online',
+      (data: { userId: number; username: string }) => {
+        this.userOnlineSubject.next(data);
+      }
+    );
 
-    this.socket.on('user_offline', (data: {userId: number, username: string}) => {
-      this.userOfflineSubject.next(data);
-    });
+    this.socket.on(
+      'user_offline',
+      (data: { userId: number; username: string }) => {
+        this.userOfflineSubject.next(data);
+      }
+    );
+
+    // Listen for notifications
+    this.socket.on(
+      'notification',
+      (data: {
+        type: string;
+        message: string;
+        roomId?: number;
+        timestamp: string;
+      }) => {
+        this.notificationSubject.next(data);
+      }
+    );
 
     // Listen for errors
-    this.socket.on('error', (error: {message: string}) => {
+    this.socket.on('error', (error: { message: string; details?: string }) => {
       console.error('Socket error:', error.message);
-      // You might want to show a toast notification here
+      this.errorSubject.next(error);
     });
   }
 
@@ -130,13 +184,18 @@ export class SocketService {
   }
 
   // Message handling
-  sendMessage(roomId: number, content: string, type: string = 'text', replyTo?: number): void {
+  sendMessage(
+    roomId: number,
+    content: string,
+    type: string = 'text',
+    replyTo?: number
+  ): void {
     if (this.socket) {
       this.socket.emit('send_message', {
         roomId,
         content,
         type,
-        replyTo
+        replyTo,
       });
     }
   }
@@ -159,7 +218,7 @@ export class SocketService {
     if (this.socket) {
       this.socket.emit('add_reaction', {
         messageId,
-        reactionType
+        reactionType,
       });
     }
   }
@@ -178,16 +237,16 @@ export class SocketService {
   }
 
   // Listen for specific events
-  onJoinedRoom(): Observable<{roomId: number, success: boolean}> {
-    return new Observable(observer => {
+  onJoinedRoom(): Observable<{ roomId: number; success: boolean }> {
+    return new Observable((observer) => {
       if (this.socket) {
         this.socket.on('joined_room', (data) => observer.next(data));
       }
     });
   }
 
-  onLeftRoom(): Observable<{roomId: number}> {
-    return new Observable(observer => {
+  onLeftRoom(): Observable<{ roomId: number }> {
+    return new Observable((observer) => {
       if (this.socket) {
         this.socket.on('left_room', (data) => observer.next(data));
       }

@@ -13,6 +13,12 @@ export interface ChatRoom {
   created_by: number;
   created_at: string;
   updated_at?: string | null;
+  member_count?: number;
+  online_member_count?: number;
+  all_members?: User[];
+  Creator?: User; // For associations
+  Members?: User[]; // For associations
+  Messages?: ChatMessage[]; // For associations
 }
 
 export interface ChatMessage {
@@ -25,6 +31,7 @@ export interface ChatMessage {
   is_edited: boolean;
   reply_to?: number | null;
   sent_at: string;
+  Sender?: User; // For associations
 }
 
 export interface ChatRoomMember {

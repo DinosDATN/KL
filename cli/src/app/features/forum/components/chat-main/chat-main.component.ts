@@ -168,7 +168,21 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
     }
   }
 
+  getMemberCount(): number {
+    // Use preloaded member count if available
+    if (this.room?.member_count !== undefined) {
+      return this.room.member_count;
+    }
+    // Fallback to roomMembers array length
+    return this.roomMembers.length;
+  }
+
   getOnlineCount(): number {
+    // Use preloaded online count if available
+    if (this.room?.online_member_count !== undefined) {
+      return this.room.online_member_count;
+    }
+    // Fallback to calculating from roomMembers
     return this.roomMembers.filter((member) => member.is_online).length;
   }
 

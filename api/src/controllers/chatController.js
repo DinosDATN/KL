@@ -35,9 +35,40 @@ const getUserChatRooms = async (req, res) => {
       order: [['updated_at', 'DESC']]
     });
 
+    // Add member count and online member count for each room
+    const roomsWithMemberInfo = await Promise.all(
+      userRooms.map(async (room) => {
+        const roomData = room.toJSON();
+        
+        // Get total member count
+        const memberCount = await ChatRoomMember.count({
+          where: { room_id: room.id }
+        });
+        
+        // Get all members with their online status
+        const allMembers = await ChatRoomMember.findAll({
+          where: { room_id: room.id },
+          include: [{
+            model: User,
+            as: 'User',
+            attributes: ['id', 'name', 'email', 'is_online', 'avatar_url']
+          }]
+        });
+        
+        const onlineCount = allMembers.filter(member => member.User?.is_online).length;
+        
+        return {
+          ...roomData,
+          member_count: memberCount,
+          online_member_count: onlineCount,
+          all_members: allMembers.map(m => m.User)
+        };
+      })
+    );
+
     res.json({
       success: true,
-      data: userRooms
+      data: roomsWithMemberInfo
     });
   } catch (error) {
     console.error('Error fetching user chat rooms:', error);
@@ -395,11 +426,139 @@ const getRoomMembers = async (req, res) => {
   }
 };
 
+// Search users for chat room creation
+const searchUsers = async (req, res) => {
+  try {
+    const { q: searchTerm, limit = 20 } = req.query;
+    const currentUserId = req.user.id;
+
+    if (!searchTerm || searchTerm.length < 2) {
+      return res.status(400).json({
+        success: false,
+        message: 'Search term must be at least 2 characters long'
+      });
+    }
+
+    // Search users by name or email, excluding current user
+    const users = await User.findAll({
+      where: {
+        id: { [Op.ne]: currentUserId },
+        is_active: true,
+        [Op.or]: [
+          {
+            name: {
+              [Op.like]: `%${searchTerm}%`
+            }
+          },
+          {
+            email: {
+              [Op.like]: `%${searchTerm}%`
+            }
+          }
+        ]
+      },
+      attributes: ['id', 'name', 'email', 'avatar_url', 'is_online', 'last_seen_at'],
+      limit: parseInt(limit),
+      order: [['name', 'ASC']]
+    });
+
+    res.json({
+      success: true,
+      data: users
+    });
+  } catch (error) {
+    console.error('Error searching users:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error searching users'
+    });
+  }
+};
+
+// Get online users
+const getOnlineUsers = async (req, res) => {
+  try {
+    const currentUserId = req.user.id;
+    const { limit = 50 } = req.query;
+
+    const users = await User.findAll({
+      where: {
+        id: { [Op.ne]: currentUserId },
+        is_online: true,
+        is_active: true
+      },
+      attributes: ['id', 'name', 'email', 'avatar_url', 'is_online', 'last_seen_at'],
+      limit: parseInt(limit),
+      order: [['name', 'ASC']]
+    });
+
+    res.json({
+      success: true,
+      data: users
+    });
+  } catch (error) {
+    console.error('Error fetching online users:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching online users'
+    });
+  }
+};
+
+// Validate room members before creation
+const validateRoomMembers = async (req, res) => {
+  try {
+    const { memberIds } = req.body;
+    const currentUserId = req.user.id;
+
+    if (!memberIds || !Array.isArray(memberIds) || memberIds.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          validMembers: [],
+          invalidMembers: []
+        }
+      });
+    }
+
+    // Remove current user from the list if included
+    const filteredMemberIds = memberIds.filter(id => id !== currentUserId);
+
+    const users = await User.findAll({
+      where: {
+        id: { [Op.in]: filteredMemberIds },
+        is_active: true
+      },
+      attributes: ['id', 'name', 'email', 'avatar_url', 'is_online']
+    });
+
+    const validMemberIds = users.map(user => user.id);
+    const invalidMemberIds = filteredMemberIds.filter(id => !validMemberIds.includes(id));
+
+    res.json({
+      success: true,
+      data: {
+        validMembers: users,
+        invalidMembers: invalidMemberIds
+      }
+    });
+  } catch (error) {
+    console.error('Error validating members:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error validating members'
+    });
+  }
+};
+
 module.exports = {
   getUserChatRooms,
   getRoomMessages,
   sendMessage,
   createChatRoom,
   addReaction,
-  getRoomMembers
+  getRoomMembers,
+  searchUsers,
+  getOnlineUsers,
+  validateRoomMembers
 };

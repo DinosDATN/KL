@@ -142,6 +142,7 @@
               class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
             >
               <svg
+                *ngIf="!isSearching"
                 class="w-4 h-4 text-gray-400"
                 fill="none"
                 stroke="currentColor"
@@ -154,14 +155,60 @@
                   d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                 ></path>
               </svg>
+              <!-- Loading spinner -->
+              <svg
+                *ngIf="isSearching"
+                class="w-4 h-4 text-blue-500 animate-spin"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                ></circle>
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
             </div>
             <input
               type="text"
               [(ngModel)]="userSearchTerm"
+              (input)="onSearchTermChange()"
               name="userSearch"
-              placeholder="Tìm kiếm người dùng..."
-              class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+              placeholder="Tìm kiếm người dùng theo tên hoặc email..."
+              class="w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
             />
+            <!-- Clear search button -->
+            <button
+              *ngIf="userSearchTerm"
+              type="button"
+              (click)="clearSearch()"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Search status -->
+          <div *ngIf="showSearchResults" class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+            <span *ngIf="isSearching">Đang tìm kiếm...</span>
+            <span *ngIf="!isSearching && searchResults.length > 0">Tìm thấy {{ searchResults.length }} người dùng</span>
+            <span *ngIf="!isSearching && searchResults.length === 0">Không tìm thấy người dùng nào</span>
+          </div>
+
+          <!-- Online users header -->
+          <div *ngIf="showOnlineUsers" class="text-xs text-green-600 dark:text-green-400 mb-2 flex items-center gap-1">
+            <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            Người dùng đang online ({{ onlineUsers.length }})
           </div>
 
           <!-- Selected Users -->
@@ -277,7 +324,17 @@
     >
       <div class="flex items-center justify-between">
         <div class="text-sm text-gray-500 dark:text-gray-400">
-          {{ selectedUsers.length }} thành viên được chọn
+          {{ getSelectedUsersText() }}
+        </div>
+        
+        <!-- Success message -->
+        <div *ngIf="successMessage" class="text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-md">
+          {{ successMessage }}
+        </div>
+        
+        <!-- Error message -->
+        <div *ngIf="errorMessage" class="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-md">
+          {{ errorMessage }}
         </div>
         <div class="flex items-center gap-3">
           <button
@@ -290,15 +347,15 @@
           <button
             type="button"
             (click)="createGroup()"
-            [disabled]="!groupName.trim() || isCreating"
+            [disabled]="isCreateDisabled()"
             [class]="
               'px-6 py-2 rounded-lg font-medium transition-all duration-200 ' +
-              (groupName.trim() && !isCreating
-                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+              (!isCreateDisabled()
+                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
                 : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed')
             "
           >
-            <span *ngIf="!isCreating">Tạo nhóm</span>
+            <span *ngIf="!isCreating">{{ getCreateButtonText() }}</span>
             <span *ngIf="isCreating" class="flex items-center gap-2">
               <svg
                 class="animate-spin w-4 h-4"
@@ -320,7 +377,7 @@
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 ></path>
               </svg>
-              Đang tạo...
+              {{ getCreateButtonText() }}
             </span>
           </button>
         </div>

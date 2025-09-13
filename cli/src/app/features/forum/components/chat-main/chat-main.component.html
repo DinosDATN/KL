@@ -67,7 +67,7 @@
       <div
         class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400"
       >
-        <span>{{ roomMembers.length }} thành viên</span>
+        <span>{{ getMemberCount() }} thành viên</span>
         <span *ngIf="getOnlineCount() > 0">•</span>
         <span
           *ngIf="getOnlineCount() > 0"

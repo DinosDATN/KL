@@ -99,6 +99,90 @@
     class="flex-1 bg-gray-50 dark:bg-gray-900 flex overflow-hidden"
     style="height: calc(100vh - 73px);"
   >
+    <!-- Authentication Required Message -->
+    <div
+      *ngIf="!currentUser"
+      class="flex-1 flex items-center justify-center p-8 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800"
+    >
+      <div class="text-center max-w-lg space-y-6">
+        <div class="relative">
+          <div
+            class="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-600 rounded-full blur-xl opacity-20 animate-pulse"
+          ></div>
+          <div
+            class="relative bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-xl"
+          >
+            <svg
+              class="w-16 h-16 mx-auto text-blue-500 dark:text-blue-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+              ></path>
+            </svg>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <h2 class="text-3xl font-bold text-gray-900 dark:text-white">
+            Đăng nhập để sử dụng Chat
+          </h2>
+          <p class="text-lg text-gray-600 dark:text-gray-400 leading-relaxed">
+            Bạn cần đăng nhập để truy cập tính năng chat trực tiếp
+          </p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <button
+            (click)="navigateToLogin()"
+            class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl transition-all duration-200 hover:scale-105 shadow-lg"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+              ></path>
+            </svg>
+            Đăng nhập
+          </button>
+
+          <button
+            (click)="navigateToRegister()"
+            class="inline-flex items-center gap-2 px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-xl transition-all duration-200 hover:scale-105 shadow-lg"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+              ></path>
+            </svg>
+            Đăng ký
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat Interface (only when authenticated) -->
+    <ng-container *ngIf="currentUser">
     <!-- Mobile Sidebar Toggle Button -->
     <button
       *ngIf="isMobileView"
@@ -256,6 +340,7 @@
         [getMessageReactions]="getMessageReactions.bind(this)"
       ></app-chat-main>
     </main>
+    </ng-container>
   </div>
 </div>
 
@@ -268,9 +353,11 @@
 
 <!-- Create Group Modal -->
 <app-create-group-modal
-  *ngIf="showCreateGroupModal"
-  [users]="users"
-  [currentUser]="currentUser!"
+  *ngIf="showCreateGroupModal && currentUser"
+  [currentUser]="currentUser"
   (groupCreated)="onGroupCreated($event)"
   (modalClosed)="onCloseModal()"
 ></app-create-group-modal>
+
+<!-- Notification Toasts -->
+<app-notification-toast></app-notification-toast>

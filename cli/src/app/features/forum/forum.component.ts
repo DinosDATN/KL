@@ -25,7 +25,6 @@ import { User } from '../../core/models/user.model';
 import { ThemeService } from '../../core/services/theme.service';
 import { ChatService } from '../../core/services/chat.service';
 import { AuthService } from '../../core/services/auth.service';
-import { mockUsers } from '../../core/services/user-mock-data';
 
 // Components
 import { ChatSidebarComponent } from './components/chat-sidebar/chat-sidebar.component';
@@ -34,6 +33,7 @@ import { CreateGroupModalComponent } from './components/create-group-modal/creat
 import { ForumLayoutComponent } from './components/forum-layout/forum-layout.component';
 import { PostCreatorComponent } from './components/post-creator/post-creator.component';
 import { PostDetailComponent } from './components/post-detail/post-detail.component';
+import { NotificationToastComponent } from '../../shared/components/notification-toast/notification-toast.component';
 
 interface CreatePostRequest {
   title: string;
@@ -56,6 +56,7 @@ interface CreatePostRequest {
     ForumLayoutComponent,
     PostCreatorComponent,
     PostDetailComponent,
+    NotificationToastComponent,
   ],
   templateUrl: './forum.component.html',
   styleUrl: './forum.component.css',
@@ -101,13 +102,33 @@ export class ForumComponent implements OnInit, OnDestroy {
   ) {
     // Get current user from auth service
     this.currentUser = this.authService.getCurrentUser();
+    
+    // Subscribe to authentication state changes
+    this.authService.currentUser$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(user => {
+        this.currentUser = user;
+        if (user) {
+          console.log('✅ User authenticated:', user.name);
+          // Initialize chat when user becomes available
+          this.initializeChat();
+        } else {
+          console.log('🔑 User not authenticated');
+          // Clear chat data when user logs out
+          this.clearChatData();
+        }
+      });
   }
 
   ngOnInit(): void {
-    this.initializeChat();
     this.checkScreenSize();
     if (isPlatformBrowser(this.platformId)) {
       window.addEventListener('resize', this.onResize.bind(this));
+    }
+    
+    // Initialize chat if user is already authenticated
+    if (this.currentUser) {
+      this.initializeChat();
     }
   }
 
@@ -122,7 +143,7 @@ export class ForumComponent implements OnInit, OnDestroy {
 
   private initializeChat(): void {
     if (!this.currentUser) {
-      console.error('No authenticated user found');
+      console.info('🔑 User not authenticated - chat features disabled');
       return;
     }
 
@@ -134,6 +155,10 @@ export class ForumComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(rooms => {
         this.chatRooms = rooms;
+        
+        // Load users and room members from the rooms data
+        this.loadUsersFromRooms(rooms);
+        
         // Auto-select first room if available and no room is selected
         if (rooms.length > 0 && !this.selectedRoom) {
           this.selectRoom(rooms[0]);
@@ -147,8 +172,109 @@ export class ForumComponent implements OnInit, OnDestroy {
         this.onlineUsers = users;
       });
 
-    // Load mock users for now (until user management is implemented)
-    this.users = [...mockUsers];
+    // Users will be loaded dynamically from the backend when needed
+  }
+
+  private clearChatData(): void {
+    // Clear all chat-related data when user logs out
+    this.chatRooms = [];
+    this.messages = {};
+    this.selectedRoom = null;
+    this.onlineUsers = [];
+    this.roomMembers = [];
+    this.reactions = [];
+    
+    // Disconnect from chat service
+    this.chatService.disconnect();
+  }
+
+  private loadUsersFromRooms(rooms: ChatRoom[]): void {
+    // Extract all users from rooms data (creators, members)
+    const allUsers = new Map<number, User>();
+    
+    rooms.forEach(room => {
+      // Add creator
+      if (room.Creator) {
+        allUsers.set(room.Creator.id, {
+          ...room.Creator,
+          role: 'user',
+          is_active: true,
+          subscription_status: 'free',
+          subscription_end_date: null,
+          created_at: '',
+          updated_at: ''
+        } as User);
+      }
+      
+      // Add all members
+      if (room.all_members) {
+        room.all_members.forEach(member => {
+          if (member) {
+            allUsers.set(member.id, {
+              ...member,
+              role: member.role || 'user',
+              is_active: member.is_active || true,
+              subscription_status: member.subscription_status || 'free',
+              subscription_end_date: member.subscription_end_date || null,
+              created_at: member.created_at || '',
+              updated_at: member.updated_at || ''
+            } as User);
+          }
+        });
+      }
+      
+      // Add room members data
+      if (room.all_members) {
+        room.all_members.forEach(member => {
+          if (member) {
+            const roomMember: ChatRoomMember = {
+              id: 0, // This will be set properly by the backend
+              room_id: room.id,
+              user_id: member.id,
+              joined_at: new Date().toISOString(),
+              is_admin: false, // This should come from the backend
+              User: member
+            };
+            
+            // Add to roomMembers if not already present
+            if (!this.roomMembers.find(rm => rm.room_id === room.id && rm.user_id === member.id)) {
+              this.roomMembers.push(roomMember);
+            }
+          }
+        });
+      }
+    });
+    
+    // Update users array
+    this.users = Array.from(allUsers.values());
+  }
+
+  private loadUsersFromMessages(messages: ChatMessage[]): void {
+    // Extract users from message senders and add them to the users array if not already present
+    const currentUsers = new Map<number, User>();
+    
+    // Add existing users to map
+    this.users.forEach(user => {
+      currentUsers.set(user.id, user);
+    });
+    
+    // Add users from messages
+    messages.forEach(message => {
+      if (message.Sender && !currentUsers.has(message.Sender.id)) {
+        currentUsers.set(message.Sender.id, {
+          ...message.Sender,
+          role: message.Sender.role || 'user',
+          is_active: message.Sender.is_active || true,
+          subscription_status: message.Sender.subscription_status || 'free',
+          subscription_end_date: message.Sender.subscription_end_date || null,
+          created_at: message.Sender.created_at || '',
+          updated_at: message.Sender.updated_at || null
+        } as User);
+      }
+    });
+    
+    // Update users array
+    this.users = Array.from(currentUsers.values());
   }
 
 
@@ -180,37 +306,32 @@ export class ForumComponent implements OnInit, OnDestroy {
     this.showCreateGroupModal = true;
   }
 
-  onGroupCreated(groupData: {
-    name: string;
-    description: string;
-    isPublic: boolean;
-    selectedUsers: User[];
-  }): void {
+  onGroupCreated(room: ChatRoom): void {
     if (!this.currentUser) return;
 
-    // Create room via chat service
-    const roomData = {
-      name: groupData.name,
-      description: groupData.description,
-      type: 'group',
-      is_public: groupData.isPublic,
-      memberIds: groupData.selectedUsers.map(user => user.id)
-    };
-
-    this.chatService.createRoom(roomData).subscribe({
-      next: (room) => {
-        this.selectRoom(room);
-        this.showCreateGroupModal = false;
-      },
-      error: (error) => {
-        console.error('Error creating room:', error);
-        // You might want to show an error message to the user
-      }
-    });
+    // Room has already been created by the modal component
+    // Just select the new room and close the modal
+    this.selectRoom(room);
+    this.showCreateGroupModal = false;
+    
+    // Show success message
+    console.log('Group created successfully:', room.name);
   }
 
   onCloseModal(): void {
     this.showCreateGroupModal = false;
+  }
+
+  navigateToLogin(): void {
+    this.router.navigate(['/auth/login'], {
+      queryParams: { returnUrl: '/forum' }
+    });
+  }
+
+  navigateToRegister(): void {
+    this.router.navigate(['/auth/register'], {
+      queryParams: { returnUrl: '/forum' }
+    });
   }
 
   toggleSidebar(): void {
@@ -224,13 +345,24 @@ export class ForumComponent implements OnInit, OnDestroy {
     this.chatService.joinRoom(room.id);
     
     // Load messages for the room
-    this.chatService.loadRoomMessages(room.id).subscribe();
+    this.chatService.loadRoomMessages(room.id).subscribe({
+      next: (messages) => {
+        console.log(`✅ Loaded ${messages.length} messages for room ${room.id}`);
+        // Ensure we have user data for message senders
+        this.loadUsersFromMessages(messages);
+      },
+      error: (error) => {
+        console.error(`❌ Error loading messages for room ${room.id}:`, error);
+      }
+    });
     
     // Subscribe to messages for this room
     this.chatService.getMessagesForRoom(room.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe(messages => {
         this.messages[room.id] = messages;
+        // Ensure we have user data for new messages
+        this.loadUsersFromMessages(messages);
       });
 
     // Mark room as read (reset unread count)
