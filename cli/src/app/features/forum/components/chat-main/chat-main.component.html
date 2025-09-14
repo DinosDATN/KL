@@ -102,10 +102,9 @@
       </svg>
     </button>
 
-    <!-- Room Settings (if admin) -->
+    <!-- Room Settings -->
     <button
-      *ngIf="isRoomAdmin"
-      (click)="showSettings = !showSettings"
+      (click)="openChatSettings()"
       class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
       title="Cài đặt nhóm"
     >
@@ -135,9 +134,45 @@
 <!-- Chat Messages Area (Scrollable only) -->
 <div
   #messagesContainer
-  class="chat-messages-scroll flex-1 p-4 space-y-4 overflow-y-auto overflow-x-hidden"
+  class="chat-messages-scroll flex-1 p-4 space-y-4 overflow-y-auto overflow-x-hidden relative"
+  (scroll)="onScroll($event)"
 >
-  <!-- (scroll)="onScroll($event)" -->
+  <!-- Loading Older Messages Indicator -->
+  <div
+    *ngIf="isLoadingOlderMessages"
+    class="flex justify-center items-center py-4 loading-indicator"
+  >
+    <div class="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+      <div class="loading-spinner rounded-full h-4 w-4 border-2 border-blue-600"></div>
+      <span class="text-sm font-medium">Đang tải tin nhắn cũ...</span>
+    </div>
+  </div>
+  
+  <!-- No More Messages Indicator -->
+  <div
+    *ngIf="!hasMoreMessages && messages.length > 0"
+    class="flex justify-center items-center py-2 no-more-messages"
+  >
+    <div class="text-gray-500 dark:text-gray-400 text-sm">
+      🎯 Bạn đã xem hết tin nhắn trong phòng này
+    </div>
+  </div>
+
+  <!-- New Message Indicator -->
+  <div
+    *ngIf="showNewMessageIndicator"
+    class="fixed bottom-32 left-1/2 transform -translate-x-1/2 z-30"
+  >
+    <button
+      (click)="onNewMessageIndicatorClick()"
+      class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 transition-all duration-200 animate-bounce"
+    >
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V4"/>
+      </svg>
+      <span>{{ newMessageCount }} tin nhắn mới</span>
+    </button>
+  </div>
 
   <!-- Date Separator -->
   <div
@@ -517,3 +552,18 @@
     </div>
   </div>
 </div>
+
+<!-- Chat Settings Modal -->
+<app-chat-settings-modal
+  [isOpen]="showChatSettingsModal"
+  [room]="room"
+  [currentUser]="currentUser"
+  [roomMembers]="roomMembers"
+  [isRoomAdmin]="isRoomAdmin"
+  [allUsers]="allUsers"
+  (closeModal)="closeChatSettings()"
+  (updateSettings)="onChatSettingsUpdate($event)"
+  (memberAction)="onMemberAction($event)"
+  (deleteRoom)="onDeleteRoom($event)"
+  (leaveRoom)="onLeaveRoom($event)"
+></app-chat-settings-modal>

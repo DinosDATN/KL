@@ -207,11 +207,48 @@ export class ChatService {
         })
       );
   }
+  
+  // Load older messages for pagination
+  loadOlderMessages(roomId: number, page: number, limit: number = 20): Observable<ChatMessage[]> {
+    console.log(`📜 ChatService: Loading older messages for room ${roomId}, page ${page}`);
+    
+    return this.http.get<{success: boolean, data: {messages: ChatMessage[]}}>
+      (`${this.apiUrl}/chat/rooms/${roomId}/messages?page=${page}&limit=${limit}`)
+      .pipe(
+        map(response => {
+          console.log(`✅ ChatService: Received ${response.data.messages.length} older messages`);
+          return response.data.messages;
+        })
+      );
+  }
 
   sendMessage(roomId: number, content: string, type: string = 'text', replyTo?: number): void {
     console.log('🗣️ ChatService: Sending message...');
     console.log('🏠 Room ID:', roomId);
     console.log('💬 Content:', content);
+    
+    // Generate temporary ID to prevent duplications
+    const tempId = Date.now() + Math.random();
+    
+    // Create optimistic message for immediate UI update
+    const currentUser = this.authService.getCurrentUser();
+    if (currentUser) {
+      const optimisticMessage: ChatMessage = {
+        id: tempId,
+        room_id: roomId,
+        sender_id: currentUser.id,
+        content: content,
+        type: type as any,
+        time_stamp: new Date().toISOString(),
+        sent_at: new Date().toISOString(),
+        is_edited: false,
+        reply_to: replyTo || null,
+        Sender: currentUser
+      };
+      
+      // Add optimistic message immediately
+      this.addMessageToRoom(optimisticMessage);
+    }
     
     // Send via Socket.IO for real-time delivery
     this.socketService.sendMessage(roomId, content, type, replyTo);
@@ -258,7 +295,7 @@ export class ChatService {
     this.socketService.joinRoom(roomId);
   }
 
-  leaveRoom(roomId: number): void {
+  leaveRoomSocket(roomId: number): void {
     this.socketService.leaveRoom(roomId);
   }
 
@@ -276,6 +313,19 @@ export class ChatService {
     const currentMessages = this.messagesSubject.value;
     if (!currentMessages[message.room_id]) {
       currentMessages[message.room_id] = [];
+    }
+    
+    // Check for duplicate messages to prevent duplication bug
+    const existingMessage = currentMessages[message.room_id].find(m => 
+      m.id === message.id || 
+      (m.content === message.content && 
+       m.sender_id === message.sender_id && 
+       Math.abs(new Date(m.sent_at).getTime() - new Date(message.sent_at).getTime()) < 1000)
+    );
+    
+    if (existingMessage) {
+      console.log('🚫 Duplicate message detected, skipping:', message.id);
+      return;
     }
     
     // Ensure message has proper structure with sender info
@@ -296,8 +346,22 @@ export class ChatService {
       }
     };
     
-    currentMessages[message.room_id].push(enhancedMessage);
+    // Insert message in chronological order to maintain proper order
+    const messageTime = new Date(enhancedMessage.sent_at).getTime();
+    let insertIndex = currentMessages[message.room_id].length;
+    
+    for (let i = currentMessages[message.room_id].length - 1; i >= 0; i--) {
+      const existingMessageTime = new Date(currentMessages[message.room_id][i].sent_at).getTime();
+      if (messageTime > existingMessageTime) {
+        break;
+      }
+      insertIndex = i;
+    }
+    
+    currentMessages[message.room_id].splice(insertIndex, 0, enhancedMessage);
     this.messagesSubject.next({...currentMessages});
+    
+    console.log('✅ Message added to room', message.room_id, 'at index', insertIndex);
 
     // Update room's last message info
     const rooms = this.roomsSubject.value;
@@ -466,6 +530,111 @@ export class ChatService {
           invalidMembers: []
         }))
       );
+    }
+  }
+
+  // Chat Settings Management
+  updateRoomSettings(roomId: number, settings: any): Observable<ChatRoom> {
+    return this.http.put<{success: boolean, data: ChatRoom}>(
+      `${this.apiUrl}/chat/rooms/${roomId}/settings`,
+      settings
+    ).pipe(
+      map(response => response.data),
+      tap(updatedRoom => {
+        // Update room in local state
+        const rooms = this.roomsSubject.value;
+        const roomIndex = rooms.findIndex(r => r.id === roomId);
+        if (roomIndex !== -1) {
+          rooms[roomIndex] = updatedRoom;
+          this.roomsSubject.next([...rooms]);
+        }
+      })
+    );
+  }
+
+  addMemberToRoom(roomId: number, userId: number): Observable<User> {
+    return this.http.post<{success: boolean, data: User}>(
+      `${this.apiUrl}/chat/rooms/${roomId}/members`,
+      { userId }
+    ).pipe(
+      map(response => response.data)
+    );
+  }
+
+  removeMemberFromRoom(roomId: number, userId: number): Observable<void> {
+    return this.http.delete<{success: boolean}>(
+      `${this.apiUrl}/chat/rooms/${roomId}/members/${userId}`
+    ).pipe(
+      map(() => void 0)
+    );
+  }
+
+  updateMemberRole(roomId: number, userId: number, isAdmin: boolean): Observable<void> {
+    return this.http.put<{success: boolean}>(
+      `${this.apiUrl}/chat/rooms/${roomId}/members/${userId}/role`,
+      { isAdmin }
+    ).pipe(
+      map(() => void 0)
+    );
+  }
+
+  deleteRoom(roomId: number): Observable<void> {
+    return this.http.delete<{success: boolean}>(
+      `${this.apiUrl}/chat/rooms/${roomId}`
+    ).pipe(
+      map(() => {
+        // Remove room from local state
+        const rooms = this.roomsSubject.value;
+        const filteredRooms = rooms.filter(r => r.id !== roomId);
+        this.roomsSubject.next(filteredRooms);
+        
+        // Remove messages for this room
+        const messages = this.messagesSubject.value;
+        delete messages[roomId];
+        this.messagesSubject.next({...messages});
+      })
+    );
+  }
+
+  leaveRoom(roomId: number): Observable<void> {
+    return this.http.post<{success: boolean}>(
+      `${this.apiUrl}/chat/rooms/${roomId}/leave`,
+      {}
+    ).pipe(
+      map(() => {
+        // Remove room from local state
+        const rooms = this.roomsSubject.value;
+        const filteredRooms = rooms.filter(r => r.id !== roomId);
+        this.roomsSubject.next(filteredRooms);
+        
+        // Remove messages for this room
+        const messages = this.messagesSubject.value;
+        delete messages[roomId];
+        this.messagesSubject.next({...messages});
+        
+        // Leave room via socket
+        this.leaveRoomSocket(roomId);
+      })
+    );
+  }
+
+  // Optimistic message management
+  private removeOptimisticMessage(roomId: number, tempId: number): void {
+    const currentMessages = this.messagesSubject.value;
+    if (currentMessages[roomId]) {
+      currentMessages[roomId] = currentMessages[roomId].filter(m => m.id !== tempId);
+      this.messagesSubject.next({...currentMessages});
+    }
+  }
+
+  private replaceOptimisticMessage(roomId: number, tempId: number, realMessage: ChatMessage): void {
+    const currentMessages = this.messagesSubject.value;
+    if (currentMessages[roomId]) {
+      const messageIndex = currentMessages[roomId].findIndex(m => m.id === tempId);
+      if (messageIndex !== -1) {
+        currentMessages[roomId][messageIndex] = realMessage;
+        this.messagesSubject.next({...currentMessages});
+      }
     }
   }
 }

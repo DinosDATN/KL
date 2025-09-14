@@ -24,20 +24,13 @@ export class ChatSidebarComponent {
   @Input() currentUser!: User;
   @Input() onlineUsers: User[] = [];
   @Input() searchTerm: string = '';
-  @Input() activeFilter: 'all' | 'unread' | 'favorites' = 'all';
   @Input() getUser!: (id: number) => User | undefined;
   @Input() getRoomMembers!: (roomId: number) => User[];
 
   @Output() roomSelected = new EventEmitter<ChatRoom>();
   @Output() searchChanged = new EventEmitter<string>();
-  @Output() filterChanged = new EventEmitter<'all' | 'unread' | 'favorites'>();
   @Output() createGroup = new EventEmitter<void>();
 
-  filters = [
-    { key: 'all' as const, label: 'Tất cả' },
-    { key: 'unread' as const, label: 'Chưa đọc' },
-    { key: 'favorites' as const, label: 'Yêu thích' },
-  ];
 
   selectRoom(room: ChatRoom): void {
     this.roomSelected.emit(room);

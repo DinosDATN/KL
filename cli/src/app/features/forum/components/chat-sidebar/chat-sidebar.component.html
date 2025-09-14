@@ -50,21 +50,6 @@
     />
   </div>
 
-  <!-- Filter Tabs -->
-  <div class="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-    <button
-      *ngFor="let filter of filters"
-      (click)="filterChanged.emit(filter.key)"
-      [class]="
-        'flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200 ' +
-        (activeFilter === filter.key
-          ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
-          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200')
-      "
-    >
-      {{ filter.label }}
-    </button>
-  </div>
 </div>
 
 <!-- Chat Rooms List -->

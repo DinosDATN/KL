@@ -30,6 +30,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { ChatSidebarComponent } from './components/chat-sidebar/chat-sidebar.component';
 import { ChatMainComponent } from './components/chat-main/chat-main.component';
 import { CreateGroupModalComponent } from './components/create-group-modal/create-group-modal.component';
+import { ChatSettingsModalComponent, ChatSettings, MemberAction } from './components/chat-settings-modal/chat-settings-modal.component';
 import { ForumLayoutComponent } from './components/forum-layout/forum-layout.component';
 import { PostCreatorComponent } from './components/post-creator/post-creator.component';
 import { PostDetailComponent } from './components/post-detail/post-detail.component';
@@ -53,6 +54,7 @@ interface CreatePostRequest {
     ChatSidebarComponent,
     ChatMainComponent,
     CreateGroupModalComponent,
+    ChatSettingsModalComponent,
     ForumLayoutComponent,
     PostCreatorComponent,
     PostDetailComponent,
@@ -81,15 +83,17 @@ export class ForumComponent implements OnInit, OnDestroy {
   isTyping = false;
   typingUsers: User[] = [];
   
+  // Pagination state
+  messagePagination: { [roomId: number]: { page: number; hasMore: boolean; loading: boolean } } = {};
+  
   // New Forum UI State
   currentView: 'forum' | 'chat' = 'forum';
   viewMode: 'list' | 'post' = 'list';
   selectedPostId: number | null = null;
   showPostCreator = false;
 
-  // Search and filters
+  // Search
   searchTerm = '';
-  activeFilter: 'all' | 'unread' | 'favorites' = 'all';
 
   private destroy$ = new Subject<void>();
 
@@ -310,6 +314,145 @@ export class ForumComponent implements OnInit, OnDestroy {
     this.chatService.addReaction(messageId, reactionType);
   }
 
+  // Chat Settings Event Handlers
+  onUpdateChatSettings(settings: ChatSettings): void {
+    if (!this.selectedRoom) return;
+
+    this.chatService.updateRoomSettings(this.selectedRoom.id, settings)
+      .subscribe({
+        next: (updatedRoom) => {
+          console.log('✅ Room settings updated:', updatedRoom.name);
+          // Update local room data
+          const roomIndex = this.chatRooms.findIndex(r => r.id === this.selectedRoom!.id);
+          if (roomIndex !== -1) {
+            this.chatRooms[roomIndex] = updatedRoom;
+            this.selectedRoom = updatedRoom;
+          }
+        },
+        error: (error) => {
+          console.error('❌ Error updating room settings:', error);
+        }
+      });
+  }
+
+  onHandleMemberAction(action: MemberAction): void {
+    if (!this.selectedRoom) return;
+
+    switch (action.type) {
+      case 'add':
+        if (action.user) {
+          this.chatService.addMemberToRoom(this.selectedRoom.id, action.userId)
+            .subscribe({
+              next: () => {
+                console.log('✅ Member added:', action.user!.name);
+                // Update local members list
+                if (!this.roomMembers.find(m => m.user_id === action.userId)) {
+                  this.roomMembers.push({
+                    id: 0,
+                    room_id: this.selectedRoom!.id,
+                    user_id: action.userId,
+                    joined_at: new Date().toISOString(),
+                    is_admin: false,
+                    User: action.user!
+                  });
+                }
+              },
+              error: (error) => {
+                console.error('❌ Error adding member:', error);
+              }
+            });
+        }
+        break;
+
+      case 'remove':
+      case 'kick':
+        this.chatService.removeMemberFromRoom(this.selectedRoom.id, action.userId)
+          .subscribe({
+            next: () => {
+              console.log('✅ Member removed:', action.user?.name);
+              // Update local members list
+              this.roomMembers = this.roomMembers.filter(m => m.user_id !== action.userId);
+            },
+            error: (error) => {
+              console.error('❌ Error removing member:', error);
+            }
+          });
+        break;
+
+      case 'promote':
+        this.chatService.updateMemberRole(this.selectedRoom.id, action.userId, true)
+          .subscribe({
+            next: () => {
+              console.log('✅ Member promoted:', action.user?.name);
+              // Update local members list
+              const member = this.roomMembers.find(m => m.user_id === action.userId);
+              if (member) {
+                member.is_admin = true;
+              }
+            },
+            error: (error) => {
+              console.error('❌ Error promoting member:', error);
+            }
+          });
+        break;
+
+      case 'demote':
+        this.chatService.updateMemberRole(this.selectedRoom.id, action.userId, false)
+          .subscribe({
+            next: () => {
+              console.log('✅ Member demoted:', action.user?.name);
+              // Update local members list
+              const member = this.roomMembers.find(m => m.user_id === action.userId);
+              if (member) {
+                member.is_admin = false;
+              }
+            },
+            error: (error) => {
+              console.error('❌ Error demoting member:', error);
+            }
+          });
+        break;
+    }
+  }
+
+  onDeleteRoom(roomId: number): void {
+    this.chatService.deleteRoom(roomId)
+      .subscribe({
+        next: () => {
+          console.log('✅ Room deleted');
+          // Room will be removed from local state by the service
+          this.selectedRoom = null;
+          
+          // Select first available room if any
+          if (this.chatRooms.length > 0) {
+            this.selectRoom(this.chatRooms[0]);
+          }
+        },
+        error: (error) => {
+          console.error('❌ Error deleting room:', error);
+        }
+      });
+  }
+
+  onLeaveRoom(roomId: number): void {
+    this.chatService.leaveRoom(roomId)
+      .subscribe({
+        next: () => {
+          console.log('✅ Left room');
+          // Room will be removed from local state by the service
+          this.selectedRoom = null;
+          
+          // Select first available room if any
+          if (this.chatRooms.length > 0) {
+            this.selectRoom(this.chatRooms[0]);
+          }
+        },
+        error: (error: any) => {
+          console.error('❌ Error leaving room:', error);
+        }
+      });
+  }
+
   onCreateGroup(): void {
     this.showCreateGroupModal = true;
   }
@@ -349,6 +492,15 @@ export class ForumComponent implements OnInit, OnDestroy {
   private selectRoom(room: ChatRoom): void {
     this.selectedRoom = room;
     
+    // Initialize pagination state for this room if not already present
+    if (!this.messagePagination[room.id]) {
+      this.messagePagination[room.id] = {
+        page: 1,
+        hasMore: true,
+        loading: false
+      };
+    }
+    
     // Join room via socket
     this.chatService.joinRoom(room.id);
     
@@ -358,6 +510,13 @@ export class ForumComponent implements OnInit, OnDestroy {
         console.log(`✅ Loaded ${messages.length} messages for room ${room.id}`);
         // Ensure we have user data for message senders
         this.loadUsersFromMessages(messages);
+        
+        // Update pagination state based on initial load
+        this.messagePagination[room.id] = {
+          page: 1,
+          hasMore: messages.length === 20, // Assuming 20 messages per page
+          loading: false
+        };
       },
       error: (error) => {
         console.error(`❌ Error loading messages for room ${room.id}:`, error);
@@ -456,17 +615,6 @@ export class ForumComponent implements OnInit, OnDestroy {
       );
     }
 
-    // Apply active filter
-    switch (this.activeFilter) {
-      case 'unread':
-        filtered = filtered.filter((room) => room.unread_count > 0);
-        break;
-      case 'favorites':
-        // In a real app, this would filter by user favorites
-        filtered = filtered.filter((room) => room.type === 'group');
-        break;
-    }
-
     // Sort by last activity
     return filtered.sort((a, b) => {
       const aTime = new Date(a.updated_at || a.created_at).getTime();
@@ -507,5 +655,93 @@ export class ForumComponent implements OnInit, OnDestroy {
   navigateToCategory(categoryId: number): void {
     console.log('Navigate to category:', categoryId);
     // Implement category filtering
+  }
+  
+  // Pagination Methods
+  onLoadOlderMessages(): void {
+    if (!this.selectedRoom || !this.currentUser) {
+      console.log('⚠️ Cannot load older messages - no selected room or user');
+      return;
+    }
+    
+    const roomId = this.selectedRoom.id;
+    const pagination = this.messagePagination[roomId] || { page: 1, hasMore: true, loading: false };
+    
+    if (pagination.loading || !pagination.hasMore) {
+      console.log('📜 Skipping older messages load - already loading or no more messages');
+      return;
+    }
+    
+    console.log(`📜 Loading older messages for room ${roomId}, page ${pagination.page + 1}`);
+    
+    // Set loading state
+    this.messagePagination[roomId] = {
+      ...pagination,
+      loading: true
+    };
+    
+    // Load older messages from the chat service
+    this.chatService.loadOlderMessages(roomId, pagination.page + 1)
+      .subscribe({
+        next: (olderMessages) => {
+          console.log(`✅ Loaded ${olderMessages.length} older messages`);
+          
+          if (olderMessages.length > 0) {
+            // Add older messages to the beginning of the current messages array
+            const currentMessages = this.messages[roomId] || [];
+            this.messages[roomId] = [...olderMessages, ...currentMessages];
+            
+            // Load user data from new messages
+            this.loadUsersFromMessages(olderMessages);
+            
+            // Update pagination state
+            this.messagePagination[roomId] = {
+              page: pagination.page + 1,
+              hasMore: olderMessages.length === 20, // Assuming 20 messages per page
+              loading: false
+            };
+            
+            console.log(`📍 Updated pagination for room ${roomId}:`, this.messagePagination[roomId]);
+          } else {
+            // No more messages available
+            this.messagePagination[roomId] = {
+              ...pagination,
+              hasMore: false,
+              loading: false
+            };
+            
+            console.log(`📋 No more older messages for room ${roomId}`);
+          }
+        },
+        error: (error) => {
+          console.error('❌ Error loading older messages:', error);
+          
+          // Reset loading state on error
+          this.messagePagination[roomId] = {
+            ...pagination,
+            loading: false
+          };
+        }
+      });
+  }
+  
+  // Check if there are more messages to load for a room
+  hasMoreMessages(roomId: number): boolean {
+    const pagination = this.messagePagination[roomId];
+    return pagination ? pagination.hasMore : true;
+  }
+  
+  // Check if currently loading older messages for a room
+  isLoadingOlderMessages(roomId: number): boolean {
+    const pagination = this.messagePagination[roomId];
+    return pagination ? pagination.loading : false;
+  }
+  
+  // Get pagination callbacks for child component
+  getPaginationCallbacks() {
+    return {
+      isLoading: this.isLoadingOlderMessages.bind(this),
+      hasMore: this.hasMoreMessages.bind(this)
+    };
   }
 }
