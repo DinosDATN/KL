@@ -294,14 +294,26 @@ export class ProblemsService {
     return this.getProblemsByDifficulty('Hard');
   }
 
-  // Code execution methods
+  // Code execution methods - Updated to use Judge0 service
   executeCode(sourceCode: string, language: string, input: string = ''): Observable<any> {
-    return this.http.post<{success: boolean, data: any}>(`${this.apiUrl}/problems/execute`, {
-      sourceCode,
+    return this.http.post<{success: boolean, data: any}>(`${this.apiUrl}/judge0/execute`, {
+      source_code: sourceCode,
       language,
-      input
+      stdin: input
     }).pipe(
-      map(response => response.data),
+      map(response => {
+        if (!response.success) {
+          throw new Error('Code execution failed');
+        }
+        // Transform response to match expected format
+        return {
+          success: response.data.status === 'completed',
+          output: response.data.output,
+          error: response.data.error,
+          executionTime: response.data.execution_time,
+          memoryUsed: response.data.memory_used
+        };
+      }),
       catchError(error => {
         console.error('Error executing code:', error);
         throw error;
@@ -310,12 +322,34 @@ export class ProblemsService {
   }
 
   submitCode(problemId: number, sourceCode: string, language: string, userId?: number): Observable<any> {
-    return this.http.post<{success: boolean, data: any}>(`${this.apiUrl}/problems/${problemId}/submit`, {
-      sourceCode,
+    // First, get test cases for this problem
+    const testCases = this.getTestCasesByProblemId(problemId)
+      .map(tc => ({
+        input: tc.input,
+        expected_output: tc.expected_output
+      }));
+
+    return this.http.post<{success: boolean, data: any}>(`${this.apiUrl}/judge0/submit`, {
+      source_code: sourceCode,
       language,
-      userId
+      test_cases: testCases
     }).pipe(
-      map(response => response.data),
+      map(response => {
+        if (!response.success) {
+          throw new Error('Code submission failed');
+        }
+        // Transform response to match expected format
+        return {
+          submissionId: response.data.submission_id,
+          status: response.data.status,
+          score: response.data.score,
+          executionTime: response.data.execution_time,
+          memoryUsed: response.data.memory_used,
+          testCasesPassed: response.data.test_cases_passed,
+          totalTestCases: response.data.total_test_cases,
+          details: response.data.error || null
+        };
+      }),
       catchError(error => {
         console.error('Error submitting code:', error);
         throw error;
@@ -324,9 +358,14 @@ export class ProblemsService {
   }
 
   getSupportedLanguages(): Observable<any[]> {
-    return this.http.get<{success: boolean, data: any[]}>(`${this.apiUrl}/problems/data/languages`)
+    return this.http.get<{success: boolean, data: any[]}>(`${this.apiUrl}/judge0/languages`)
       .pipe(
-        map(response => response.data),
+        map(response => {
+          if (!response.success) {
+            throw new Error('Failed to fetch languages');
+          }
+          return response.data;
+        }),
         catchError(error => {
           console.error('Error fetching supported languages:', error);
           // Return default languages as fallback
@@ -334,7 +373,8 @@ export class ProblemsService {
             { id: 'python', name: 'Python 3', judgeId: 71 },
             { id: 'javascript', name: 'JavaScript (Node.js)', judgeId: 63 },
             { id: 'java', name: 'Java', judgeId: 62 },
-            { id: 'cpp', name: 'C++', judgeId: 54 }
+            { id: 'cpp', name: 'C++', judgeId: 54 },
+            { id: 'c', name: 'C', judgeId: 50 }
           ]);
         })
       );

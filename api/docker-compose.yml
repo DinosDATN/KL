@@ -1,6 +1,36 @@
 version: "3.8"
 
 services:
+  # Backend API Service
+  api:
+    build: .
+    container_name: backend_api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      API_PREFIX: /api/v1
+      CLIENT_URL: http://localhost:4200
+      # Database configuration
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: lfysdb
+      DB_USER: api_user
+      DB_PASSWORD: api_password
+      # Judge0 configuration
+      JUDGE0_API_URL: http://judge0:2358
+    volumes:
+      - ./uploads:/app/uploads
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - mysql
+      - judge0
+    networks:
+      - api_network
+
   mysql:
     image: mariadb:10.4
     container_name: api_mysql
@@ -33,8 +63,92 @@ services:
     networks:
       - api_network
 
+  # Judge0 Dependencies
+  judge0-redis:
+    image: redis:7.0-alpine
+    container_name: judge0_redis
+    restart: unless-stopped
+    command: [
+      "sh", "-c",
+      "redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\""
+    ]
+    environment:
+      - REDIS_PASSWORD=judge0_redis_password
+    volumes:
+      - judge0_redis_data:/data
+    networks:
+      - api_network
+
+  judge0-postgres:
+    image: postgres:15-alpine
+    container_name: judge0_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: judge0
+      POSTGRES_USER: judge0
+      POSTGRES_PASSWORD: judge0_postgres_password
+    volumes:
+      - judge0_postgres_data:/var/lib/postgresql/data
+    networks:
+      - api_network
+
+  # Judge0 API Server
+  judge0:
+    image: judge0/judge0:1.13.0
+    container_name: judge0_api
+    restart: unless-stopped
+    ports:
+      - "2358:2358"
+    privileged: true
+    environment:
+      # Database
+      POSTGRES_HOST: judge0-postgres
+      POSTGRES_DB: judge0
+      POSTGRES_USER: judge0
+      POSTGRES_PASSWORD: judge0_postgres_password
+      
+      # Redis
+      REDIS_HOST: judge0-redis
+      REDIS_PASSWORD: judge0_redis_password
+      REDIS_PORT: 6379
+      
+      # Judge0 Configuration
+      RAILS_ENV: production
+      RAILS_MAX_THREADS: 4
+      SECRET_KEY_BASE: judge0_secret_key_base_change_this_in_production
+      
+      # Enable authentication (optional, set to false for development)
+      ENABLE_WAIT_RESULT: true
+      ENABLE_COMPILER_OPTIONS: true
+      ALLOWED_LANGUAGES_FILE: "/judge0/allowed_languages.txt"
+      
+      # Limits
+      MAX_QUEUE_SIZE: 100
+      MAX_CPU_TIME_LIMIT: 15
+      MAX_MEMORY_LIMIT: 512000
+      MAX_STACK_LIMIT: 64000
+      MAX_PROCESSES_AND_OR_THREADS: 30
+      MAX_FILE_SIZE: 1024
+      
+      # Workers
+      COUNT_OF_WORKERS: 2
+      WORKER_TIMEOUT: 10
+      
+      # Fix isolate sandbox issues
+      USE_ISOLATE: false
+    volumes:
+      - judge0_tmp:/tmp
+    depends_on:
+      - judge0-postgres
+      - judge0-redis
+    networks:
+      - api_network
+
 volumes:
   mysql_data:
+  judge0_redis_data:
+  judge0_postgres_data:
+  judge0_tmp:
 
 networks:
   api_network:

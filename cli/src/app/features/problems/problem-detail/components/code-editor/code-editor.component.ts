@@ -1,10 +1,12 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MockJudgeService, Language, ExecutionResult, SubmissionResult } from '../../../../../core/services/mock-judge.service';
+import { Language, ExecutionResult, SubmissionResult } from '../../../../../core/services/mock-judge.service';
 import { ProblemsService } from '../../../../../core/services/problems.service';
+import { Judge0Service, Judge0ExecutionResult, Judge0SubmissionResult, Judge0Language } from '../../../../../core/services/judge0.service';
 import { StarterCode, TestCase } from '../../../../../core/models/problem.model';
 import { ThemeService } from '../../../../../core/services/theme.service';
+import { forkJoin, of } from 'rxjs';
 
 declare var ace: any;
 
@@ -34,12 +36,14 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   editor: any;
   currentCode: string = '';
   selectedLanguage: Language;
+  supportedLanguages: Language[] = [];
   customInput: string = '';
   
   // UI States
   isExecuting: boolean = false;
   isSubmitting: boolean = false;
   isFullscreen: boolean = false;
+  isLoadingLanguages: boolean = false;
   fontSize: number = 14;
   
   // Results
@@ -48,11 +52,17 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,
-    public mockJudgeService: MockJudgeService,
     private problemsService: ProblemsService,
+    private judge0Service: Judge0Service,
     private themeService: ThemeService
   ) {
-    this.selectedLanguage = this.mockJudgeService.supportedLanguages[0];
+    // Initialize with default language
+    this.selectedLanguage = {
+      id: '63',
+      name: 'JavaScript',
+      extension: 'js',
+      aceMode: 'javascript'
+    };
   }
   
   ngOnInit(): void {
@@ -62,6 +72,9 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
         this.updateEditorTheme(theme);
       }
     });
+    
+    // Load supported languages from Judge0 service
+    this.loadSupportedLanguages();
   }
   
   ngAfterViewInit(): void {
@@ -156,7 +169,7 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   onLanguageChange(event: Event): void {
     const target = event.target as HTMLSelectElement;
     const languageId = target.value;
-    const language = this.mockJudgeService.supportedLanguages.find(l => l.id === languageId);
+    const language = this.supportedLanguages.find(l => l.id === languageId);
     if (language) {
       console.log('Changing language to:', language.name, 'with aceMode:', language.aceMode);
       this.selectedLanguage = language;
@@ -186,13 +199,104 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
   
+  private loadSupportedLanguages(): void {
+    this.isLoadingLanguages = true;
+    console.log('Loading supported languages from Judge0...');
+    
+    this.judge0Service.getSupportedLanguages().subscribe({
+      next: (judge0Languages: Judge0Language[]) => {
+        // Transform Judge0 languages to our Language interface
+        this.supportedLanguages = judge0Languages.map(lang => ({
+          id: lang.id,
+          name: lang.name,
+          extension: this.getExtensionForLanguage(lang.name.toLowerCase()),
+          aceMode: this.getAceModeForLanguage(lang.name.toLowerCase())
+        }));
+        
+        // Update selected language if it exists in the new list, otherwise use the first one
+        const currentLang = this.supportedLanguages.find(l => l.id === this.selectedLanguage.id);
+        if (currentLang) {
+          this.selectedLanguage = currentLang;
+        } else if (this.supportedLanguages.length > 0) {
+          this.selectedLanguage = this.supportedLanguages[0];
+        }
+        
+        this.isLoadingLanguages = false;
+        console.log('Loaded languages successfully:', this.supportedLanguages.length);
+      },
+      error: (error) => {
+        console.error('Failed to load languages from Judge0:', error);
+        // Fallback to basic language set
+        this.supportedLanguages = [
+          { id: '63', name: 'JavaScript', extension: 'js', aceMode: 'javascript' },
+          { id: '71', name: 'Python', extension: 'py', aceMode: 'python' },
+          { id: '54', name: 'C++', extension: 'cpp', aceMode: 'c_cpp' },
+          { id: '50', name: 'C', extension: 'c', aceMode: 'c_cpp' },
+          { id: '62', name: 'Java', extension: 'java', aceMode: 'java' }
+        ];
+        this.selectedLanguage = this.supportedLanguages[0];
+        this.isLoadingLanguages = false;
+        console.log('Using fallback language set');
+      }
+    });
+  }
+  
+  private getExtensionForLanguage(languageName: string): string {
+    const extensionMap: { [key: string]: string } = {
+      'javascript': 'js',
+      'python': 'py',
+      'java': 'java',
+      'c++': 'cpp',
+      'cpp': 'cpp',
+      'c': 'c',
+      'csharp': 'cs',
+      'c#': 'cs',
+      'ruby': 'rb',
+      'php': 'php',
+      'go': 'go',
+      'rust': 'rs',
+      'swift': 'swift',
+      'kotlin': 'kt'
+    };
+    
+    return extensionMap[languageName] || 'txt';
+  }
+  
+  private getAceModeForLanguage(languageName: string): string {
+    const modeMap: { [key: string]: string } = {
+      'javascript': 'javascript',
+      'python': 'python',
+      'java': 'java',
+      'c++': 'c_cpp',
+      'cpp': 'c_cpp',
+      'c': 'c_cpp',
+      'csharp': 'csharp',
+      'c#': 'csharp',
+      'ruby': 'ruby',
+      'php': 'php',
+      'go': 'golang',
+      'rust': 'rust',
+      'swift': 'swift',
+      'kotlin': 'kotlin'
+    };
+    
+    return modeMap[languageName] || 'text';
+  }
+  
   private getDefaultCodeTemplate(languageId: string): string {
     const templates: { [key: string]: string } = {
-      'javascript': '// Your JavaScript code here\nfunction solution() {\n    // Write your code here\n    return null;\n}',
-      'python': '# Your Python code here\ndef solution():\n    # Write your code here\n    pass',
-      'java': '// Your Java code here\npublic class Solution {\n    public void solution() {\n        // Write your code here\n    }\n}',
-      'cpp': '// Your C++ code here\n#include <iostream>\nusing namespace std;\n\nint main() {\n    // Write your code here\n    return 0;\n}',
-      'csharp': '// Your C# code here\nusing System;\n\npublic class Solution {\n    public void Main() {\n        // Write your code here\n    }\n}'
+      // Judge0 language IDs
+      '63': '// Your JavaScript code here\nconsole.log("Hello World");', // JavaScript
+      '71': '# Your Python code here\nprint("Hello World")', // Python
+      '62': '// Your Java code here\npublic class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello World");\n    }\n}', // Java
+      '54': '// Your C++ code here\n#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello World" << endl;\n    return 0;\n}', // C++
+      '50': '// Your C code here\n#include <stdio.h>\n\nint main() {\n    printf("Hello World\\n");\n    return 0;\n}', // C
+      // Legacy fallbacks for backward compatibility
+      'javascript': '// Your JavaScript code here\nconsole.log("Hello World");',
+      'python': '# Your Python code here\nprint("Hello World")',
+      'java': '// Your Java code here\npublic class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello World");\n    }\n}',
+      'cpp': '// Your C++ code here\n#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello World" << endl;\n    return 0;\n}',
+      'c': '// Your C code here\n#include <stdio.h>\n\nint main() {\n    printf("Hello World\\n");\n    return 0;\n}'
     };
     return templates[languageId] || '// Start coding here';
   }
@@ -225,72 +329,107 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     this.isExecuting = true;
     this.executionResult = null;
     
-    // Try real API first, fallback to mock service
-    this.problemsService.executeCode(
-      this.currentCode, 
-      this.selectedLanguage.id, 
-      this.customInput
-    ).subscribe({
-      next: (result) => {
-        this.executionResult = result;
+    console.log('Executing code with Judge0:', {
+      language: this.selectedLanguage.id,
+      codeLength: this.currentCode.length
+    });
+    
+    // Use Judge0 service as primary
+    this.judge0Service.executeCode({
+      source_code: this.currentCode,
+      language: this.selectedLanguage.id,
+      stdin: this.customInput || ''
+    }).subscribe({
+      next: (result: Judge0ExecutionResult) => {
+        // Transform Judge0 result to match component's expected format
+        this.executionResult = {
+          success: result.status === 'completed',
+          output: result.output,
+          error: result.error || undefined,
+          executionTime: result.execution_time,
+          memoryUsed: result.memory_used // Keep in KB
+        };
         this.isExecuting = false;
+        console.log('Judge0 execution successful:', this.executionResult);
       },
       error: (error) => {
-        console.error('Real execution failed, falling back to mock:', error);
-        // Fallback to mock service
-        this.mockJudgeService.executeCode(
-          this.currentCode, 
-          this.selectedLanguage.id, 
-          this.customInput
-        ).subscribe({
-          next: (result) => {
-            this.executionResult = result;
-            this.isExecuting = false;
-          },
-          error: (fallbackError) => {
-            console.error('Mock execution also failed:', fallbackError);
-            this.isExecuting = false;
-          }
-        });
+        console.error('Judge0 execution failed:', error);
+        this.executionResult = {
+          success: false,
+          output: '',
+          error: `Code execution failed: ${error.message || 'Unknown error occurred'}`,
+          executionTime: 0,
+          memoryUsed: 0
+        };
+        this.isExecuting = false;
       }
     });
   }
   
   submitSolution(): void {
-    if (!this.currentCode.trim() || this.isSubmitting) return;
+    if (!this.currentCode.trim() || this.isSubmitting || !this.testCases.length) return;
     
     this.isSubmitting = true;
     this.submissionResult = null;
     
-    // Try real API first, fallback to mock service
-    this.problemsService.submitCode(
-      this.problem?.id || 1,
-      this.currentCode,
-      this.selectedLanguage.id,
-      undefined // userId - can be added later when user authentication is implemented
-    ).subscribe({
-      next: (result) => {
-        this.submissionResult = result;
+    console.log('Submitting solution with Judge0:', {
+      language: this.selectedLanguage.id,
+      testCasesCount: this.testCases.length,
+      codeLength: this.currentCode.length
+    });
+    
+    // Prepare test cases for Judge0
+    const testCasesForJudge0 = this.testCases.map(tc => ({
+      input: tc.input,
+      expected_output: tc.expected_output
+    }));
+    
+    // Use Judge0 service as primary
+    this.judge0Service.submitCode({
+      source_code: this.currentCode,
+      language: this.selectedLanguage.id,
+      test_cases: testCasesForJudge0
+    }).subscribe({
+      next: (result: Judge0SubmissionResult) => {
+        // Transform Judge0 result to match component's expected format
+        // Map Judge0 status to expected status types
+        let mappedStatus: SubmissionResult['status'];
+        if (result.status === 'accepted') {
+          mappedStatus = 'Accepted';
+        } else if (result.status === 'wrong') {
+          mappedStatus = 'Wrong Answer';
+        } else if (result.status === 'error') {
+          mappedStatus = 'Runtime Error';
+        } else {
+          mappedStatus = 'Runtime Error'; // Default fallback
+        }
+        
+        this.submissionResult = {
+          submissionId: result.submission_id,
+          status: mappedStatus,
+          score: result.score,
+          executionTime: result.execution_time,
+          memoryUsed: result.memory_used, // Keep in KB
+          testCasesPassed: result.test_cases_passed,
+          totalTestCases: result.total_test_cases,
+          details: result.error || undefined
+        };
         this.isSubmitting = false;
+        console.log('Judge0 submission successful:', this.submissionResult);
       },
       error: (error) => {
-        console.error('Real submission failed, falling back to mock:', error);
-        // Fallback to mock service
-        this.mockJudgeService.submitCode(
-          this.currentCode,
-          this.selectedLanguage.id,
-          this.problem?.id || 1,
-          this.testCases
-        ).subscribe({
-          next: (result) => {
-            this.submissionResult = result;
-            this.isSubmitting = false;
-          },
-          error: (fallbackError) => {
-            console.error('Mock submission also failed:', fallbackError);
-            this.isSubmitting = false;
-          }
-        });
+        console.error('Judge0 submission failed:', error);
+        this.submissionResult = {
+          submissionId: 'ERROR_' + Date.now(),
+          status: 'Runtime Error',
+          score: 0,
+          executionTime: 0,
+          memoryUsed: 0,
+          testCasesPassed: 0,
+          totalTestCases: this.testCases.length,
+          details: `Submission failed: ${error.message || 'Unknown error occurred'}`
+        };
+        this.isSubmitting = false;
       }
     });
   }

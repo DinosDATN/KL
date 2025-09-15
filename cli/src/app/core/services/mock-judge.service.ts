@@ -47,9 +47,10 @@ export class MockJudgeService {
   // Supported programming languages
   readonly supportedLanguages: Language[] = [
     { id: 'python', name: 'Python 3', extension: 'py', aceMode: 'python' },
-    { id: 'javascript', name: 'JavaScript', extension: 'js', aceMode: 'javascript' },
+    { id: 'javascript', name: 'JavaScript (Node.js)', extension: 'js', aceMode: 'javascript' },
     { id: 'java', name: 'Java', extension: 'java', aceMode: 'java' },
-    { id: 'cpp', name: 'C++', extension: 'cpp', aceMode: 'c_cpp' }
+    { id: 'cpp', name: 'C++', extension: 'cpp', aceMode: 'c_cpp' },
+    { id: 'c', name: 'C', extension: 'c', aceMode: 'c_cpp' }
   ];
 
   constructor() { }
@@ -183,6 +184,12 @@ export class MockJudgeService {
         'Compilation error: cannot find symbol'
       ],
       cpp: [
+        'Segmentation fault (core dumped)',
+        'Runtime error: array index out of bounds',
+        'Compilation error: \'x\' was not declared in this scope',
+        'Runtime error: division by zero'
+      ],
+      c: [
         'Segmentation fault (core dumped)',
         'Runtime error: array index out of bounds',
         'Compilation error: \'x\' was not declared in this scope',
