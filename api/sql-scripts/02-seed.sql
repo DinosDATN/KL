@@ -115,15 +115,15 @@ INSERT INTO course_categories (id, name, description, created_at, updated_at) VA
 (8, 'Cybersecurity', 'An ninh mạng và bảo mật', NOW(), NOW());
 
 -- Insert courses
-INSERT INTO courses (id, instructor_id, title, thumbnail, publish_date, status, revenue, students, rating, description, level, duration, category_id, is_premium, is_deleted, created_at, updated_at) VALUES
-(1, 2, 'Python cho người mới bắt đầu', 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=400', '2024-01-01', 'published', 2500000, 150, 4.8, 'Khóa học Python từ cơ bản đến nâng cao, phù hợp cho người mới bắt đầu lập trình.', 'Beginner', 1200, 1, FALSE, FALSE, NOW(), NOW()),
-(2, 2, 'Machine Learning với Python', 'https://images.unsplash.com/photo-1555255707-c07966088b7b?w=400', '2024-01-05', 'published', 4500000, 85, 4.9, 'Học máy từ cơ bản đến nâng cao với Python, scikit-learn và TensorFlow.', 'Intermediate', 2400, 5, TRUE, FALSE, NOW(), NOW()),
-(3, 4, 'React.js Fundamentals', 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400', '2024-01-08', 'published', 3200000, 120, 4.7, 'Xây dựng ứng dụng web hiện đại với React.js, từ cơ bản đến nâng cao.', 'Intermediate', 1800, 2, FALSE, FALSE, NOW(), NOW()),
-(4, 4, 'Advanced JavaScript Patterns', 'https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=400', '2024-01-10', 'published', 1800000, 75, 4.6, 'Các pattern và kỹ thuật nâng cao trong JavaScript cho developer kinh nghiệm.', 'Advanced', 1500, 2, TRUE, FALSE, NOW(), NOW()),
-(5, 8, 'Flutter Mobile Development', 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400', '2024-01-12', 'published', 2800000, 95, 4.8, 'Phát triển ứng dụng di động đa nền tảng với Flutter và Dart.', 'Beginner', 2000, 3, FALSE, FALSE, NOW(), NOW()),
-(6, 7, 'Docker và Container', 'https://images.unsplash.com/photo-1605745341112-85968b19335b?w=400', '2024-01-15', 'published', 2100000, 68, 4.5, 'Triển khai và quản lý ứng dụng với Docker và Kubernetes.', 'Intermediate', 1400, 6, TRUE, FALSE, NOW(), NOW()),
-(7, 2, 'Data Analysis với Pandas', 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400', '2024-01-18', 'draft', 0, 0, 0, 'Phân tích dữ liệu hiệu quả với thư viện Pandas trong Python.', 'Intermediate', 1600, 4, FALSE, FALSE, NOW(), NOW()),
-(8, 4, 'Node.js Backend Development', 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400', '2024-01-20', 'published', 3500000, 110, 4.7, 'Xây dựng API và backend services với Node.js và Express.', 'Intermediate', 2200, 2, FALSE, FALSE, NOW(), NOW());
+INSERT INTO courses (id, instructor_id, title, thumbnail, publish_date, status, revenue, students, rating, description, level, duration, category_id, is_premium, is_deleted, price, original_price, discount, created_at, updated_at) VALUES
+(1, 2, 'Python cho người mới bắt đầu', 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=400', '2024-01-01', 'published', 2500000, 150, 4.8, 'Khóa học Python từ cơ bản đến nâng cao, phù hợp cho người mới bắt đầu lập trình.', 'Beginner', 1200, 1, FALSE, FALSE, 0, 299000, 100, NOW(), NOW()),
+(2, 2, 'Machine Learning với Python', 'https://images.unsplash.com/photo-1555255707-c07966088b7b?w=400', '2024-01-05', 'published', 4500000, 85, 4.9, 'Học máy từ cơ bản đến nâng cao với Python, scikit-learn và TensorFlow.', 'Intermediate', 2400, 5, TRUE, FALSE, 499000, 599000, 17, NOW(), NOW()),
+(3, 4, 'React.js Fundamentals', 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400', '2024-01-08', 'published', 3200000, 120, 4.7, 'Xây dựng ứng dụng web hiện đại với React.js, từ cơ bản đến nâng cao.', 'Intermediate', 1800, 2, FALSE, FALSE, 399000, 399000, 0, NOW(), NOW()),
+(4, 4, 'Advanced JavaScript Patterns', 'https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=400', '2024-01-10', 'published', 1800000, 75, 4.6, 'Các pattern và kỹ thuật nâng cao trong JavaScript cho developer kinh nghiệm.', 'Advanced', 1500, 2, TRUE, FALSE, 799000, 999000, 20, NOW(), NOW()),
+(5, 8, 'Flutter Mobile Development', 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400', '2024-01-12', 'published', 2800000, 95, 4.8, 'Phát triển ứng dụng di động đa nền tảng với Flutter và Dart.', 'Beginner', 2000, 3, FALSE, FALSE, 299000, 399000, 25, NOW(), NOW()),
+(6, 7, 'Docker và Container', 'https://images.unsplash.com/photo-1605745341112-85968b19335b?w=400', '2024-01-15', 'published', 2100000, 68, 4.5, 'Triển khai và quản lý ứng dụng với Docker và Kubernetes.', 'Intermediate', 1400, 6, TRUE, FALSE, 599000, 799000, 25, NOW(), NOW()),
+(7, 2, 'Data Analysis với Pandas', 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400', '2024-01-18', 'draft', 0, 0, 0, 'Phân tích dữ liệu hiệu quả với thư viện Pandas trong Python.', 'Intermediate', 1600, 4, FALSE, FALSE, 399000, 499000, 20, NOW(), NOW()),
+(8, 4, 'Node.js Backend Development', 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400', '2024-01-20', 'published', 3500000, 110, 4.7, 'Xây dựng API và backend services với Node.js và Express.', 'Intermediate', 2200, 2, FALSE, FALSE, 699000, 899000, 22, NOW(), NOW());
 
 -- Insert course enrollments
 INSERT INTO course_enrollments (id, user_id, course_id, progress, status, start_date, completion_date, rating, created_at, updated_at) VALUES
@@ -263,7 +263,11 @@ INSERT INTO problems (id, title, description, difficulty, estimated_time, likes,
 (5, 'Reverse Integer', 'Đảo ngược một số nguyên 32-bit có dấu.', 'Easy', '20 mins', 890, 45, 91.2, 12000, 10944, TRUE, FALSE, FALSE, 1, 4, FALSE, NOW(), NOW()),
 (6, 'Binary Tree Inorder Traversal', 'Duyệt cây nhị phân theo thứ tự giữa (inorder).', 'Easy', '20 mins', 654, 32, 88.5, 9500, 8407, FALSE, TRUE, FALSE, 4, 2, FALSE, NOW(), NOW()),
 (7, 'Maximum Subarray', 'Tìm mảng con liên tiếp có tổng lớn nhất.', 'Easy', '25 mins', 1100, 78, 85.6, 16000, 13696, FALSE, TRUE, FALSE, 6, 4, FALSE, NOW(), NOW()),
-(8, 'Climbing Stairs', 'Có bao nhiều cách khác biệt để leo lên đỉnh?', 'Easy', '15 mins', 987, 56, 92.1, 14000, 12894, TRUE, FALSE, FALSE, 6, 2, FALSE, NOW(), NOW());
+(8, 'Climbing Stairs', 'Có bao nhiêu cách khác biệt để leo lên đỉnh?', 'Easy', '15 mins', 987, 56, 92.1, 14000, 12894, TRUE, FALSE, FALSE, 6, 2, FALSE, NOW(), NOW()),
+-- Additional problems from 03-problem-seed
+(9, 'Tổng các phần tử mảng', 'Tính tổng các phần tử trong mảng số nguyên.', 'Easy', '10 phút', 120, 5, 95.50, 500, 480, true, true, false, 1, 1, false, NOW(), NOW()),
+(10, 'Đảo ngược chuỗi', 'Viết hàm đảo ngược một chuỗi ký tự.', 'Easy', '8 phút', 85, 2, 98.20, 300, 295, false, true, false, 2, 2, false, NOW(), NOW()),
+(11, 'Two Sum Extended', 'Tìm hai số trong mảng có tổng bằng target.', 'Easy', '15 phút', 200, 8, 87.30, 1200, 1050, false, true, false, 1, 1, false, NOW(), NOW());
 
 -- Insert tags
 INSERT INTO tags (id, name, created_at, updated_at) VALUES
@@ -289,7 +293,11 @@ INSERT INTO problem_tags (problem_id, tag_id) VALUES
 (5, 7),
 (6, 8), (6, 9), (6, 12),
 (7, 1), (7, 10),
-(8, 7), (8, 10);
+(8, 7), (8, 10),
+-- Additional problem tags
+(9, 1),
+(10, 3),
+(11, 2), (11, 1);
 
 -- Insert problem examples
 INSERT INTO problem_examples (id, problem_id, input, output, explanation, created_at, updated_at) VALUES
@@ -298,7 +306,11 @@ INSERT INTO problem_examples (id, problem_id, input, output, explanation, create
 (3, 5, 'x = 123', '321', 'Đảo ngược 123 thành 321.', NOW(), NOW()),
 (4, 5, 'x = -123', '-321', 'Đảo ngược -123 thành -321.', NOW(), NOW()),
 (5, 7, 'nums = [-2,1,-3,4,-1,2,1,-5,4]', '6', 'Mảng con [4,-1,2,1] có tổng lớn nhất = 6.', NOW(), NOW()),
-(6, 8, 'n = 2', '2', 'Có 2 cách: 1. 1 step + 1 step, 2. 2 steps', NOW(), NOW());
+(6, 8, 'n = 2', '2', 'Có 2 cách: 1. 1 step + 1 step, 2. 2 steps', NOW(), NOW()),
+-- Additional problem examples
+(7, 9, 'arr = [1,2,3]', '6', '1+2+3=6', NOW(), NOW()),
+(8, 10, 's = "abc"', 'cba', 'Đảo ngược chuỗi', NOW(), NOW()),
+(9, 11, 'nums = [2,7,11,15], target = 9', '[0,1]', 'nums[0] + nums[1] = 2 + 7 = 9', NOW(), NOW());
 
 -- Insert problem constraints
 INSERT INTO problem_constraints (id, problem_id, constraint_text, created_at, updated_at) VALUES
@@ -317,7 +329,10 @@ INSERT INTO starter_codes (id, problem_id, language, code, created_at, updated_a
 (3, 1, 'javascript', 'var twoSum = function(nums, target) {\n    \n};', NOW(), NOW()),
 (4, 5, 'python', 'class Solution:\n    def reverse(self, x: int) -> int:\n        pass', NOW(), NOW()),
 (5, 7, 'python', 'class Solution:\n    def maxSubArray(self, nums: List[int]) -> int:\n        pass', NOW(), NOW()),
-(6, 8, 'python', 'class Solution:\n    def climbStairs(self, n: int) -> int:\n        pass', NOW(), NOW());
+(6, 8, 'python', 'class Solution:\n    def climbStairs(self, n: int) -> int:\n        pass', NOW(), NOW()),
+-- Additional starter codes
+(7, 9, 'python', 'def sum_array(arr):\n    return sum(arr)', NOW(), NOW()),
+(8, 10, 'python', 'def reverse_string(s):\n    return s[::-1]', NOW(), NOW());
 
 -- Insert submission codes
 INSERT INTO submission_codes (id, source_code, created_at, updated_at) VALUES
@@ -610,7 +625,15 @@ INSERT INTO course_modules (id, course_id, title, position, created_at, updated_
 (7, 2, 'Unsupervised Learning', 3, NOW(), NOW()),
 (8, 3, 'React Fundamentals', 1, NOW(), NOW()),
 (9, 3, 'Components and Props', 2, NOW(), NOW()),
-(10, 3, 'State and Lifecycle', 3, NOW(), NOW());
+(10, 3, 'State and Lifecycle', 3, NOW(), NOW()),
+-- Additional course modules from 03-courses-seed
+(11, 1, 'Getting Started', 1, NOW(), NOW()),
+(12, 1, 'Components & Templates', 2, NOW(), NOW()),
+(13, 1, 'Services & Dependency Injection', 3, NOW(), NOW()),
+(14, 2, 'ML Basics', 1, NOW(), NOW()),
+(15, 2, 'Supervised Learning', 2, NOW(), NOW()),
+(16, 3, 'React Fundamentals', 1, NOW(), NOW()),
+(17, 3, 'Advanced React', 2, NOW(), NOW());
 
 -- Insert course lessons
 INSERT INTO course_lessons (id, module_id, title, content, duration, position, created_at, updated_at) VALUES
@@ -621,7 +644,15 @@ INSERT INTO course_lessons (id, module_id, title, content, duration, position, c
 (5, 2, 'Lists and Dictionaries', 'Cấu trúc dữ liệu list và dictionary...', 35, 2, NOW(), NOW()),
 (6, 8, 'Introduction to React', 'React là thư viện JavaScript để xây dựng UI...', 25, 1, NOW(), NOW()),
 (7, 8, 'JSX Syntax', 'Tìm hiểu về cú pháp JSX trong React...', 30, 2, NOW(), NOW()),
-(8, 9, 'Creating Components', 'Cách tạo và sử dụng components trong React...', 40, 1, NOW(), NOW());
+(8, 9, 'Creating Components', 'Cách tạo và sử dụng components trong React...', 40, 1, NOW(), NOW()),
+-- Additional course lessons from 03-courses-seed
+(9, 11, 'Introduction to Angular', 'https://www.youtube.com/watch?v=k5E2AVpwsko', 20, 1, NOW(), NOW()),
+(10, 11, 'Setting up Development Environment', '## Setting up Angular Development Environment\n\n### Prerequisites\n- Node.js (v16 or higher)\n- npm or yarn package manager\n- Code editor (VS Code recommended)\n\n### Installation Steps\n1. Install Node.js from nodejs.org\n2. Install Angular CLI globally:\n   ```bash\n   npm install -g @angular/cli\n   ```\n3. Verify installation:\n   ```bash\n   ng version\n   ```\n\n### Creating Your First Project\n```bash\nng new my-angular-app\ncd my-angular-app\nng serve\n```\n\nYour Angular app will be available at http://localhost:4200', 15, 2, NOW(), NOW()),
+(11, 12, 'Component Basics', '## Angular Components\n\n### What is a Component?\nA component is a TypeScript class decorated with @Component that controls a patch of the screen called a view.\n\n### Component Structure\n- **Template**: HTML that defines the view\n- **Class**: TypeScript code that handles data and logic\n- **Styles**: CSS that defines appearance\n\n### Example Component\n```typescript\nimport { Component } from \'@angular/core\';\n\n@Component({\n  selector: \'app-hello\',\n  template: \'<h1>Hello {{name}}!</h1>\',\n  styles: [\'h1 { color: blue; }\']\n})\nexport class HelloComponent {\n  name = \'Angular\';\n}\n```\n\n### Key Concepts\n- Data binding\n- Event handling\n- Component lifecycle\n- Input/Output properties', 30, 1, NOW(), NOW()),
+(12, 12, 'Component Practice Quiz', 'Test your understanding of Angular components with this interactive quiz.\n\nQuestions will cover:\n- Component decoration\n- Data binding syntax\n- Component lifecycle hooks\n- Best practices\n\nScore 80% or higher to pass!', 10, 2, NOW(), NOW()),
+(13, 14, 'What is Machine Learning?', 'https://www.youtube.com/watch?v=ukzFI9rgwfU', 25, 1, NOW(), NOW()),
+(14, 14, 'Types of Machine Learning', '## Types of Machine Learning\n\n### 1. Supervised Learning\n- **Definition**: Learning with labeled training data\n- **Examples**: Classification, Regression\n- **Use cases**: Email spam detection, house price prediction\n- **Algorithms**: Linear Regression, Decision Trees, Random Forest\n\n### 2. Unsupervised Learning\n- **Definition**: Finding patterns in data without labels\n- **Examples**: Clustering, Dimensionality Reduction\n- **Use cases**: Customer segmentation, anomaly detection\n- **Algorithms**: K-Means, PCA, DBSCAN\n\n### 3. Reinforcement Learning\n- **Definition**: Learning through interaction and feedback\n- **Examples**: Game playing, robotics\n- **Use cases**: Autonomous vehicles, recommendation systems\n- **Algorithms**: Q-Learning, Policy Gradient\n\n### Key Differences\n| Type | Data | Goal | Examples |\n|------|------|------|---------|\n| Supervised | Labeled | Predict | Classification, Regression |\n| Unsupervised | Unlabeled | Discover | Clustering, Association |\n| Reinforcement | Rewards/Penalties | Optimize | Game AI, Robotics |', 20, 2, NOW(), NOW()),
+(15, 14, 'ML Fundamentals Assessment', 'Evaluate your understanding of machine learning fundamentals.\n\nThis assessment covers:\n- Definition and importance of ML\n- Supervised vs Unsupervised vs Reinforcement Learning\n- Common algorithms and their applications\n- Real-world ML examples\n\nComplete all questions to proceed to the next module.', 15, 3, NOW(), NOW());
 
 -- Insert course languages
 INSERT INTO course_languages (id, course_id, language, created_at, updated_at) VALUES

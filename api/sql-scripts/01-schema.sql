@@ -160,13 +160,19 @@ CREATE TABLE courses (
     category_id BIGINT NOT NULL,
     is_premium BOOLEAN DEFAULT FALSE NOT NULL, -- Thêm cho premium content
     is_deleted BOOLEAN DEFAULT FALSE NOT NULL, -- Soft delete
+    price INT CHECK (price >= 0),
+    original_price INT CHECK (original_price >= 0),
+    discount INT CHECK (discount >= 0 AND discount <= 100),
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (instructor_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (category_id) REFERENCES course_categories(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     INDEX idx_instructor_id (instructor_id),
     INDEX idx_category_id (category_id),
-    INDEX idx_status (status)
+    INDEX idx_status (status),
+    INDEX idx_level (level),
+    INDEX idx_is_premium (is_premium),
+    INDEX idx_is_deleted (is_deleted)
 )CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng đăng ký khóa học (Course Enrollments)
