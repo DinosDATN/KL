@@ -8,6 +8,7 @@ const StarterCode = require('./StarterCode');
 const TestCase = require('./TestCase');
 const SubmissionCode = require('./SubmissionCode');
 const Submission = require('./Submission');
+const SubmissionTestResult = require('./SubmissionTestResult');
 const ProblemComment = require('./ProblemComment');
 const User = require('./User');
 const UserProfile = require('./UserProfile');
@@ -111,6 +112,27 @@ Submission.belongsTo(SubmissionCode, {
 
 SubmissionCode.hasMany(Submission, {
   foreignKey: 'code_id'
+});
+
+// Submission Test Results associations
+Submission.hasMany(SubmissionTestResult, {
+  foreignKey: 'submission_id',
+  as: 'TestResults'
+});
+
+SubmissionTestResult.belongsTo(Submission, {
+  foreignKey: 'submission_id',
+  as: 'Submission'
+});
+
+TestCase.hasMany(SubmissionTestResult, {
+  foreignKey: 'test_case_id',
+  as: 'TestResults'
+});
+
+SubmissionTestResult.belongsTo(TestCase, {
+  foreignKey: 'test_case_id',
+  as: 'TestCase'
 });
 
 Problem.hasMany(ProblemComment, {
@@ -403,6 +425,7 @@ module.exports = {
   TestCase,
   SubmissionCode,
   Submission,
+  SubmissionTestResult,
   ProblemComment,
   User,
   UserProfile,

@@ -6,6 +6,7 @@ import { ProblemsService } from '../../../../../core/services/problems.service';
 import { Judge0Service, Judge0ExecutionResult, Judge0SubmissionResult, Judge0Language } from '../../../../../core/services/judge0.service';
 import { StarterCode, TestCase } from '../../../../../core/models/problem.model';
 import { ThemeService } from '../../../../../core/services/theme.service';
+import { AuthService } from '../../../../../core/services/auth.service';
 import { forkJoin, of } from 'rxjs';
 
 declare var ace: any;
@@ -54,7 +55,8 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     @Inject(PLATFORM_ID) private platformId: Object,
     private problemsService: ProblemsService,
     private judge0Service: Judge0Service,
-    private themeService: ThemeService
+    private themeService: ThemeService,
+    private authService: AuthService
   ) {
     // Initialize with default language
     this.selectedLanguage = {
@@ -329,31 +331,32 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     this.isExecuting = true;
     this.executionResult = null;
     
-    console.log('Executing code with Judge0:', {
+    console.log('Executing code via Problem API:', {
       language: this.selectedLanguage.id,
-      codeLength: this.currentCode.length
+      codeLength: this.currentCode.length,
+      customInput: this.customInput
     });
     
-    // Use Judge0 service as primary
-    this.judge0Service.executeCode({
-      source_code: this.currentCode,
+    // Use Problems service to execute code (which internally uses Judge0)
+    this.problemsService.executeCode({
+      sourceCode: this.currentCode,
       language: this.selectedLanguage.id,
-      stdin: this.customInput || ''
+      input: this.customInput || ''
     }).subscribe({
-      next: (result: Judge0ExecutionResult) => {
-        // Transform Judge0 result to match component's expected format
+      next: (result: any) => {
+        // Transform API result to match component's expected format
         this.executionResult = {
-          success: result.status === 'completed',
-          output: result.output,
-          error: result.error || undefined,
-          executionTime: result.execution_time,
-          memoryUsed: result.memory_used // Keep in KB
+          success: result.success,
+          output: result.stdout || result.output || '',
+          error: result.error || result.stderr || undefined,
+          executionTime: result.executionTime || 0,
+          memoryUsed: result.memoryUsed || 0
         };
         this.isExecuting = false;
-        console.log('Judge0 execution successful:', this.executionResult);
+        console.log('Code execution successful:', this.executionResult);
       },
       error: (error) => {
-        console.error('Judge0 execution failed:', error);
+        console.error('Code execution failed:', error);
         this.executionResult = {
           success: false,
           output: '',
@@ -367,32 +370,45 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   }
   
   submitSolution(): void {
-    if (!this.currentCode.trim() || this.isSubmitting || !this.testCases.length) return;
+    if (!this.currentCode.trim() || this.isSubmitting || !this.testCases.length || !this.problem) return;
     
     this.isSubmitting = true;
     this.submissionResult = null;
     
-    console.log('Submitting solution with Judge0:', {
+    // Get current user
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) {
+      console.error('User not authenticated');
+      this.submissionResult = {
+        submissionId: 'AUTH_ERROR_' + Date.now(),
+        status: 'Runtime Error',
+        score: 0,
+        executionTime: 0,
+        memoryUsed: 0,
+        testCasesPassed: 0,
+        totalTestCases: this.testCases.length,
+        details: 'Please log in to submit your solution.'
+      };
+      this.isSubmitting = false;
+      return;
+    }
+    
+    console.log('Submitting solution via Problem API:', {
+      problemId: this.problem.id,
+      userId: currentUser.id,
       language: this.selectedLanguage.id,
       testCasesCount: this.testCases.length,
       codeLength: this.currentCode.length
     });
     
-    // Prepare test cases for Judge0
-    const testCasesForJudge0 = this.testCases.map(tc => ({
-      input: tc.input,
-      expected_output: tc.expected_output
-    }));
-    
-    // Use Judge0 service as primary
-    this.judge0Service.submitCode({
-      source_code: this.currentCode,
+    // Use Problems service to submit code (which saves to database)
+    this.problemsService.submitCode(this.problem.id, {
+      sourceCode: this.currentCode,
       language: this.selectedLanguage.id,
-      test_cases: testCasesForJudge0
+      userId: currentUser.id
     }).subscribe({
-      next: (result: Judge0SubmissionResult) => {
-        // Transform Judge0 result to match component's expected format
-        // Map Judge0 status to expected status types
+      next: (result: any) => {
+        // Transform API result to match component's expected format
         let mappedStatus: SubmissionResult['status'];
         if (result.status === 'accepted') {
           mappedStatus = 'Accepted';
@@ -400,25 +416,27 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
           mappedStatus = 'Wrong Answer';
         } else if (result.status === 'error') {
           mappedStatus = 'Runtime Error';
+        } else if (result.status === 'timeout') {
+          mappedStatus = 'Time Limit Exceeded';
         } else {
           mappedStatus = 'Runtime Error'; // Default fallback
         }
         
         this.submissionResult = {
-          submissionId: result.submission_id,
+          submissionId: result.submissionId || 'SUB_' + Date.now(),
           status: mappedStatus,
-          score: result.score,
-          executionTime: result.execution_time,
-          memoryUsed: result.memory_used, // Keep in KB
-          testCasesPassed: result.test_cases_passed,
-          totalTestCases: result.total_test_cases,
+          score: result.score || 0,
+          executionTime: result.executionTime || 0,
+          memoryUsed: result.memoryUsed || 0,
+          testCasesPassed: result.testCasesPassed || 0,
+          totalTestCases: result.totalTestCases || this.testCases.length,
           details: result.error || undefined
         };
         this.isSubmitting = false;
-        console.log('Judge0 submission successful:', this.submissionResult);
+        console.log('Code submission successful:', this.submissionResult);
       },
       error: (error) => {
-        console.error('Judge0 submission failed:', error);
+        console.error('Code submission failed:', error);
         this.submissionResult = {
           submissionId: 'ERROR_' + Date.now(),
           status: 'Runtime Error',

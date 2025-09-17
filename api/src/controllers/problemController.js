@@ -9,6 +9,7 @@ const {
   TestCase,
   SubmissionCode,
   Submission,
+  SubmissionTestResult,
   ProblemComment
 } = require('../models');
 const judgeService = require('../services/judgeService');
@@ -497,7 +498,7 @@ class ProblemController {
           }
 
           // Save submission
-          await Submission.create({
+          const submission = await Submission.create({
             user_id: userId,
             problem_id: id,
             code_id: submissionCode.id,
@@ -506,8 +507,27 @@ class ProblemController {
             score: result.score || 0,
             exec_time: result.executionTime || null,
             memory_used: result.memoryUsed || null,
+            test_cases_passed: result.testCasesPassed || 0,
+            total_test_cases: result.totalTestCases || 0,
+            error_message: result.error || null,
             submitted_at: new Date()
           });
+          
+          // Save detailed test case results if available
+          if (result.testCaseResults && result.testCaseResults.length > 0) {
+            const testResultsData = result.testCaseResults.map(tcResult => ({
+              submission_id: submission.id,
+              input: tcResult.input,
+              expected_output: tcResult.expectedOutput,
+              actual_output: tcResult.actualOutput,
+              passed: tcResult.passed,
+              execution_time: tcResult.executionTime || null,
+              memory_used: result.memoryUsed || null, // Use overall memory for each test case
+              error_message: tcResult.error || null
+            }));
+            
+            await SubmissionTestResult.bulkCreate(testResultsData);
+          }
         } catch (saveError) {
           console.error('Failed to save submission:', saveError);
           // Continue with response even if save fails
@@ -544,10 +564,18 @@ class ProblemController {
 
       const { count, rows: submissions } = await Submission.findAndCountAll({
         where: whereClause,
-        include: [{
-          model: SubmissionCode,
-          attributes: ['source_code']
-        }],
+        include: [
+          {
+            model: SubmissionCode,
+            attributes: ['source_code'],
+            as: 'Code'
+          },
+          {
+            model: SubmissionTestResult,
+            as: 'TestResults',
+            required: false
+          }
+        ],
         limit,
         offset,
         order: [['submitted_at', 'DESC']]
@@ -568,6 +596,103 @@ class ProblemController {
       res.status(500).json({
         success: false,
         message: 'Failed to fetch submissions',
+        error: error.message
+      });
+    }
+  }
+
+  // Get single submission with detailed test results
+  async getSubmissionById(req, res) {
+    try {
+      const { submissionId } = req.params;
+      
+      const submission = await Submission.findByPk(submissionId, {
+        include: [
+          {
+            model: SubmissionCode,
+            attributes: ['source_code'],
+            as: 'Code'
+          },
+          {
+            model: SubmissionTestResult,
+            as: 'TestResults',
+            required: false
+          },
+          {
+            model: Problem,
+            attributes: ['id', 'title', 'difficulty']
+          }
+        ]
+      });
+      
+      if (!submission) {
+        return res.status(404).json({
+          success: false,
+          message: 'Submission not found'
+        });
+      }
+      
+      res.status(200).json({
+        success: true,
+        data: submission
+      });
+    } catch (error) {
+      console.error('Error in getSubmissionById:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch submission',
+        error: error.message
+      });
+    }
+  }
+  
+  // Get user's submissions across all problems
+  async getUserSubmissions(req, res) {
+    try {
+      const { userId } = req.params;
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const offset = (page - 1) * limit;
+      const { status, language } = req.query;
+      
+      const whereClause = { user_id: userId };
+      if (status) whereClause.status = status;
+      if (language) whereClause.language = language;
+      
+      const { count, rows: submissions } = await Submission.findAndCountAll({
+        where: whereClause,
+        include: [
+          {
+            model: Problem,
+            attributes: ['id', 'title', 'difficulty']
+          },
+          {
+            model: SubmissionTestResult,
+            as: 'TestResults',
+            required: false,
+            limit: 3 // Only get first 3 test results for overview
+          }
+        ],
+        limit,
+        offset,
+        order: [['submitted_at', 'DESC']]
+      });
+      
+      res.status(200).json({
+        success: true,
+        data: submissions,
+        pagination: {
+          current_page: page,
+          total_pages: Math.ceil(count / limit),
+          total_items: count,
+          items_per_page: limit
+        }
+      });
+    } catch (error) {
+      console.error('Error in getUserSubmissions:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch user submissions',
         error: error.message
       });
     }

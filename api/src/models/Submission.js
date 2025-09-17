@@ -65,6 +65,26 @@ const Submission = sequelize.define('Submission', {
     type: DataTypes.DATE,
     allowNull: false,
     defaultValue: DataTypes.NOW
+  },
+  test_cases_passed: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: 0,
+    validate: {
+      min: 0
+    }
+  },
+  total_test_cases: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: 0,
+    validate: {
+      min: 0
+    }
+  },
+  error_message: {
+    type: DataTypes.TEXT,
+    allowNull: true
   }
 }, {
   tableName: 'submissions',

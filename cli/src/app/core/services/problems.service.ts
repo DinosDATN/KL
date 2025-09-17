@@ -294,12 +294,12 @@ export class ProblemsService {
     return this.getProblemsByDifficulty('Hard');
   }
 
-  // Code execution methods - Updated to use Judge0 service
-  executeCode(sourceCode: string, language: string, input: string = ''): Observable<any> {
-    return this.http.post<{success: boolean, data: any}>(`${this.apiUrl}/judge0/execute`, {
-      source_code: sourceCode,
-      language,
-      stdin: input
+  // Code execution methods - Updated to use problem API
+  executeCode(request: {sourceCode: string, language: string, input?: string}): Observable<any> {
+    return this.http.post<{success: boolean, data: any}>(`${this.apiUrl}/problems/execute`, {
+      sourceCode: request.sourceCode,
+      language: request.language,
+      input: request.input || ''
     }).pipe(
       map(response => {
         if (!response.success) {
@@ -307,11 +307,13 @@ export class ProblemsService {
         }
         // Transform response to match expected format
         return {
-          success: response.data.status === 'completed',
-          output: response.data.output,
+          success: response.data.success,
+          stdout: response.data.stdout,
+          output: response.data.stdout,
           error: response.data.error,
-          executionTime: response.data.execution_time,
-          memoryUsed: response.data.memory_used
+          stderr: response.data.stderr,
+          executionTime: response.data.executionTime,
+          memoryUsed: response.data.memoryUsed
         };
       }),
       catchError(error => {
@@ -321,18 +323,11 @@ export class ProblemsService {
     );
   }
 
-  submitCode(problemId: number, sourceCode: string, language: string, userId?: number): Observable<any> {
-    // First, get test cases for this problem
-    const testCases = this.getTestCasesByProblemId(problemId)
-      .map(tc => ({
-        input: tc.input,
-        expected_output: tc.expected_output
-      }));
-
-    return this.http.post<{success: boolean, data: any}>(`${this.apiUrl}/judge0/submit`, {
-      source_code: sourceCode,
-      language,
-      test_cases: testCases
+  submitCode(problemId: number, request: {sourceCode: string, language: string, userId: number}): Observable<any> {
+    return this.http.post<{success: boolean, data: any}>(`${this.apiUrl}/problems/${problemId}/submit`, {
+      sourceCode: request.sourceCode,
+      language: request.language,
+      userId: request.userId
     }).pipe(
       map(response => {
         if (!response.success) {
@@ -340,14 +335,14 @@ export class ProblemsService {
         }
         // Transform response to match expected format
         return {
-          submissionId: response.data.submission_id,
+          submissionId: response.data.submissionId || response.data.submission_id,
           status: response.data.status,
           score: response.data.score,
-          executionTime: response.data.execution_time,
-          memoryUsed: response.data.memory_used,
-          testCasesPassed: response.data.test_cases_passed,
-          totalTestCases: response.data.total_test_cases,
-          details: response.data.error || null
+          executionTime: response.data.executionTime || response.data.execution_time,
+          memoryUsed: response.data.memoryUsed || response.data.memory_used,
+          testCasesPassed: response.data.testCasesPassed || response.data.test_cases_passed,
+          totalTestCases: response.data.totalTestCases || response.data.total_test_cases,
+          error: response.data.error
         };
       }),
       catchError(error => {

@@ -29,6 +29,8 @@ router.get('/:id/test-cases', problemController.getTestCases);
 router.post('/execute', problemController.executeCode);
 router.post('/:id/submit', problemController.submitCode);
 router.get('/:id/submissions', problemController.getProblemSubmissions);
+router.get('/submissions/:submissionId', problemController.getSubmissionById);
+router.get('/users/:userId/submissions', problemController.getUserSubmissions);
 
 // Supported languages
 router.get('/data/languages', problemController.getSupportedLanguages);
