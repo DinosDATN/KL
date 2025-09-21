@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { Inject, PLATFORM_ID } from '@angular/core';
-import { Problem, TestCase, StarterCode } from '../../../core/models/problem.model';
+import { Problem, TestCase, StarterCode, ProblemExample } from '../../../core/models/problem.model';
 import { ProblemsService } from '../../../core/services/problems.service';
 import { ProblemDescriptionComponent } from './components/problem-description/problem-description.component';
 import { CodeEditorComponent } from './components/code-editor/code-editor.component';
@@ -25,6 +25,7 @@ import { ExecutionResultsComponent } from './components/execution-results/execut
 export class ProblemDetailComponent implements OnInit, OnDestroy {
   problem: Problem | null = null;
   testCases: TestCase[] = [];
+  examples: ProblemExample[] = [];
   starterCodes: StarterCode[] = [];
   loading = true;
   error: string | null = null;
@@ -77,6 +78,7 @@ export class ProblemDetailComponent implements OnInit, OnDestroy {
         
         // Load related data
         this.loadTestCases(problem.id);
+        this.loadExamples(problem.id);
         this.loadStarterCodes(problem.id);
         
         this.loading = false;
@@ -105,6 +107,18 @@ export class ProblemDetailComponent implements OnInit, OnDestroy {
   
   private loadTestCases(problemId: number): void {
     this.testCases = this.problemsService.getTestCasesByProblemId(problemId);
+  }
+  
+  private loadExamples(problemId: number): void {
+    this.problemsService.getProblemExamples(problemId).subscribe({
+      next: (examples: ProblemExample[]) => {
+        this.examples = examples;
+      },
+      error: (error: any) => {
+        console.error('Error loading examples:', error);
+        this.examples = [];
+      }
+    });
   }
   
   private loadStarterCodes(problemId: number): void {

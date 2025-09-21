@@ -153,6 +153,27 @@ export interface SubmissionStatus {
   formattedResult: ExecutionResult;
 }
 
+export interface ExampleResult {
+  exampleId: number;
+  input: string;
+  expectedOutput: string;
+  actualOutput: string;
+  passed: boolean;
+  executionTime: number;
+  memoryUsed: number;
+  error?: string | null;
+  explanation?: string | null;
+}
+
+export interface BatchExampleResult {
+  results: ExampleResult[];
+  overallStatus: 'success' | 'partial' | 'failure';
+  passedCount: number;
+  totalCount: number;
+  averageExecutionTime: number;
+  maxMemoryUsed: number;
+}
+
 export interface JudgeHealthCheck {
   status: 'healthy' | 'unhealthy';
   info?: any;

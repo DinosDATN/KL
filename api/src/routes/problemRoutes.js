@@ -37,6 +37,15 @@ router.post('/execute',
   problemController.executeCode
 );
 
+router.post('/:id/execute-examples', 
+  judgeMiddleware.rateLimit(5, 60000), // 5 requests per minute
+  judgeMiddleware.securityHeaders,
+  judgeMiddleware.validateSourceCode,
+  judgeMiddleware.logJudgeOperation,
+  judgeMiddleware.sanitizeOutput,
+  problemController.executeCodeWithExamples
+);
+
 router.post('/:id/submit', 
   judgeMiddleware.rateLimit(10, 60000), // 10 submissions per minute
   judgeMiddleware.securityHeaders,

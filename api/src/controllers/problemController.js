@@ -443,6 +443,49 @@ class ProblemController {
     }
   }
 
+  // Execute code with examples (Run with Example button)
+  async executeCodeWithExamples(req, res) {
+    try {
+      const { id } = req.params; // problem id
+      const { sourceCode, language } = req.body;
+      
+      if (!sourceCode || !language) {
+        return res.status(400).json({
+          success: false,
+          message: 'Source code and language are required'
+        });
+      }
+
+      // Get examples for the problem
+      const examples = await ProblemExample.findAll({
+        where: { problem_id: id },
+        order: [['created_at', 'ASC']]
+      });
+
+      if (examples.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'No examples found for this problem'
+        });
+      }
+
+      // Execute code with Judge0 against all examples
+      const result = await judgeService.executeCodeWithExamples(sourceCode, language, examples);
+
+      res.status(200).json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('Error in executeCodeWithExamples:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to execute code with examples',
+        error: error.message
+      });
+    }
+  }
+
   // Submit code (Submit button)
   async submitCode(req, res) {
     try {

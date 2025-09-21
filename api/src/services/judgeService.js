@@ -453,6 +453,99 @@ class JudgeService {
   }
 
   /**
+   * Execute code against examples (for "Run with Example" functionality)
+   */
+  async executeCodeWithExamples(sourceCode, language, examples) {
+    try {
+      const languageId = this.languageMap[language.toLowerCase()];
+      if (!languageId) {
+        throw new Error(`Unsupported language: ${language}`);
+      }
+
+      const results = [];
+      let passedCount = 0;
+      let totalExecutionTime = 0;
+      let maxMemoryUsed = 0;
+
+      // Run code against each example
+      for (const example of examples) {
+        try {
+          const result = await this.executeCode(
+            sourceCode,
+            language,
+            example.input,
+            example.output
+          );
+
+          const passed = result.success && 
+                        result.stdout && 
+                        result.stdout.trim() === example.output.trim();
+
+          if (passed) passedCount++;
+          
+          totalExecutionTime += result.executionTime || 0;
+          maxMemoryUsed = Math.max(maxMemoryUsed, result.memoryUsed || 0);
+
+          results.push({
+            exampleId: example.id,
+            input: example.input,
+            expectedOutput: example.output,
+            actualOutput: result.stdout || '',
+            passed: passed,
+            executionTime: result.executionTime || 0,
+            memoryUsed: result.memoryUsed || 0,
+            error: result.error || result.stderr || null,
+            explanation: example.explanation || null
+          });
+        } catch (error) {
+          console.error(`Error executing example ${example.id}:`, error);
+          
+          results.push({
+            exampleId: example.id,
+            input: example.input,
+            expectedOutput: example.output,
+            actualOutput: '',
+            passed: false,
+            executionTime: 0,
+            memoryUsed: 0,
+            error: error.message || 'Execution failed',
+            explanation: example.explanation || null
+          });
+        }
+      }
+
+      // Determine overall status
+      let overallStatus = 'failure';
+      if (passedCount === examples.length) {
+        overallStatus = 'success';
+      } else if (passedCount > 0) {
+        overallStatus = 'partial';
+      }
+
+      return {
+        results: results,
+        overallStatus: overallStatus,
+        passedCount: passedCount,
+        totalCount: examples.length,
+        averageExecutionTime: examples.length > 0 ? Math.round(totalExecutionTime / examples.length) : 0,
+        maxMemoryUsed: maxMemoryUsed
+      };
+
+    } catch (error) {
+      console.error('Judge0 batch example execution error:', error);
+      return {
+        results: [],
+        overallStatus: 'failure',
+        passedCount: 0,
+        totalCount: examples.length,
+        averageExecutionTime: 0,
+        maxMemoryUsed: 0,
+        error: error.message
+      };
+    }
+  }
+
+  /**
    * Health check for Judge0 API
    */
   async healthCheck() {

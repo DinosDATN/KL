@@ -1,6 +1,6 @@
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, map, catchError } from 'rxjs';
+import { Observable, of, map, catchError, forkJoin } from 'rxjs';
 import { isPlatformBrowser } from '@angular/common';
 import { environment } from '../../../environments/environment';
 import {
@@ -14,7 +14,9 @@ import {
   TestCase,
   SubmissionCode,
   Submission,
-  ProblemComment
+  ProblemComment,
+  ExampleResult,
+  BatchExampleResult
 } from '../models/problem.model';
 import {
   mockProblems,
@@ -160,8 +162,16 @@ export class ProblemsService {
 
   // Problem examples
   getProblemExamples(problemId: number): Observable<ProblemExample[]> {
-    const examples = mockProblemExamples.filter(e => e.problem_id === problemId);
-    return of(examples);
+    return this.http.get<{success: boolean, data: ProblemExample[]}>(`${this.apiUrl}/problems/${problemId}/examples`)
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error fetching problem examples:', error);
+          // Fallback to mock data
+          const examples = mockProblemExamples.filter(e => e.problem_id === problemId);
+          return of(examples);
+        })
+      );
   }
 
   // Problem constraints
@@ -471,5 +481,122 @@ export class ProblemsService {
           ]);
         })
       );
+  }
+
+  // Execute code with examples (Run with Example button)
+  executeCodeWithExamples(sourceCode: string, language: string, examples: ProblemExample[]): Observable<BatchExampleResult> {
+    if (!isPlatformBrowser(this.platformId)) {
+      // Return mock result during SSR
+      const mockResults = examples.map((example, index) => ({
+        exampleId: example.id,
+        input: example.input,
+        expectedOutput: example.output,
+        actualOutput: example.output, // Mock successful execution
+        passed: true,
+        executionTime: 100,
+        memoryUsed: 1024,
+        error: null,
+        explanation: example.explanation
+      }));
+      
+      return of({
+        results: mockResults,
+        overallStatus: 'success',
+        passedCount: examples.length,
+        totalCount: examples.length,
+        averageExecutionTime: 100,
+        maxMemoryUsed: 1024
+      });
+    }
+
+    // Get problem ID from the first example (all examples should belong to the same problem)
+    const problemId = examples[0]?.problem_id;
+    if (!problemId) {
+      return of({
+        results: [],
+        overallStatus: 'failure',
+        passedCount: 0,
+        totalCount: 0,
+        averageExecutionTime: 0,
+        maxMemoryUsed: 0
+      });
+    }
+
+    // Call the backend API endpoint
+    return this.http.post<{success: boolean, data: BatchExampleResult}>(
+      `${this.apiUrl}/problems/${problemId}/execute-examples`,
+      {
+        sourceCode,
+        language
+      }
+    ).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error executing code with examples:', error);
+        
+        // Fallback to client-side execution (existing logic)
+        const executionObservables = examples.map(example => 
+          this.executeCode(sourceCode, language, example.input).pipe(
+            map(result => {
+              const passed = result.success && 
+                            result.stdout && 
+                            result.stdout.trim() === example.output.trim();
+              
+              return {
+                exampleId: example.id,
+                input: example.input,
+                expectedOutput: example.output,
+                actualOutput: result.stdout || '',
+                passed: passed,
+                executionTime: result.executionTime || 0,
+                memoryUsed: result.memoryUsed || 0,
+                error: result.error || null,
+                explanation: example.explanation
+              } as ExampleResult;
+            }),
+            catchError(error => {
+              return of({
+                exampleId: example.id,
+                input: example.input,
+                expectedOutput: example.output,
+                actualOutput: '',
+                passed: false,
+                executionTime: 0,
+                memoryUsed: 0,
+                error: error.message || 'Execution failed',
+                explanation: example.explanation
+              } as ExampleResult);
+            })
+          )
+        );
+
+        // Combine all results using forkJoin as fallback
+        return forkJoin(executionObservables).pipe(
+          map(results => {
+            const passedCount = results.filter(r => r.passed).length;
+            const totalExecutionTime = results.reduce((sum, r) => sum + r.executionTime, 0);
+            const maxMemory = Math.max(...results.map(r => r.memoryUsed));
+            
+            let overallStatus: 'success' | 'partial' | 'failure';
+            if (passedCount === results.length) {
+              overallStatus = 'success';
+            } else if (passedCount > 0) {
+              overallStatus = 'partial';
+            } else {
+              overallStatus = 'failure';
+            }
+            
+            return {
+              results,
+              overallStatus,
+              passedCount,
+              totalCount: results.length,
+              averageExecutionTime: results.length > 0 ? Math.round(totalExecutionTime / results.length) : 0,
+              maxMemoryUsed: maxMemory
+            } as BatchExampleResult;
+          })
+        );
+      })
+    );
   }
 }

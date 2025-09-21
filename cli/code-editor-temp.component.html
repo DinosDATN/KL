@@ -1,0 +1,136 @@
+<!-- Example Tabs (LeetCode Style) -->
+<div class="bg-white dark:bg-gray-800">
+  <div class="flex border-b border-gray-200 dark:border-gray-600">
+    <button
+      *ngFor="let result of exampleResults.results; let i = index"
+      (click)="setActiveResultTab(i)"
+      class="px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 min-w-0"
+      [class.border-blue-500]="activeResultTab === i"
+      [class.text-blue-600]="activeResultTab === i"
+      [class.dark:text-blue-400]="activeResultTab === i"
+      [class.bg-blue-50]="activeResultTab === i"
+      [class.dark:bg-blue-900/20]="activeResultTab === i"
+      [class.border-transparent]="activeResultTab !== i"
+      [class.text-gray-500]="activeResultTab !== i"
+      [class.dark:text-gray-400]="activeResultTab !== i"
+      [class.hover:text-gray-700]="activeResultTab !== i"
+      [class.dark:hover:text-gray-300]="activeResultTab !== i"
+    >
+      <svg
+        class="w-4 h-4 flex-shrink-0"
+        [class]="getExampleStatusClass(result.passed)"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          [attr.d]="getExampleStatusIcon(result.passed)"
+        ></path>
+      </svg>
+      <span class="truncate">Example {{ i + 1 }}</span>
+    </button>
+  </div>
+
+  <!-- Tab Content -->
+  <div class="p-4" *ngIf="exampleResults.results[activeResultTab] as activeResult">
+    <div class="space-y-4">
+      <!-- Input Section -->
+      <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+        <div class="flex items-center gap-2 mb-2">
+          <svg class="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Input</h4>
+        </div>
+        <pre class="text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre-wrap max-h-32 overflow-y-auto">{{ activeResult.input || '(No input)' }}</pre>
+      </div>
+
+      <!-- Output Section -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Expected Output -->
+        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+          <div class="flex items-center gap-2 mb-2">
+            <svg class="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Expected</h4>
+          </div>
+          <pre class="text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre-wrap max-h-32 overflow-y-auto">{{ activeResult.expectedOutput }}</pre>
+        </div>
+
+        <!-- Actual Output -->
+        <div
+          class="rounded-lg p-4"
+          [class.bg-green-50]="activeResult.passed"
+          [class.dark:bg-green-900/20]="activeResult.passed"
+          [class.bg-red-50]="!activeResult.passed"
+          [class.dark:bg-red-900/20]="!activeResult.passed"
+        >
+          <div class="flex items-center gap-2 mb-2">
+            <svg
+              class="w-4 h-4"
+              [class.text-green-600]="activeResult.passed"
+              [class.text-red-600]="!activeResult.passed"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                [attr.d]="getExampleStatusIcon(activeResult.passed)"
+              ></path>
+            </svg>
+            <h4
+              class="text-sm font-semibold"
+              [class.text-green-700]="activeResult.passed"
+              [class.dark:text-green-300]="activeResult.passed"
+              [class.text-red-700]="!activeResult.passed"
+              [class.dark:text-red-300]="!activeResult.passed"
+            >
+              Your Output
+            </h4>
+          </div>
+          <pre
+            class="text-sm font-mono whitespace-pre-wrap max-h-32 overflow-y-auto"
+            [class.text-green-800]="activeResult.passed"
+            [class.dark:text-green-200]="activeResult.passed"
+            [class.text-red-800]="!activeResult.passed"
+            [class.dark:text-red-200]="!activeResult.passed"
+          >{{ activeResult.actualOutput || (activeResult.error ? 'Error: ' + activeResult.error : '(No output)') }}</pre>
+        </div>
+      </div>
+
+      <!-- Explanation Section (if available) -->
+      <div *ngIf="activeResult.explanation" class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+        <div class="flex items-center gap-2 mb-2">
+          <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <h4 class="text-sm font-semibold text-blue-700 dark:text-blue-300">Explanation</h4>
+        </div>
+        <p class="text-sm text-blue-800 dark:text-blue-200">{{ activeResult.explanation }}</p>
+      </div>
+
+      <!-- Performance Stats -->
+      <div class="flex gap-6 text-sm text-gray-600 dark:text-gray-400 pt-2">
+        <div class="flex items-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          {{ activeResult.executionTime }}ms
+        </div>
+        <div class="flex items-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+          </svg>
+          {{ activeResult.memoryUsed }}MB
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
