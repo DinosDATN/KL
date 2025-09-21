@@ -296,6 +296,17 @@ export class ProblemsService {
 
   // Code execution methods
   executeCode(sourceCode: string, language: string, input: string = ''): Observable<any> {
+    if (!isPlatformBrowser(this.platformId)) {
+      // Return mock result during SSR
+      return of({
+        success: true,
+        stdout: 'Sample output',
+        stderr: '',
+        executionTime: 0.1,
+        memoryUsed: 1024
+      });
+    }
+
     return this.http.post<{success: boolean, data: any}>(`${this.apiUrl}/problems/execute`, {
       sourceCode,
       language,
@@ -304,12 +315,32 @@ export class ProblemsService {
       map(response => response.data),
       catchError(error => {
         console.error('Error executing code:', error);
-        throw error;
+        // Return a user-friendly error response
+        const errorResponse = {
+          success: false,
+          error: error.error?.message || 'Code execution failed',
+          stdout: '',
+          stderr: error.error?.message || 'Unknown error occurred',
+          executionTime: 0,
+          memoryUsed: 0
+        };
+        return of(errorResponse);
       })
     );
   }
 
   submitCode(problemId: number, sourceCode: string, language: string, userId?: number): Observable<any> {
+    if (!isPlatformBrowser(this.platformId)) {
+      // Return mock result during SSR
+      return of({
+        submissionId: 'MOCK_SUB_' + Date.now(),
+        status: 'accepted',
+        score: 100,
+        testCasesPassed: 3,
+        totalTestCases: 3
+      });
+    }
+
     return this.http.post<{success: boolean, data: any}>(`${this.apiUrl}/problems/${problemId}/submit`, {
       sourceCode,
       language,
@@ -318,23 +349,125 @@ export class ProblemsService {
       map(response => response.data),
       catchError(error => {
         console.error('Error submitting code:', error);
+        // Return a user-friendly error response
+        const errorResponse = {
+          submissionId: 'ERROR_' + Date.now(),
+          status: 'error',
+          score: 0,
+          testCasesPassed: 0,
+          totalTestCases: 0,
+          error: error.error?.message || 'Code submission failed'
+        };
+        return of(errorResponse);
+      })
+    );
+  }
+
+  // Batch submit code (enhanced performance)
+  batchSubmitCode(problemId: number, sourceCode: string, language: string, userId?: number): Observable<any> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return this.submitCode(problemId, sourceCode, language, userId);
+    }
+
+    return this.http.post<{success: boolean, data: any}>(`${this.apiUrl}/problems/${problemId}/batch-submit`, {
+      sourceCode,
+      language,
+      userId
+    }).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error in batch submit:', error);
+        // Fallback to regular submit
+        return this.submitCode(problemId, sourceCode, language, userId);
+      })
+    );
+  }
+
+  // Create async submission
+  createAsyncSubmission(sourceCode: string, language: string, input: string = '', expectedOutput?: string): Observable<{token: string, message: string}> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return of({ token: 'MOCK_TOKEN_' + Date.now(), message: 'Mock submission created' });
+    }
+
+    return this.http.post<{success: boolean, data: {token: string, message: string}}>(`${this.apiUrl}/problems/async-submit`, {
+      sourceCode,
+      language,
+      input,
+      expectedOutput
+    }).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error creating async submission:', error);
         throw error;
       })
     );
   }
 
+  // Get submission result by token
+  getSubmissionResult(token: string, base64Encoded: boolean = false): Observable<any> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return of({ token, formattedResult: { success: true, stdout: 'Mock result' } });
+    }
+
+    return this.http.get<{success: boolean, data: any}>(`${this.apiUrl}/problems/submission/${token}`, {
+      params: { base64_encoded: base64Encoded.toString() }
+    }).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error getting submission result:', error);
+        throw error;
+      })
+    );
+  }
+
+  // Check Judge0 API health
+  checkJudgeHealth(): Observable<{status: string, info?: any}> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return of({ status: 'healthy' });
+    }
+
+    return this.http.get<{success: boolean, data: {status: string, info?: any}}>(`${this.apiUrl}/problems/judge/health`)
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error checking judge health:', error);
+          return of({ status: 'unhealthy', error: error.message });
+        })
+      );
+  }
+
   getSupportedLanguages(): Observable<any[]> {
+    // Return mock data during SSR
+    if (!isPlatformBrowser(this.platformId)) {
+      return of([
+        { id: 'python', name: 'Python 3.8.1', judgeId: 71 },
+        { id: 'javascript', name: 'JavaScript (Node.js 12.14.0)', judgeId: 63 },
+        { id: 'java', name: 'Java (OpenJDK 13.0.1)', judgeId: 62 },
+        { id: 'cpp', name: 'C++ (GCC 9.2.0)', judgeId: 54 },
+        { id: 'c', name: 'C (GCC 9.2.0)', judgeId: 50 }
+      ]);
+    }
+
     return this.http.get<{success: boolean, data: any[]}>(`${this.apiUrl}/problems/data/languages`)
       .pipe(
         map(response => response.data),
         catchError(error => {
           console.error('Error fetching supported languages:', error);
-          // Return default languages as fallback
+          // Return enhanced default languages as fallback
           return of([
-            { id: 'python', name: 'Python 3', judgeId: 71 },
-            { id: 'javascript', name: 'JavaScript (Node.js)', judgeId: 63 },
-            { id: 'java', name: 'Java', judgeId: 62 },
-            { id: 'cpp', name: 'C++', judgeId: 54 }
+            { id: 'python', name: 'Python 3.8.1', judgeId: 71 },
+            { id: 'javascript', name: 'JavaScript (Node.js 12.14.0)', judgeId: 63 },
+            { id: 'java', name: 'Java (OpenJDK 13.0.1)', judgeId: 62 },
+            { id: 'cpp', name: 'C++ (GCC 9.2.0)', judgeId: 54 },
+            { id: 'c', name: 'C (GCC 9.2.0)', judgeId: 50 },
+            { id: 'csharp', name: 'C# (Mono 6.6.0.161)', judgeId: 51 },
+            { id: 'go', name: 'Go (1.13.5)', judgeId: 60 },
+            { id: 'rust', name: 'Rust (1.40.0)', judgeId: 73 },
+            { id: 'php', name: 'PHP (7.4.1)', judgeId: 68 },
+            { id: 'ruby', name: 'Ruby (2.7.0)', judgeId: 72 },
+            { id: 'kotlin', name: 'Kotlin (1.3.70)', judgeId: 78 },
+            { id: 'swift', name: 'Swift (5.2.3)', judgeId: 79 },
+            { id: 'typescript', name: 'TypeScript (3.7.4)', judgeId: 74 }
           ]);
         })
       );

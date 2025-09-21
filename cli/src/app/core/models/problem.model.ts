@@ -104,3 +104,57 @@ export interface TestCase {
   created_at: string;
   updated_at?: string | null;
 }
+
+// Judge0 Integration Interfaces
+export interface SupportedLanguage {
+  id: string;
+  name: string;
+  judgeId: number;
+}
+
+export interface ExecutionResult {
+  success: boolean;
+  stdout: string;
+  stderr: string;
+  error?: string | null;
+  executionTime: number;
+  memoryUsed: number;
+}
+
+export interface TestCaseResult {
+  input: string;
+  expectedOutput: string;
+  actualOutput: string;
+  passed: boolean;
+  executionTime: number;
+  error?: string | null;
+}
+
+export interface SubmissionResult {
+  submissionId: string;
+  status: 'accepted' | 'wrong' | 'error' | 'timeout' | 'pending';
+  score: number;
+  executionTime: number;
+  memoryUsed: number;
+  testCasesPassed: number;
+  totalTestCases: number;
+  testCaseResults?: TestCaseResult[];
+  error?: string;
+}
+
+export interface AsyncSubmissionResponse {
+  token: string;
+  message: string;
+}
+
+export interface SubmissionStatus {
+  token: string;
+  rawResult: any;
+  formattedResult: ExecutionResult;
+}
+
+export interface JudgeHealthCheck {
+  status: 'healthy' | 'unhealthy';
+  info?: any;
+  error?: string;
+}

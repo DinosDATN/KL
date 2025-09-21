@@ -1,10 +1,10 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MockJudgeService, Language, ExecutionResult, SubmissionResult } from '../../../../../core/services/mock-judge.service';
 import { ProblemsService } from '../../../../../core/services/problems.service';
-import { StarterCode, TestCase } from '../../../../../core/models/problem.model';
+import { StarterCode, TestCase, SupportedLanguage, ExecutionResult, SubmissionResult } from '../../../../../core/models/problem.model';
 import { ThemeService } from '../../../../../core/services/theme.service';
+import { NotificationService } from '../../../../../core/services/notification.service';
 
 declare var ace: any;
 
@@ -33,7 +33,8 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   
   editor: any;
   currentCode: string = '';
-  selectedLanguage: Language;
+  selectedLanguage: SupportedLanguage;
+  supportedLanguages: SupportedLanguage[] = [];
   customInput: string = '';
   
   // UI States
@@ -41,21 +42,32 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   isSubmitting: boolean = false;
   isFullscreen: boolean = false;
   fontSize: number = 14;
+  isLoadingLanguages: boolean = true;
   
   // Results
   executionResult: ExecutionResult | null = null;
   submissionResult: SubmissionResult | null = null;
   
+  // Default language configuration
+  private defaultLanguage: SupportedLanguage = {
+    id: 'python',
+    name: 'Python 3.8.1',
+    judgeId: 71
+  };
+  
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,
-    public mockJudgeService: MockJudgeService,
     private problemsService: ProblemsService,
-    private themeService: ThemeService
+    private themeService: ThemeService,
+    private notificationService: NotificationService
   ) {
-    this.selectedLanguage = this.mockJudgeService.supportedLanguages[0];
+    this.selectedLanguage = this.defaultLanguage;
   }
   
   ngOnInit(): void {
+    // Load supported languages from backend
+    this.loadSupportedLanguages();
+    
     // Listen to theme changes
     this.themeService.theme$.subscribe(theme => {
       if (this.editor && isPlatformBrowser(this.platformId)) {
@@ -99,7 +111,8 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
       
       // Configure editor
       this.updateEditorTheme(this.themeService.getCurrentTheme());
-      this.editor.session.setMode('ace/mode/' + this.selectedLanguage.aceMode);
+      const aceMode = this.getAceModeForLanguage(this.selectedLanguage.id);
+      this.editor.session.setMode('ace/mode/' + aceMode);
       this.editor.setFontSize(this.fontSize);
       
       // Enable features
@@ -153,19 +166,72 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
   
+  private loadSupportedLanguages(): void {
+    this.isLoadingLanguages = true;
+    
+    this.problemsService.getSupportedLanguages().subscribe({
+      next: (languages) => {
+        this.supportedLanguages = languages;
+        
+        // Set the first available language as default if current selection is not available
+        if (!this.supportedLanguages.find(l => l.id === this.selectedLanguage.id)) {
+          this.selectedLanguage = this.supportedLanguages[0] || this.defaultLanguage;
+        }
+        
+        this.isLoadingLanguages = false;
+      },
+      error: (error) => {
+        console.error('Error loading supported languages:', error);
+        // Use fallback languages
+        this.supportedLanguages = [
+          { id: 'python', name: 'Python 3.8.1', judgeId: 71 },
+          { id: 'javascript', name: 'JavaScript (Node.js 12.14.0)', judgeId: 63 },
+          { id: 'java', name: 'Java (OpenJDK 13.0.1)', judgeId: 62 },
+          { id: 'cpp', name: 'C++ (GCC 9.2.0)', judgeId: 54 },
+          { id: 'c', name: 'C (GCC 9.2.0)', judgeId: 50 }
+        ];
+        this.selectedLanguage = this.supportedLanguages[0];
+        this.isLoadingLanguages = false;
+      }
+    });
+  }
+  
   onLanguageChange(event: Event): void {
     const target = event.target as HTMLSelectElement;
     const languageId = target.value;
-    const language = this.mockJudgeService.supportedLanguages.find(l => l.id === languageId);
+    const language = this.supportedLanguages.find(l => l.id === languageId);
     if (language) {
-      console.log('Changing language to:', language.name, 'with aceMode:', language.aceMode);
+      console.log('Changing language to:', language.name);
       this.selectedLanguage = language;
       if (this.editor) {
-        this.editor.session.setMode('ace/mode/' + language.aceMode);
+        const aceMode = this.getAceModeForLanguage(language.id);
+        this.editor.session.setMode('ace/mode/' + aceMode);
         this.loadStarterCode();
         this.editor.focus();
       }
+      
+      // Clear previous results
+      this.clearResults();
     }
+  }
+  
+  private getAceModeForLanguage(languageId: string): string {
+    const modeMap: { [key: string]: string } = {
+      'python': 'python',
+      'javascript': 'javascript',
+      'java': 'java',
+      'cpp': 'c_cpp',
+      'c': 'c_cpp',
+      'csharp': 'csharp',
+      'go': 'golang',
+      'rust': 'rust',
+      'php': 'php',
+      'ruby': 'ruby',
+      'kotlin': 'kotlin',
+      'swift': 'swift',
+      'typescript': 'typescript'
+    };
+    return modeMap[languageId] || 'text';
   }
   
   private loadStarterCode(): void {
@@ -219,78 +285,139 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     this.isFullscreen = !this.isFullscreen;
   }
   
+  private validateCode(): boolean {
+    if (!this.currentCode.trim()) {
+      this.notificationService.codeValidationError('Vui lòng nhập code trước khi chạy.');
+      return false;
+    }
+    
+    if (this.currentCode.length > 64 * 1024) { // 64KB limit
+      this.notificationService.codeValidationError('Code quá dài. Giới hạn tối đa là 64KB.');
+      return false;
+    }
+    
+    return true;
+  }
+  
   runCode(): void {
-    if (!this.currentCode.trim() || this.isExecuting) return;
+    if (!this.validateCode() || this.isExecuting) return;
     
     this.isExecuting = true;
     this.executionResult = null;
     
-    // Try real API first, fallback to mock service
+    console.log('Executing code with language:', this.selectedLanguage.name);
+    
     this.problemsService.executeCode(
       this.currentCode, 
       this.selectedLanguage.id, 
       this.customInput
     ).subscribe({
       next: (result) => {
-        this.executionResult = result;
+        console.log('Execution result:', result);
+        const formattedResult = this.formatExecutionResult(result);
+        this.executionResult = formattedResult;
+        
+        if (formattedResult.success) {
+          this.notificationService.codeExecutionSuccess(
+            formattedResult.executionTime, 
+            formattedResult.memoryUsed
+          );
+        } else {
+          this.notificationService.codeExecutionError(
+            formattedResult.error || 'Code execution failed'
+          );
+        }
+        
         this.isExecuting = false;
       },
       error: (error) => {
-        console.error('Real execution failed, falling back to mock:', error);
-        // Fallback to mock service
-        this.mockJudgeService.executeCode(
-          this.currentCode, 
-          this.selectedLanguage.id, 
-          this.customInput
-        ).subscribe({
-          next: (result) => {
-            this.executionResult = result;
-            this.isExecuting = false;
-          },
-          error: (fallbackError) => {
-            console.error('Mock execution also failed:', fallbackError);
-            this.isExecuting = false;
-          }
-        });
+        console.error('Code execution failed:', error);
+        
+        // Handle specific error types
+        if (error.status === 429) {
+          this.notificationService.rateLimitError();
+        } else if (error.status === 503) {
+          this.notificationService.judgeApiError();
+        } else if (error.status === 0) {
+          this.notificationService.networkError();
+        } else {
+          this.notificationService.codeExecutionError(
+            error.error?.message || error.message || 'Code execution failed'
+          );
+        }
+        
+        this.executionResult = {
+          success: false,
+          stdout: '',
+          stderr: error.message || 'Code execution failed',
+          error: error.message || 'Unknown error occurred',
+          executionTime: 0,
+          memoryUsed: 0
+        };
+        this.isExecuting = false;
       }
     });
   }
   
   submitSolution(): void {
-    if (!this.currentCode.trim() || this.isSubmitting) return;
+    if (!this.validateCode() || this.isSubmitting) return;
     
     this.isSubmitting = true;
     this.submissionResult = null;
     
-    // Try real API first, fallback to mock service
-    this.problemsService.submitCode(
+    console.log('Submitting solution with language:', this.selectedLanguage.name);
+    
+    // Use batch submit for better performance if available
+    const submitMethod = this.problemsService.batchSubmitCode || this.problemsService.submitCode;
+    
+    submitMethod.call(
+      this.problemsService,
       this.problem?.id || 1,
       this.currentCode,
       this.selectedLanguage.id,
       undefined // userId - can be added later when user authentication is implemented
     ).subscribe({
       next: (result) => {
-        this.submissionResult = result;
+        console.log('Submission result:', result);
+        const formattedResult = this.formatSubmissionResult(result);
+        this.submissionResult = formattedResult;
+        
+        // Show success notification
+        this.notificationService.codeSubmissionSuccess(
+          formattedResult.score,
+          formattedResult.testCasesPassed,
+          formattedResult.totalTestCases
+        );
+        
         this.isSubmitting = false;
       },
       error: (error) => {
-        console.error('Real submission failed, falling back to mock:', error);
-        // Fallback to mock service
-        this.mockJudgeService.submitCode(
-          this.currentCode,
-          this.selectedLanguage.id,
-          this.problem?.id || 1,
-          this.testCases
-        ).subscribe({
-          next: (result) => {
-            this.submissionResult = result;
-            this.isSubmitting = false;
-          },
-          error: (fallbackError) => {
-            console.error('Mock submission also failed:', fallbackError);
-            this.isSubmitting = false;
-          }
-        });
+        console.error('Code submission failed:', error);
+        
+        // Handle specific error types
+        if (error.status === 429) {
+          this.notificationService.rateLimitError();
+        } else if (error.status === 503) {
+          this.notificationService.judgeApiError();
+        } else if (error.status === 0) {
+          this.notificationService.networkError();
+        } else {
+          this.notificationService.codeSubmissionError(
+            error.error?.message || error.message || 'Code submission failed'
+          );
+        }
+        
+        this.submissionResult = {
+          submissionId: 'ERROR_' + Date.now(),
+          status: 'error',
+          score: 0,
+          executionTime: 0,
+          memoryUsed: 0,
+          testCasesPassed: 0,
+          totalTestCases: this.testCases.length,
+          error: error.error?.message || error.message || 'Code submission failed'
+        };
+        this.isSubmitting = false;
       }
     });
   }
@@ -298,5 +425,57 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   clearResults(): void {
     this.executionResult = null;
     this.submissionResult = null;
+  }
+  
+  private formatExecutionResult(result: any): ExecutionResult {
+    return {
+      success: result.success || false,
+      stdout: result.stdout || '',
+      stderr: result.stderr || '',
+      error: result.error || null,
+      executionTime: result.executionTime || 0,
+      memoryUsed: result.memoryUsed || 0
+    };
+  }
+  
+  private formatSubmissionResult(result: any): SubmissionResult {
+    return {
+      submissionId: result.submissionId || 'UNKNOWN',
+      status: this.mapStatus(result.status),
+      score: result.score || 0,
+      executionTime: result.executionTime || 0,
+      memoryUsed: result.memoryUsed || 0,
+      testCasesPassed: result.testCasesPassed || 0,
+      totalTestCases: result.totalTestCases || 0,
+      testCaseResults: result.testCaseResults || [],
+      error: result.error || undefined
+    };
+  }
+  
+  private mapStatus(status: string): 'accepted' | 'wrong' | 'error' | 'timeout' | 'pending' {
+    const statusMap: { [key: string]: 'accepted' | 'wrong' | 'error' | 'timeout' | 'pending' } = {
+      'accepted': 'accepted',
+      'wrong': 'wrong',
+      'error': 'error',
+      'timeout': 'timeout',
+      'pending': 'pending',
+      'Accepted': 'accepted',
+      'Wrong Answer': 'wrong',
+      'Runtime Error': 'error',
+      'Time Limit Exceeded': 'timeout',
+      'Compilation Error': 'error'
+    };
+    return statusMap[status] || 'pending';
+  }
+  
+  getStatusDisplayText(status: string): string {
+    const displayMap: { [key: string]: string } = {
+      'accepted': 'Đúng',
+      'wrong': 'Sai',
+      'error': 'Lỗi',
+      'timeout': 'Quá thời gian',
+      'pending': 'Đang xử lý'
+    };
+    return displayMap[status] || status;
   }
 }

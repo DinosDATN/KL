@@ -1,1 +1,150 @@
-<p>execution-results works!</p>
+<!-- Execution Results Container -->
+<div class="space-y-6">
+  
+  <!-- Execution Result -->
+  <div *ngIf="executionResult" class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+      <div class="flex items-center gap-2">
+        <svg class="w-5 h-5" [class]="getStatusColor(executionResult.success ? 'accepted' : 'error')" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path *ngIf="executionResult.success" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          <path *ngIf="!executionResult.success" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Kết quả thực thi</h3>
+      </div>
+    </div>
+    
+    <div class="p-4 space-y-4">
+      <!-- Success Output -->
+      <div *ngIf="executionResult.success && executionResult.stdout" class="border border-green-200 dark:border-green-700 rounded-lg p-4" [class]="getStatusBgColor('accepted')">
+        <h4 class="font-medium text-green-800 dark:text-green-200 mb-2">Output:</h4>
+        <pre class="text-sm text-green-700 dark:text-green-300 whitespace-pre-wrap font-mono bg-white dark:bg-green-800 p-3 rounded border">{{ executionResult.stdout }}</pre>
+      </div>
+      
+      <!-- Error Output -->
+      <div *ngIf="!executionResult.success && (executionResult.error || executionResult.stderr)" class="border border-red-200 dark:border-red-700 rounded-lg p-4" [class]="getStatusBgColor('error')">
+        <h4 class="font-medium text-red-800 dark:text-red-200 mb-2">Lỗi:</h4>
+        <pre class="text-sm text-red-700 dark:text-red-300 whitespace-pre-wrap font-mono bg-white dark:bg-red-800 p-3 rounded border">{{ executionResult.error || executionResult.stderr }}</pre>
+      </div>
+      
+      <!-- Execution Stats -->
+      <div class="grid grid-cols-2 gap-4 text-sm">
+        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+          <div class="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide mb-1">Thời gian</div>
+          <div class="text-lg font-semibold text-gray-900 dark:text-white">{{ executionResult.executionTime }}ms</div>
+        </div>
+        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+          <div class="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide mb-1">Bộ nhớ</div>
+          <div class="text-lg font-semibold text-gray-900 dark:text-white">{{ (executionResult.memoryUsed / 1024).toFixed(2) }}MB</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Submission Result -->
+  <div *ngIf="submissionResult" class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+      <div class="flex items-center gap-2">
+        <svg class="w-5 h-5" [class]="getStatusColor(submissionResult.status)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path *ngIf="submissionResult.status === 'accepted'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          <path *ngIf="submissionResult.status !== 'accepted'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Kết quả nộp bài</h3>
+      </div>
+    </div>
+    
+    <div class="p-4 space-y-4">
+      <!-- Status and Score -->
+      <div class="flex items-center justify-between">
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border"
+              [class]="getStatusBgColor(submissionResult.status)"
+              [class.text-green-800]="submissionResult.status === 'accepted'"
+              [class.text-red-800]="submissionResult.status !== 'accepted'"
+              [class.dark:text-green-300]="submissionResult.status === 'accepted'"
+              [class.dark:text-red-300]="submissionResult.status !== 'accepted'">
+          {{ getStatusDisplayText(submissionResult.status) }}
+        </span>
+        <span class="text-2xl font-bold" [class]="getStatusColor(submissionResult.status)">
+          {{ submissionResult.score }}/100
+        </span>
+      </div>
+      
+      <!-- Stats Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+          <div class="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide mb-1">Test Cases</div>
+          <div class="text-lg font-semibold text-gray-900 dark:text-white">{{ submissionResult.testCasesPassed }}/{{ submissionResult.totalTestCases }}</div>
+        </div>
+        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+          <div class="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide mb-1">Runtime</div>
+          <div class="text-lg font-semibold text-gray-900 dark:text-white">{{ submissionResult.executionTime }}ms</div>
+        </div>
+        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+          <div class="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide mb-1">Memory</div>
+          <div class="text-lg font-semibold text-gray-900 dark:text-white">{{ (submissionResult.memoryUsed / 1024).toFixed(2) }}MB</div>
+        </div>
+        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+          <div class="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide mb-1">ID</div>
+          <div class="text-xs font-mono text-gray-900 dark:text-white truncate" title="{{ submissionResult.submissionId }}">{{ submissionResult.submissionId }}</div>
+        </div>
+      </div>
+      
+      <!-- Test Case Results (if detailed results are enabled) -->
+      <div *ngIf="showDetailedResults && submissionResult.testCaseResults && submissionResult.testCaseResults.length > 0" class="space-y-3">
+        <h4 class="font-medium text-gray-900 dark:text-white">Chi tiết test cases:</h4>
+        <div class="space-y-2 max-h-64 overflow-y-auto">
+          <div *ngFor="let testCase of submissionResult.testCaseResults; let i = index" 
+               class="border rounded-lg p-3 text-sm"
+               [class]="getStatusBgColor(testCase.passed ? 'accepted' : 'wrong')">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-medium">Test Case {{ i + 1 }}</span>
+              <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
+                    [class.bg-green-100]="testCase.passed"
+                    [class.text-green-800]="testCase.passed"
+                    [class.bg-red-100]="!testCase.passed"
+                    [class.text-red-800]="!testCase.passed"
+                    [class.dark:bg-green-900]="testCase.passed"
+                    [class.dark:text-green-300]="testCase.passed"
+                    [class.dark:bg-red-900]="!testCase.passed"
+                    [class.dark:text-red-300]="!testCase.passed">
+                {{ testCase.passed ? 'PASS' : 'FAIL' }}
+              </span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
+              <div>
+                <div class="text-gray-500 dark:text-gray-400 mb-1">Input:</div>
+                <pre class="bg-white dark:bg-gray-800 p-2 rounded border font-mono">{{ testCase.input || '(empty)' }}</pre>
+              </div>
+              <div>
+                <div class="text-gray-500 dark:text-gray-400 mb-1">Expected:</div>
+                <pre class="bg-white dark:bg-gray-800 p-2 rounded border font-mono">{{ testCase.expectedOutput }}</pre>
+              </div>
+              <div>
+                <div class="text-gray-500 dark:text-gray-400 mb-1">Actual:</div>
+                <pre class="bg-white dark:bg-gray-800 p-2 rounded border font-mono">{{ testCase.actualOutput || '(no output)' }}</pre>
+              </div>
+            </div>
+            <div *ngIf="testCase.error" class="mt-2">
+              <div class="text-red-500 dark:text-red-400 text-xs mb-1">Error:</div>
+              <pre class="bg-red-50 dark:bg-red-900 text-red-700 dark:text-red-300 p-2 rounded border font-mono text-xs">{{ testCase.error }}</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Error Message -->
+      <div *ngIf="submissionResult.error" class="border border-red-200 dark:border-red-700 rounded-lg p-4" [class]="getStatusBgColor('error')">
+        <h4 class="font-medium text-red-800 dark:text-red-200 mb-2">Lỗi:</h4>
+        <p class="text-red-700 dark:text-red-300 text-sm">{{ submissionResult.error }}</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- No Results State -->
+  <div *ngIf="!executionResult && !submissionResult" class="text-center py-8">
+    <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+    </svg>
+    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Chưa có kết quả</h3>
+    <p class="text-gray-500 dark:text-gray-400">Chạy hoặc nộp code để xem kết quả thực thi</p>
+  </div>
+</div>
