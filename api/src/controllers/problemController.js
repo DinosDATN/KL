@@ -9,7 +9,8 @@ const {
   TestCase,
   SubmissionCode,
   Submission,
-  ProblemComment
+  ProblemComment,
+  JudgeSubmission
 } = require('../models');
 const judgeService = require('../services/judgeService');
 
@@ -587,6 +588,246 @@ class ProblemController {
       res.status(500).json({
         success: false,
         message: 'Failed to fetch supported languages',
+        error: error.message
+      });
+    }
+  }
+
+  // Check Judge0 API health
+  async checkJudgeHealth(req, res) {
+    try {
+      const health = await judgeService.healthCheck();
+      
+      const statusCode = health.status === 'healthy' ? 200 : 503;
+      
+      res.status(statusCode).json({
+        success: health.status === 'healthy',
+        data: health
+      });
+    } catch (error) {
+      console.error('Error in checkJudgeHealth:', error);
+      res.status(503).json({
+        success: false,
+        message: 'Failed to check Judge0 health',
+        error: error.message
+      });
+    }
+  }
+
+  // Get submission by token (for async operations)
+  async getSubmission(req, res) {
+    try {
+      const { token } = req.params;
+      const { base64_encoded = 'false' } = req.query;
+      
+      if (!token) {
+        return res.status(400).json({
+          success: false,
+          message: 'Submission token is required'
+        });
+      }
+      
+      const result = await judgeService.getSubmission(token, base64_encoded === 'true');
+      const formattedResult = judgeService.formatExecutionResult(result);
+      
+      res.status(200).json({
+        success: true,
+        data: {
+          token: token,
+          rawResult: result,
+          formattedResult: formattedResult
+        }
+      });
+    } catch (error) {
+      console.error('Error in getSubmission:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get submission result',
+        error: error.message
+      });
+    }
+  }
+
+  // Create async submission
+  async createAsyncSubmission(req, res) {
+    try {
+      const { sourceCode, language, input = '', expectedOutput = null, base64Encoded = false } = req.body;
+      
+      if (!sourceCode || !language) {
+        return res.status(400).json({
+          success: false,
+          message: 'Source code and language are required'
+        });
+      }
+      
+      const languageId = judgeService.getLanguageId(language);
+      if (!languageId) {
+        return res.status(400).json({
+          success: false,
+          message: `Unsupported language: ${language}`
+        });
+      }
+      
+      const submission = await judgeService.createSubmission(
+        sourceCode,
+        languageId,
+        input,
+        expectedOutput,
+        base64Encoded
+      );
+      
+      res.status(201).json({
+        success: true,
+        data: {
+          token: submission.token,
+          message: 'Submission created successfully. Use the token to check status.'
+        }
+      });
+    } catch (error) {
+      console.error('Error in createAsyncSubmission:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to create submission',
+        error: error.message
+      });
+    }
+  }
+
+  // Batch submit code with multiple test cases
+  async batchSubmitCode(req, res) {
+    try {
+      const { id } = req.params; // problem id
+      const { sourceCode, language, userId } = req.body;
+      
+      if (!sourceCode || !language) {
+        return res.status(400).json({
+          success: false,
+          message: 'Source code and language are required'
+        });
+      }
+      
+      const languageId = judgeService.getLanguageId(language);
+      if (!languageId) {
+        return res.status(400).json({
+          success: false,
+          message: `Unsupported language: ${language}`
+        });
+      }
+      
+      // Get test cases for the problem
+      const testCases = await TestCase.findAll({
+        where: { problem_id: id },
+        attributes: ['input', 'expected_output']
+      });
+      
+      if (testCases.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'No test cases found for this problem'
+        });
+      }
+      
+      // Use batch submission for better performance
+      const batchResults = await judgeService.batchSubmissions(
+        sourceCode,
+        languageId,
+        testCases
+      );
+      
+      // Process results
+      const results = [];
+      let passedCount = 0;
+      let totalExecutionTime = 0;
+      let maxMemoryUsed = 0;
+      
+      for (const batchResult of batchResults) {
+        if (batchResult.error) {
+          results.push({
+            input: batchResult.testCase.input,
+            expectedOutput: batchResult.testCase.expected_output,
+            actualOutput: '',
+            passed: false,
+            executionTime: 0,
+            error: batchResult.error
+          });
+          continue;
+        }
+        
+        const formatted = judgeService.formatExecutionResult(batchResult.result);
+        const passed = formatted.success && 
+                      formatted.stdout && 
+                      formatted.stdout.trim() === batchResult.testCase.expected_output.trim();
+        
+        if (passed) passedCount++;
+        
+        totalExecutionTime += formatted.executionTime || 0;
+        maxMemoryUsed = Math.max(maxMemoryUsed, formatted.memoryUsed || 0);
+        
+        results.push({
+          input: batchResult.testCase.input,
+          expectedOutput: batchResult.testCase.expected_output,
+          actualOutput: formatted.stdout || '',
+          passed: passed,
+          executionTime: formatted.executionTime || 0,
+          error: formatted.error || null
+        });
+      }
+      
+      // Calculate final status and score
+      const score = Math.floor((passedCount / testCases.length) * 100);
+      let status = score === 100 ? 'accepted' : 'wrong';
+      
+      // Check for runtime errors
+      if (results.some(r => r.error && !r.passed)) {
+        status = 'error';
+      }
+      
+      const finalResult = {
+        submissionId: 'BATCH_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+        status: status,
+        score: score,
+        executionTime: Math.floor(totalExecutionTime / testCases.length),
+        memoryUsed: maxMemoryUsed,
+        testCasesPassed: passedCount,
+        totalTestCases: testCases.length,
+        testCaseResults: results
+      };
+      
+      // Save submission if userId is provided
+      if (userId) {
+        try {
+          // Save submission code
+          const submissionCode = await SubmissionCode.create({
+            source_code: sourceCode
+          });
+          
+          // Save submission
+          await Submission.create({
+            user_id: userId,
+            problem_id: id,
+            code_id: submissionCode.id,
+            language: language,
+            status: status,
+            score: finalResult.score,
+            exec_time: finalResult.executionTime,
+            memory_used: finalResult.memoryUsed,
+            submitted_at: new Date()
+          });
+        } catch (saveError) {
+          console.error('Failed to save batch submission:', saveError);
+          // Continue with response even if save fails
+        }
+      }
+      
+      res.status(200).json({
+        success: true,
+        data: finalResult
+      });
+    } catch (error) {
+      console.error('Error in batchSubmitCode:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to submit code with batch processing',
         error: error.message
       });
     }

@@ -25,6 +25,7 @@ const Contest = require('./Contest');
 const ContestProblem = require('./ContestProblem');
 const UserContest = require('./UserContest');
 const ContestSubmission = require('./ContestSubmission');
+const JudgeSubmission = require('./JudgeSubmission');
 
 // Define associations
 Problem.belongsTo(ProblemCategory, {
@@ -392,6 +393,27 @@ User.hasMany(ChatReaction, {
   as: 'Reactions'
 });
 
+// Judge Submission associations
+JudgeSubmission.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'User'
+});
+
+JudgeSubmission.belongsTo(Problem, {
+  foreignKey: 'problem_id',
+  as: 'Problem'
+});
+
+User.hasMany(JudgeSubmission, {
+  foreignKey: 'user_id',
+  as: 'JudgeSubmissions'
+});
+
+Problem.hasMany(JudgeSubmission, {
+  foreignKey: 'problem_id',
+  as: 'JudgeSubmissions'
+});
+
 module.exports = {
   Problem,
   ProblemCategory,
@@ -416,6 +438,7 @@ module.exports = {
   ContestProblem,
   UserContest,
   ContestSubmission,
+  JudgeSubmission,
   ChatRoom,
   ChatMessage,
   ChatRoomMember,

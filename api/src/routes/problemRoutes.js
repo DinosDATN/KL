@@ -1,5 +1,6 @@
 const express = require('express');
 const problemController = require('../controllers/problemController');
+const judgeMiddleware = require('../middleware/judgeMiddleware');
 
 const router = express.Router();
 
@@ -25,12 +26,55 @@ router.get('/:id/constraints', problemController.getProblemConstraints);
 router.get('/:id/starter-codes', problemController.getStarterCodes);
 router.get('/:id/test-cases', problemController.getTestCases);
 
-// Code execution and submission
-router.post('/execute', problemController.executeCode);
-router.post('/:id/submit', problemController.submitCode);
+// Code execution and submission with middleware
+router.post('/execute', 
+  judgeMiddleware.rateLimit(5, 60000), // 5 requests per minute
+  judgeMiddleware.securityHeaders,
+  judgeMiddleware.validateSourceCode,
+  judgeMiddleware.validateInput,
+  judgeMiddleware.logJudgeOperation,
+  judgeMiddleware.sanitizeOutput,
+  problemController.executeCode
+);
+
+router.post('/:id/submit', 
+  judgeMiddleware.rateLimit(10, 60000), // 10 submissions per minute
+  judgeMiddleware.securityHeaders,
+  judgeMiddleware.validateSourceCode,
+  judgeMiddleware.logJudgeOperation,
+  judgeMiddleware.sanitizeOutput,
+  problemController.submitCode
+);
+
+router.post('/:id/batch-submit', 
+  judgeMiddleware.rateLimit(3, 60000), // 3 batch submissions per minute
+  judgeMiddleware.securityHeaders,
+  judgeMiddleware.validateSourceCode,
+  judgeMiddleware.logJudgeOperation,
+  judgeMiddleware.sanitizeOutput,
+  problemController.batchSubmitCode
+);
+
 router.get('/:id/submissions', problemController.getProblemSubmissions);
 
-// Supported languages
+// Async submission handling with middleware
+router.post('/async-submit', 
+  judgeMiddleware.rateLimit(10, 60000),
+  judgeMiddleware.securityHeaders,
+  judgeMiddleware.validateSourceCode,
+  judgeMiddleware.validateInput,
+  judgeMiddleware.logJudgeOperation,
+  problemController.createAsyncSubmission
+);
+
+router.get('/submission/:token', 
+  judgeMiddleware.securityHeaders,
+  judgeMiddleware.sanitizeOutput,
+  problemController.getSubmission
+);
+
+// Supported languages and health check
 router.get('/data/languages', problemController.getSupportedLanguages);
+router.get('/judge/health', problemController.checkJudgeHealth);
 
 module.exports = router;
