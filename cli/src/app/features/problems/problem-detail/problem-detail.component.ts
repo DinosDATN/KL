@@ -6,7 +6,7 @@ import { Problem, TestCase, StarterCode, ProblemExample } from '../../../core/mo
 import { ProblemsService } from '../../../core/services/problems.service';
 import { ProblemDescriptionComponent } from './components/problem-description/problem-description.component';
 import { CodeEditorComponent } from './components/code-editor/code-editor.component';
-import { TestCasesComponent } from './components/test-cases/test-cases.component';
+import { ExamplesComponent } from './components/examples/examples.component';
 import { ExecutionResultsComponent } from './components/execution-results/execution-results.component';
 
 @Component({
@@ -16,7 +16,7 @@ import { ExecutionResultsComponent } from './components/execution-results/execut
     CommonModule,
     ProblemDescriptionComponent,
     CodeEditorComponent,
-    TestCasesComponent,
+    ExamplesComponent,
     ExecutionResultsComponent
   ],
   templateUrl: './problem-detail.component.html',
@@ -32,7 +32,7 @@ export class ProblemDetailComponent implements OnInit, OnDestroy {
   
   // Layout state
   isMobileView = false;
-  activeTab: 'description' | 'test-cases' = 'description';
+  activeTab: 'description' | 'examples' = 'description';
   
   constructor(
     private route: ActivatedRoute,
@@ -101,7 +101,7 @@ export class ProblemDetailComponent implements OnInit, OnDestroy {
     }
   }
   
-  setActiveTab(tab: 'description' | 'test-cases'): void {
+  setActiveTab(tab: 'description' | 'examples'): void {
     this.activeTab = tab;
   }
   
