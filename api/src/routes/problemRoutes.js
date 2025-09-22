@@ -66,6 +66,10 @@ router.post('/:id/batch-submit',
 
 router.get('/:id/submissions', problemController.getProblemSubmissions);
 
+// Assignment dashboard endpoints
+router.get('/dashboard/submissions', problemController.getAllSubmissions);
+router.get('/dashboard/stats', problemController.getSubmissionStats);
+
 // Async submission handling with middleware
 router.post('/async-submit', 
   judgeMiddleware.rateLimit(10, 60000),

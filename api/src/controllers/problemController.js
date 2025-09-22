@@ -12,6 +12,8 @@ const {
   ProblemComment,
   JudgeSubmission
 } = require('../models');
+const { sequelize } = require('../config/sequelize');
+const { Op } = require('sequelize');
 const judgeService = require('../services/judgeService');
 
 class ProblemController {
@@ -590,6 +592,7 @@ class ProblemController {
         where: whereClause,
         include: [{
           model: SubmissionCode,
+          as: 'Code',
           attributes: ['source_code']
         }],
         limit,
@@ -612,6 +615,170 @@ class ProblemController {
       res.status(500).json({
         success: false,
         message: 'Failed to fetch submissions',
+        error: error.message
+      });
+    }
+  }
+
+  // Get all submissions for assignment dashboard (for instructors/admins)
+  async getAllSubmissions(req, res) {
+    try {
+      const { problemId, userId, status, language } = req.query;
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 50;
+      const offset = (page - 1) * limit;
+
+      // Build where clause
+      const whereClause = {};
+      if (problemId) whereClause.problem_id = problemId;
+      if (userId) whereClause.user_id = userId;
+      if (status) whereClause.status = status;
+      if (language) whereClause.language = language;
+
+      const { count, rows: submissions } = await Submission.findAndCountAll({
+        where: whereClause,
+        include: [
+          {
+            model: SubmissionCode,
+            as: 'Code',
+            attributes: ['source_code']
+          },
+          {
+            model: Problem,
+            attributes: ['id', 'title', 'difficulty'],
+            required: false
+          }
+        ],
+        limit,
+        offset,
+        order: [['submitted_at', 'DESC']]
+      });
+
+      // Add user information if needed (you might want to include User model in associations)
+      const enhancedSubmissions = submissions.map(submission => ({
+        id: submission.id,
+        user_id: submission.user_id,
+        problem_id: submission.problem_id,
+        problem: submission.Problem ? {
+          id: submission.Problem.id,
+          title: submission.Problem.title,
+          difficulty: submission.Problem.difficulty
+        } : null,
+        language: submission.language,
+        status: submission.status,
+        score: submission.score,
+        exec_time: submission.exec_time,
+        memory_used: submission.memory_used,
+        submitted_at: submission.submitted_at,
+        source_code: submission.Code ? submission.Code.source_code : null
+      }));
+
+      res.status(200).json({
+        success: true,
+        data: enhancedSubmissions,
+        pagination: {
+          current_page: page,
+          total_pages: Math.ceil(count / limit),
+          total_items: count,
+          items_per_page: limit
+        }
+      });
+    } catch (error) {
+      console.error('Error in getAllSubmissions:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch all submissions',
+        error: error.message
+      });
+    }
+  }
+
+  // Get submission statistics for assignment dashboard
+  async getSubmissionStats(req, res) {
+    try {
+      const { problemId, userId } = req.query;
+
+      // Build where clause
+      const whereClause = {};
+      if (problemId) whereClause.problem_id = problemId;
+      if (userId) whereClause.user_id = userId;
+
+      // Get total submissions
+      const totalSubmissions = await Submission.count({ where: whereClause });
+
+      // Get submissions by status
+      const statusStats = await Submission.findAll({
+        where: whereClause,
+        attributes: [
+          'status',
+          [sequelize.fn('COUNT', sequelize.col('status')), 'count']
+        ],
+        group: ['status'],
+        raw: true
+      });
+
+      // Get submissions by language
+      const languageStats = await Submission.findAll({
+        where: whereClause,
+        attributes: [
+          'language',
+          [sequelize.fn('COUNT', sequelize.col('language')), 'count']
+        ],
+        group: ['language'],
+        raw: true
+      });
+
+      // Get unique users count
+      const uniqueUsers = await Submission.count({
+        where: whereClause,
+        distinct: true,
+        col: 'user_id'
+      });
+
+      // Get submissions over time (last 30 days)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const timeSeriesData = await Submission.findAll({
+        where: {
+          ...whereClause,
+          submitted_at: {
+            [Op.gte]: thirtyDaysAgo
+          }
+        },
+        attributes: [
+          [sequelize.fn('DATE', sequelize.col('submitted_at')), 'date'],
+          [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+        ],
+        group: [sequelize.fn('DATE', sequelize.col('submitted_at'))],
+        order: [[sequelize.fn('DATE', sequelize.col('submitted_at')), 'ASC']],
+        raw: true
+      });
+
+      res.status(200).json({
+        success: true,
+        data: {
+          totalSubmissions,
+          statusStats: statusStats.reduce((acc, stat) => {
+            acc[stat.status] = parseInt(stat.count);
+            return acc;
+          }, {}),
+          languageStats: languageStats.reduce((acc, stat) => {
+            acc[stat.language] = parseInt(stat.count);
+            return acc;
+          }, {}),
+          uniqueUsers,
+          submissionsOverTime: timeSeriesData.map(item => ({
+            date: item.date,
+            count: parseInt(item.count)
+          }))
+        }
+      });
+    } catch (error) {
+      console.error('Error in getSubmissionStats:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch submission statistics',
         error: error.message
       });
     }

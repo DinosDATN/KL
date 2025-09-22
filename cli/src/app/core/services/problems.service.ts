@@ -483,6 +483,96 @@ export class ProblemsService {
       );
   }
 
+  // Get all submissions for assignment dashboard
+  getAllSubmissions(filters?: {
+    problemId?: number,
+    userId?: number,
+    status?: string,
+    language?: string,
+    page?: number,
+    limit?: number
+  }): Observable<any> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return of({ data: [], pagination: { total_items: 0, current_page: 1, total_pages: 1 } });
+    }
+
+    const params: { [key: string]: string } = {};
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          params[key] = value.toString();
+        }
+      });
+    }
+
+    return this.http.get<{success: boolean, data: any[], pagination: any}>(
+      `${this.apiUrl}/problems/dashboard/submissions`, { params }
+    ).pipe(
+      map(response => response),
+      catchError(error => {
+        console.error('Error fetching all submissions:', error);
+        return of({ success: false, data: [], pagination: { total_items: 0, current_page: 1, total_pages: 1 } });
+      })
+    );
+  }
+
+  // Get submission statistics for assignment dashboard
+  getSubmissionStats(filters?: {
+    problemId?: number,
+    userId?: number
+  }): Observable<any> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return of({
+        totalSubmissions: 0,
+        statusStats: {},
+        languageStats: {},
+        uniqueUsers: 0,
+        submissionsOverTime: []
+      });
+    }
+
+    const params: { [key: string]: string } = {};
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          params[key] = value.toString();
+        }
+      });
+    }
+
+    return this.http.get<{success: boolean, data: any}>(
+      `${this.apiUrl}/problems/dashboard/stats`, { params }
+    ).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error fetching submission statistics:', error);
+        return of({
+          totalSubmissions: 0,
+          statusStats: {},
+          languageStats: {},
+          uniqueUsers: 0,
+          submissionsOverTime: []
+        });
+      })
+    );
+  }
+
+  // Get user submissions history
+  getUserSubmissions(userId: number, filters?: {
+    problemId?: number,
+    status?: string,
+    language?: string,
+    page?: number,
+    limit?: number
+  }): Observable<any> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return of({ data: [], pagination: { total_items: 0, current_page: 1, total_pages: 1 } });
+    }
+
+    const allFilters = { ...filters, userId };
+    return this.getAllSubmissions(allFilters);
+  }
+
   // Execute code with examples (Run with Example button)
   executeCodeWithExamples(sourceCode: string, language: string, examples: ProblemExample[]): Observable<BatchExampleResult> {
     if (!isPlatformBrowser(this.platformId)) {

@@ -14,6 +14,7 @@ import {
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProblemsService } from '../../../../../core/services/problems.service';
+import { AuthService } from '../../../../../core/services/auth.service';
 import {
   StarterCode,
   TestCase,
@@ -87,7 +88,8 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     @Inject(PLATFORM_ID) private platformId: Object,
     private problemsService: ProblemsService,
     private themeService: ThemeService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private authService: AuthService
   ) {
     this.selectedLanguage = this.defaultLanguage;
   }
@@ -486,6 +488,17 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   submitSolution(): void {
     if (!this.validateCode() || this.isSubmitting) return;
 
+    // Get current user ID from auth service
+    const currentUser = this.authService.getCurrentUser();
+    const userId = currentUser?.id || null;
+
+    // Notify user if not logged in (but still allow submission for demo purposes)
+    if (!userId) {
+      this.notificationService.codeValidationError(
+        'Đăng nhập để lưu kết quả làm bài và theo dõi tiến độ của bạn.'
+      );
+    }
+
     this.isSubmitting = true;
     this.submissionResult = null;
 
@@ -493,6 +506,7 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
       'Submitting solution with language:',
       this.selectedLanguage.name
     );
+    console.log('Submitting with user ID:', userId);
 
     // Use batch submit for better performance if available
     const submitMethod =
@@ -504,7 +518,7 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
         this.problem?.id || 1,
         this.currentCode,
         this.selectedLanguage.id,
-        undefined // userId - can be added later when user authentication is implemented
+        userId || undefined // Pass the actual user ID from authentication, convert null to undefined
       )
       .subscribe({
         next: (result) => {
