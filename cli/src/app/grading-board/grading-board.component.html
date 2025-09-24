@@ -1,0 +1,160 @@
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+  <!-- Header -->
+  <div class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Code Grading Board</h1>
+          <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">View and manage code submissions</p>
+        </div>
+        <div class="flex items-center space-x-4">
+          <button 
+            (click)="toggleStats()" 
+            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800 transition-colors duration-200">
+            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"></path>
+            </svg>
+            {{ showStats ? 'Hide Stats' : 'Show Stats' }}
+          </button>
+          <button 
+            (click)="toggleFilters()" 
+            class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800 transition-colors duration-200">
+            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd"></path>
+            </svg>
+            {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Panel -->
+  <div *ngIf="showStats && stats" class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4">Submission Statistics</h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Total Submissions -->
+        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 transition-colors duration-200">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <svg class="h-8 w-8 text-indigo-600 dark:text-indigo-400" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
+                <path fill-rule="evenodd" d="M4 5a2 2 0 012-2v1a1 1 0 001 1h6a1 1 0 001-1V3a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"></path>
+              </svg>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Submissions</p>
+              <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ stats.total_submissions }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status Breakdown -->
+        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 transition-colors duration-200">
+          <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">By Status</h4>
+          <div class="space-y-2">
+            <div *ngFor="let item of stats.status_breakdown" class="flex justify-between items-center">
+              <span [class]="getStatusColorClass(item.status)" class="px-2 py-1 rounded-full text-xs font-medium">
+                {{ item.status | titlecase }}
+              </span>
+              <span class="text-sm font-medium text-gray-900 dark:text-white">{{ item.count }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Language Breakdown -->
+        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 transition-colors duration-200">
+          <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">By Language</h4>
+          <div class="space-y-2">
+            <div *ngFor="let item of stats.language_breakdown" class="flex justify-between items-center">
+              <span class="text-sm text-gray-700 dark:text-gray-300">{{ getLanguageDisplayName(item.language) }}</span>
+              <span class="text-sm font-medium text-gray-900 dark:text-white">{{ item.count }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Panel -->
+  <div *ngIf="showFilters" class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4">Filters</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Status Filter -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+          <select [(ngModel)]="filters.status" class="block w-full border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors duration-200">
+            <option value="">All Statuses</option>
+            <option *ngFor="let status of statusOptions" [value]="status">{{ status | titlecase }}</option>
+          </select>
+        </div>
+
+        <!-- Language Filter -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Language</label>
+          <select [(ngModel)]="filters.language" class="block w-full border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors duration-200">
+            <option value="">All Languages</option>
+            <option *ngFor="let lang of languageOptions" [value]="lang">{{ getLanguageDisplayName(lang) }}</option>
+          </select>
+        </div>
+
+        <!-- Sort By -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sort By</label>
+          <select [(ngModel)]="filters.sort_by" class="block w-full border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors duration-200">
+            <option *ngFor="let option of sortOptions" [value]="option.value">{{ option.label }}</option>
+          </select>
+        </div>
+
+        <!-- Sort Order -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Order</label>
+          <select [(ngModel)]="filters.sort_order" class="block w-full border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors duration-200">
+            <option value="DESC">Descending</option>
+            <option value="ASC">Ascending</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Filter Actions -->
+      <div class="mt-4 flex justify-end space-x-3">
+        <button 
+          (click)="clearFilters()" 
+          class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800 transition-colors duration-200">
+          Clear
+        </button>
+        <button 
+          (click)="applyFilters()" 
+          class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800 transition-colors duration-200">
+          Apply Filters
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- List View -->
+    <div *ngIf="view === 'list'">
+      <app-submission-list
+        [submissions]="submissions"
+        [loading]="loading"
+        [currentUser]="currentUser"
+        (submissionSelect)="onSubmissionSelect($event)"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="onPageSizeChange($event)">
+      </app-submission-list>
+    </div>
+
+    <!-- Details View -->
+    <div *ngIf="view === 'details'">
+      <app-submission-details
+        [submissionId]="selectedSubmissionId"
+        [currentUser]="currentUser"
+        (backToList)="onBackToList()">
+      </app-submission-details>
+    </div>
+  </div>
+</div>

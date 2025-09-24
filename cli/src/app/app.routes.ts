@@ -9,7 +9,7 @@ export const routes: Routes = [
       import('./features/auth/login/login.component').then(
         (m) => m.LoginComponent
       ),
-    canActivate: [NoAuthGuard]
+    canActivate: [NoAuthGuard],
   },
   {
     path: 'auth/register',
@@ -17,7 +17,7 @@ export const routes: Routes = [
       import('./features/auth/register/register.component').then(
         (m) => m.RegisterComponent
       ),
-    canActivate: [NoAuthGuard]
+    canActivate: [NoAuthGuard],
   },
   // Main layout routes
   {
@@ -50,9 +50,9 @@ export const routes: Routes = [
       {
         path: 'problems/:id',
         loadComponent: () =>
-          import('./features/problems/problem-detail/problem-detail.component').then(
-            (m) => m.ProblemDetailComponent
-          ),
+          import(
+            './features/problems/problem-detail/problem-detail.component'
+          ).then((m) => m.ProblemDetailComponent),
       },
       {
         path: 'documents',
@@ -64,9 +64,9 @@ export const routes: Routes = [
       {
         path: 'documents/:id',
         loadComponent: () =>
-          import('./features/documents/document-detail/document-detail.component').then(
-            (m) => m.DocumentDetailComponent
-          ),
+          import(
+            './features/documents/document-detail/document-detail.component'
+          ).then((m) => m.DocumentDetailComponent),
       },
       {
         path: 'forum',
@@ -92,16 +92,16 @@ export const routes: Routes = [
       {
         path: 'courses/:id',
         loadComponent: () =>
-          import('./features/courses/course-detail/course-detail.component').then(
-            (m) => m.CourseDetailComponent
-          ),
+          import(
+            './features/courses/course-detail/course-detail.component'
+          ).then((m) => m.CourseDetailComponent),
       },
       {
         path: 'courses/:courseId/lessons/:lessonId',
         loadComponent: () =>
-          import('./features/courses/lesson-learning/lesson-learning.component').then(
-            (m) => m.LessonLearningComponent
-          ),
+          import(
+            './features/courses/lesson-learning/lesson-learning.component'
+          ).then((m) => m.LessonLearningComponent),
       },
       {
         path: 'about',
@@ -120,9 +120,9 @@ export const routes: Routes = [
       {
         path: 'contests/:id',
         loadComponent: () =>
-          import('./features/contests/contest-detail/contest-detail.component').then(
-            (m) => m.ContestDetailComponent
-          ),
+          import(
+            './features/contests/contest-detail/contest-detail.component'
+          ).then((m) => m.ContestDetailComponent),
       },
       {
         path: 'profile',
@@ -130,7 +130,15 @@ export const routes: Routes = [
           import('./features/profile/profile.component').then(
             (m) => m.ProfileComponent
           ),
-        canActivate: [AuthGuard]
+        canActivate: [AuthGuard],
+      },
+      {
+        path: 'grading-board',
+        loadComponent: () =>
+          import('./grading-board/grading-board.component').then(
+            (m) => m.GradingBoardComponent
+          ),
+        canActivate: [AuthGuard],
       },
     ],
   },

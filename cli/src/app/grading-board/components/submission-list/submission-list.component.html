@@ -1,0 +1,307 @@
+<div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg transition-colors duration-200">
+  <!-- Loading State -->
+  <div *ngIf="loading" class="p-8 text-center">
+    <div class="inline-flex items-center">
+      <svg class="animate-spin -ml-1 mr-3 h-8 w-8 text-indigo-600 dark:text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <span class="text-lg text-gray-600 dark:text-gray-400">Loading submissions...</span>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && !hasSubmissions()" class="p-8 text-center">
+    <svg class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+      <path d="M34 40h10v-4a6 6 0 00-10.712-3.714M34 40H14m20 0v-4a9.971 9.971 0 00-.712-3.714M14 40H4v-4a6 6 0 0110.713-3.714M14 40v-4c0-1.313.253-2.566.713-3.714m0 0A9.971 9.971 0 0118 28c2.624 0 4.928 1.006 6.713 2.714" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+    </svg>
+    <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No submissions found</h3>
+    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">There are no submissions matching your current filters.</p>
+  </div>
+
+  <!-- Submissions Table -->
+  <div *ngIf="!loading && hasSubmissions()">
+    <!-- Table Header -->
+    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">
+          Submissions 
+          <span class="text-sm font-normal text-gray-500 dark:text-gray-400">({{ submissions?.pagination?.total_items }} total)</span>
+        </h3>
+        <div class="flex items-center space-x-2">
+          <label class="text-sm text-gray-500 dark:text-gray-400">Show:</label>
+          <select 
+            [value]="currentPageSize" 
+(change)="onPageSizeChange(+($any($event.target).value))" 
+            class="border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200">
+            <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }}</option>
+          </select>
+          <span class="text-sm text-gray-500 dark:text-gray-400">per page</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Desktop Table -->
+    <div class="hidden md:block overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead class="bg-gray-50 dark:bg-gray-800">
+          <tr>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Problem
+            </th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              User
+            </th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Language
+            </th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Status
+            </th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Score
+            </th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Performance
+            </th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Submitted
+            </th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+          <tr *ngFor="let submission of submissions?.submissions" 
+              class="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors duration-150"
+              (click)="onSubmissionClick(submission)">
+            
+            <!-- Problem -->
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm font-medium text-gray-900 dark:text-white">{{ submission.Problem?.title }}</div>
+              <div class="flex items-center mt-1">
+                <span [class]="getDifficultyColorClass(submission.Problem?.difficulty || '')" 
+                      class="px-2 py-1 rounded-full text-xs font-medium">
+                  {{ submission.Problem?.difficulty }}
+                </span>
+                <span class="ml-2 text-xs text-gray-500 dark:text-gray-400">{{ submission.Problem?.Category?.name }}</span>
+              </div>
+            </td>
+
+            <!-- User -->
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 h-8 w-8">
+                  <img *ngIf="submission.User?.avatar_url" 
+                       [src]="submission.User?.avatar_url" 
+                       [alt]="submission.User?.name" 
+                       class="h-8 w-8 rounded-full">
+                  <div *ngIf="!submission.User?.avatar_url" 
+                       class="h-8 w-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-200">
+                      {{ (submission.User?.name || 'Unknown')[0].toUpperCase() }}
+                    </span>
+                  </div>
+                </div>
+                <div class="ml-3">
+                  <div class="text-sm font-medium text-gray-900 dark:text-white">{{ submission.User?.name || 'Unknown' }}</div>
+                  <div class="text-sm text-gray-500 dark:text-gray-400">ID: {{ submission.user_id }}</div>
+                </div>
+              </div>
+            </td>
+
+            <!-- Language -->
+            <td class="px-6 py-4 whitespace-nowrap">
+              <span class="px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs font-medium">
+                {{ getLanguageDisplayName(submission.language) }}
+              </span>
+            </td>
+
+            <!-- Status -->
+            <td class="px-6 py-4 whitespace-nowrap">
+              <span [class]="getStatusColorClass(submission.status)" class="px-2 py-1 rounded-full text-xs font-medium">
+                {{ getStatusDisplayName(submission.status) }}
+              </span>
+            </td>
+
+            <!-- Score -->
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+              <div class="flex items-center">
+                <div class="flex-1 bg-gray-200 dark:bg-gray-600 rounded-full h-2 mr-2">
+                  <div class="bg-green-500 dark:bg-green-400 h-2 rounded-full transition-all duration-300" 
+                       [style.width.%]="submission.score"></div>
+                </div>
+                <span class="text-sm font-medium">{{ submission.score }}%</span>
+              </div>
+            </td>
+
+            <!-- Performance -->
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+              <div>{{ formatExecutionTime(submission.exec_time) }}</div>
+              <div>{{ formatMemoryUsage(submission.memory_used) }}</div>
+            </td>
+
+            <!-- Submitted -->
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+              {{ formatDate(submission.submitted_at) }}
+            </td>
+
+            <!-- Actions -->
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+              <div class="flex items-center space-x-2">
+                <button 
+                  (click)="$event.stopPropagation(); onSubmissionClick(submission)"
+                  class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 font-medium transition-colors duration-200">
+                  View
+                </button>
+                <span *ngIf="canViewCode(submission)" class="text-green-600 dark:text-green-400 text-xs font-medium">
+                  <svg class="w-4 h-4 inline" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                  </svg>
+                </span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile Cards -->
+    <div class="md:hidden">
+      <div *ngFor="let submission of submissions?.submissions" 
+           class="border-b border-gray-200 dark:border-gray-700 p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors duration-150"
+           (click)="onSubmissionClick(submission)">
+        
+        <!-- Header -->
+        <div class="flex items-start justify-between mb-3">
+          <div class="flex-1">
+            <h4 class="text-sm font-medium text-gray-900 dark:text-white">{{ submission.Problem?.title }}</h4>
+            <div class="flex items-center mt-1 space-x-2">
+              <span [class]="getDifficultyColorClass(submission.Problem?.difficulty || '')" 
+                    class="px-2 py-1 rounded-full text-xs font-medium">
+                {{ submission.Problem?.difficulty }}
+              </span>
+              <span class="text-xs text-gray-500 dark:text-gray-400">{{ submission.Problem?.Category?.name }}</span>
+            </div>
+          </div>
+          <span [class]="getStatusColorClass(submission.status)" class="px-2 py-1 rounded-full text-xs font-medium">
+            {{ getStatusDisplayName(submission.status) }}
+          </span>
+        </div>
+
+        <!-- Details -->
+        <div class="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <span class="text-gray-500 dark:text-gray-400">User:</span>
+            <div class="font-medium text-gray-900 dark:text-white mt-1">{{ submission.User?.name || 'Unknown' }}</div>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400">Language:</span>
+            <div class="mt-1">
+              <span class="px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs font-medium">
+                {{ getLanguageDisplayName(submission.language) }}
+              </span>
+            </div>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400">Score:</span>
+            <div class="flex items-center mt-1">
+              <div class="flex-1 bg-gray-200 dark:bg-gray-600 rounded-full h-2 mr-2">
+                <div class="bg-green-500 dark:bg-green-400 h-2 rounded-full" [style.width.%]="submission.score"></div>
+              </div>
+              <span class="text-sm font-medium text-gray-900 dark:text-white">{{ submission.score }}%</span>
+            </div>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400">Performance:</span>
+            <div class="text-gray-900 dark:text-white mt-1">
+              <div>{{ formatExecutionTime(submission.exec_time) }}</div>
+              <div>{{ formatMemoryUsage(submission.memory_used) }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-gray-600">
+          <span class="text-sm text-gray-500 dark:text-gray-400">{{ formatDate(submission.submitted_at) }}</span>
+          <div class="flex items-center space-x-2">
+            <button class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 font-medium text-sm transition-colors duration-200">View Details</button>
+            <span *ngIf="canViewCode(submission)" class="text-green-600 dark:text-green-400 text-xs">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+              </svg>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div *ngIf="submissions?.pagination" class="bg-white dark:bg-gray-800 px-4 py-3 border-t border-gray-200 dark:border-gray-700 sm:px-6 transition-colors duration-200">
+      <div class="flex items-center justify-between">
+        <div class="flex-1 flex justify-between sm:hidden">
+          <button 
+            (click)="onPreviousPage()"
+            [disabled]="(submissions?.pagination?.current_page || 1) <= 1"
+            class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200">
+            Previous
+          </button>
+          <button 
+            (click)="onNextPage()"
+            [disabled]="(submissions?.pagination?.current_page || 1) >= (submissions?.pagination?.total_pages || 1)"
+            class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200">
+            Next
+          </button>
+        </div>
+        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+          <div>
+            <p class="text-sm text-gray-700 dark:text-gray-300">
+              Showing
+              <span class="font-medium">{{ ((submissions?.pagination?.current_page || 1) - 1) * (submissions?.pagination?.per_page || 1) + 1 }}</span>
+              to
+              <span class="font-medium">{{ Math.min((submissions?.pagination?.current_page || 1) * (submissions?.pagination?.per_page || 1), submissions?.pagination?.total_items || 0) }}</span>
+              of
+              <span class="font-medium">{{ submissions?.pagination?.total_items }}</span>
+              results
+            </p>
+          </div>
+          <div>
+            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+              <button 
+                (click)="onPreviousPage()"
+                [disabled]="(submissions?.pagination?.current_page || 1) <= 1"
+                class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200">
+                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                </svg>
+              </button>
+              
+              <button 
+                *ngFor="let page of getVisiblePages()"
+                (click)="onPageClick(page)"
+                [class.bg-indigo-50]="page === submissions?.pagination?.current_page"
+                [class.dark:bg-indigo-900]="page === submissions?.pagination?.current_page"
+                [class.border-indigo-500]="page === submissions?.pagination?.current_page"
+                [class.dark:border-indigo-400]="page === submissions?.pagination?.current_page"
+                [class.text-indigo-600]="page === submissions?.pagination?.current_page"
+                [class.dark:text-indigo-300]="page === submissions?.pagination?.current_page"
+                class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-200">
+                {{ page }}
+              </button>
+              
+              <button 
+                (click)="onNextPage()"
+                [disabled]="(submissions?.pagination?.current_page || 1) >= (submissions?.pagination?.total_pages || 1)"
+                class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200">
+                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                </svg>
+              </button>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
