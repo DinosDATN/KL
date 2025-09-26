@@ -2,7 +2,7 @@
 -- 📚 DATABASE: L-FYS (Learn For Yourself)
 /* Here is the SQL schema of my system (I will paste it below).  
 Your task:  
-1. Read the entire schema and understand all tables, primary keys, and foreign keys.  
+1. Read the entire schema in E:\AA\KLTN\KL\api\sql-scripts\01-schema.sql and understand all tables, primary keys, and foreign keys.  
 2. Generate valid sample data for each table.  
 3. For every table, write at least 50 INSERT INTO statements.  
 4. Ensure the insert order respects foreign key constraints (parent tables first, child tables later).  
