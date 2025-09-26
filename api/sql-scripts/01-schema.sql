@@ -1,5 +1,15 @@
 -- ===============================
 -- 📚 DATABASE: L-FYS (Learn For Yourself)
+/* Here is the SQL schema of my system (I will paste it below).  
+Your task:  
+1. Read the entire schema and understand all tables, primary keys, and foreign keys.  
+2. Generate valid sample data for each table.  
+3. For every table, write at least 50 INSERT INTO statements.  
+4. Ensure the insert order respects foreign key constraints (parent tables first, child tables later).  
+5. Output the result as a complete .sql file that can be executed directly.  
+6. If the output is too long, split it into multiple blocks (for example: Users.sql, Orders.sql, etc.) and continue until each table has at least 50 rows.  
+7. Do not stop at 10 rows — always generate at least 50 rows per table as requested.  
+*/
 -- ===============================
 CREATE DATABASE IF NOT EXISTS lfysdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE lfysdb;
