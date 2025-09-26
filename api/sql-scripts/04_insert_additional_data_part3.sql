@@ -93,7 +93,7 @@ INSERT INTO document_modules (document_id, title, position) VALUES
 (18, 'Service Management', 3),
 
 (19, 'AWS Core Services', 1),
-(19, 'Infrastructure as Code', 2),
+(19, 'Infrastructure Code', 2),
 (19, 'Security Best Practices', 3),
 
 (20, 'Command Line Basics', 1),

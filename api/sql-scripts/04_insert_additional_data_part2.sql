@@ -86,7 +86,7 @@ INSERT INTO course_modules (course_id, title, position) VALUES
 (13, 'Advanced NLP', 4),
 
 (14, 'Platform Engineering Basics', 1),
-(14, 'Infrastructure as Code', 2),
+(14, 'Infrastructure Code', 2),
 (14, 'Container Orchestration', 3),
 (14, 'Monitoring and Observability', 4),
 
@@ -202,7 +202,7 @@ INSERT INTO course_lessons (module_id, title, content, duration, position) VALUE
 -- Module 13 lessons
 (13, 'Unity Editor Overview', 'Understanding the Unity interface', 20, 1),
 (13, 'Scene Management', 'Working with scenes in Unity', 18, 2),
-(13, 'GameObjects and Components', 'Unity's component system', 22, 3),
+(13, 'GameObjects and Components', 'Unity component system', 22, 3),
 (13, 'Asset Store and Packages', 'Extending Unity functionality', 16, 4),
 
 -- Module 14 lessons
@@ -364,7 +364,7 @@ INSERT INTO course_reviews (course_id, user_id, rating, comment, helpful, not_he
 (2, 29, 5, 'Sass section was particularly helpful.', 7, 0, TRUE),
 
 -- Flutter Course reviews
-(3, 2, 5, 'Best Flutter course I\'ve taken. Covers everything needed.', 22, 1, TRUE),
+(3, 2, 5, 'Best Flutter course I have taken. Covers everything needed.', 22, 1, TRUE),
 (3, 6, 5, 'Excellent practical approach with real projects.', 16, 0, TRUE),
 (3, 13, 2, 'Too fast-paced for complete beginners.', 2, 8, FALSE),
 (3, 27, 4, 'Good content but could use better examples.', 5, 3, TRUE),

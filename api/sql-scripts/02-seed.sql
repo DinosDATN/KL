@@ -3,7 +3,7 @@
 -- ===============================
 -- This file contains comprehensive sample data for all tables in the L-FYS database
 -- Execute this after running 01-schema.sql
-
+/**
 USE lfysdb;
 
 SET FOREIGN_KEY_CHECKS = 0;
