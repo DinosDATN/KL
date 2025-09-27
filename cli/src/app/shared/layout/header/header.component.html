@@ -16,7 +16,9 @@
             <div
               class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center"
             >
-              <span class="text-white font-bold text-sm">L</span>
+              <span class="text-white font-bold text-sm"
+                ><img src="programming_icon.ico" alt=""
+              /></span>
             </div>
             <span class="text-xl font-bold text-gray-900 dark:text-white"
               >L-FYS</span
@@ -49,14 +51,17 @@
                 [attr.aria-haspopup]="'true'"
                 [ngClass]="{
                   'text-blue-600 border-blue-600': isDropdownOpen(item.label),
-                  'text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white hover:border-gray-300 dark:hover:border-gray-600': !isDropdownOpen(item.label)
+                  'text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white hover:border-gray-300 dark:hover:border-gray-600':
+                    !isDropdownOpen(item.label)
                 }"
                 class="dropdown-button inline-flex items-center px-2 pt-1 border-b-2 border-transparent text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md"
               >
                 <i class="mr-1" [class]="'icon-' + item.icon"></i>
                 {{ item.label }}
-                <i class="dropdown-arrow ml-1 icon-chevron-down text-xs"
-                   [ngClass]="{ 'rotate': isDropdownOpen(item.label) }"></i>
+                <i
+                  class="dropdown-arrow ml-1 icon-chevron-down text-xs"
+                  [ngClass]="{ rotate: isDropdownOpen(item.label) }"
+                ></i>
               </button>
 
               <!-- Dropdown Menu -->
@@ -79,13 +84,13 @@
             </div>
           </ng-container>
         </div>
-        
-      <!-- Invisible overlay to close dropdowns when clicking outside (desktop only) -->
-      <div 
-        *ngIf="activeDropdown"
-        class="fixed inset-0 z-[45] hidden md:block"
-        (click)="closeMenus()"
-      ></div>
+
+        <!-- Invisible overlay to close dropdowns when clicking outside (desktop only) -->
+        <div
+          *ngIf="activeDropdown"
+          class="fixed inset-0 z-[45] hidden md:block"
+          (click)="closeMenus()"
+        ></div>
       </div>
 
       <!-- Right side items -->
