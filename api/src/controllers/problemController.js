@@ -21,8 +21,8 @@ class ProblemController {
   async getAllProblems(req, res) {
     try {
       const page = parseInt(req.query.page) || 1;
-      const limit = parseInt(req.query.limit) || 10;
-      const offset = (page - 1) * limit;
+      const limit = parseInt(req.query.limit) || (req.query.all === 'true' ? null : 10);
+      const offset = limit ? (page - 1) * limit : 0;
       const { difficulty, category_id, is_premium, is_new, is_popular } = req.query;
 
       // Build where clause
@@ -36,23 +36,37 @@ class ProblemController {
       if (is_new !== undefined) whereClause.is_new = is_new === 'true';
       if (is_popular !== undefined) whereClause.is_popular = is_popular === 'true';
 
-      const { count, rows: problems } = await Problem.findAndCountAll({
+      const queryOptions = {
         where: whereClause,
-        limit,
-        offset,
         order: [['likes', 'DESC'], ['acceptance', 'DESC'], ['created_at', 'DESC']]
-      });
+      };
+      
+      // Only add limit and offset if limit is specified
+      if (limit) {
+        queryOptions.limit = limit;
+        queryOptions.offset = offset;
+      }
+      
+      const { count, rows: problems } = await Problem.findAndCountAll(queryOptions);
 
-      res.status(200).json({
+      const response = {
         success: true,
-        data: problems,
-        pagination: {
+        data: problems
+      };
+      
+      // Only add pagination info if using pagination
+      if (limit) {
+        response.pagination = {
           current_page: page,
           total_pages: Math.ceil(count / limit),
           total_items: count,
           items_per_page: limit
-        }
-      });
+        };
+      } else {
+        response.total_items = count;
+      }
+      
+      res.status(200).json(response);
     } catch (error) {
       console.error('Error in getAllProblems:', error);
       res.status(500).json({
@@ -167,13 +181,16 @@ class ProblemController {
   // Get popular problems
   async getPopularProblems(req, res) {
     try {
-      const limit = parseInt(req.query.limit) || 10;
+      const limit = parseInt(req.query.limit) || (req.query.all === 'true' ? null : 10);
       
       const popularProblems = await Problem.findPopular();
 
+      const data = limit ? popularProblems.slice(0, limit) : popularProblems;
+
       res.status(200).json({
         success: true,
-        data: popularProblems.slice(0, limit)
+        data: data,
+        total_items: popularProblems.length
       });
     } catch (error) {
       console.error('Error in getPopularProblems:', error);
@@ -188,13 +205,16 @@ class ProblemController {
   // Get new problems
   async getNewProblems(req, res) {
     try {
-      const limit = parseInt(req.query.limit) || 10;
+      const limit = parseInt(req.query.limit) || (req.query.all === 'true' ? null : 10);
       
       const newProblems = await Problem.findNew();
 
+      const data = limit ? newProblems.slice(0, limit) : newProblems;
+
       res.status(200).json({
         success: true,
-        data: newProblems.slice(0, limit)
+        data: data,
+        total_items: newProblems.length
       });
     } catch (error) {
       console.error('Error in getNewProblems:', error);

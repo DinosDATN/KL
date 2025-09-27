@@ -50,12 +50,68 @@ export class ProblemsService {
       return of(mockProblems);
     }
 
-    return this.http.get<{success: boolean, data: Problem[]}>(`${this.apiUrl}/problems`)
+    return this.http.get<{success: boolean, data: Problem[], total_items?: number}>(`${this.apiUrl}/problems?all=true`)
       .pipe(
         map(response => response.data),
         catchError(error => {
           console.error('Error fetching problems:', error);
           return of(mockProblems); // Fallback to mock data
+        })
+      );
+  }
+
+  getPaginatedProblems(page: number = 1, limit: number = 10, filters?: {
+    difficulty?: string,
+    category_id?: number,
+    is_premium?: boolean,
+    is_new?: boolean,
+    is_popular?: boolean
+  }): Observable<{data: Problem[], pagination: any}> {
+    // Return mock data during SSR
+    if (!isPlatformBrowser(this.platformId)) {
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      const paginatedData = mockProblems.slice(startIndex, endIndex);
+      
+      return of({
+        data: paginatedData,
+        pagination: {
+          current_page: page,
+          total_pages: Math.ceil(mockProblems.length / limit),
+          total_items: mockProblems.length,
+          items_per_page: limit
+        }
+      });
+    }
+
+    const params: any = { page: page.toString(), limit: limit.toString() };
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          params[key] = value.toString();
+        }
+      });
+    }
+
+    return this.http.get<{success: boolean, data: Problem[], pagination: any}>(`${this.apiUrl}/problems`, { params })
+      .pipe(
+        map(response => ({ data: response.data, pagination: response.pagination })),
+        catchError(error => {
+          console.error('Error fetching paginated problems:', error);
+          // Fallback to mock data pagination
+          const startIndex = (page - 1) * limit;
+          const endIndex = startIndex + limit;
+          const paginatedData = mockProblems.slice(startIndex, endIndex);
+          
+          return of({
+            data: paginatedData,
+            pagination: {
+              current_page: page,
+              total_pages: Math.ceil(mockProblems.length / limit),
+              total_items: mockProblems.length,
+              items_per_page: limit
+            }
+          });
         })
       );
   }
@@ -275,20 +331,64 @@ export class ProblemsService {
     return of(featured);
   }
 
-  getPopularProblems(): Observable<Problem[]> {
-    const popular = mockProblems
-      .filter(p => p.is_popular)
-      .sort((a, b) => b.likes - a.likes)
-      .slice(0, 10);
-    return of(popular);
+  getPopularProblems(limit?: number): Observable<Problem[]> {
+    // Return mock data during SSR
+    if (!isPlatformBrowser(this.platformId)) {
+      const popular = mockProblems
+        .filter(p => p.is_popular)
+        .sort((a, b) => b.likes - a.likes);
+      return of(limit ? popular.slice(0, limit) : popular);
+    }
+
+    const params: { [key: string]: string } = {};
+    if (limit) {
+      params['limit'] = limit.toString();
+    } else {
+      params['all'] = 'true';
+    }
+    
+    return this.http.get<{success: boolean, data: Problem[], total_items?: number}>(`${this.apiUrl}/problems/popular`, { params })
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error fetching popular problems:', error);
+          // Fallback to mock data
+          const popular = mockProblems
+            .filter(p => p.is_popular)
+            .sort((a, b) => b.likes - a.likes);
+          return of(limit ? popular.slice(0, limit) : popular);
+        })
+      );
   }
 
-  getRecentProblems(): Observable<Problem[]> {
-    const recent = mockProblems
-      .filter(p => p.is_new)
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, 10);
-    return of(recent);
+  getRecentProblems(limit?: number): Observable<Problem[]> {
+    // Return mock data during SSR
+    if (!isPlatformBrowser(this.platformId)) {
+      const recent = mockProblems
+        .filter(p => p.is_new)
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      return of(limit ? recent.slice(0, limit) : recent);
+    }
+
+    const params: { [key: string]: string } = {};
+    if (limit) {
+      params['limit'] = limit.toString();
+    } else {
+      params['all'] = 'true';
+    }
+    
+    return this.http.get<{success: boolean, data: Problem[], total_items?: number}>(`${this.apiUrl}/problems/new`, { params })
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error fetching recent problems:', error);
+          // Fallback to mock data
+          const recent = mockProblems
+            .filter(p => p.is_new)
+            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+          return of(limit ? recent.slice(0, limit) : recent);
+        })
+      );
   }
 
   // Difficulty-based filtering

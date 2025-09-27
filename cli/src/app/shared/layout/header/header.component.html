@@ -26,16 +26,66 @@
 
         <!-- Desktop Navigation -->
         <div class="hidden md:flex gap-6 ml-8">
-          <a
-            *ngFor="let item of navigationItems"
-            [routerLink]="item.link"
-            routerLinkActive="text-blue-600 border-blue-600"
-            class="inline-flex items-center px-2 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white hover:border-gray-300 dark:hover:border-gray-600 transition-colors duration-200"
-          >
-            <i class="mr-1" [class]="'icon-' + item.icon"></i>
-            {{ item.label }}
-          </a>
+          <ng-container *ngFor="let item of navigationItems">
+            <!-- Single-level navigation item -->
+            <a
+              *ngIf="!item.children"
+              [routerLink]="item.link"
+              routerLinkActive="text-blue-600 border-blue-600"
+              class="inline-flex items-center px-2 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white hover:border-gray-300 dark:hover:border-gray-600 transition-colors duration-200"
+            >
+              <i class="mr-1" [class]="'icon-' + item.icon"></i>
+              {{ item.label }}
+            </a>
+
+            <!-- Multi-level navigation item with dropdown -->
+            <div *ngIf="item.children" class="relative dropdown-container">
+              <button
+                (click)="onDropdownToggle(item.label, $event)"
+                (keydown.escape)="closeMenus()"
+                (keydown.enter)="onDropdownToggle(item.label, $event)"
+                (keydown.space)="onDropdownToggle(item.label, $event)"
+                [attr.aria-expanded]="isDropdownOpen(item.label)"
+                [attr.aria-haspopup]="'true'"
+                [ngClass]="{
+                  'text-blue-600 border-blue-600': isDropdownOpen(item.label),
+                  'text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white hover:border-gray-300 dark:hover:border-gray-600': !isDropdownOpen(item.label)
+                }"
+                class="dropdown-button inline-flex items-center px-2 pt-1 border-b-2 border-transparent text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md"
+              >
+                <i class="mr-1" [class]="'icon-' + item.icon"></i>
+                {{ item.label }}
+                <i class="dropdown-arrow ml-1 icon-chevron-down text-xs"
+                   [ngClass]="{ 'rotate': isDropdownOpen(item.label) }"></i>
+              </button>
+
+              <!-- Dropdown Menu -->
+              <div
+                *ngIf="isDropdownOpen(item.label)"
+                (click)="$event.stopPropagation()"
+                class="dropdown-menu absolute top-full left-0 w-48 bg-white dark:bg-gray-800 rounded-lg py-2 z-[60] animate-dropdown"
+              >
+                <a
+                  *ngFor="let child of item.children"
+                  [routerLink]="child.link"
+                  routerLinkActive="bg-blue-50 dark:bg-blue-900 text-blue-600 dark:text-blue-400"
+                  (click)="closeMenus(); $event.stopPropagation()"
+                  class="dropdown-item flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-700"
+                >
+                  <i class="mr-3" [class]="'icon-' + child.icon"></i>
+                  {{ child.label }}
+                </a>
+              </div>
+            </div>
+          </ng-container>
         </div>
+        
+      <!-- Invisible overlay to close dropdowns when clicking outside (desktop only) -->
+      <div 
+        *ngIf="activeDropdown"
+        class="fixed inset-0 z-[45] hidden md:block"
+        (click)="closeMenus()"
+      ></div>
       </div>
 
       <!-- Right side items -->
@@ -134,7 +184,12 @@
             class="flex items-center gap-2 p-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
             <img
-              [src]="currentUser?.avatar_url || 'https://ui-avatars.com/api/?name=' + (currentUser?.name | slice:0:2) + '&background=3b82f6&color=ffffff'"
+              [src]="
+                currentUser?.avatar_url ||
+                'https://ui-avatars.com/api/?name=' +
+                  (currentUser?.name | slice : 0 : 2) +
+                  '&background=3b82f6&color=ffffff'
+              "
               [alt]="currentUser?.name || 'User'"
               class="w-8 h-8 rounded-full"
             />
@@ -146,7 +201,7 @@
               class="icon-chevron-down text-gray-400 dark:text-gray-500 ml-1"
             ></i>
           </button>
-          
+
           <!-- Login/Register buttons when not authenticated -->
           <div *ngIf="!isAuthenticated" class="flex items-center gap-2">
             <a
@@ -170,9 +225,17 @@
             <div
               class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50"
             >
-              <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ currentUser?.name }}</p>
-                <p class="text-sm text-gray-500 dark:text-gray-400 truncate">{{ currentUser?.email }}</p>
+              <div
+                class="px-4 py-2 border-b border-gray-200 dark:border-gray-700"
+              >
+                <p
+                  class="text-sm font-medium text-gray-900 dark:text-white truncate"
+                >
+                  {{ currentUser?.name }}
+                </p>
+                <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
+                  {{ currentUser?.email }}
+                </p>
               </div>
               <button
                 *ngFor="let item of userMenuItems"
@@ -219,9 +282,9 @@
         <div class="flex-1 overflow-y-auto px-2 pt-4 pb-3 space-y-1">
           <!-- Mobile Navigation Links -->
           <a
-            *ngFor="let item of navigationItems"
+            *ngFor="let item of flatNavigationItems"
             [routerLink]="item.link"
-            routerLinkActive="bg-blue-50 border-blue-500 text-blue-700"
+            routerLinkActive="bg-blue-50 dark:bg-blue-900 border-blue-500 text-blue-700 dark:text-blue-400"
             (click)="closeMenus()"
             class="flex items-center px-3 py-2 text-base font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 border-l-4 border-transparent transition-colors"
           >

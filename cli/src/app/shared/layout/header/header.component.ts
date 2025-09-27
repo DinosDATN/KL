@@ -1,4 +1,4 @@
-import { Component, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, ViewChild, ElementRef, AfterViewInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { ThemeService } from '../../../core/services/theme.service';
@@ -11,6 +11,13 @@ interface MenuItem {
   link: string;
   icon: string;
   action?: string;
+}
+
+interface NavigationItem {
+  label: string;
+  link?: string;
+  icon: string;
+  children?: NavigationItem[];
 }
 
 @Component({
@@ -51,8 +58,9 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
   }
   isMenuOpen = false;
   isUserMenuOpen = false;
-
   isNotificationOpen = false;
+  activeDropdown: string | null = null;
+  // Removed hover-related properties for click-only functionality
   notifications = [
     {
       id: 1,
@@ -89,15 +97,40 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     });
   }
 
-  navigationItems = [
+  navigationItems: NavigationItem[] = [
     { label: 'Trang chủ', link: '/', icon: 'home' },
-    { label: 'Khóa học', link: '/courses', icon: 'book' },
-    { label: 'Bài tập', link: '/problems', icon: 'code' },
-    { label: 'Cuộc thi', link: '/contests', icon: 'award' },
-    { label: 'Tài liệu', link: '/documents', icon: 'file-text' },
-    { label: 'Diễn đàn', link: '/forum', icon: 'message-circle' },
-    { label: 'Xếp hạng', link: '/leaderboard', icon: 'trophy' },
+    {
+      label: 'Học tập',
+      icon: 'book',
+      children: [
+        { label: 'Khóa học', link: '/courses', icon: 'book' },
+        { label: 'Bài tập', link: '/problems', icon: 'code' },
+        { label: 'Tài liệu', link: '/documents', icon: 'file-text' }
+      ]
+    },
+    {
+      label: 'Thi đấu',
+      icon: 'award',
+      children: [
+        { label: 'Cuộc thi', link: '/contests', icon: 'award' },
+        { label: 'Xếp hạng', link: '/leaderboard', icon: 'trophy' }
+      ]
+    },
+    { label: 'Diễn đàn', link: '/forum', icon: 'message-circle' }
   ];
+
+  // Flattened items for mobile menu
+  get flatNavigationItems(): NavigationItem[] {
+    const flatItems: NavigationItem[] = [];
+    this.navigationItems.forEach(item => {
+      if (item.children) {
+        flatItems.push(...item.children);
+      } else {
+        flatItems.push(item);
+      }
+    });
+    return flatItems;
+  }
 
   userMenuItems: MenuItem[] = [
     { label: 'Hồ sơ', link: '/profile', icon: 'user' },
@@ -116,6 +149,34 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
   closeMenus(): void {
     this.isMenuOpen = false;
     this.isUserMenuOpen = false;
+    this.activeDropdown = null;
+  }
+
+
+
+  // Simplified click-only dropdown methods
+  onDropdownToggle(itemLabel: string, event: Event): void {
+    event.stopPropagation();
+    
+    // Toggle dropdown state
+    if (this.activeDropdown === itemLabel) {
+      this.activeDropdown = null;
+    } else {
+      this.activeDropdown = itemLabel;
+    }
+  }
+
+  isDropdownOpen(itemLabel: string): boolean {
+    return this.activeDropdown === itemLabel;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event): void {
+    const target = event.target as HTMLElement;
+    // Check if click is outside the dropdown area
+    if (!target.closest('.dropdown-container')) {
+      this.activeDropdown = null;
+    }
   }
 
   toggleNotification(): void {

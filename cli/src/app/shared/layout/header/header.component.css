@@ -8,8 +8,102 @@
     transform: translateY(0);
   }
 }
+
+@keyframes dropdown-fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-2px) scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dropdown-fade-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    visibility: visible;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+    visibility: hidden;
+  }
+}
+
 .animate-fade-in {
   animation: fade-in 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-dropdown {
+  animation: dropdown-fade-in 0.12s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  transform-origin: top center;
+  /* Ensure immediate visibility without delay */
+  opacity: 1;
+  visibility: visible;
+}
+
+.animate-dropdown-out {
+  animation: dropdown-fade-out 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94)
+    forwards;
+}
+
+/* Dropdown container improvements */
+.dropdown-container {
+  position: relative;
+}
+
+/* Smooth transitions for dropdown arrows */
+.dropdown-arrow {
+  transition: transform 0.2s ease-in-out;
+  /* Make chevron more prominent for click-only interaction */
+  font-size: 0.875rem;
+  font-weight: bold;
+}
+
+.dropdown-arrow.rotate {
+  transform: rotate(180deg);
+}
+
+/* Enhanced hover state for click-only buttons */
+.dropdown-button:hover {
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+.dark .dropdown-button:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Dropdown menu positioning */
+.dropdown-menu {
+  min-width: 12rem;
+  box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  /* Standard positioning for click-only dropdowns */
+  margin-top: 0.25rem;
+}
+
+/* Dark mode dropdown improvements */
+.dark .dropdown-menu {
+  box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.3),
+    0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Focus states for accessibility */
+.dropdown-item:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: -2px;
+}
+
+/* Prevent text selection on buttons */
+.dropdown-button {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 /* Hiệu ứng ẩn/hiện header khi cuộn */
 .header-hidden {
