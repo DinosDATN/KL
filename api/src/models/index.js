@@ -27,7 +27,119 @@ const UserContest = require('./UserContest');
 const ContestSubmission = require('./ContestSubmission');
 const JudgeSubmission = require('./JudgeSubmission');
 
+// Course models
+const Course = require('./Course');
+const CourseCategory = require('./CourseCategory');
+const CourseModule = require('./CourseModule');
+const CourseLesson = require('./CourseLesson');
+const CourseEnrollment = require('./CourseEnrollment');
+const CourseReview = require('./CourseReview');
+const InstructorQualification = require('./InstructorQualification');
+
 // Define associations
+
+// Course associations
+// Course belongs to CourseCategory
+Course.belongsTo(CourseCategory, {
+  foreignKey: 'category_id',
+  as: 'Category'
+});
+
+CourseCategory.hasMany(Course, {
+  foreignKey: 'category_id',
+  as: 'Courses'
+});
+
+// Course belongs to User (instructor)
+Course.belongsTo(User, {
+  foreignKey: 'instructor_id',
+  as: 'Instructor'
+});
+
+User.hasMany(Course, {
+  foreignKey: 'instructor_id',
+  as: 'CreatedCourses'
+});
+
+// Course has many CourseModules
+Course.hasMany(CourseModule, {
+  foreignKey: 'course_id',
+  as: 'Modules'
+});
+
+CourseModule.belongsTo(Course, {
+  foreignKey: 'course_id',
+  as: 'Course'
+});
+
+// CourseModule has many CourseLessons
+CourseModule.hasMany(CourseLesson, {
+  foreignKey: 'module_id',
+  as: 'Lessons'
+});
+
+CourseLesson.belongsTo(CourseModule, {
+  foreignKey: 'module_id',
+  as: 'Module'
+});
+
+// Course enrollment associations
+User.belongsToMany(Course, {
+  through: CourseEnrollment,
+  foreignKey: 'user_id',
+  otherKey: 'course_id',
+  as: 'EnrolledCourses'
+});
+
+Course.belongsToMany(User, {
+  through: CourseEnrollment,
+  foreignKey: 'course_id',
+  otherKey: 'user_id',
+  as: 'EnrolledStudents'
+});
+
+CourseEnrollment.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'User'
+});
+
+CourseEnrollment.belongsTo(Course, {
+  foreignKey: 'course_id',
+  as: 'Course'
+});
+
+// Course review associations
+Course.hasMany(CourseReview, {
+  foreignKey: 'course_id',
+  as: 'Reviews'
+});
+
+CourseReview.belongsTo(Course, {
+  foreignKey: 'course_id',
+  as: 'Course'
+});
+
+CourseReview.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'User'
+});
+
+User.hasMany(CourseReview, {
+  foreignKey: 'user_id',
+  as: 'CourseReviews'
+});
+
+// Instructor qualification associations
+User.hasMany(InstructorQualification, {
+  foreignKey: 'user_id',
+  as: 'Qualifications'
+});
+
+InstructorQualification.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'User'
+});
+
 Problem.belongsTo(ProblemCategory, {
   foreignKey: 'category_id',
   as: 'Category'
@@ -442,5 +554,13 @@ module.exports = {
   ChatRoom,
   ChatMessage,
   ChatRoomMember,
-  ChatReaction
+  ChatReaction,
+  // Course models
+  Course,
+  CourseCategory,
+  CourseModule,
+  CourseLesson,
+  CourseEnrollment,
+  CourseReview,
+  InstructorQualification
 };

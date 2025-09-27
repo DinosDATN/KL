@@ -72,10 +72,11 @@ CourseLesson.findByCourse = function(courseId) {
   return this.findAll({
     include: [{
       model: CourseModule,
+      as: 'Module',
       where: { course_id: courseId },
       attributes: ['id', 'title', 'position']
     }],
-    order: [[CourseModule, 'position', 'ASC'], ['position', 'ASC']]
+    order: [['Module', 'position', 'ASC'], ['position', 'ASC']]
   });
 };
 

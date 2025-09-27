@@ -110,10 +110,12 @@ CREATE TABLE course_lessons (
     content TEXT,
     duration INT CHECK (duration >= 0),
     position INT NOT NULL CHECK (position >= 0),
+    type ENUM('document', 'video', 'exercise', 'quiz') DEFAULT 'document' NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (module_id) REFERENCES course_modules(id) ON DELETE CASCADE ON UPDATE CASCADE,
-    INDEX idx_module_id (module_id)
+    INDEX idx_module_id (module_id),
+    INDEX idx_type (type)
 )CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Bảng ngôn ngữ cho course (nhiều ngôn ngữ/course)
@@ -133,7 +135,7 @@ CREATE TABLE course_reviews (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     course_id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
-    rating INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    rating FLOAT NOT NULL CHECK (rating BETWEEN 1 AND 5),
     comment TEXT,
     helpful INT DEFAULT 0 CHECK (helpful >= 0),
     not_helpful INT DEFAULT 0 CHECK (not_helpful >= 0),
