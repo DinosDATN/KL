@@ -293,6 +293,46 @@ const authController = {
     console.error('Google OAuth authentication failed');
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:4200';
     res.redirect(`${clientUrl}/auth/login?error=oauth_failed`);
+  },
+
+  // GitHub OAuth callback handler
+  githubCallback: async (req, res) => {
+    try {
+      const user = req.user;
+      
+      if (!user) {
+        console.error('No user found in GitHub OAuth callback');
+        return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:4200'}/auth/login?error=oauth_failed`);
+      }
+
+      // Update user's online status
+      await user.update({ 
+        is_online: true,
+        last_seen_at: new Date()
+      });
+
+      // Generate JWT token
+      const token = generateToken(user.id);
+
+      // Redirect to frontend with token
+      const clientUrl = process.env.CLIENT_URL || 'http://localhost:4200';
+      const redirectUrl = `${clientUrl}/auth/callback?token=${token}&user=${encodeURIComponent(JSON.stringify(user.toAuthJSON()))}`;
+      
+      console.log('GitHub OAuth successful, redirecting to:', redirectUrl);
+      res.redirect(redirectUrl);
+
+    } catch (error) {
+      console.error('GitHub OAuth callback error:', error);
+      const clientUrl = process.env.CLIENT_URL || 'http://localhost:4200';
+      res.redirect(`${clientUrl}/auth/login?error=oauth_failed`);
+    }
+  },
+
+  // GitHub OAuth failure handler
+  githubFailure: (req, res) => {
+    console.error('GitHub OAuth authentication failed');
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:4200';
+    res.redirect(`${clientUrl}/auth/login?error=github_oauth_failed&message=GitHub authentication failed. Please ensure your GitHub account has a verified email address.`);
   }
 };
 

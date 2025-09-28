@@ -104,9 +104,16 @@ export class OAuthCallbackComponent implements OnInit {
     this.isProcessing = false;
     this.hasError = true;
 
+    // Check for custom error message in URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const customMessage = urlParams.get('message');
+
     switch (errorType) {
       case 'oauth_failed':
         this.statusMessage = 'Đăng nhập với Google thất bại. Vui lòng thử lại.';
+        break;
+      case 'github_oauth_failed':
+        this.statusMessage = customMessage || 'Đăng nhập với GitHub thất bại. Vui lòng đảm bảo tài khoản GitHub có email đã xác thực và cho phép truy cập email.';
         break;
       case 'missing_data':
         this.statusMessage = 'Thiếu thông tin xác thực. Vui lòng thử đăng nhập lại.';
@@ -116,7 +123,7 @@ export class OAuthCallbackComponent implements OnInit {
         break;
       case 'processing_error':
       default:
-        this.statusMessage = 'Có lỗi xảy ra trong quá trình xử lý. Vui lòng thử lại.';
+        this.statusMessage = customMessage || 'Có lỗi xảy ra trong quá trình xử lý. Vui lòng thử lại.';
         break;
     }
   }

@@ -27,6 +27,24 @@ router.get('/google/callback',
 
 router.get('/google/failure', authController.googleFailure); // GET /api/v1/auth/google/failure
 
+// GitHub OAuth routes
+router.get('/github', 
+  passport.authenticate('github', { 
+    scope: ['user:email', 'read:user'],
+    session: false 
+  })
+); // GET /api/v1/auth/github
+
+router.get('/github/callback',
+  passport.authenticate('github', { 
+    session: false,
+    failureRedirect: '/api/v1/auth/github/failure'
+  }),
+  authController.githubCallback
+); // GET /api/v1/auth/github/callback
+
+router.get('/github/failure', authController.githubFailure); // GET /api/v1/auth/github/failure
+
 // Protected routes (require authentication)
 router.get('/profile', authenticateToken, authController.getProfile);   // GET /api/v1/auth/profile
 router.post('/logout', authenticateToken, authController.logout);       // POST /api/v1/auth/logout

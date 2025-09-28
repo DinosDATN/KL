@@ -1,13 +1,15 @@
-# Google OAuth Integration - Implementation Summary
+# OAuth Integration - Implementation Summary
 
-This document summarizes the complete Google OAuth integration that has been implemented in the LFYS platform.
+This document summarizes the complete OAuth integration (Google and GitHub) that has been implemented in the LFYS platform.
 
 ## 🎯 Integration Overview
 
-The Google OAuth integration allows users to sign in using their Google accounts, providing a seamless authentication experience that integrates with the existing JWT-based authentication system.
+The OAuth integration allows users to sign in using their Google or GitHub accounts, providing a seamless authentication experience that integrates with the existing JWT-based authentication system.
 
 ### Key Features Implemented:
 - ✅ Server-side OAuth flow using Passport.js
+- ✅ **Google OAuth** - General user authentication
+- ✅ **GitHub OAuth** - Developer-focused authentication
 - ✅ Automatic user registration/login
 - ✅ JWT token generation for authenticated sessions  
 - ✅ Frontend OAuth callback handling
@@ -38,8 +40,8 @@ The Google OAuth integration allows users to sign in using their Google accounts
 ### Backend Files
 
 #### 🆕 New Files Created:
-1. **`api/src/config/passport.js`** - Passport configuration for Google OAuth and JWT
-2. **Updated Dependencies:** Added `passport`, `passport-google-oauth20`, `passport-jwt`
+1. **`api/src/config/passport.js`** - Passport configuration for Google & GitHub OAuth and JWT
+2. **Updated Dependencies:** Added `passport`, `passport-google-oauth20`, `passport-github2`, `passport-jwt`
 
 #### 📝 Modified Files:
 1. **`api/src/app.js`** - Added Passport initialization
@@ -50,20 +52,21 @@ The Google OAuth integration allows users to sign in using their Google accounts
 ### Frontend Files
 
 #### 🆕 New Files Created:
-1. **`cli/src/app/core/services/google-oauth.service.ts`** - Google OAuth service
+1. **`cli/src/app/core/services/oauth.service.ts`** - Multi-provider OAuth service (Google & GitHub)
 2. **`cli/src/app/features/auth/oauth-callback/oauth-callback.component.ts`** - OAuth callback handler
 
 #### 📝 Modified Files:
-1. **`cli/src/app/features/auth/login/login.component.ts`** - Added Google login functionality
-2. **`cli/src/app/features/auth/login/login.component.html`** - Made Google button functional
-3. **`cli/src/app/features/auth/register/register.component.ts`** - Added Google login functionality
-4. **`cli/src/app/features/auth/register/register.component.html`** - Made Google button functional
+1. **`cli/src/app/features/auth/login/login.component.ts`** - Added Google & GitHub login functionality
+2. **`cli/src/app/features/auth/login/login.component.html`** - Made Google & GitHub buttons functional
+3. **`cli/src/app/features/auth/register/register.component.ts`** - Added Google & GitHub login functionality
+4. **`cli/src/app/features/auth/register/register.component.html`** - Made Google & GitHub buttons functional
 5. **`cli/src/app/app.routes.ts`** - Added OAuth callback route
 
 ### Documentation Files Created:
-1. **`GOOGLE_OAUTH_SETUP.md`** - Setup and configuration guide
-2. **`GOOGLE_OAUTH_TESTING.md`** - Comprehensive testing guide
-3. **`GOOGLE_OAUTH_IMPLEMENTATION_SUMMARY.md`** - This summary document
+1. **`GOOGLE_OAUTH_SETUP.md`** - Google OAuth setup and configuration guide
+2. **`GITHUB_OAUTH_SETUP.md`** - GitHub OAuth setup and configuration guide
+3. **`GOOGLE_OAUTH_TESTING.md`** - Comprehensive testing guide
+4. **`GOOGLE_OAUTH_IMPLEMENTATION_SUMMARY.md`** - This summary document
 
 ## 🔧 Technical Implementation Details
 
@@ -76,18 +79,28 @@ passport.use('jwt', new JwtStrategy({...}));
 
 // Google OAuth Strategy  
 passport.use('google', new GoogleStrategy({...}));
+
+// GitHub OAuth Strategy
+passport.use('github', new GitHubStrategy({...}));
 ```
 
 #### 2. Authentication Routes
-- `GET /api/v1/auth/google` - Initiate OAuth flow
-- `GET /api/v1/auth/google/callback` - Handle OAuth callback
-- `GET /api/v1/auth/google/failure` - Handle OAuth failure
+**Google OAuth:**
+- `GET /api/v1/auth/google` - Initiate Google OAuth flow
+- `GET /api/v1/auth/google/callback` - Handle Google OAuth callback
+- `GET /api/v1/auth/google/failure` - Handle Google OAuth failure
+
+**GitHub OAuth:**
+- `GET /api/v1/auth/github` - Initiate GitHub OAuth flow
+- `GET /api/v1/auth/github/callback` - Handle GitHub OAuth callback
+- `GET /api/v1/auth/github/failure` - Handle GitHub OAuth failure
 
 #### 3. User Management
-- Automatic user creation for new Google users
-- User profile updates with Google data (avatar, etc.)
+- Automatic user creation for new Google & GitHub users
+- User profile updates with OAuth provider data (avatar, etc.)
 - Seamless integration with existing user model
 - Password field remains `NULL` for OAuth users
+- Support for multiple OAuth providers per user
 
 ### Frontend Implementation
 

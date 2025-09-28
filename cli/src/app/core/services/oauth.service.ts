@@ -11,7 +11,7 @@ declare global {
 @Injectable({
   providedIn: 'root'
 })
-export class GoogleOAuthService {
+export class OAuthService {
   private googleLoaded = false;
   private readonly apiUrl = environment.apiUrl || 'http://localhost:3000/api/v1';
 
@@ -20,7 +20,7 @@ export class GoogleOAuthService {
   }
 
   /**
-   * Load Google OAuth script dynamically
+   * Load Google OAuth script dynamically (for One Tap if needed)
    */
   private loadGoogleScript(): void {
     if (typeof document !== 'undefined' && !this.googleLoaded) {
@@ -83,6 +83,21 @@ export class GoogleOAuthService {
     } catch (error) {
       console.error('Error initiating Google OAuth:', error);
       throw new Error('Failed to start Google authentication');
+    }
+  }
+
+  /**
+   * Initiate GitHub OAuth login by redirecting to backend OAuth endpoint
+   */
+  async loginWithGitHub(): Promise<void> {
+    try {
+      // Simple redirect approach - let the backend handle OAuth
+      const githubAuthUrl = `${this.apiUrl}/auth/github`;
+      console.log('Redirecting to GitHub OAuth:', githubAuthUrl);
+      window.location.href = githubAuthUrl;
+    } catch (error) {
+      console.error('Error initiating GitHub OAuth:', error);
+      throw new Error('Failed to start GitHub authentication');
     }
   }
 

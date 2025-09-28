@@ -9,7 +9,7 @@ import {
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { AuthService, LoginRequest } from '../../../core/services/auth.service';
 import { ThemeService } from '../../../core/services/theme.service';
-import { GoogleOAuthService } from '../../../core/services/google-oauth.service';
+import { OAuthService } from '../../../core/services/oauth.service';
 
 @Component({
   selector: 'app-login',
@@ -31,7 +31,7 @@ export class LoginComponent implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     public themeService: ThemeService,
-    private googleOAuthService: GoogleOAuthService
+    private oAuthService: OAuthService
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -85,11 +85,23 @@ export class LoginComponent implements OnInit {
     try {
       this.isLoading = true;
       this.errorMessage = '';
-      await this.googleOAuthService.loginWithGoogle();
+      await this.oAuthService.loginWithGoogle();
     } catch (error) {
       this.isLoading = false;
       this.errorMessage = 'Không thể kết nối với Google. Vui lòng thử lại.';
       console.error('Google login error:', error);
+    }
+  }
+
+  async loginWithGitHub(): Promise<void> {
+    try {
+      this.isLoading = true;
+      this.errorMessage = '';
+      await this.oAuthService.loginWithGitHub();
+    } catch (error) {
+      this.isLoading = false;
+      this.errorMessage = 'Không thể kết nối với GitHub. Vui lòng thử lại.';
+      console.error('GitHub login error:', error);
     }
   }
 
