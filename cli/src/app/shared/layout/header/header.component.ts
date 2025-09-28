@@ -1,4 +1,11 @@
-import { Component, ViewChild, ElementRef, AfterViewInit, OnDestroy, HostListener } from '@angular/core';
+import {
+  Component,
+  ViewChild,
+  ElementRef,
+  AfterViewInit,
+  OnDestroy,
+  HostListener,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { ThemeService } from '../../../core/services/theme.service';
@@ -31,7 +38,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
   showCompactSticky = false;
   private observer?: IntersectionObserver;
   @ViewChild('sentinel', { static: true }) sentinelRef!: ElementRef;
-  
+
   // Authentication state
   currentUser: User | null = null;
   isAuthenticated = false;
@@ -88,10 +95,10 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     private router: Router
   ) {
     // Subscribe to authentication state changes
-    this.authSubscription = this.authService.currentUser$.subscribe(user => {
+    this.authSubscription = this.authService.currentUser$.subscribe((user) => {
       this.currentUser = user;
       this.isAuthenticated = !!user;
-      
+
       // Update user menu items based on authentication state
       this.updateUserMenuItems();
     });
@@ -105,24 +112,32 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
       children: [
         { label: 'Khóa học', link: '/courses', icon: 'book' },
         { label: 'Bài tập', link: '/problems', icon: 'code' },
-        { label: 'Tài liệu', link: '/documents', icon: 'file-text' }
-      ]
+        { label: 'Tài liệu', link: '/documents', icon: 'file-text' },
+      ],
     },
     {
       label: 'Thi đấu',
       icon: 'award',
       children: [
         { label: 'Cuộc thi', link: '/contests', icon: 'award' },
-        { label: 'Xếp hạng', link: '/leaderboard', icon: 'trophy' }
-      ]
+        { label: 'Xếp hạng', link: '/leaderboard', icon: 'trophy' },
+      ],
     },
-    { label: 'Diễn đàn', link: '/forum', icon: 'message-circle' }
+    {
+      label: 'Diễn đàn',
+      // link: '/forum',
+      icon: 'message-circle',
+      children: [
+        { label: 'Diễn đàn', link: '/forum/', icon: 'message-circle' },
+        { label: 'Chat', link: '/chat', icon: 'users' },
+      ],
+    },
   ];
 
   // Flattened items for mobile menu
   get flatNavigationItems(): NavigationItem[] {
     const flatItems: NavigationItem[] = [];
-    this.navigationItems.forEach(item => {
+    this.navigationItems.forEach((item) => {
       if (item.children) {
         flatItems.push(...item.children);
       } else {
@@ -152,12 +167,10 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     this.activeDropdown = null;
   }
 
-
-
   // Simplified click-only dropdown methods
   onDropdownToggle(itemLabel: string, event: Event): void {
     event.stopPropagation();
-    
+
     // Toggle dropdown state
     if (this.activeDropdown === itemLabel) {
       this.activeDropdown = null;
@@ -205,7 +218,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
         console.error('Logout error:', error);
         // Still navigate to login even if logout fails
         this.router.navigate(['/auth/login']);
-      }
+      },
     });
   }
 
@@ -214,12 +227,12 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
       this.userMenuItems = [
         { label: 'Hồ sơ', link: '/profile', icon: 'user' },
         { label: 'Cài đặt', link: '/settings', icon: 'settings' },
-        { label: 'Đăng xuất', link: '#', icon: 'log-out', action: 'logout' }
+        { label: 'Đăng xuất', link: '#', icon: 'log-out', action: 'logout' },
       ];
     } else {
       this.userMenuItems = [
         { label: 'Đăng nhập', link: '/auth/login', icon: 'log-in' },
-        { label: 'Đăng ký', link: '/auth/register', icon: 'user-plus' }
+        { label: 'Đăng ký', link: '/auth/register', icon: 'user-plus' },
       ];
     }
   }
