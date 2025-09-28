@@ -1,8 +1,24 @@
 /* Chat component styles */
 :host {
   display: block;
-  height: 100vh;
+  height: calc(100vh - 66px); /* Adjust for header height */
   overflow: hidden;
+}
+.position-relative {
+  position: relative !important;
+}
+/* Ensure proper flex layout */
+.chat-container {
+  height: calc(100vh - 66px); /* Adjust for header height */
+  overflow: hidden;
+}
+
+/* Chat main area should fill available space */
+.chat-main-area {
+  height: calc(100vh - 66px); /* Adjust for header height */
+  display: flex;
+  flex-direction: column;
+  position: relative;
 }
 
 /* Mobile responsive adjustments */
