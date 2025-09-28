@@ -19,6 +19,13 @@ export const routes: Routes = [
       ),
     canActivate: [NoAuthGuard],
   },
+  {
+    path: 'auth/callback',
+    loadComponent: () =>
+      import('./features/auth/oauth-callback/oauth-callback.component').then(
+        (m) => m.OAuthCallbackComponent
+      ),
+  },
   // Main layout routes
   {
     path: '',

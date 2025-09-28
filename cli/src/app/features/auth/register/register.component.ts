@@ -13,6 +13,7 @@ import {
   RegisterRequest,
 } from '../../../core/services/auth.service';
 import { ThemeService } from '../../../core/services/theme.service';
+import { GoogleOAuthService } from '../../../core/services/google-oauth.service';
 
 // Custom validator for password confirmation
 function passwordMatchValidator(
@@ -49,7 +50,8 @@ export class RegisterComponent implements OnInit {
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
-    public themeService: ThemeService
+    public themeService: ThemeService,
+    private googleOAuthService: GoogleOAuthService
   ) {
     this.registerForm = this.fb.group(
       {
@@ -112,6 +114,18 @@ export class RegisterComponent implements OnInit {
 
   toggleConfirmPasswordVisibility(): void {
     this.showConfirmPassword = !this.showConfirmPassword;
+  }
+
+  async loginWithGoogle(): Promise<void> {
+    try {
+      this.isLoading = true;
+      this.errorMessage = '';
+      await this.googleOAuthService.loginWithGoogle();
+    } catch (error) {
+      this.isLoading = false;
+      this.errorMessage = 'Không thể kết nối với Google. Vui lòng thử lại.';
+      console.error('Google login error:', error);
+    }
   }
 
   getInputClasses(fieldName: string): string {

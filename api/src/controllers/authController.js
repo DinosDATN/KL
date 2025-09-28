@@ -253,6 +253,46 @@ const authController = {
         error: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
+  },
+
+  // Google OAuth callback handler
+  googleCallback: async (req, res) => {
+    try {
+      const user = req.user;
+      
+      if (!user) {
+        console.error('No user found in Google OAuth callback');
+        return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:4200'}/auth/login?error=oauth_failed`);
+      }
+
+      // Update user's online status
+      await user.update({ 
+        is_online: true,
+        last_seen_at: new Date()
+      });
+
+      // Generate JWT token
+      const token = generateToken(user.id);
+
+      // Redirect to frontend with token
+      const clientUrl = process.env.CLIENT_URL || 'http://localhost:4200';
+      const redirectUrl = `${clientUrl}/auth/callback?token=${token}&user=${encodeURIComponent(JSON.stringify(user.toAuthJSON()))}`;
+      
+      console.log('Google OAuth successful, redirecting to:', redirectUrl);
+      res.redirect(redirectUrl);
+
+    } catch (error) {
+      console.error('Google OAuth callback error:', error);
+      const clientUrl = process.env.CLIENT_URL || 'http://localhost:4200';
+      res.redirect(`${clientUrl}/auth/login?error=oauth_failed`);
+    }
+  },
+
+  // Google OAuth failure handler
+  googleFailure: (req, res) => {
+    console.error('Google OAuth authentication failed');
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:4200';
+    res.redirect(`${clientUrl}/auth/login?error=oauth_failed`);
   }
 };
 
