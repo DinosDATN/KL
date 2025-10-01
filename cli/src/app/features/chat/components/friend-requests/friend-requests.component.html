@@ -1,0 +1,183 @@
+<div class="friend-requests-container bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <div class="flex items-center space-x-3">
+      <svg class="w-6 h-6 text-purple-500 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 0v2m0 0V6a2 2 0 012 0v2m0 0h2m-6 0h2m5 9l3 3m0 0l-3 3m3-3H9m5-9l3-3m0 0l3 3m-3-3H9"></path>
+      </svg>
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+        Lời mời kết bạn
+      </h2>
+    </div>
+    <button 
+      (click)="refreshRequests()" 
+      [disabled]="loading"
+      class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50"
+      title="Làm mới danh sách lời mời"
+    >
+      <svg class="w-5 h-5" [class.animate-spin]="loading" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Tabs -->
+  <div class="flex space-x-1 mb-6 bg-gray-100 dark:bg-gray-700 p-1 rounded-lg">
+    <button 
+      (click)="onTabChange('received')"
+      [class.bg-white]="activeTab === 'received' && !themeService.isDarkMode()"
+      [class.bg-gray-800]="activeTab === 'received' && themeService.isDarkMode()"
+      [class.text-blue-600]="activeTab === 'received'"
+      [class.shadow-sm]="activeTab === 'received'"
+      class="flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all text-center
+             text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+    >
+      Nhận được ({{pendingRequests.length}})
+    </button>
+    <button 
+      (click)="onTabChange('sent')"
+      [class.bg-white]="activeTab === 'sent' && !themeService.isDarkMode()"
+      [class.bg-gray-800]="activeTab === 'sent' && themeService.isDarkMode()"
+      [class.text-blue-600]="activeTab === 'sent'"
+      [class.shadow-sm]="activeTab === 'sent'"
+      class="flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all text-center
+             text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+    >
+      Đã gửi ({{sentRequests.length}})
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="flex justify-center items-center py-8">
+    <div class="flex items-center space-x-2 text-gray-500 dark:text-gray-400">
+      <svg class="animate-spin w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4a2 2 0 110-4m6 4a2 2 0 100-4m0 4a2 2 0 100 4m0-4a2 2 0 110-4"></path>
+      </svg>
+      <span>Đang tải danh sách lời mời...</span>
+    </div>
+  </div>
+
+  <!-- Received Requests Tab -->
+  <div *ngIf="!loading && activeTab === 'received'">
+    <!-- Empty State for Received -->
+    <div *ngIf="pendingRequests.length === 0" class="text-center py-8">
+      <svg class="mx-auto w-16 h-16 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+      </svg>
+      <p class="text-gray-500 dark:text-gray-400 mt-3">Không có lời mời kết bạn nào</p>
+      <p class="text-sm text-gray-400 dark:text-gray-500">Các lời mời kết bạn sẽ xuất hiện ở đây</p>
+    </div>
+
+    <!-- Received Requests List -->
+    <div *ngIf="pendingRequests.length > 0" class="space-y-3">
+      <div 
+        *ngFor="let request of pendingRequests" 
+        class="request-item p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg border border-blue-200 dark:border-blue-800"
+      >
+        <div class="flex items-center space-x-4">
+          <!-- Requester Avatar -->
+          <div class="flex-shrink-0">
+            <img 
+              [src]="request.Requester?.avatar_url || '/assets/default-avatar.svg'" 
+              [alt]="request.Requester?.name"
+              class="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm"
+            >
+          </div>
+          
+          <!-- Request Info -->
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between mb-1">
+              <h3 class="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                {{request.Requester?.name}}
+              </h3>
+              <span class="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
+                {{getTimeAgo(request.requested_at)}}
+              </span>
+            </div>
+            <p class="text-xs text-gray-600 dark:text-gray-400 truncate mb-3">
+              {{request.Requester?.email}}
+            </p>
+            
+            <!-- Action Buttons -->
+            <div class="flex space-x-2">
+              <button 
+                (click)="onAcceptRequest(request)"
+                class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
+              >
+                Chấp nhận
+              </button>
+              <button 
+                (click)="onDeclineRequest(request)"
+                class="px-4 py-2 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg transition-colors"
+              >
+                Từ chối
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sent Requests Tab -->
+  <div *ngIf="!loading && activeTab === 'sent'">
+    <!-- Empty State for Sent -->
+    <div *ngIf="sentRequests.length === 0" class="text-center py-8">
+      <svg class="mx-auto w-16 h-16 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+      </svg>
+      <p class="text-gray-500 dark:text-gray-400 mt-3">Chưa gửi lời mời kết bạn nào</p>
+      <p class="text-sm text-gray-400 dark:text-gray-500">Tìm kiếm và gửi lời mời kết bạn cho người dùng khác</p>
+    </div>
+
+    <!-- Sent Requests List -->
+    <div *ngIf="sentRequests.length > 0" class="space-y-3">
+      <div 
+        *ngFor="let request of sentRequests" 
+        class="request-item p-4 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800"
+      >
+        <div class="flex items-center space-x-4">
+          <!-- Addressee Avatar -->
+          <div class="flex-shrink-0">
+            <img 
+              [src]="request.Addressee?.avatar_url || '/assets/default-avatar.svg'" 
+              [alt]="request.Addressee?.name"
+              class="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm"
+            >
+          </div>
+          
+          <!-- Request Info -->
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between mb-1">
+              <h3 class="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                {{request.Addressee?.name}}
+              </h3>
+              <span class="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
+                {{getTimeAgo(request.requested_at)}}
+              </span>
+            </div>
+            <p class="text-xs text-gray-600 dark:text-gray-400 truncate mb-2">
+              {{request.Addressee?.email}}
+            </p>
+            
+            <div class="flex items-center justify-between">
+              <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200">
+                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Đang chờ phản hồi
+              </span>
+              
+              <button 
+                (click)="onCancelSentRequest(request)"
+                class="text-xs text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 font-medium"
+              >
+                Hủy lời mời
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

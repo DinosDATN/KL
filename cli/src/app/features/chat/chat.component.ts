@@ -32,6 +32,10 @@ import { ChatMainComponent } from '../forum/components/chat-main/chat-main.compo
 import { CreateGroupModalComponent } from '../forum/components/create-group-modal/create-group-modal.component';
 import { ChatSettingsModalComponent, ChatSettings, MemberAction } from '../forum/components/chat-settings-modal/chat-settings-modal.component';
 import { NotificationToastComponent } from '../../shared/components/notification-toast/notification-toast.component';
+import { FriendsListComponent } from './components/friends-list/friends-list.component';
+import { FriendRequestsComponent } from './components/friend-requests/friend-requests.component';
+import { UserSearchComponent } from './components/user-search/user-search.component';
+import { PrivateChatComponent } from './components/private-chat/private-chat.component';
 
 @Component({
   selector: 'app-chat',
@@ -44,6 +48,10 @@ import { NotificationToastComponent } from '../../shared/components/notification
     CreateGroupModalComponent,
     ChatSettingsModalComponent,
     NotificationToastComponent,
+    FriendsListComponent,
+    FriendRequestsComponent,
+    UserSearchComponent,
+    PrivateChatComponent,
   ],
   templateUrl: './chat.component.html',
   styleUrl: './chat.component.css'
@@ -67,6 +75,10 @@ export class ChatComponent implements OnInit, OnDestroy {
   showCreateGroupModal = false;
   isTyping = false;
   typingUsers: User[] = [];
+  
+  // Chat mode: 'groups' for group chat, 'private' for 1-1 chats, 'friends' for friends management
+  chatMode: 'groups' | 'private' | 'friends' = 'groups';
+  friendsTab: 'list' | 'requests' | 'search' = 'list';
   
   // Pagination state
   messagePagination: { [roomId: number]: { page: number; hasMore: boolean; loading: boolean } } = {};
@@ -639,5 +651,23 @@ export class ChatComponent implements OnInit, OnDestroy {
     this.router.navigate(['/auth/register'], {
       queryParams: { returnUrl: '/chat' }
     });
+  }
+  
+  // Mode switching methods
+  setChatMode(mode: 'groups' | 'private' | 'friends'): void {
+    this.chatMode = mode;
+    
+    // Close sidebar on mobile when switching modes
+    if (this.isMobileView) {
+      this.showSidebar = false;
+    }
+  }
+  
+  setFriendsTab(tab: 'list' | 'requests' | 'search'): void {
+    this.friendsTab = tab;
+  }
+  
+  onStartPrivateChat(friend: User): void {
+    this.setChatMode('private');
   }
 }

@@ -1,28 +1,130 @@
 <!-- Main Chat Layout -->
-<div class="chat-container flex bg-gray-100 dark:bg-gray-900">
+<div class="chat-container flex bg-gray-100 dark:bg-gray-900 h-screen">
   <!-- Chat Sidebar -->
   <div
     [ngClass]="{
-      'w-80 flex-shrink-0 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800':
+      'w-80 flex-shrink-0 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col':
         !isMobileView,
-      'fixed inset-y-0 left-0 z-50 w-80 bg-white dark:bg-gray-800 shadow-xl transform transition-transform':
+      'fixed inset-y-0 left-0 z-50 w-80 bg-white dark:bg-gray-800 shadow-xl transform transition-transform flex flex-col':
         isMobileView,
       'translate-x-0': showSidebar,
       '-translate-x-full': isMobileView && !showSidebar
     }"
   >
-    <app-chat-sidebar
-      [rooms]="getFilteredRooms()"
-      [currentUser]="currentUser!"
-      [selectedRoom]="selectedRoom"
-      [searchTerm]="searchTerm"
-      [onlineUsers]="onlineUsers"
-      [getUser]="getUser.bind(this)"
-      [getRoomMembers]="getRoomMembers.bind(this)"
-      (roomSelected)="onRoomSelected($event)"
-      (createGroup)="onCreateGroup()"
-      (searchChanged)="searchTerm = $event"
-    ></app-chat-sidebar>
+    <!-- Sidebar Header with Mode Tabs -->
+    <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+      <div class="flex space-x-1 mb-4 bg-gray-100 dark:bg-gray-700 p-1 rounded-lg">
+        <button 
+          (click)="setChatMode('groups')"
+          [class.bg-white]="chatMode === 'groups' && !themeService.isDarkMode()"
+          [class.bg-gray-800]="chatMode === 'groups' && themeService.isDarkMode()"
+          [class.text-blue-600]="chatMode === 'groups'"
+          [class.shadow-sm]="chatMode === 'groups'"
+          class="flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all text-center
+                 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+        >
+          Nhóm
+        </button>
+        <button 
+          (click)="setChatMode('private')"
+          [class.bg-white]="chatMode === 'private' && !themeService.isDarkMode()"
+          [class.bg-gray-800]="chatMode === 'private' && themeService.isDarkMode()"
+          [class.text-blue-600]="chatMode === 'private'"
+          [class.shadow-sm]="chatMode === 'private'"
+          class="flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all text-center
+                 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+        >
+          Riêng tư
+        </button>
+        <button 
+          (click)="setChatMode('friends')"
+          [class.bg-white]="chatMode === 'friends' && !themeService.isDarkMode()"
+          [class.bg-gray-800]="chatMode === 'friends' && themeService.isDarkMode()"
+          [class.text-blue-600]="chatMode === 'friends'"
+          [class.shadow-sm]="chatMode === 'friends'"
+          class="flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all text-center
+                 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+        >
+          Bạn bè
+        </button>
+      </div>
+      
+      <!-- Friends Sub-tabs -->
+      <div *ngIf="chatMode === 'friends'" class="flex space-x-1 bg-gray-50 dark:bg-gray-600 p-1 rounded-lg">
+        <button 
+          (click)="setFriendsTab('list')"
+          [class.bg-white]="friendsTab === 'list' && !themeService.isDarkMode()"
+          [class.bg-gray-700]="friendsTab === 'list' && themeService.isDarkMode()"
+          [class.text-blue-600]="friendsTab === 'list'"
+          [class.shadow-sm]="friendsTab === 'list'"
+          class="flex-1 px-2 py-1 text-xs font-medium rounded transition-all text-center
+                 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
+        >
+          Danh sách
+        </button>
+        <button 
+          (click)="setFriendsTab('requests')"
+          [class.bg-white]="friendsTab === 'requests' && !themeService.isDarkMode()"
+          [class.bg-gray-700]="friendsTab === 'requests' && themeService.isDarkMode()"
+          [class.text-blue-600]="friendsTab === 'requests'"
+          [class.shadow-sm]="friendsTab === 'requests'"
+          class="flex-1 px-2 py-1 text-xs font-medium rounded transition-all text-center
+                 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
+        >
+          Lời mời
+        </button>
+        <button 
+          (click)="setFriendsTab('search')"
+          [class.bg-white]="friendsTab === 'search' && !themeService.isDarkMode()"
+          [class.bg-gray-700]="friendsTab === 'search' && themeService.isDarkMode()"
+          [class.text-blue-600]="friendsTab === 'search'"
+          [class.shadow-sm]="friendsTab === 'search'"
+          class="flex-1 px-2 py-1 text-xs font-medium rounded transition-all text-center
+                 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
+        >
+          Tìm kiếm
+        </button>
+      </div>
+    </div>
+    
+    <!-- Sidebar Content -->
+    <div class="flex-1 overflow-hidden">
+      <!-- Group Chat Sidebar -->
+      <div *ngIf="chatMode === 'groups'" class="h-full">
+        <app-chat-sidebar
+          [rooms]="getFilteredRooms()"
+          [currentUser]="currentUser!"
+          [selectedRoom]="selectedRoom"
+          [searchTerm]="searchTerm"
+          [onlineUsers]="onlineUsers"
+          [getUser]="getUser.bind(this)"
+          [getRoomMembers]="getRoomMembers.bind(this)"
+          (roomSelected)="onRoomSelected($event)"
+          (createGroup)="onCreateGroup()"
+          (searchChanged)="searchTerm = $event"
+        ></app-chat-sidebar>
+      </div>
+      
+      <!-- Private Chat Mode -->
+      <div *ngIf="chatMode === 'private'" class="h-full p-4">
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Chế độ tin nhắn riêng sẽ được hiển thị ở khu vực chính</p>
+      </div>
+      
+      <!-- Friends Management -->
+      <div *ngIf="chatMode === 'friends'" class="h-full">
+        <div *ngIf="friendsTab === 'list'" class="h-full p-4">
+          <app-friends-list (startPrivateChat)="onStartPrivateChat($event)"></app-friends-list>
+        </div>
+        
+        <div *ngIf="friendsTab === 'requests'" class="h-full p-4">
+          <app-friend-requests></app-friend-requests>
+        </div>
+        
+        <div *ngIf="friendsTab === 'search'" class="h-full p-4">
+          <app-user-search></app-user-search>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Mobile Sidebar Overlay -->
@@ -59,7 +161,7 @@
           </svg>
         </button>
         <h1 class="text-lg font-semibold text-gray-900 dark:text-white">
-          Chat
+          Chat - {{chatMode === 'groups' ? 'Nhóm' : chatMode === 'private' ? 'Riêng tư' : 'Bạn bè'}}
         </h1>
         <div class="w-10"></div>
         <!-- Spacer for centering -->
@@ -69,33 +171,56 @@
     <!-- Chat Content -->
     <div class="flex-1 min-h-0 position-relative">
       <ng-container *ngIf="currentUser; else notAuthenticated">
-        <ng-container *ngIf="selectedRoom; else noChatSelected">
-          <!-- Chat Main Component -->
-          <app-chat-main
-            class="h-full w-full"
-            [room]="selectedRoom"
-            [messages]="getRoomMessages(selectedRoom.id)"
-            [currentUser]="currentUser!"
-            [roomMembers]="getRoomMembers(selectedRoom.id)"
-            [reactions]="reactions"
-            [typingUsers]="typingUsers"
-            [isRoomAdmin]="
-              currentUser ? isRoomAdmin(selectedRoom.id, currentUser.id) : false
-            "
-            [allUsers]="users"
-            [paginationCallbacks]="getPaginationCallbacks()"
-            (sendMessage)="onSendMessage($event)"
-            (reactToMessage)="
-              onReactToMessage($event.messageId, $event.reactionType)
-            "
-            (updateChatSettings)="onUpdateChatSettings($event)"
-            (handleMemberAction)="onHandleMemberAction($event)"
-            (deleteRoom)="onDeleteRoom($event)"
-            (leaveRoom)="onLeaveRoom($event)"
-            (loadOlderMessages)="onLoadOlderMessages()"
-            [getUser]="getUser.bind(this)"
-            [getMessageReactions]="getMessageReactions.bind(this)"
-          ></app-chat-main>
+        <!-- Group Chat Mode -->
+        <ng-container *ngIf="chatMode === 'groups'">
+          <ng-container *ngIf="selectedRoom; else noChatSelected">
+            <!-- Chat Main Component -->
+            <app-chat-main
+              class="h-full w-full"
+              [room]="selectedRoom"
+              [messages]="getRoomMessages(selectedRoom.id)"
+              [currentUser]="currentUser!"
+              [roomMembers]="getRoomMembers(selectedRoom.id)"
+              [reactions]="reactions"
+              [typingUsers]="typingUsers"
+              [isRoomAdmin]="
+                currentUser ? isRoomAdmin(selectedRoom.id, currentUser.id) : false
+              "
+              [allUsers]="users"
+              [paginationCallbacks]="getPaginationCallbacks()"
+              (sendMessage)="onSendMessage($event)"
+              (reactToMessage)="
+                onReactToMessage($event.messageId, $event.reactionType)
+              "
+              (updateChatSettings)="onUpdateChatSettings($event)"
+              (handleMemberAction)="onHandleMemberAction($event)"
+              (deleteRoom)="onDeleteRoom($event)"
+              (leaveRoom)="onLeaveRoom($event)"
+              (loadOlderMessages)="onLoadOlderMessages()"
+              [getUser]="getUser.bind(this)"
+              [getMessageReactions]="getMessageReactions.bind(this)"
+            ></app-chat-main>
+          </ng-container>
+        </ng-container>
+        
+        <!-- Private Chat Mode -->
+        <ng-container *ngIf="chatMode === 'private'">
+          <app-private-chat class="h-full w-full"></app-private-chat>
+        </ng-container>
+        
+        <!-- Friends Management Mode -->
+        <ng-container *ngIf="chatMode === 'friends'">
+          <div class="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+            <div class="text-center max-w-md mx-auto px-6">
+              <div class="w-24 h-24 mx-auto mb-8 bg-gradient-to-br from-green-100 to-blue-100 dark:from-green-900 dark:to-blue-900 rounded-full flex items-center justify-center">
+                <svg class="w-12 h-12 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-2.239"></path>
+                </svg>
+              </div>
+              <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-3">Quản lý bạn bè</h2>
+              <p class="text-lg text-gray-600 dark:text-gray-400 leading-relaxed">Sử dụng thanh bên để quản lý bạn bè, lời mời và tìm kiếm người dùng mới</p>
+            </div>
+          </div>
         </ng-container>
       </ng-container>
     </div>

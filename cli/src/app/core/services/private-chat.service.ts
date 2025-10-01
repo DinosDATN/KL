@@ -1,0 +1,213 @@
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, BehaviorSubject } from 'rxjs';
+import { map, tap, catchError } from 'rxjs/operators';
+import {
+  PrivateConversation,
+  PrivateMessage,
+  ConversationListResponse,
+  MessageListResponse,
+  UnreadCountResponse
+} from '../models/private-chat.model';
+import { AuthService } from './auth.service';
+import { NotificationService } from './notification.service';
+import { environment } from '../../../environments/environment';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class PrivateChatService {
+  private apiUrl = environment.production ? environment.apiUrl : 'http://localhost:3000/api/v1';
+  
+  // State management
+  private conversationsSubject = new BehaviorSubject<PrivateConversation[]>([]);
+  private messagesSubject = new BehaviorSubject<{[conversationId: number]: PrivateMessage[]}>({});
+  private unreadCountSubject = new BehaviorSubject<number>(0);
+  private activeConversationSubject = new BehaviorSubject<PrivateConversation | null>(null);
+  
+  // Public observables
+  public conversations$ = this.conversationsSubject.asObservable();
+  public messages$ = this.messagesSubject.asObservable();
+  public unreadCount$ = this.unreadCountSubject.asObservable();
+  public activeConversation$ = this.activeConversationSubject.asObservable();
+  
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService,
+    private notificationService: NotificationService
+  ) {
+    this.loadInitialData();
+  }
+  
+  // Initialize data
+  private loadInitialData(): void {
+    if (this.authService.isAuthenticated()) {
+      this.loadConversations().subscribe();
+      this.loadUnreadCount().subscribe();
+    }
+  }
+  
+  // Conversation management
+  loadConversations(page: number = 1, limit: number = 20): Observable<PrivateConversation[]> {
+    const url = `${this.apiUrl}/private-chat/conversations?page=${page}&limit=${limit}`;
+    
+    return this.http.get<{success: boolean, data: ConversationListResponse}>(url).pipe(
+      map(response => response.data.conversations),
+      tap(conversations => {
+        if (page === 1) {
+          this.conversationsSubject.next(conversations);
+        } else {
+          const currentConversations = this.conversationsSubject.value;
+          this.conversationsSubject.next([...currentConversations, ...conversations]);
+        }
+      })
+    );
+  }
+  
+  getOrCreateConversation(otherUserId: number): Observable<PrivateConversation> {
+    return this.http.post<{success: boolean, data: PrivateConversation}>(
+      `${this.apiUrl}/private-chat/conversations/with/${otherUserId}`,
+      {}
+    ).pipe(
+      map(response => response.data),
+      tap(conversation => {
+        const conversations = this.conversationsSubject.value;
+        const existingIndex = conversations.findIndex(c => c.id === conversation.id);
+        
+        if (existingIndex === -1) {
+          this.conversationsSubject.next([conversation, ...conversations]);
+        }
+        
+        this.activeConversationSubject.next(conversation);
+      })
+    );
+  }
+  
+  // Message management
+  loadConversationMessages(conversationId: number, page: number = 1, limit: number = 50): Observable<PrivateMessage[]> {
+    const url = `${this.apiUrl}/private-chat/conversations/${conversationId}/messages?page=${page}&limit=${limit}`;
+    
+    return this.http.get<{success: boolean, data: MessageListResponse}>(url).pipe(
+      map(response => response.data.messages),
+      tap(messages => {
+        const currentMessages = this.messagesSubject.value;
+        
+        if (page === 1) {
+          currentMessages[conversationId] = messages;
+        } else {
+          const existingMessages = currentMessages[conversationId] || [];
+          currentMessages[conversationId] = [...messages, ...existingMessages];
+        }
+        
+        this.messagesSubject.next({...currentMessages});
+      })
+    );
+  }
+  
+  sendMessage(conversationId: number, content: string): Observable<PrivateMessage> {
+    return this.http.post<{success: boolean, data: PrivateMessage}>(
+      `${this.apiUrl}/private-chat/conversations/${conversationId}/messages`,
+      { content: content.trim(), message_type: 'text' }
+    ).pipe(
+      map(response => response.data),
+      tap(message => {
+        this.addMessageToConversation(conversationId, message);
+        this.updateConversationLastActivity(conversationId, message);
+      })
+    );
+  }
+  
+  markMessagesAsRead(conversationId: number, messageIds: number[]): Observable<void> {
+    return this.http.put<{success: boolean}>(
+      `${this.apiUrl}/private-chat/conversations/${conversationId}/messages/read`,
+      { messageIds }
+    ).pipe(
+      map(() => void 0),
+      tap(() => {
+        this.updateLocalMessageStatuses(conversationId, messageIds, 'read');
+        this.loadUnreadCount().subscribe();
+      })
+    );
+  }
+  
+  loadUnreadCount(): Observable<number> {
+    return this.http.get<{success: boolean, data: UnreadCountResponse}>(
+      `${this.apiUrl}/private-chat/unread-count`
+    ).pipe(
+      map(response => response.data.unread_count),
+      tap(count => this.unreadCountSubject.next(count))
+    );
+  }
+  
+  // Helper methods
+  private addMessageToConversation(conversationId: number, message: PrivateMessage): void {
+    const currentMessages = this.messagesSubject.value;
+    if (!currentMessages[conversationId]) {
+      currentMessages[conversationId] = [];
+    }
+    currentMessages[conversationId].push(message);
+    this.messagesSubject.next({...currentMessages});
+  }
+  
+  private updateLocalMessageStatuses(conversationId: number, messageIds: number[], status: string): void {
+    const currentMessages = this.messagesSubject.value;
+    const conversationMessages = currentMessages[conversationId];
+    
+    if (conversationMessages) {
+      conversationMessages.forEach(message => {
+        if (messageIds.includes(message.id)) {
+          message.read_status = status as any;
+        }
+      });
+      this.messagesSubject.next({...currentMessages});
+    }
+  }
+  
+  private updateConversationLastActivity(conversationId: number, lastMessage: PrivateMessage): void {
+    const conversations = this.conversationsSubject.value;
+    const conversationIndex = conversations.findIndex(c => c.id === conversationId);
+    
+    if (conversationIndex !== -1) {
+      conversations[conversationIndex] = {
+        ...conversations[conversationIndex],
+        last_message_id: lastMessage.id,
+        last_activity_at: lastMessage.sent_at,
+        last_message: lastMessage
+      };
+      
+      const updatedConversation = conversations.splice(conversationIndex, 1)[0];
+      conversations.unshift(updatedConversation);
+      this.conversationsSubject.next([...conversations]);
+    }
+  }
+  
+  // Public utility methods
+  getConversations(): PrivateConversation[] {
+    return this.conversationsSubject.value;
+  }
+  
+  getMessagesForConversation(conversationId: number): PrivateMessage[] {
+    return this.messagesSubject.value[conversationId] || [];
+  }
+  
+  getActiveConversation(): PrivateConversation | null {
+    return this.activeConversationSubject.value;
+  }
+  
+  setActiveConversation(conversation: PrivateConversation | null): void {
+    this.activeConversationSubject.next(conversation);
+  }
+  
+  findConversationByParticipant(userId: number): PrivateConversation | null {
+    return this.conversationsSubject.value.find(conv => 
+      conv.other_participant?.id === userId
+    ) || null;
+  }
+  
+  clearData(): void {
+    this.conversationsSubject.next([]);
+    this.messagesSubject.next({});
+    this.unreadCountSubject.next(0);
+    this.activeConversationSubject.next(null);
+  }
+}
