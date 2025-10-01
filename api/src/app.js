@@ -24,6 +24,8 @@ const leaderboardRoutes = require("./routes/leaderboardRoutes");
 const contestRoutes = require("./routes/contestRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const submissionRoutes = require("./routes/submissionRoutes");
+const friendshipRoutes = require("./routes/friendshipRoutes");
+const privateChatRoutes = require("./routes/privateChatRoutes");
 
 // Create Express app and HTTP server
 const app = express();
@@ -80,6 +82,8 @@ app.use(apiPrefix + "/leaderboard", leaderboardRoutes);
 app.use(apiPrefix + "/contests", contestRoutes);
 app.use(apiPrefix + "/chat", chatRoutes);
 app.use(apiPrefix + "/submissions", submissionRoutes);
+app.use(apiPrefix + "/friendship", friendshipRoutes);
+app.use(apiPrefix + "/private-chat", privateChatRoutes);
 
 // Homepage-specific routes
 app.use(apiPrefix + "/homepage", homepageRoutes);

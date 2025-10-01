@@ -36,6 +36,13 @@ const CourseEnrollment = require('./CourseEnrollment');
 const CourseReview = require('./CourseReview');
 const InstructorQualification = require('./InstructorQualification');
 
+// Friendship and Private Chat models
+const Friendship = require('./Friendship');
+const UserBlock = require('./UserBlock');
+const PrivateConversation = require('./PrivateConversation');
+const PrivateMessage = require('./PrivateMessage');
+const PrivateMessageStatus = require('./PrivateMessageStatus');
+
 // Define associations
 
 // Course associations
@@ -526,6 +533,139 @@ Problem.hasMany(JudgeSubmission, {
   as: 'JudgeSubmissions'
 });
 
+// Friendship associations
+// Friendship belongs to Users for requester and addressee
+Friendship.belongsTo(User, {
+  foreignKey: 'requester_id',
+  as: 'Requester'
+});
+
+Friendship.belongsTo(User, {
+  foreignKey: 'addressee_id',
+  as: 'Addressee'
+});
+
+User.hasMany(Friendship, {
+  foreignKey: 'requester_id',
+  as: 'SentFriendRequests'
+});
+
+User.hasMany(Friendship, {
+  foreignKey: 'addressee_id',
+  as: 'ReceivedFriendRequests'
+});
+
+// User Block associations
+UserBlock.belongsTo(User, {
+  foreignKey: 'blocker_id',
+  as: 'Blocker'
+});
+
+UserBlock.belongsTo(User, {
+  foreignKey: 'blocked_id',
+  as: 'BlockedUser'
+});
+
+User.hasMany(UserBlock, {
+  foreignKey: 'blocker_id',
+  as: 'BlockedUsers'
+});
+
+User.hasMany(UserBlock, {
+  foreignKey: 'blocked_id',
+  as: 'BlockingUsers'
+});
+
+// Private Conversation associations
+PrivateConversation.belongsTo(User, {
+  foreignKey: 'participant1_id',
+  as: 'Participant1'
+});
+
+PrivateConversation.belongsTo(User, {
+  foreignKey: 'participant2_id',
+  as: 'Participant2'
+});
+
+User.hasMany(PrivateConversation, {
+  foreignKey: 'participant1_id',
+  as: 'ConversationsAsParticipant1'
+});
+
+User.hasMany(PrivateConversation, {
+  foreignKey: 'participant2_id',
+  as: 'ConversationsAsParticipant2'
+});
+
+// Private Message associations
+PrivateConversation.hasMany(PrivateMessage, {
+  foreignKey: 'conversation_id',
+  as: 'Messages'
+});
+
+PrivateMessage.belongsTo(PrivateConversation, {
+  foreignKey: 'conversation_id',
+  as: 'Conversation'
+});
+
+PrivateMessage.belongsTo(User, {
+  foreignKey: 'sender_id',
+  as: 'Sender'
+});
+
+PrivateMessage.belongsTo(User, {
+  foreignKey: 'receiver_id',
+  as: 'Receiver'
+});
+
+User.hasMany(PrivateMessage, {
+  foreignKey: 'sender_id',
+  as: 'SentPrivateMessages'
+});
+
+User.hasMany(PrivateMessage, {
+  foreignKey: 'receiver_id',
+  as: 'ReceivedPrivateMessages'
+});
+
+// Self-referencing for reply_to_message_id
+PrivateMessage.belongsTo(PrivateMessage, {
+  foreignKey: 'reply_to_message_id',
+  as: 'ReplyToMessage'
+});
+
+PrivateMessage.hasMany(PrivateMessage, {
+  foreignKey: 'reply_to_message_id',
+  as: 'Replies'
+});
+
+// Private Message Status associations
+PrivateMessage.hasMany(PrivateMessageStatus, {
+  foreignKey: 'message_id',
+  as: 'MessageStatuses'
+});
+
+PrivateMessageStatus.belongsTo(PrivateMessage, {
+  foreignKey: 'message_id',
+  as: 'Message'
+});
+
+PrivateMessageStatus.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'User'
+});
+
+User.hasMany(PrivateMessageStatus, {
+  foreignKey: 'user_id',
+  as: 'MessageStatuses'
+});
+
+// Private Conversation - Last Message association
+PrivateConversation.belongsTo(PrivateMessage, {
+  foreignKey: 'last_message_id',
+  as: 'LastMessage'
+});
+
 module.exports = {
   Problem,
   ProblemCategory,
@@ -562,5 +702,11 @@ module.exports = {
   CourseLesson,
   CourseEnrollment,
   CourseReview,
-  InstructorQualification
+  InstructorQualification,
+  // Friendship and Private Chat models
+  Friendship,
+  UserBlock,
+  PrivateConversation,
+  PrivateMessage,
+  PrivateMessageStatus
 };
