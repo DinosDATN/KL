@@ -1,5 +1,17 @@
-const { ChatRoom, ChatMessage, ChatRoomMember, ChatReaction, User } = require('../models');
-const { authenticateSocket, handleAuthError } = require('../middleware/socketAuthMiddleware');
+const {
+  ChatRoom,
+  ChatMessage,
+  ChatRoomMember,
+  ChatReaction,
+  User,
+  PrivateConversation,
+  PrivateMessage,
+  PrivateMessageStatus,
+} = require("../models");
+const {
+  authenticateSocket,
+  handleAuthError,
+} = require("../middleware/socketAuthMiddleware");
 
 // Store active users
 const activeUsers = new Map();
@@ -9,22 +21,24 @@ const typingUsers = new Map();
 const handleConnection = (io) => {
   // Apply authentication middleware with error handling
   io.use(authenticateSocket);
-  
+
   // Handle authentication errors
-  io.engine.on('connection_error', (err) => {
-    console.error('🚫 Socket.IO connection error:', err.message);
-    console.error('🔍 Error details:', err.context);
+  io.engine.on("connection_error", (err) => {
+    console.error("🚫 Socket.IO connection error:", err.message);
+    console.error("🔍 Error details:", err.context);
   });
 
-  io.on('connection', (socket) => {
-    console.log(`🔗 User ${socket.user.name} (ID: ${socket.userId}) connected (Socket ID: ${socket.id})`);
+  io.on("connection", (socket) => {
+    console.log(
+      `🔗 User ${socket.user.name} (ID: ${socket.userId}) connected (Socket ID: ${socket.id})`
+    );
     console.log(`📊 Active users count: ${activeUsers.size + 1}`);
 
     // Store user connection
     activeUsers.set(socket.userId, {
       socketId: socket.id,
       user: socket.user,
-      lastSeen: new Date()
+      lastSeen: new Date(),
     });
 
     // Update user online status in database
@@ -37,64 +51,74 @@ const handleConnection = (io) => {
     joinUserRooms(socket);
 
     // Notify others that user is online
-    socket.broadcast.emit('user_online', {
+    socket.broadcast.emit("user_online", {
       userId: socket.userId,
-      username: socket.user.name
+      username: socket.user.name,
     });
 
     // Handle joining a room
-    socket.on('join_room', async (roomId) => {
+    socket.on("join_room", async (roomId) => {
       try {
-        console.log(`🚪 User ${socket.user.name} trying to join room ${roomId}`);
+        console.log(
+          `🚪 User ${socket.user.name} trying to join room ${roomId}`
+        );
         const isMember = await ChatRoomMember.findOne({
           where: {
             room_id: roomId,
-            user_id: socket.userId
-          }
+            user_id: socket.userId,
+          },
         });
 
         if (isMember) {
           socket.join(`room_${roomId}`);
-          socket.emit('joined_room', { roomId, success: true });
-          console.log(`✅ User ${socket.user.name} successfully joined room ${roomId}`);
+          socket.emit("joined_room", { roomId, success: true });
+          console.log(
+            `✅ User ${socket.user.name} successfully joined room ${roomId}`
+          );
         } else {
-          console.log(`❌ User ${socket.user.name} not a member of room ${roomId}`);
-          socket.emit('error', { message: 'Not a member of this room' });
+          console.log(
+            `❌ User ${socket.user.name} not a member of room ${roomId}`
+          );
+          socket.emit("error", { message: "Not a member of this room" });
         }
       } catch (error) {
         console.error(`❌ Error joining room ${roomId}:`, error);
-        socket.emit('error', { message: 'Error joining room' });
+        socket.emit("error", { message: "Error joining room" });
       }
     });
 
     // Handle leaving a room
-    socket.on('leave_room', (roomId) => {
+    socket.on("leave_room", (roomId) => {
       socket.leave(`room_${roomId}`);
-      socket.emit('left_room', { roomId });
+      socket.emit("left_room", { roomId });
     });
 
     // Handle sending messages
-    socket.on('send_message', async (data) => {
+    socket.on("send_message", async (data) => {
       try {
         console.log(`💬 Message received from user ${socket.user.name}:`, data);
-        const { roomId, content, type = 'text', replyTo = null } = data;
+        const { roomId, content, type = "text", replyTo = null } = data;
 
         if (!content || !content.trim()) {
-          console.log('❌ Empty message content');
-          return socket.emit('error', { message: 'Message content is required' });
+          console.log("❌ Empty message content");
+          return socket.emit("error", {
+            message: "Message content is required",
+          });
         }
 
         // Check if user is member of the room
         const isMember = await ChatRoomMember.findOne({
           where: {
             room_id: roomId,
-            user_id: socket.userId
-          }
+            user_id: socket.userId,
+          },
         });
 
         if (!isMember) {
-          console.log(`❌ User ${socket.user.name} not member of room ${roomId}`);
-          return socket.emit('error', { message: 'Not a member of this room' });
+          console.log(
+            `❌ User ${socket.user.name} not member of room ${roomId}`
+          );
+          return socket.emit("error", { message: "Not a member of this room" });
         }
 
         // Create the message
@@ -103,17 +127,17 @@ const handleConnection = (io) => {
           sender_id: socket.userId,
           content: content.trim(),
           type: type,
-          reply_to: replyTo
+          reply_to: replyTo,
         });
 
         // Update room's last message
         await ChatRoom.update(
           {
             last_message_id: message.id,
-            updated_at: new Date()
+            updated_at: new Date(),
           },
           {
-            where: { id: roomId }
+            where: { id: roomId },
           }
         );
 
@@ -122,92 +146,104 @@ const handleConnection = (io) => {
           include: [
             {
               model: User,
-              as: 'Sender',
-              attributes: ['id', 'name', 'email', 'is_online', 'last_seen_at']
+              as: "Sender",
+              attributes: ["id", "name", "email", "is_online", "last_seen_at"],
             },
             {
               model: ChatMessage,
-              as: 'ReplyToMessage',
-              include: [{
-                model: User,
-                as: 'Sender',
-                attributes: ['id', 'name']
-              }]
-            }
-          ]
+              as: "ReplyToMessage",
+              include: [
+                {
+                  model: User,
+                  as: "Sender",
+                  attributes: ["id", "name"],
+                },
+              ],
+            },
+          ],
         });
 
         // Broadcast message to all room members
-        console.log(`🚀 Broadcasting message to room_${roomId}:`, completeMessage.id);
-        io.to(`room_${roomId}`).emit('new_message', completeMessage);
+        console.log(
+          `🚀 Broadcasting message to room_${roomId}:`,
+          completeMessage.id
+        );
+        io.to(`room_${roomId}`).emit("new_message", completeMessage);
 
         // Stop typing indicator for this user
         clearTyping(socket, roomId);
-        
-        console.log(`✅ Message ${completeMessage.id} sent successfully by ${socket.user.name}`);
 
+        console.log(
+          `✅ Message ${completeMessage.id} sent successfully by ${socket.user.name}`
+        );
       } catch (error) {
-        console.error('Error sending message:', error);
-        socket.emit('error', { message: 'Error sending message' });
+        console.error("Error sending message:", error);
+        socket.emit("error", { message: "Error sending message" });
       }
     });
 
     // Handle typing indicators
-    socket.on('typing_start', async (data) => {
+    socket.on("typing_start", async (data) => {
       const { roomId } = data;
-      
+
       if (!typingUsers.has(roomId)) {
         typingUsers.set(roomId, new Set());
       }
-      
+
       typingUsers.get(roomId).add(socket.userId);
-      
+
       // Broadcast typing to other users in the room
-      socket.to(`room_${roomId}`).emit('user_typing', {
+      socket.to(`room_${roomId}`).emit("user_typing", {
         userId: socket.userId,
         username: socket.user.name,
-        roomId
+        roomId,
       });
     });
 
-    socket.on('typing_stop', (data) => {
+    socket.on("typing_stop", (data) => {
       const { roomId } = data;
       clearTyping(socket, roomId);
     });
 
     // Handle reactions
-    socket.on('add_reaction', async (data) => {
+    socket.on("add_reaction", async (data) => {
       try {
         const { messageId, reactionType } = data;
 
-        if (!['like', 'love', 'laugh', 'sad', 'angry'].includes(reactionType)) {
-          return socket.emit('error', { message: 'Invalid reaction type' });
+        if (!["like", "love", "laugh", "sad", "angry"].includes(reactionType)) {
+          return socket.emit("error", { message: "Invalid reaction type" });
         }
 
         // Check if message exists and user has access
         const message = await ChatMessage.findByPk(messageId, {
-          include: [{
-            model: ChatRoom,
-            as: 'Room',
-            include: [{
-              model: User,
-              as: 'Members',
-              where: { id: socket.userId },
-              required: true
-            }]
-          }]
+          include: [
+            {
+              model: ChatRoom,
+              as: "Room",
+              include: [
+                {
+                  model: User,
+                  as: "Members",
+                  where: { id: socket.userId },
+                  required: true,
+                },
+              ],
+            },
+          ],
         });
 
         if (!message) {
-          return socket.emit('error', { message: 'Message not found or access denied' });
+          return socket.emit("error", {
+            message: "Message not found or access denied",
+          });
         }
 
         // Check existing reaction
         const existingReaction = await ChatReaction.findOne({
           where: {
             message_id: messageId,
-            user_id: socket.userId
-          }
+            user_id: socket.userId,
+          },
         });
 
         let action;
@@ -215,60 +251,214 @@ const handleConnection = (io) => {
           if (existingReaction.reaction_type === reactionType) {
             // Remove reaction
             await existingReaction.destroy();
-            action = 'removed';
+            action = "removed";
           } else {
             // Update reaction
             await existingReaction.update({ reaction_type: reactionType });
-            action = 'updated';
+            action = "updated";
           }
         } else {
           // Add new reaction
           await ChatReaction.create({
             message_id: messageId,
             user_id: socket.userId,
-            reaction_type: reactionType
+            reaction_type: reactionType,
           });
-          action = 'added';
+          action = "added";
         }
 
         // Broadcast reaction update to room members
-        io.to(`room_${message.room_id}`).emit('reaction_update', {
+        io.to(`room_${message.room_id}`).emit("reaction_update", {
           messageId,
           userId: socket.userId,
           username: socket.user.name,
           reactionType,
-          action
+          action,
+        });
+      } catch (error) {
+        console.error("Error handling reaction:", error);
+        socket.emit("error", { message: "Error handling reaction" });
+      }
+    });
+
+    // Handle private message sending
+    socket.on("send_private_message", async (data) => {
+      try {
+        console.log(
+          `💬 Private message received from user ${socket.user.name}:`,
+          data
+        );
+        const { conversationId, content } = data;
+
+        if (!content || !content.trim()) {
+          console.log("❌ Empty private message content");
+          return socket.emit("error", {
+            message: "Message content is required",
+          });
+        }
+
+        // Find conversation and verify user is a participant
+        const conversation = await PrivateConversation.findByPk(conversationId);
+        if (!conversation) {
+          console.log(`❌ Conversation ${conversationId} not found`);
+          return socket.emit("error", { message: "Conversation not found" });
+        }
+
+        if (!conversation.isParticipant(socket.userId)) {
+          console.log(
+            `❌ User ${socket.user.name} not participant of conversation ${conversationId}`
+          );
+          return socket.emit("error", {
+            message: "You are not a participant in this conversation",
+          });
+        }
+
+        const receiverId = conversation.getOtherParticipant(socket.userId);
+
+        // Create the message
+        const message = await PrivateMessage.create({
+          conversation_id: conversationId,
+          sender_id: socket.userId,
+          receiver_id: receiverId,
+          content: content.trim(),
+          message_type: "text",
         });
 
+        // Update conversation last activity
+        await conversation.updateLastActivity(message.id);
+
+        // Create message status for receiver
+        await PrivateMessageStatus.create({
+          message_id: message.id,
+          user_id: receiverId,
+          status: "sent",
+        });
+
+        // Fetch complete message with sender info
+        const completeMessage = await PrivateMessage.findByPk(message.id, {
+          include: [
+            {
+              model: User,
+              as: "Sender",
+              attributes: [
+                "id",
+                "name",
+                "email",
+                "avatar_url",
+                "is_online",
+                "last_seen_at",
+              ],
+            },
+          ],
+        });
+
+        // Send to sender
+        socket.emit("new_private_message", completeMessage);
+
+        // Send to receiver if they're online
+        const receiverSocket = Array.from(io.sockets.sockets.values()).find(
+          (s) => s.userId === receiverId
+        );
+        if (receiverSocket) {
+          receiverSocket.emit("new_private_message", completeMessage);
+        }
+
+        console.log(
+          `✅ Private message ${completeMessage.id} sent successfully by ${socket.user.name}`
+        );
       } catch (error) {
-        console.error('Error handling reaction:', error);
-        socket.emit('error', { message: 'Error handling reaction' });
+        console.error("Error sending private message:", error);
+        socket.emit("error", { message: "Error sending private message" });
+      }
+    });
+
+    // Handle private chat typing indicators
+    socket.on("private_typing_start", async (data) => {
+      try {
+        const { conversationId } = data;
+
+        // Verify user is participant
+        const conversation = await PrivateConversation.findByPk(conversationId);
+        if (!conversation || !conversation.isParticipant(socket.userId)) {
+          return socket.emit("error", { message: "Invalid conversation" });
+        }
+
+        const receiverId = conversation.getOtherParticipant(socket.userId);
+
+        // Send typing indicator to receiver if online
+        const receiverSocket = Array.from(io.sockets.sockets.values()).find(
+          (s) => s.userId === receiverId
+        );
+        if (receiverSocket) {
+          receiverSocket.emit("private_user_typing", {
+            userId: socket.userId,
+            username: socket.user.name,
+            conversationId,
+          });
+        }
+      } catch (error) {
+        console.error("Error handling private typing:", error);
+      }
+    });
+
+    socket.on("private_typing_stop", async (data) => {
+      try {
+        const { conversationId } = data;
+
+        // Verify user is participant
+        const conversation = await PrivateConversation.findByPk(conversationId);
+        if (!conversation || !conversation.isParticipant(socket.userId)) {
+          return socket.emit("error", { message: "Invalid conversation" });
+        }
+
+        const receiverId = conversation.getOtherParticipant(socket.userId);
+
+        // Send stop typing indicator to receiver if online
+        const receiverSocket = Array.from(io.sockets.sockets.values()).find(
+          (s) => s.userId === receiverId
+        );
+        if (receiverSocket) {
+          receiverSocket.emit("private_user_stop_typing", {
+            userId: socket.userId,
+            conversationId,
+          });
+        }
+      } catch (error) {
+        console.error("Error handling private stop typing:", error);
       }
     });
 
     // Handle room creation
-    socket.on('create_room', async (data) => {
+    socket.on("create_room", async (data) => {
       try {
-        const { name, description, type = 'group', isPublic = true, memberIds = [] } = data;
+        const {
+          name,
+          description,
+          type = "group",
+          isPublic = true,
+          memberIds = [],
+        } = data;
 
         if (!name || !name.trim()) {
-          return socket.emit('error', { message: 'Room name is required' });
+          return socket.emit("error", { message: "Room name is required" });
         }
 
         // Validate member IDs
         let validMemberIds = [];
         if (memberIds && memberIds.length > 0) {
-          const uniqueMemberIds = [...new Set(memberIds.filter(id => id !== socket.userId))];
-          
+          const uniqueMemberIds = [
+            ...new Set(memberIds.filter((id) => id !== socket.userId)),
+          ];
+
           const validUsers = await User.findAll({
             where: {
-              id: { [require('sequelize').Op.in]: uniqueMemberIds },
-              is_active: true
+              id: { [require("sequelize").Op.in]: uniqueMemberIds },
+              is_active: true,
             },
-            attributes: ['id']
+            attributes: ["id"],
           });
-          
-          validMemberIds = validUsers.map(user => user.id);
+
+          validMemberIds = validUsers.map((user) => user.id);
         }
 
         const room = await ChatRoom.create({
@@ -276,22 +466,22 @@ const handleConnection = (io) => {
           description: description?.trim(),
           type: type,
           is_public: isPublic,
-          created_by: socket.userId
+          created_by: socket.userId,
         });
 
         // Add creator as admin member
         await ChatRoomMember.create({
           room_id: room.id,
           user_id: socket.userId,
-          is_admin: true
+          is_admin: true,
         });
 
         // Add validated members
         if (validMemberIds.length > 0) {
-          const memberData = validMemberIds.map(memberId => ({
+          const memberData = validMemberIds.map((memberId) => ({
             room_id: room.id,
             user_id: memberId,
-            is_admin: false
+            is_admin: false,
           }));
           await ChatRoomMember.bulkCreate(memberData);
         }
@@ -304,41 +494,42 @@ const handleConnection = (io) => {
           include: [
             {
               model: User,
-              as: 'Creator',
-              attributes: ['id', 'name', 'email', 'avatar_url']
+              as: "Creator",
+              attributes: ["id", "name", "email", "avatar_url"],
             },
             {
               model: User,
-              as: 'Members',
-              attributes: ['id', 'name', 'email', 'avatar_url', 'is_online'],
-              through: { attributes: ['is_admin'] }
-            }
-          ]
+              as: "Members",
+              attributes: ["id", "name", "email", "avatar_url", "is_online"],
+              through: { attributes: ["is_admin"] },
+            },
+          ],
         });
 
         // Notify creator first
-        socket.emit('room_created', {
+        socket.emit("room_created", {
           ...completeRoom.toJSON(),
           isCreator: true,
-          memberCount: validMemberIds.length + 1
+          memberCount: validMemberIds.length + 1,
         });
 
         // Notify all members about the new room
-        validMemberIds.forEach(memberId => {
-          const userSocket = Array.from(io.sockets.sockets.values())
-            .find(s => s.userId === memberId);
+        validMemberIds.forEach((memberId) => {
+          const userSocket = Array.from(io.sockets.sockets.values()).find(
+            (s) => s.userId === memberId
+          );
           if (userSocket) {
             userSocket.join(`room_${room.id}`);
-            userSocket.emit('room_created', {
+            userSocket.emit("room_created", {
               ...completeRoom.toJSON(),
               isCreator: false,
-              memberCount: validMemberIds.length + 1
+              memberCount: validMemberIds.length + 1,
             });
-            userSocket.emit('notification', {
-              type: 'room_invite',
+            userSocket.emit("notification", {
+              type: "room_invite",
               message: `You've been added to ${room.name} by ${socket.user.name}`,
               roomId: room.id,
-              timestamp: new Date().toISOString()
+              timestamp: new Date().toISOString(),
             });
           }
         });
@@ -347,36 +538,40 @@ const handleConnection = (io) => {
         const welcomeMessage = await ChatMessage.create({
           room_id: room.id,
           sender_id: socket.userId,
-          content: `🎉 Welcome to ${room.name}! ${validMemberIds.length > 0 ? 'Let\'s start chatting!' : 'Invite some friends to join!'}`,
-          type: 'text'
+          content: `🎉 Welcome to ${room.name}! ${
+            validMemberIds.length > 0
+              ? "Let's start chatting!"
+              : "Invite some friends to join!"
+          }`,
+          type: "text",
         });
 
         // Broadcast welcome message
-        io.to(`room_${room.id}`).emit('new_message', welcomeMessage);
-
+        io.to(`room_${room.id}`).emit("new_message", welcomeMessage);
       } catch (error) {
-        console.error('Error creating room:', error);
-        socket.emit('error', { 
-          message: 'Error creating room',
-          details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        console.error("Error creating room:", error);
+        socket.emit("error", {
+          message: "Error creating room",
+          details:
+            process.env.NODE_ENV === "development" ? error.message : undefined,
         });
       }
     });
 
     // Handle disconnect
-    socket.on('disconnect', () => {
+    socket.on("disconnect", () => {
       console.log(`User ${socket.user.name} disconnected`);
-      
+
       // Remove from active users
       activeUsers.delete(socket.userId);
-      
+
       // Clear typing indicators
       typingUsers.forEach((users, roomId) => {
         if (users.has(socket.userId)) {
           users.delete(socket.userId);
-          socket.to(`room_${roomId}`).emit('user_stop_typing', {
+          socket.to(`room_${roomId}`).emit("user_stop_typing", {
             userId: socket.userId,
-            roomId
+            roomId,
           });
         }
       });
@@ -388,9 +583,9 @@ const handleConnection = (io) => {
       );
 
       // Notify others that user is offline
-      socket.broadcast.emit('user_offline', {
+      socket.broadcast.emit("user_offline", {
         userId: socket.userId,
-        username: socket.user.name
+        username: socket.user.name,
       });
     });
   });
@@ -401,14 +596,14 @@ const joinUserRooms = async (socket) => {
   try {
     const userRooms = await ChatRoomMember.findAll({
       where: { user_id: socket.userId },
-      attributes: ['room_id']
+      attributes: ["room_id"],
     });
 
     userRooms.forEach(({ room_id }) => {
       socket.join(`room_${room_id}`);
     });
   } catch (error) {
-    console.error('Error joining user rooms:', error);
+    console.error("Error joining user rooms:", error);
   }
 };
 
@@ -418,9 +613,9 @@ const clearTyping = (socket, roomId) => {
     const roomTypingUsers = typingUsers.get(roomId);
     if (roomTypingUsers.has(socket.userId)) {
       roomTypingUsers.delete(socket.userId);
-      socket.to(`room_${roomId}`).emit('user_stop_typing', {
+      socket.to(`room_${roomId}`).emit("user_stop_typing", {
         userId: socket.userId,
-        roomId
+        roomId,
       });
     }
   }
@@ -431,11 +626,11 @@ const getActiveUsers = () => {
   return Array.from(activeUsers.values()).map(({ user, lastSeen }) => ({
     id: user.id,
     username: user.name,
-    lastSeen
+    lastSeen,
   }));
 };
 
 module.exports = {
   handleConnection,
-  getActiveUsers
+  getActiveUsers,
 };

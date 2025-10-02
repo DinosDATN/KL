@@ -274,6 +274,21 @@ export class SocketService {
     });
   }
 
+  // Generic methods for listening to and emitting events
+  listen(eventName: string): Observable<any> {
+    return new Observable((observer) => {
+      if (this.socket) {
+        this.socket.on(eventName, (data) => observer.next(data));
+      }
+    });
+  }
+
+  emit(eventName: string, data?: any): void {
+    if (this.socket) {
+      this.socket.emit(eventName, data);
+    }
+  }
+
   // Utility methods
   isConnected(): boolean {
     return this.socket?.connected || false;

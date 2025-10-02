@@ -1,115 +1,610 @@
+<!-- Private Chat Container -->
 <div class="private-chat-container flex h-full bg-gray-100 dark:bg-gray-900">
-  <div class="w-80 flex-shrink-0 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+  <!-- Conversations Sidebar -->
+  <div
+    class="w-80 flex-shrink-0 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+  >
     <div class="p-4 border-b border-gray-200 dark:border-gray-700">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Tin nhắn riêng</h2>
-        <button (click)="toggleFriendsList()" class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors" title="Chọn bạn bè để trò chuyện">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          Tin nhắn riêng
+        </h2>
+        <button
+          (click)="toggleFriendsList()"
+          class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+          title="Chọn bạn bè để trò chuyện"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+            ></path>
           </svg>
         </button>
       </div>
       <div class="flex space-x-2">
-        <button 
-          (click)="showFriendsList = false" 
-          [class.bg-blue-100]="!showFriendsList && !themeService.isDarkMode()" 
-          [class.bg-blue-900]="!showFriendsList && themeService.isDarkMode()" 
-          [class.text-blue-600]="!showFriendsList" 
-          [class.dark:text-blue-400]="!showFriendsList" 
-          class="flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+        <button
+          (click)="showFriendsList = false"
+          [class.bg-blue-100]="!showFriendsList && !themeService.isDarkMode()"
+          [class.bg-blue-900]="!showFriendsList && themeService.isDarkMode()"
+          [class.text-blue-600]="!showFriendsList"
+          [class.dark:text-blue-400]="!showFriendsList"
+          class="flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+        >
           Cuộc trò chuyện
         </button>
-        <button 
-          (click)="showFriendsList = true" 
-          [class.bg-blue-100]="showFriendsList && !themeService.isDarkMode()" 
-          [class.bg-blue-900]="showFriendsList && themeService.isDarkMode()" 
-          [class.text-blue-600]="showFriendsList" 
-          [class.dark:text-blue-400]="showFriendsList" 
-          class="flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
-          Bạn bè ({{friends.length}})
+        <button
+          (click)="showFriendsList = true"
+          [class.bg-blue-100]="showFriendsList && !themeService.isDarkMode()"
+          [class.bg-blue-900]="showFriendsList && themeService.isDarkMode()"
+          [class.text-blue-600]="showFriendsList"
+          [class.dark:text-blue-400]="showFriendsList"
+          class="flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+        >
+          Bạn bè ({{ friends.length }})
         </button>
       </div>
     </div>
+
+    <!-- Conversations List -->
     <div *ngIf="!showFriendsList" class="flex-1 overflow-y-auto">
-      <div *ngIf="loading" class="p-4 text-center">
-        <div class="flex items-center justify-center space-x-2 text-gray-500 dark:text-gray-400">
-          <svg class="animate-spin w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4a2 2 0 110-4m6 4a2 2 0 100-4m0 4a2 2 0 100 4m0-4a2 2 0 110-4"></path>
-          </svg>
-          <span>Đang tải...</span>
+      <div *ngIf="loading" class="flex justify-center items-center py-4">
+        <div class="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+          <div
+            class="loading-spinner rounded-full h-4 w-4 border-2 border-blue-600"
+          ></div>
+          <span class="text-sm font-medium">Đang tải...</span>
         </div>
       </div>
-      <div *ngIf="!loading && conversations.length === 0" class="p-4 text-center">
-        <p class="text-gray-500 dark:text-gray-400 text-sm">Chưa có cuộc trò chuyện nào</p>
+
+      <div
+        *ngIf="!loading && conversations.length === 0"
+        class="p-4 text-center"
+      >
+        <p class="text-gray-500 dark:text-gray-400 text-sm">
+          Chưa có cuộc trò chuyện nào
+        </p>
       </div>
-      <div *ngIf="!loading && conversations.length > 0" class="divide-y divide-gray-200 dark:divide-gray-700">
-        <div *ngFor="let conversation of conversations" (click)="onSelectConversation(conversation)" class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors">
+
+      <div
+        *ngIf="!loading && conversations.length > 0"
+        class="divide-y divide-gray-200 dark:divide-gray-700"
+      >
+        <div
+          *ngFor="
+            let conversation of conversations;
+            trackBy: trackByConversationId
+          "
+          (click)="onSelectConversation(conversation)"
+          [class.bg-blue-50]="
+            activeConversation?.id === conversation.id &&
+            !themeService.isDarkMode()
+          "
+          [class.bg-blue-900]="
+            activeConversation?.id === conversation.id &&
+            themeService.isDarkMode()
+          "
+          class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-all duration-200"
+        >
           <div class="flex items-center space-x-3">
-            <div class="relative flex-shrink-0">
-              <img [src]="conversation.other_participant?.avatar_url || '/assets/default-avatar.svg'" [alt]="conversation.other_participant?.name" class="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-600">
+            <div
+              class="relative flex-shrink-0"
+              [class]="
+                conversation.other_participant?.is_online
+                  ? 'online-indicator'
+                  : 'offline-indicator'
+              "
+            >
+              <div
+                class="w-12 h-12 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center shadow-md"
+              >
+                <img
+                  *ngIf="
+                    conversation.other_participant?.avatar_url;
+                    else userInitials
+                  "
+                  [src]="conversation.other_participant?.avatar_url"
+                  [alt]="conversation.other_participant?.name"
+                  class="w-full h-full rounded-full object-cover"
+                />
+                <ng-template #userInitials>
+                  <span class="text-white text-sm font-medium">
+                    {{
+                      getUserInitials(
+                        conversation.other_participant?.name || ""
+                      )
+                    }}
+                  </span>
+                </ng-template>
+              </div>
             </div>
             <div class="flex-1 min-w-0">
-              <h3 class="text-sm font-medium text-gray-900 dark:text-white truncate">{{getConversationTitle(conversation)}}</h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 truncate">{{getConversationSubtitle(conversation)}}</p>
+              <div class="flex justify-between items-center">
+                <h3
+                  class="text-sm font-medium text-gray-900 dark:text-white truncate"
+                >
+                  {{ getConversationTitle(conversation) }}
+                </h3>
+                <span
+                  *ngIf="conversation.last_message"
+                  class="text-xs text-gray-500 dark:text-gray-400"
+                >
+                  {{ getMessageTime(conversation.last_message) }}
+                </span>
+              </div>
+              <div class="flex justify-between items-center mt-1">
+                <p
+                  class="text-sm text-gray-500 dark:text-gray-400 truncate flex-1"
+                >
+                  {{ getConversationSubtitle(conversation) }}
+                </p>
+                <div
+                  *ngIf="
+                    conversation.unread_count && conversation.unread_count > 0
+                  "
+                  class="ml-2 bg-blue-600 text-white text-xs rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5"
+                >
+                  {{ conversation.unread_count }}
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Friends List -->
     <div *ngIf="showFriendsList" class="flex-1 overflow-y-auto">
       <div *ngIf="friends.length === 0" class="p-4 text-center">
-        <p class="text-gray-500 dark:text-gray-400 text-sm">Chưa có bạn bè nào</p>
+        <p class="text-gray-500 dark:text-gray-400 text-sm">
+          Chưa có bạn bè nào
+        </p>
       </div>
-      <div *ngIf="friends.length > 0" class="divide-y divide-gray-200 dark:divide-gray-700">
-        <div *ngFor="let friendReq of friends" (click)="onSelectFriend(friendReq)" class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors">
+
+      <div
+        *ngIf="friends.length > 0"
+        class="divide-y divide-gray-200 dark:divide-gray-700"
+      >
+        <div
+          *ngFor="let friendReq of friends; trackBy: trackByFriendId"
+          (click)="onSelectFriend(friendReq)"
+          class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-all duration-200"
+        >
           <div class="flex items-center space-x-3">
-            <div class="relative flex-shrink-0">
-              <img [src]="friendReq.friend.avatar_url || '/assets/default-avatar.svg'" [alt]="friendReq.friend.name" class="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-600">
+            <div
+              class="relative flex-shrink-0"
+              [class]="
+                getOnlineStatus(friendReq.friend)
+                  ? 'online-indicator'
+                  : 'offline-indicator'
+              "
+            >
+              <div
+                class="w-12 h-12 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center shadow-md"
+              >
+                <img
+                  *ngIf="friendReq.friend.avatar_url; else friendInitials"
+                  [src]="friendReq.friend.avatar_url"
+                  [alt]="friendReq.friend.name"
+                  class="w-full h-full rounded-full object-cover"
+                />
+                <ng-template #friendInitials>
+                  <span class="text-white text-sm font-medium">
+                    {{ getUserInitials(friendReq.friend.name) }}
+                  </span>
+                </ng-template>
+              </div>
             </div>
             <div class="flex-1 min-w-0">
-              <h3 class="text-sm font-medium text-gray-900 dark:text-white truncate">{{friendReq.friend.name}}</h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 truncate">{{friendReq.friend.is_online ? 'Đang trực tuyến' : 'Ngoại tuyến'}}</p>
+              <h3
+                class="text-sm font-medium text-gray-900 dark:text-white truncate"
+              >
+                {{ friendReq.friend.name }}
+              </h3>
+              <p
+                class="text-sm transition-colors duration-200"
+                [class.text-green-600]="
+                  getOnlineStatus(friendReq.friend) &&
+                  !themeService.isDarkMode()
+                "
+                [class.text-green-400]="
+                  getOnlineStatus(friendReq.friend) && themeService.isDarkMode()
+                "
+                [class.text-gray-500]="
+                  !getOnlineStatus(friendReq.friend) &&
+                  !themeService.isDarkMode()
+                "
+                [class.text-gray-400]="
+                  !getOnlineStatus(friendReq.friend) &&
+                  themeService.isDarkMode()
+                "
+              >
+                {{
+                  getOnlineStatus(friendReq.friend)
+                    ? "Đang trực tuyến"
+                    : "Ngoại tuyến"
+                }}
+              </p>
             </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-  <div class="flex-1 flex flex-col">
-    <div *ngIf="!activeConversation" class="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+
+  <!-- Chat Area -->
+  <div class="flex-1 flex flex-col relative">
+    <!-- Empty State -->
+    <div
+      *ngIf="!activeConversation"
+      class="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-900"
+    >
       <div class="text-center max-w-md mx-auto px-6">
-        <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-3">Tin nhắn riêng</h2>
-        <p class="text-lg text-gray-600 dark:text-gray-400 leading-relaxed">Chọn cuộc trò chuyện hoặc bạn bè để bắt đầu nhắn tin</p>
+        <div
+          class="w-24 h-24 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg"
+        >
+          <svg
+            class="w-12 h-12 text-white"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+            ></path>
+          </svg>
+        </div>
+        <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-3">
+          Tin nhắn riêng
+        </h2>
+        <p class="text-lg text-gray-600 dark:text-gray-400 leading-relaxed">
+          Chọn cuộc trò chuyện hoặc bạn bè để bắt đầu nhắn tin
+        </p>
       </div>
     </div>
+
+    <!-- Active Conversation -->
     <div *ngIf="activeConversation" class="flex-1 flex flex-col">
-      <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-        <div class="flex items-center space-x-3">
-          <img [src]="activeConversation.other_participant?.avatar_url || '/assets/default-avatar.svg'" [alt]="activeConversation.other_participant?.name" class="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-600">
-          <div>
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{getConversationTitle(activeConversation)}}</h3>
+      <!-- Chat Header -->
+      <div
+        class="chat-header-fixed flex items-center justify-between p-4 bg-white/95 dark:bg-gray-800/95"
+      >
+        <div class="flex items-center gap-3">
+          <div
+            class="relative"
+            [class]="
+              activeConversation.other_participant?.is_online
+                ? 'online-indicator'
+                : 'offline-indicator'
+            "
+          >
+            <div
+              class="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-xl flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200"
+            >
+              <img
+                *ngIf="
+                  activeConversation.other_participant?.avatar_url;
+                  else headerInitials
+                "
+                [src]="activeConversation.other_participant?.avatar_url"
+                [alt]="activeConversation.other_participant?.name"
+                class="w-full h-full rounded-lg object-cover"
+              />
+              <ng-template #headerInitials>
+                <span class="text-white font-semibold text-sm">
+                  {{
+                    getUserInitials(
+                      activeConversation.other_participant?.name || ""
+                    )
+                  }}
+                </span>
+              </ng-template>
+            </div>
           </div>
-        </div>
-      </div>
-      <div class="flex-1 overflow-y-auto px-6 py-4 bg-gray-50 dark:bg-gray-900">
-        <div *ngIf="messages.length === 0" class="text-center py-8">
-          <p class="text-gray-500 dark:text-gray-400">Bắt đầu cuộc trò chuyện</p>
-        </div>
-        <div *ngIf="messages.length > 0" class="space-y-4">
-          <div *ngFor="let message of messages" class="flex items-end space-x-2">
-            <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-2xl shadow-sm bg-white dark:bg-gray-800">
-              <p class="text-sm">{{message.content}}</p>
+          <div>
+            <h2 class="font-semibold text-gray-900 dark:text-white">
+              {{ getConversationTitle(activeConversation) }}
+            </h2>
+            <div
+              class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400"
+            >
+              <span
+                *ngIf="getTypingText()"
+                class="text-blue-600 dark:text-blue-400"
+              >
+                {{ getTypingText() }}
+              </span>
+              <span
+                *ngIf="!getTypingText()"
+                [class.text-green-600]="
+                  activeConversation.other_participant?.is_online &&
+                  !themeService.isDarkMode()
+                "
+                [class.text-green-400]="
+                  activeConversation.other_participant?.is_online &&
+                  themeService.isDarkMode()
+                "
+              >
+                {{
+                  activeConversation.other_participant?.is_online
+                    ? "Đang online"
+                    : "Offline"
+                }}
+              </span>
             </div>
           </div>
         </div>
       </div>
-      <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-        <div class="flex items-end space-x-3">
-          <div class="flex-1">
-            <textarea [(ngModel)]="newMessage" (keydown)="onKeyPress($event)" placeholder="Nhập tin nhắn..." rows="1" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"></textarea>
+
+      <!-- Messages Area -->
+      <div
+        #messagesContainer
+        class="chat-messages-scroll flex-1 p-4 overflow-x-hidden relative"
+        (scroll)="onScroll($event)"
+      >
+        <!-- Loading Older Messages Indicator -->
+        <div
+          *ngIf="isLoadingOlderMessages"
+          class="flex justify-center items-center py-4 loading-indicator"
+        >
+          <div class="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+            <div
+              class="loading-spinner rounded-full h-4 w-4 border-2 border-blue-600"
+            ></div>
+            <span class="text-sm font-medium">Đang tải tin nhắn cũ...</span>
           </div>
-          <button (click)="onSendMessage()" [disabled]="!newMessage.trim()" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-2xl">
-            Gửi
+        </div>
+
+        <!-- No More Messages Indicator -->
+        <div
+          *ngIf="!hasMoreMessages && messages.length > 0"
+          class="flex justify-center items-center py-2 no-more-messages"
+        >
+          <div class="text-gray-500 dark:text-gray-400 text-sm">
+            🎯 Bạn đã xem hết tin nhắn trong cuộc trò chuyện này
+          </div>
+        </div>
+
+        <!-- New Message Indicator -->
+        <div
+          *ngIf="showNewMessageIndicator"
+          class="fixed bottom-32 left-1/2 transform -translate-x-1/2 z-30"
+        >
+          <button
+            (click)="onNewMessageIndicatorClick()"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 transition-all duration-200 animate-bounce"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 14l-7 7m0 0l-7-7m7 7V4"
+              ></path>
+            </svg>
+            <span>{{ newMessageCount }} tin nhắn mới</span>
+          </button>
+        </div>
+
+        <!-- Messages with Date Separators -->
+        <div *ngFor="let group of getGroupedMessages(); trackBy: trackByDate">
+          <div class="flex items-center justify-center">
+            <div
+              class="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs px-3 py-1 rounded-full"
+            >
+              {{ group.date }}
+            </div>
+          </div>
+
+          <!-- Messages in this date group -->
+          <div
+            *ngFor="let message of group.messages; trackBy: trackByMessageId"
+            [class]="
+              'message-appear ' +
+              (message.sender_id === currentUser?.id
+                ? 'flex justify-end'
+                : 'flex justify-start')
+            "
+          >
+            <!-- Message Bubble -->
+            <div
+              [class]="
+                'group message-bubble flex items-end gap-2 max-w-xs lg:max-w-md xl:max-w-lg ' +
+                (message.sender_id === currentUser?.id
+                  ? 'flex-row-reverse'
+                  : 'flex-row')
+              "
+            >
+              <!-- User Avatar (for others) -->
+              <div
+                *ngIf="message.sender_id !== currentUser?.id"
+                class="flex-shrink-0"
+              >
+                <div
+                  class="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center mb-8"
+                >
+                  <img
+                    *ngIf="getSender(message)?.avatar_url; else senderInitials"
+                    [src]="getSender(message)?.avatar_url"
+                    [alt]="getSender(message)?.name"
+                    class="w-full h-full rounded-full object-cover"
+                  />
+                  <ng-template #senderInitials>
+                    <span class="text-white text-xs font-medium">
+                      {{ getUserInitials(getSender(message)?.name || "") }}
+                    </span>
+                  </ng-template>
+                </div>
+              </div>
+
+              <!-- Message Content -->
+              <div
+                [class]="
+                  'flex flex-col ' +
+                  (message.sender_id === currentUser?.id
+                    ? 'items-end'
+                    : 'items-start')
+                "
+              >
+                <!-- Sender Name (for others) -->
+                <div
+                  *ngIf="message.sender_id !== currentUser?.id"
+                  class="text-xs text-gray-500 dark:text-gray-400 mb-1 ml-1"
+                >
+                  {{ getSender(message)?.name }}
+                </div>
+
+                <!-- Message Bubble -->
+                <div
+                  [class]="
+                    'rounded-2xl px-4 py-2 shadow-sm ' +
+                    (message.sender_id === currentUser?.id
+                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-blue-500/20'
+                      : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-600 hover:shadow-md transition-shadow duration-200')
+                  "
+                >
+                  <!-- Message Text -->
+                  <div class="break-words">{{ message.content }}</div>
+                </div>
+
+                <!-- Message Actions -->
+                <div
+                  class="flex items-center gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                >
+                  <!-- Timestamp -->
+                  <span class="text-xs text-gray-400 dark:text-gray-500">
+                    {{ getMessageTime(message) }}
+                  </span>
+
+                  <!-- Read Status -->
+                  <div
+                    *ngIf="message.sender_id === currentUser?.id"
+                    class="ml-2"
+                  >
+                    <svg
+                      *ngIf="message.read_status === 'read'"
+                      class="w-3 h-3 text-blue-600"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      ></path>
+                    </svg>
+                    <svg
+                      *ngIf="message.read_status !== 'read'"
+                      class="w-3 h-3 text-gray-400"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      ></path>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Typing Indicators -->
+        <div *ngIf="typingUsers.length > 0" class="flex items-center gap-2">
+          <div class="w-8 h-8"></div>
+          <div
+            class="bg-gray-200 dark:bg-gray-700 rounded-2xl px-4 py-2 text-gray-600 dark:text-gray-400"
+          >
+            <div class="flex items-center gap-2">
+              <div class="typing-dots">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+              </div>
+              <span class="text-sm">
+                {{ getTypingText() }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Message Input -->
+      <div class="chat-input-fixed p-4 bg-white/95 dark:bg-gray-800/95">
+        <div class="flex items-center justify-center gap-3">
+          <!-- File Upload Button -->
+          <button
+            type="button"
+            class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+            title="Đính kèm file"
+          >
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+              ></path>
+            </svg>
+          </button>
+
+          <!-- Message Input -->
+          <div class="flex-1">
+            <textarea
+              #messageInput
+              [(ngModel)]="newMessage"
+              (keydown)="onKeyDown($event)"
+              (input)="onInputChange()"
+              placeholder="Nhập tin nhắn..."
+              rows="1"
+              class="message-input w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-2xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+              style="min-height: 44px; max-height: 120px"
+            ></textarea>
+          </div>
+
+          <!-- Send Button -->
+          <button
+            (click)="send()"
+            [disabled]="!newMessage.trim()"
+            [class]="
+              'p-3 rounded-2xl transition-all duration-200 ' +
+              (newMessage.trim()
+                ? 'bg-blue-600 hover:bg-blue-700 text-white btn-primary'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed')
+            "
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+              ></path>
+            </svg>
           </button>
         </div>
       </div>

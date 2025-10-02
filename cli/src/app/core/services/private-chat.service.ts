@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
-import { map, tap, catchError } from 'rxjs/operators';
+import { Observable, BehaviorSubject, Subject } from 'rxjs';
+import { map, tap, catchError, takeUntil } from 'rxjs/operators';
 import {
   PrivateConversation,
   PrivateMessage,
@@ -9,8 +9,10 @@ import {
   MessageListResponse,
   UnreadCountResponse
 } from '../models/private-chat.model';
+import { User } from '../models/user.model';
 import { AuthService } from './auth.service';
 import { NotificationService } from './notification.service';
+import { SocketService } from './socket.service';
 import { environment } from '../../../environments/environment';
 
 @Injectable({
@@ -24,19 +26,24 @@ export class PrivateChatService {
   private messagesSubject = new BehaviorSubject<{[conversationId: number]: PrivateMessage[]}>({});
   private unreadCountSubject = new BehaviorSubject<number>(0);
   private activeConversationSubject = new BehaviorSubject<PrivateConversation | null>(null);
+  private typingUsersSubject = new BehaviorSubject<{[conversationId: number]: User[]}>({});
+  private destroy$ = new Subject<void>();
   
   // Public observables
   public conversations$ = this.conversationsSubject.asObservable();
   public messages$ = this.messagesSubject.asObservable();
   public unreadCount$ = this.unreadCountSubject.asObservable();
   public activeConversation$ = this.activeConversationSubject.asObservable();
+  public typingUsers$ = this.typingUsersSubject.asObservable();
   
   constructor(
     private http: HttpClient,
     private authService: AuthService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private socketService: SocketService
   ) {
     this.loadInitialData();
+    this.initializeSocketListeners();
   }
   
   // Initialize data
@@ -45,6 +52,50 @@ export class PrivateChatService {
       this.loadConversations().subscribe();
       this.loadUnreadCount().subscribe();
     }
+  }
+
+  // Initialize Socket.IO listeners
+  private initializeSocketListeners(): void {
+    // Listen for new private messages
+    this.socketService.listen('new_private_message')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((message: PrivateMessage) => {
+        if (message) {
+          console.log('📬 PrivateChat: New message received', message);
+          this.addMessageToConversation(message.conversation_id, message);
+          this.updateConversationLastActivity(message.conversation_id, message);
+          this.loadUnreadCount().subscribe();
+        }
+      });
+
+    // Listen for private typing indicators
+    this.socketService.listen('private_user_typing')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((data: {userId: number, username: string, conversationId: number}) => {
+        if (data) {
+          this.addTypingUser(data.conversationId, {
+            id: data.userId,
+            name: data.username,
+            email: '',
+            role: 'user',
+            is_active: true,
+            is_online: true,
+            last_seen_at: null,
+            subscription_status: 'free',
+            subscription_end_date: null,
+            created_at: '',
+            updated_at: ''
+          } as User);
+        }
+      });
+
+    this.socketService.listen('private_user_stop_typing')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((data: {userId: number, conversationId: number}) => {
+        if (data) {
+          this.removeTypingUser(data.conversationId, data.userId);
+        }
+      });
   }
   
   // Conversation management
@@ -105,15 +156,18 @@ export class PrivateChatService {
   }
   
   sendMessage(conversationId: number, content: string): Observable<PrivateMessage> {
+    // Send via Socket.IO for real-time delivery
+    this.socketService.emit('send_private_message', {
+      conversationId,
+      content: content.trim()
+    });
+    
+    // Also make HTTP call for reliability
     return this.http.post<{success: boolean, data: PrivateMessage}>(
       `${this.apiUrl}/private-chat/conversations/${conversationId}/messages`,
       { content: content.trim(), message_type: 'text' }
     ).pipe(
-      map(response => response.data),
-      tap(message => {
-        this.addMessageToConversation(conversationId, message);
-        this.updateConversationLastActivity(conversationId, message);
-      })
+      map(response => response.data)
     );
   }
   
@@ -204,10 +258,92 @@ export class PrivateChatService {
     ) || null;
   }
   
+  // Typing indicators
+  startTyping(conversationId: number): void {
+    this.socketService.emit('private_typing_start', { conversationId });
+  }
+
+  stopTyping(conversationId: number): void {
+    this.socketService.emit('private_typing_stop', { conversationId });
+  }
+
+  // Typing users management
+  private addTypingUser(conversationId: number, user: User): void {
+    const currentTyping = this.typingUsersSubject.value;
+    if (!currentTyping[conversationId]) {
+      currentTyping[conversationId] = [];
+    }
+    
+    const existingIndex = currentTyping[conversationId].findIndex(u => u.id === user.id);
+    if (existingIndex === -1) {
+      currentTyping[conversationId].push(user);
+      this.typingUsersSubject.next({...currentTyping});
+    }
+  }
+
+  private removeTypingUser(conversationId: number, userId: number): void {
+    const currentTyping = this.typingUsersSubject.value;
+    if (currentTyping[conversationId]) {
+      currentTyping[conversationId] = currentTyping[conversationId].filter(u => u.id !== userId);
+      this.typingUsersSubject.next({...currentTyping});
+    }
+  }
+
+  getTypingUsersForConversation(conversationId: number): User[] {
+    return this.typingUsersSubject.value[conversationId] || [];
+  }
+
+  // Utility methods for pagination and message grouping
+  getGroupedMessages(conversationId: number): { date: string; messages: PrivateMessage[] }[] {
+    const messages = this.getMessagesForConversation(conversationId);
+    const groups: { [key: string]: PrivateMessage[] } = {};
+
+    messages.forEach((message) => {
+      const date = new Date(message.sent_at).toLocaleDateString('vi-VN');
+      if (!groups[date]) {
+        groups[date] = [];
+      }
+      groups[date].push(message);
+    });
+
+    return Object.entries(groups).map(([date, messages]) => ({
+      date,
+      messages,
+    }));
+  }
+
+  getMessageTime(message: PrivateMessage): string {
+    const now = new Date();
+    const messageTime = new Date(message.sent_at);
+    const diffInMinutes = Math.floor(
+      (now.getTime() - messageTime.getTime()) / (1000 * 60)
+    );
+
+    if (diffInMinutes < 1) return 'Vừa xong';
+    if (diffInMinutes < 60) return `${diffInMinutes} phút`;
+
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours} giờ`;
+
+    return messageTime.toLocaleString('vi-VN');
+  }
+
+  getUserInitials(name: string): string {
+    return name
+      .split(' ')
+      .map((word) => word.charAt(0))
+      .join('')
+      .substring(0, 2)
+      .toUpperCase();
+  }
+
   clearData(): void {
     this.conversationsSubject.next([]);
     this.messagesSubject.next({});
     this.unreadCountSubject.next(0);
     this.activeConversationSubject.next(null);
+    this.typingUsersSubject.next({});
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }
