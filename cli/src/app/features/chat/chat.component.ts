@@ -27,10 +27,14 @@ import { ChatService } from '../../core/services/chat.service';
 import { AuthService } from '../../core/services/auth.service';
 
 // Components
-import { ChatSidebarComponent } from '../forum/components/chat-sidebar/chat-sidebar.component';
-import { ChatMainComponent } from '../forum/components/chat-main/chat-main.component';
-import { CreateGroupModalComponent } from '../forum/components/create-group-modal/create-group-modal.component';
-import { ChatSettingsModalComponent, ChatSettings, MemberAction } from '../forum/components/chat-settings-modal/chat-settings-modal.component';
+import { ChatSidebarComponent } from './components/chat-sidebar/chat-sidebar.component';
+import { ChatMainComponent } from './components/chat-main/chat-main.component';
+import { CreateGroupModalComponent } from './components/create-group-modal/create-group-modal.component';
+import {
+  ChatSettingsModalComponent,
+  ChatSettings,
+  MemberAction,
+} from './components/chat-settings-modal/chat-settings-modal.component';
 import { NotificationToastComponent } from '../../shared/components/notification-toast/notification-toast.component';
 import { FriendsListComponent } from './components/friends-list/friends-list.component';
 import { FriendRequestsComponent } from './components/friend-requests/friend-requests.component';
@@ -54,12 +58,12 @@ import { PrivateChatComponent } from './components/private-chat/private-chat.com
     PrivateChatComponent,
   ],
   templateUrl: './chat.component.html',
-  styleUrl: './chat.component.css'
+  styleUrl: './chat.component.css',
 })
 export class ChatComponent implements OnInit, OnDestroy {
   // Data
   chatRooms: ChatRoom[] = [];
-  messages: {[roomId: number]: ChatMessage[]} = {};
+  messages: { [roomId: number]: ChatMessage[] } = {};
   users: User[] = [];
   roomMembers: ChatRoomMember[] = [];
   reactions: ChatReaction[] = [];
@@ -75,13 +79,15 @@ export class ChatComponent implements OnInit, OnDestroy {
   showCreateGroupModal = false;
   isTyping = false;
   typingUsers: User[] = [];
-  
+
   // Chat mode: 'groups' for group chat, 'private' for 1-1 chats, 'friends' for friends management
   chatMode: 'groups' | 'private' | 'friends' = 'groups';
   friendsTab: 'list' | 'requests' | 'search' = 'list';
-  
+
   // Pagination state
-  messagePagination: { [roomId: number]: { page: number; hasMore: boolean; loading: boolean } } = {};
+  messagePagination: {
+    [roomId: number]: { page: number; hasMore: boolean; loading: boolean };
+  } = {};
 
   // Search
   searchTerm = '';
@@ -97,11 +103,11 @@ export class ChatComponent implements OnInit, OnDestroy {
   ) {
     // Get current user from auth service
     this.currentUser = this.authService.getCurrentUser();
-    
+
     // Subscribe to authentication state changes
     this.authService.currentUser$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(user => {
+      .subscribe((user) => {
         this.currentUser = user;
         if (user) {
           console.log('✅ Chat: User authenticated:', user.name);
@@ -120,7 +126,7 @@ export class ChatComponent implements OnInit, OnDestroy {
     if (isPlatformBrowser(this.platformId)) {
       window.addEventListener('resize', this.onResize.bind(this));
     }
-    
+
     // Initialize chat if user is already authenticated
     if (this.currentUser) {
       this.initializeChat();
@@ -148,14 +154,15 @@ export class ChatComponent implements OnInit, OnDestroy {
     this.chatService.initializeChat();
 
     // Subscribe to rooms
-    this.chatService.getRoomsForCurrentUser()
+    this.chatService
+      .getRoomsForCurrentUser()
       .pipe(takeUntil(this.destroy$))
-      .subscribe(rooms => {
+      .subscribe((rooms) => {
         this.chatRooms = rooms;
-        
+
         // Load users and room members from the rooms data
         this.loadUsersFromRooms(rooms);
-        
+
         // Auto-select first room if available and no room is selected
         if (rooms.length > 0 && !this.selectedRoom) {
           this.selectRoom(rooms[0]);
@@ -165,7 +172,7 @@ export class ChatComponent implements OnInit, OnDestroy {
     // Subscribe to online users
     this.chatService.onlineUsers$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(users => {
+      .subscribe((users) => {
         this.onlineUsers = users;
       });
   }
@@ -178,7 +185,7 @@ export class ChatComponent implements OnInit, OnDestroy {
     this.onlineUsers = [];
     this.roomMembers = [];
     this.reactions = [];
-    
+
     // Disconnect from chat service
     this.chatService.disconnect();
   }
@@ -186,47 +193,47 @@ export class ChatComponent implements OnInit, OnDestroy {
   private loadUsersFromRooms(rooms: ChatRoom[]): void {
     // Extract all users from rooms data (creators, members)
     const allUsers = new Map<number, User>();
-    
-    rooms.forEach(room => {
+
+    rooms.forEach((room) => {
       // Add creator
       if (room.Creator) {
         allUsers.set(room.Creator.id, room.Creator);
       }
-      
+
       // Add all members if available
       if (room.all_members) {
-        room.all_members.forEach(user => {
+        room.all_members.forEach((user) => {
           if (user && user.id) {
             allUsers.set(user.id, user);
           }
         });
       }
-      
+
       // Add members from Members association
       if (room.Members) {
-        room.Members.forEach(user => {
+        room.Members.forEach((user) => {
           if (user && user.id) {
             allUsers.set(user.id, user);
           }
         });
       }
     });
-    
+
     this.users = Array.from(allUsers.values());
     console.log(`👥 Loaded ${this.users.length} users from rooms data`);
   }
 
   private loadUsersFromMessages(messages: ChatMessage[]): void {
-    const existingUserIds = new Set(this.users.map(u => u.id));
+    const existingUserIds = new Set(this.users.map((u) => u.id));
     const newUsers: User[] = [];
-    
-    messages.forEach(message => {
+
+    messages.forEach((message) => {
       if (message.Sender && !existingUserIds.has(message.Sender.id)) {
         newUsers.push(message.Sender);
         existingUserIds.add(message.Sender.id);
       }
     });
-    
+
     if (newUsers.length > 0) {
       this.users = [...this.users, ...newUsers];
       console.log(`👥 Added ${newUsers.length} new users from messages`);
@@ -237,7 +244,7 @@ export class ChatComponent implements OnInit, OnDestroy {
   onRoomSelected(room: ChatRoom): void {
     console.log('🏠 Room selected:', room.name);
     this.selectRoom(room);
-    
+
     // Close sidebar on mobile when room is selected
     if (this.isMobileView) {
       this.showSidebar = false;
@@ -250,9 +257,19 @@ export class ChatComponent implements OnInit, OnDestroy {
       console.error('❌ Cannot send message: no room selected');
       return;
     }
-    
-    console.log('💬 Sending message:', content, 'to room:', this.selectedRoom.id);
-    this.chatService.sendMessage(this.selectedRoom.id, content, 'text', undefined);
+
+    console.log(
+      '💬 Sending message:',
+      content,
+      'to room:',
+      this.selectedRoom.id
+    );
+    this.chatService.sendMessage(
+      this.selectedRoom.id,
+      content,
+      'text',
+      undefined
+    );
   }
 
   onReactToMessage(messageId: number, reactionType: string): void {
@@ -266,14 +283,22 @@ export class ChatComponent implements OnInit, OnDestroy {
       console.error('❌ Cannot update settings: no room selected');
       return;
     }
-    
-    console.log('⚙️ Updating chat settings:', settings, 'for room:', this.selectedRoom.id);
-    this.chatService.updateRoomSettings(this.selectedRoom.id, settings)
+
+    console.log(
+      '⚙️ Updating chat settings:',
+      settings,
+      'for room:',
+      this.selectedRoom.id
+    );
+    this.chatService
+      .updateRoomSettings(this.selectedRoom.id, settings)
       .subscribe({
         next: (updatedRoom) => {
           console.log('✅ Room settings updated:', updatedRoom.name);
           // Update local room data
-          const roomIndex = this.chatRooms.findIndex(r => r.id === this.selectedRoom!.id);
+          const roomIndex = this.chatRooms.findIndex(
+            (r) => r.id === this.selectedRoom!.id
+          );
           if (roomIndex !== -1) {
             this.chatRooms[roomIndex] = updatedRoom;
             this.selectedRoom = updatedRoom;
@@ -281,19 +306,25 @@ export class ChatComponent implements OnInit, OnDestroy {
         },
         error: (error) => {
           console.error('❌ Error updating room settings:', error);
-        }
+        },
       });
   }
 
   onHandleMemberAction(action: MemberAction): void {
     if (!this.selectedRoom) return;
-    
-    console.log('👥 Handling member action:', action.type, 'for user', action.user?.name);
-    
+
+    console.log(
+      '👥 Handling member action:',
+      action.type,
+      'for user',
+      action.user?.name
+    );
+
     switch (action.type) {
       case 'add':
         if (action.userId) {
-          this.chatService.addMemberToRoom(this.selectedRoom.id, action.userId)
+          this.chatService
+            .addMemberToRoom(this.selectedRoom.id, action.userId)
             .subscribe({
               next: (user) => {
                 console.log('✅ Member added:', user.name);
@@ -302,66 +333,75 @@ export class ChatComponent implements OnInit, OnDestroy {
                   room_id: this.selectedRoom!.id,
                   user_id: user.id,
                   is_admin: false,
-                  User: user
+                  User: user,
                 } as ChatRoomMember);
               },
               error: (error) => {
                 console.error('❌ Error adding member:', error);
-              }
+              },
             });
         }
         break;
-      
+
       case 'remove':
         if (action.userId) {
-          this.chatService.removeMemberFromRoom(this.selectedRoom.id, action.userId)
+          this.chatService
+            .removeMemberFromRoom(this.selectedRoom.id, action.userId)
             .subscribe({
               next: () => {
                 console.log('✅ Member removed:', action.user?.name);
                 // Update local members list
-                this.roomMembers = this.roomMembers.filter(m => m.user_id !== action.userId);
+                this.roomMembers = this.roomMembers.filter(
+                  (m) => m.user_id !== action.userId
+                );
               },
               error: (error) => {
                 console.error('❌ Error removing member:', error);
-              }
+              },
             });
         }
         break;
-      
+
       case 'promote':
         if (action.userId) {
-          this.chatService.updateMemberRole(this.selectedRoom.id, action.userId, true)
+          this.chatService
+            .updateMemberRole(this.selectedRoom.id, action.userId, true)
             .subscribe({
               next: () => {
                 console.log('✅ Member promoted:', action.user?.name);
                 // Update local members list
-                const member = this.roomMembers.find(m => m.user_id === action.userId);
+                const member = this.roomMembers.find(
+                  (m) => m.user_id === action.userId
+                );
                 if (member) {
                   member.is_admin = true;
                 }
               },
               error: (error) => {
                 console.error('❌ Error promoting member:', error);
-              }
+              },
             });
         }
         break;
-      
+
       case 'demote':
         if (action.userId) {
-          this.chatService.updateMemberRole(this.selectedRoom.id, action.userId, false)
+          this.chatService
+            .updateMemberRole(this.selectedRoom.id, action.userId, false)
             .subscribe({
               next: () => {
                 console.log('✅ Member demoted:', action.user?.name);
                 // Update local members list
-                const member = this.roomMembers.find(m => m.user_id === action.userId);
+                const member = this.roomMembers.find(
+                  (m) => m.user_id === action.userId
+                );
                 if (member) {
                   member.is_admin = false;
                 }
               },
               error: (error) => {
                 console.error('❌ Error demoting member:', error);
-              }
+              },
             });
         }
         break;
@@ -369,41 +409,39 @@ export class ChatComponent implements OnInit, OnDestroy {
   }
 
   onDeleteRoom(roomId: number): void {
-    this.chatService.deleteRoom(roomId)
-      .subscribe({
-        next: () => {
-          console.log('✅ Room deleted');
-          // Room will be removed from local state by the service
-          this.selectedRoom = null;
-          
-          // Select first available room if any
-          if (this.chatRooms.length > 0) {
-            this.selectRoom(this.chatRooms[0]);
-          }
-        },
-        error: (error) => {
-          console.error('❌ Error deleting room:', error);
+    this.chatService.deleteRoom(roomId).subscribe({
+      next: () => {
+        console.log('✅ Room deleted');
+        // Room will be removed from local state by the service
+        this.selectedRoom = null;
+
+        // Select first available room if any
+        if (this.chatRooms.length > 0) {
+          this.selectRoom(this.chatRooms[0]);
         }
-      });
+      },
+      error: (error) => {
+        console.error('❌ Error deleting room:', error);
+      },
+    });
   }
 
   onLeaveRoom(roomId: number): void {
-    this.chatService.leaveRoom(roomId)
-      .subscribe({
-        next: () => {
-          console.log('✅ Left room');
-          // Room will be removed from local state by the service
-          this.selectedRoom = null;
-          
-          // Select first available room if any
-          if (this.chatRooms.length > 0) {
-            this.selectRoom(this.chatRooms[0]);
-          }
-        },
-        error: (error: any) => {
-          console.error('❌ Error leaving room:', error);
+    this.chatService.leaveRoom(roomId).subscribe({
+      next: () => {
+        console.log('✅ Left room');
+        // Room will be removed from local state by the service
+        this.selectedRoom = null;
+
+        // Select first available room if any
+        if (this.chatRooms.length > 0) {
+          this.selectRoom(this.chatRooms[0]);
         }
-      });
+      },
+      error: (error: any) => {
+        console.error('❌ Error leaving room:', error);
+      },
+    });
   }
 
   onCreateGroup(): void {
@@ -417,7 +455,7 @@ export class ChatComponent implements OnInit, OnDestroy {
     // Just select the new room and close the modal
     this.selectRoom(room);
     this.showCreateGroupModal = false;
-    
+
     // Show success message
     console.log('Group created successfully:', room.name);
   }
@@ -432,42 +470,45 @@ export class ChatComponent implements OnInit, OnDestroy {
 
   private selectRoom(room: ChatRoom): void {
     this.selectedRoom = room;
-    
+
     // Initialize pagination state for this room if not already present
     if (!this.messagePagination[room.id]) {
       this.messagePagination[room.id] = {
         page: 1,
         hasMore: true,
-        loading: false
+        loading: false,
       };
     }
-    
+
     // Join room via socket
     this.chatService.joinRoom(room.id);
-    
+
     // Load messages for the room
     this.chatService.loadRoomMessages(room.id).subscribe({
       next: (messages) => {
-        console.log(`✅ Loaded ${messages.length} messages for room ${room.id}`);
+        console.log(
+          `✅ Loaded ${messages.length} messages for room ${room.id}`
+        );
         // Ensure we have user data for message senders
         this.loadUsersFromMessages(messages);
-        
+
         // Update pagination state based on initial load
         this.messagePagination[room.id] = {
           page: 1,
           hasMore: messages.length === 20, // Assuming 20 messages per page
-          loading: false
+          loading: false,
         };
       },
       error: (error) => {
         console.error(`❌ Error loading messages for room ${room.id}:`, error);
-      }
+      },
     });
-    
+
     // Subscribe to messages for this room
-    this.chatService.getMessagesForRoom(room.id)
+    this.chatService
+      .getMessagesForRoom(room.id)
       .pipe(takeUntil(this.destroy$))
-      .subscribe(messages => {
+      .subscribe((messages) => {
         this.messages[room.id] = messages;
         // Ensure we have user data for new messages
         this.loadUsersFromMessages(messages);
@@ -506,9 +547,10 @@ export class ChatComponent implements OnInit, OnDestroy {
   getTypingUsers(roomId: number): User[] {
     // Subscribe to typing users for the selected room
     if (this.selectedRoom && this.selectedRoom.id === roomId) {
-      this.chatService.getTypingUsersForRoom(roomId)
+      this.chatService
+        .getTypingUsersForRoom(roomId)
         .pipe(takeUntil(this.destroy$))
-        .subscribe(users => {
+        .subscribe((users) => {
           this.typingUsers = users;
         });
     }
@@ -570,61 +612,70 @@ export class ChatComponent implements OnInit, OnDestroy {
       console.log('⚠️ Cannot load older messages - no selected room or user');
       return;
     }
-    
+
     const roomId = this.selectedRoom.id;
-    const pagination = this.messagePagination[roomId] || { page: 1, hasMore: true, loading: false };
-    
+    const pagination = this.messagePagination[roomId] || {
+      page: 1,
+      hasMore: true,
+      loading: false,
+    };
+
     if (pagination.loading || !pagination.hasMore) {
-      console.log('📜 Skipping older messages load - already loading or no more messages');
+      console.log(
+        '📜 Skipping older messages load - already loading or no more messages'
+      );
       return;
     }
-    
-    console.log(`📜 Loading older messages for room ${roomId}, page ${pagination.page + 1}`);
-    
+
+    console.log(
+      `📜 Loading older messages for room ${roomId}, page ${
+        pagination.page + 1
+      }`
+    );
+
     // Set loading state
     this.messagePagination[roomId] = {
       ...pagination,
-      loading: true
+      loading: true,
     };
-    
+
     // Load older messages from the chat service
-    this.chatService.loadOlderMessages(roomId, pagination.page + 1)
-      .subscribe({
-        next: (olderMessages) => {
-          console.log(`✅ Loaded ${olderMessages.length} older messages`);
-          
-          if (olderMessages.length > 0) {
-            // Add older messages to the beginning of the current messages array
-            const currentMessages = this.messages[roomId] || [];
-            this.messages[roomId] = [...olderMessages, ...currentMessages];
-            
-            // Load user data from new messages
-            this.loadUsersFromMessages(olderMessages);
-            
-            // Update pagination state
-            this.messagePagination[roomId] = {
-              page: pagination.page + 1,
-              hasMore: olderMessages.length === 20, // Assuming 20 messages per page
-              loading: false
-            };
-          } else {
-            // No more messages available
-            this.messagePagination[roomId] = {
-              ...pagination,
-              hasMore: false,
-              loading: false
-            };
-          }
-        },
-        error: (error) => {
-          console.error('❌ Error loading older messages:', error);
-          // Reset loading state on error
+    this.chatService.loadOlderMessages(roomId, pagination.page + 1).subscribe({
+      next: (olderMessages) => {
+        console.log(`✅ Loaded ${olderMessages.length} older messages`);
+
+        if (olderMessages.length > 0) {
+          // Add older messages to the beginning of the current messages array
+          const currentMessages = this.messages[roomId] || [];
+          this.messages[roomId] = [...olderMessages, ...currentMessages];
+
+          // Load user data from new messages
+          this.loadUsersFromMessages(olderMessages);
+
+          // Update pagination state
+          this.messagePagination[roomId] = {
+            page: pagination.page + 1,
+            hasMore: olderMessages.length === 20, // Assuming 20 messages per page
+            loading: false,
+          };
+        } else {
+          // No more messages available
           this.messagePagination[roomId] = {
             ...pagination,
-            loading: false
+            hasMore: false,
+            loading: false,
           };
         }
-      });
+      },
+      error: (error) => {
+        console.error('❌ Error loading older messages:', error);
+        // Reset loading state on error
+        this.messagePagination[roomId] = {
+          ...pagination,
+          loading: false,
+        };
+      },
+    });
   }
 
   getPaginationCallbacks() {
@@ -637,36 +688,36 @@ export class ChatComponent implements OnInit, OnDestroy {
       isLoading: (roomId: number) => {
         const pagination = this.messagePagination[roomId];
         return pagination ? pagination.loading : false;
-      }
+      },
     };
   }
 
   navigateToLogin(): void {
     this.router.navigate(['/auth/login'], {
-      queryParams: { returnUrl: '/chat' }
+      queryParams: { returnUrl: '/chat' },
     });
   }
 
   navigateToRegister(): void {
     this.router.navigate(['/auth/register'], {
-      queryParams: { returnUrl: '/chat' }
+      queryParams: { returnUrl: '/chat' },
     });
   }
-  
+
   // Mode switching methods
   setChatMode(mode: 'groups' | 'private' | 'friends'): void {
     this.chatMode = mode;
-    
+
     // Close sidebar on mobile when switching modes
     if (this.isMobileView) {
       this.showSidebar = false;
     }
   }
-  
+
   setFriendsTab(tab: 'list' | 'requests' | 'search'): void {
     this.friendsTab = tab;
   }
-  
+
   onStartPrivateChat(friend: User): void {
     this.setChatMode('private');
   }
