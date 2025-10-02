@@ -289,6 +289,35 @@ const createChatRoom = async (req, res) => {
       ]
     });
 
+    // Send real-time notifications to members via Socket.IO
+    if (req.io && memberIds.length > 0) {
+      const creatorName = req.user.name;
+      
+      memberIds.forEach((memberId) => {
+        // Find the member's socket and notify them
+        const memberSockets = Array.from(req.io.sockets.sockets.values())
+          .filter(socket => socket.userId === memberId);
+        
+        memberSockets.forEach(socket => {
+          socket.emit('room_created', {
+            ...completeRoom.toJSON(),
+            isCreator: false,
+            memberCount: memberIds.length + 1
+          });
+          
+          socket.emit('notification', {
+            type: 'room_invite',
+            message: `You've been added to ${room.name} by ${creatorName}`,
+            roomId: room.id,
+            timestamp: new Date().toISOString(),
+          });
+          
+          // Join the member to the room
+          socket.join(`room_${room.id}`);
+        });
+      });
+    }
+
     res.status(201).json({
       success: true,
       data: completeRoom

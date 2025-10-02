@@ -47,8 +47,11 @@ const handleConnection = (io) => {
       { where: { id: socket.userId } }
     );
 
-    // Join user to their rooms
+    // Join user to their group chat rooms
     joinUserRooms(socket);
+    
+    // Join user to their private conversation rooms
+    joinUserPrivateConversations(socket);
 
     // Notify others that user is online
     socket.broadcast.emit("user_online", {
@@ -91,6 +94,46 @@ const handleConnection = (io) => {
     socket.on("leave_room", (roomId) => {
       socket.leave(`room_${roomId}`);
       socket.emit("left_room", { roomId });
+    });
+
+    // Handle joining a private conversation room
+    socket.on("join_private_conversation", async (data) => {
+      try {
+        const { conversationId } = data;
+        console.log(
+          `😪 User ${socket.user.name} trying to join private conversation ${conversationId}`
+        );
+
+        // Verify user is a participant in the conversation
+        const conversation = await PrivateConversation.findByPk(conversationId);
+        if (!conversation || !conversation.isParticipant(socket.userId)) {
+          console.log(
+            `❌ User ${socket.user.name} not a participant of conversation ${conversationId}`
+          );
+          return socket.emit("error", { message: "Not a participant in this conversation" });
+        }
+
+        const conversationRoomId = `private_conversation_${conversationId}`;
+        socket.join(conversationRoomId);
+        socket.emit("joined_private_conversation", { conversationId, success: true });
+        console.log(
+          `✅ User ${socket.user.name} successfully joined private conversation room ${conversationRoomId}`
+        );
+      } catch (error) {
+        console.error(`❌ Error joining private conversation ${data?.conversationId}:`, error);
+        socket.emit("error", { message: "Error joining private conversation" });
+      }
+    });
+
+    // Handle leaving a private conversation room
+    socket.on("leave_private_conversation", (data) => {
+      const { conversationId } = data;
+      const conversationRoomId = `private_conversation_${conversationId}`;
+      socket.leave(conversationRoomId);
+      socket.emit("left_private_conversation", { conversationId });
+      console.log(
+        `✅ User ${socket.user.name} left private conversation room ${conversationRoomId}`
+      );
     });
 
     // Handle sending messages
@@ -281,152 +324,145 @@ const handleConnection = (io) => {
       }
     });
 
-    // Handle private message sending
-    socket.on("send_private_message", async (data) => {
-      try {
+  // Handle private message sending
+  socket.on("send_private_message", async (data) => {
+    try {
+      console.log(
+        `💬 Private message received from user ${socket.user.name}:`,
+        data
+      );
+      const { conversationId, content } = data;
+
+      if (!content || !content.trim()) {
+        console.log("❌ Empty private message content");
+        return socket.emit("error", {
+          message: "Message content is required",
+        });
+      }
+
+      // Find conversation and verify user is a participant
+      const conversation = await PrivateConversation.findByPk(conversationId);
+      if (!conversation) {
+        console.log(`❌ Conversation ${conversationId} not found`);
+        return socket.emit("error", { message: "Conversation not found" });
+      }
+
+      if (!conversation.isParticipant(socket.userId)) {
         console.log(
-          `💬 Private message received from user ${socket.user.name}:`,
-          data
+          `❌ User ${socket.user.name} not participant of conversation ${conversationId}`
         );
-        const { conversationId, content } = data;
-
-        if (!content || !content.trim()) {
-          console.log("❌ Empty private message content");
-          return socket.emit("error", {
-            message: "Message content is required",
-          });
-        }
-
-        // Find conversation and verify user is a participant
-        const conversation = await PrivateConversation.findByPk(conversationId);
-        if (!conversation) {
-          console.log(`❌ Conversation ${conversationId} not found`);
-          return socket.emit("error", { message: "Conversation not found" });
-        }
-
-        if (!conversation.isParticipant(socket.userId)) {
-          console.log(
-            `❌ User ${socket.user.name} not participant of conversation ${conversationId}`
-          );
-          return socket.emit("error", {
-            message: "You are not a participant in this conversation",
-          });
-        }
-
-        const receiverId = conversation.getOtherParticipant(socket.userId);
-
-        // Create the message
-        const message = await PrivateMessage.create({
-          conversation_id: conversationId,
-          sender_id: socket.userId,
-          receiver_id: receiverId,
-          content: content.trim(),
-          message_type: "text",
+        return socket.emit("error", {
+          message: "You are not a participant in this conversation",
         });
-
-        // Update conversation last activity
-        await conversation.updateLastActivity(message.id);
-
-        // Create message status for receiver
-        await PrivateMessageStatus.create({
-          message_id: message.id,
-          user_id: receiverId,
-          status: "sent",
-        });
-
-        // Fetch complete message with sender info
-        const completeMessage = await PrivateMessage.findByPk(message.id, {
-          include: [
-            {
-              model: User,
-              as: "Sender",
-              attributes: [
-                "id",
-                "name",
-                "email",
-                "avatar_url",
-                "is_online",
-                "last_seen_at",
-              ],
-            },
-          ],
-        });
-
-        // Send to sender
-        socket.emit("new_private_message", completeMessage);
-
-        // Send to receiver if they're online
-        const receiverSocket = Array.from(io.sockets.sockets.values()).find(
-          (s) => s.userId === receiverId
-        );
-        if (receiverSocket) {
-          receiverSocket.emit("new_private_message", completeMessage);
-        }
-
-        console.log(
-          `✅ Private message ${completeMessage.id} sent successfully by ${socket.user.name}`
-        );
-      } catch (error) {
-        console.error("Error sending private message:", error);
-        socket.emit("error", { message: "Error sending private message" });
       }
-    });
 
-    // Handle private chat typing indicators
-    socket.on("private_typing_start", async (data) => {
-      try {
-        const { conversationId } = data;
+      const receiverId = conversation.getOtherParticipant(socket.userId);
 
-        // Verify user is participant
-        const conversation = await PrivateConversation.findByPk(conversationId);
-        if (!conversation || !conversation.isParticipant(socket.userId)) {
-          return socket.emit("error", { message: "Invalid conversation" });
-        }
+      // Create the message
+      const message = await PrivateMessage.create({
+        conversation_id: conversationId,
+        sender_id: socket.userId,
+        receiver_id: receiverId,
+        content: content.trim(),
+        message_type: "text",
+      });
 
-        const receiverId = conversation.getOtherParticipant(socket.userId);
+      // Update conversation last activity
+      await conversation.updateLastActivity(message.id);
 
-        // Send typing indicator to receiver if online
-        const receiverSocket = Array.from(io.sockets.sockets.values()).find(
-          (s) => s.userId === receiverId
-        );
-        if (receiverSocket) {
-          receiverSocket.emit("private_user_typing", {
-            userId: socket.userId,
-            username: socket.user.name,
-            conversationId,
-          });
-        }
-      } catch (error) {
-        console.error("Error handling private typing:", error);
+      // Create message status for receiver
+      await PrivateMessageStatus.create({
+        message_id: message.id,
+        user_id: receiverId,
+        status: "sent",
+      });
+
+      // Fetch complete message with sender info
+      const completeMessage = await PrivateMessage.findByPk(message.id, {
+        include: [
+          {
+            model: User,
+            as: "Sender",
+            attributes: [
+              "id",
+              "name",
+              "email",
+              "avatar_url",
+              "is_online",
+              "last_seen_at",
+            ],
+          },
+        ],
+      });
+
+      // Use room-based broadcasting like group chat for better reliability
+      const conversationRoomId = `private_conversation_${conversationId}`;
+      
+      // Broadcast to all participants in the conversation room
+      io.to(conversationRoomId).emit("new_private_message", completeMessage);
+      
+      // Stop typing indicator for this user in this conversation
+      socket.to(conversationRoomId).emit("private_user_stop_typing", {
+        userId: socket.userId,
+        conversationId,
+      });
+
+      console.log(
+        `✅ Private message ${completeMessage.id} sent successfully by ${socket.user.name} to room ${conversationRoomId}`
+      );
+    } catch (error) {
+      console.error("Error sending private message:", error);
+      socket.emit("error", { message: "Error sending private message" });
+    }
+  });
+
+  // Handle private chat typing indicators
+  socket.on("private_typing_start", async (data) => {
+    try {
+      const { conversationId } = data;
+
+      // Verify user is participant
+      const conversation = await PrivateConversation.findByPk(conversationId);
+      if (!conversation || !conversation.isParticipant(socket.userId)) {
+        return socket.emit("error", { message: "Invalid conversation" });
       }
-    });
 
-    socket.on("private_typing_stop", async (data) => {
-      try {
-        const { conversationId } = data;
+      // Use room-based broadcasting like group chat
+      const conversationRoomId = `private_conversation_${conversationId}`;
+      
+      // Broadcast typing indicator to other participants in the conversation room
+      socket.to(conversationRoomId).emit("private_user_typing", {
+        userId: socket.userId,
+        username: socket.user.name,
+        conversationId,
+      });
+    } catch (error) {
+      console.error("Error handling private typing:", error);
+    }
+  });
 
-        // Verify user is participant
-        const conversation = await PrivateConversation.findByPk(conversationId);
-        if (!conversation || !conversation.isParticipant(socket.userId)) {
-          return socket.emit("error", { message: "Invalid conversation" });
-        }
+  socket.on("private_typing_stop", async (data) => {
+    try {
+      const { conversationId } = data;
 
-        const receiverId = conversation.getOtherParticipant(socket.userId);
-
-        // Send stop typing indicator to receiver if online
-        const receiverSocket = Array.from(io.sockets.sockets.values()).find(
-          (s) => s.userId === receiverId
-        );
-        if (receiverSocket) {
-          receiverSocket.emit("private_user_stop_typing", {
-            userId: socket.userId,
-            conversationId,
-          });
-        }
-      } catch (error) {
-        console.error("Error handling private stop typing:", error);
+      // Verify user is participant
+      const conversation = await PrivateConversation.findByPk(conversationId);
+      if (!conversation || !conversation.isParticipant(socket.userId)) {
+        return socket.emit("error", { message: "Invalid conversation" });
       }
-    });
+
+      // Use room-based broadcasting like group chat
+      const conversationRoomId = `private_conversation_${conversationId}`;
+      
+      // Broadcast stop typing indicator to other participants in the conversation room
+      socket.to(conversationRoomId).emit("private_user_stop_typing", {
+        userId: socket.userId,
+        conversationId,
+      });
+    } catch (error) {
+      console.error("Error handling private stop typing:", error);
+    }
+  });
 
     // Handle room creation
     socket.on("create_room", async (data) => {
@@ -559,13 +595,13 @@ const handleConnection = (io) => {
     });
 
     // Handle disconnect
-    socket.on("disconnect", () => {
+    socket.on("disconnect", async () => {
       console.log(`User ${socket.user.name} disconnected`);
 
       // Remove from active users
       activeUsers.delete(socket.userId);
 
-      // Clear typing indicators
+      // Clear group chat typing indicators
       typingUsers.forEach((users, roomId) => {
         if (users.has(socket.userId)) {
           users.delete(socket.userId);
@@ -575,6 +611,29 @@ const handleConnection = (io) => {
           });
         }
       });
+      
+      // Clear private conversation typing indicators
+      try {
+        const userConversations = await PrivateConversation.findAll({
+          where: {
+            [require("sequelize").Op.or]: [
+              { user1_id: socket.userId },
+              { user2_id: socket.userId },
+            ],
+          },
+          attributes: ["id"],
+        });
+
+        userConversations.forEach(({ id }) => {
+          const conversationRoomId = `private_conversation_${id}`;
+          socket.to(conversationRoomId).emit("private_user_stop_typing", {
+            userId: socket.userId,
+            conversationId: id,
+          });
+        });
+      } catch (error) {
+        console.error("Error cleaning up private conversation typing indicators:", error);
+      }
 
       // Update user offline status
       User.update(
@@ -591,7 +650,7 @@ const handleConnection = (io) => {
   });
 };
 
-// Helper function to join user to their rooms
+// Helper function to join user to their group chat rooms
 const joinUserRooms = async (socket) => {
   try {
     const userRooms = await ChatRoomMember.findAll({
@@ -604,6 +663,31 @@ const joinUserRooms = async (socket) => {
     });
   } catch (error) {
     console.error("Error joining user rooms:", error);
+  }
+};
+
+// Helper function to join user to their private conversation rooms
+const joinUserPrivateConversations = async (socket) => {
+  try {
+    const userConversations = await PrivateConversation.findAll({
+      where: {
+        [require("sequelize").Op.or]: [
+          { user1_id: socket.userId },
+          { user2_id: socket.userId },
+        ],
+      },
+      attributes: ["id"],
+    });
+
+    userConversations.forEach(({ id }) => {
+      const conversationRoomId = `private_conversation_${id}`;
+      socket.join(conversationRoomId);
+      console.log(
+        `✅ User ${socket.user.name} joined private conversation room ${conversationRoomId}`
+      );
+    });
+  } catch (error) {
+    console.error("Error joining user private conversations:", error);
   }
 };
 

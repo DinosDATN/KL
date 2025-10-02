@@ -127,6 +127,11 @@ export class PrivateChatService {
         
         if (existingIndex === -1) {
           this.conversationsSubject.next([conversation, ...conversations]);
+          
+          // Join the new conversation room via socket
+          this.socketService.emit('join_private_conversation', {
+            conversationId: conversation.id
+          });
         }
         
         this.activeConversationSubject.next(conversation);
@@ -156,19 +161,42 @@ export class PrivateChatService {
   }
   
   sendMessage(conversationId: number, content: string): Observable<PrivateMessage> {
-    // Send via Socket.IO for real-time delivery
+    console.log('🚀 PrivateChat: Sending message via Socket.IO only');
+    
+    // Send via Socket.IO for real-time delivery (this will save to DB)
     this.socketService.emit('send_private_message', {
       conversationId,
       content: content.trim()
     });
     
-    // Also make HTTP call for reliability
-    return this.http.post<{success: boolean, data: PrivateMessage}>(
-      `${this.apiUrl}/private-chat/conversations/${conversationId}/messages`,
-      { content: content.trim(), message_type: 'text' }
-    ).pipe(
-      map(response => response.data)
-    );
+    // Return a resolved observable since Socket.IO handles the DB save
+    // The real message will come back via Socket.IO listener
+    return new Observable<PrivateMessage>(observer => {
+      // Create a temporary message for immediate response
+      const tempMessage: PrivateMessage = {
+        id: Date.now(), // Temporary ID
+        conversation_id: conversationId,
+        sender_id: 0, // Will be set properly when real message comes back
+        receiver_id: 0,
+        content: content.trim(),
+        message_type: 'text',
+        file_url: null,
+        file_name: null,
+        file_size: null,
+        reply_to_message_id: null,
+        is_edited: false,
+        edited_at: null,
+        is_deleted: false,
+        deleted_at: null,
+        sent_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        read_status: 'sent'
+      };
+      
+      observer.next(tempMessage);
+      observer.complete();
+    });
   }
   
   markMessagesAsRead(conversationId: number, messageIds: number[]): Observable<void> {
@@ -249,6 +277,21 @@ export class PrivateChatService {
   }
   
   setActiveConversation(conversation: PrivateConversation | null): void {
+    // Leave previous conversation room if any
+    const previousConversation = this.activeConversationSubject.value;
+    if (previousConversation) {
+      this.socketService.emit('leave_private_conversation', {
+        conversationId: previousConversation.id
+      });
+    }
+    
+    // Join new conversation room if any
+    if (conversation) {
+      this.socketService.emit('join_private_conversation', {
+        conversationId: conversation.id
+      });
+    }
+    
     this.activeConversationSubject.next(conversation);
   }
   

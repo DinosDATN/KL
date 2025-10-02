@@ -54,6 +54,12 @@ app.use(passport.initialize());
 // Serve static files for uploads
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+// Add Socket.IO instance to requests
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
+
 // Request logging middleware
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);

@@ -1,4 +1,11 @@
-import { Component, OnInit, OnDestroy, OnChanges, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  ViewChild,
+  ElementRef,
+  AfterViewChecked,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
@@ -6,7 +13,10 @@ import { PrivateChatService } from '../../../../core/services/private-chat.servi
 import { FriendshipService } from '../../../../core/services/friendship.service';
 import { ThemeService } from '../../../../core/services/theme.service';
 import { AuthService } from '../../../../core/services/auth.service';
-import { PrivateConversation, PrivateMessage } from '../../../../core/models/private-chat.model';
+import {
+  PrivateConversation,
+  PrivateMessage,
+} from '../../../../core/models/private-chat.model';
 import { FriendRequest } from '../../../../core/models/friendship.model';
 import { User } from '../../../../core/models/user.model';
 
@@ -15,9 +25,10 @@ import { User } from '../../../../core/models/user.model';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './private-chat.component.html',
-  styleUrl: './private-chat.component.css'
+  styleUrl: './private-chat.component.css',
 })
-export class PrivateChatComponent implements OnInit, OnDestroy, AfterViewChecked, OnChanges {
+export class PrivateChatComponent
+  implements OnInit, OnDestroy, AfterViewChecked {
   @ViewChild('messagesContainer') messagesContainer!: ElementRef;
   @ViewChild('messageInput') messageInput!: ElementRef;
 
@@ -31,7 +42,7 @@ export class PrivateChatComponent implements OnInit, OnDestroy, AfterViewChecked
   loading = false;
   selectedFriend: User | null = null;
   showFriendsList = false;
-  
+
   // Modern UI features
   shouldScrollToBottom = true;
   isNearBottom = true;
@@ -40,10 +51,10 @@ export class PrivateChatComponent implements OnInit, OnDestroy, AfterViewChecked
   isLoadingOlderMessages = false;
   hasMoreMessages = true;
   previousScrollHeight = 0;
-  
+
   // Typing management
   private typingTimer: any;
-  
+
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -57,62 +68,81 @@ export class PrivateChatComponent implements OnInit, OnDestroy, AfterViewChecked
 
   ngOnInit(): void {
     this.loadData();
-    
+
     // Subscribe to conversations
     this.privateChatService.conversations$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(conversations => {
+      .subscribe((conversations) => {
         this.conversations = conversations;
       });
-    
+
     // Subscribe to active conversation
     this.privateChatService.activeConversation$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(conversation => {
+      .subscribe((conversation) => {
         this.activeConversation = conversation;
         if (conversation) {
           this.loadConversationMessages(conversation.id);
+        } else {
+          this.messages = [];
         }
       });
-    
+
+    // Subscribe to real-time message updates
+    this.privateChatService.messages$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((messagesMap) => {
+        if (this.activeConversation) {
+          const newMessages = messagesMap[this.activeConversation.id] || [];
+          const previousLength = this.messages.length;
+          this.messages = newMessages;
+
+          // Check if new messages were added
+          if (newMessages.length > previousLength && previousLength > 0) {
+            const lastMessage = newMessages[newMessages.length - 1];
+
+            // If user is at bottom or near bottom, auto-scroll and mark as read
+            if (this.isNearBottom) {
+              this.shouldScrollToBottom = true;
+              // Mark new messages as read if user is viewing them
+              setTimeout(() => {
+                this.markNewMessagesAsReadIfViewing();
+              }, 100);
+            } else {
+              // Show new message indicator if user is not at bottom
+              if (lastMessage.sender_id !== this.currentUser?.id) {
+                this.showNewMessageIndicator = true;
+                this.newMessageCount++;
+              }
+            }
+          }
+        }
+      });
+
     // Subscribe to friends
     this.friendshipService.friends$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(friends => {
+      .subscribe((friends) => {
         this.friends = friends;
       });
-      
+
     // Subscribe to typing users
     this.privateChatService.typingUsers$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(typingUsersMap => {
+      .subscribe((typingUsersMap) => {
         if (this.activeConversation) {
           this.typingUsers = typingUsersMap[this.activeConversation.id] || [];
         }
       });
   }
 
-  ngOnChanges(): void {
-    // Check if new messages were added
-    if (this.messages && this.messages.length > 0) {
-      const lastMessage = this.messages[this.messages.length - 1];
-      
-      // Handle new messages from others when user is not at bottom
-      if (lastMessage.sender_id !== this.currentUser?.id && !this.isNearBottom) {
-        this.showNewMessageIndicator = true;
-        this.newMessageCount++;
-      } 
-      // Handle new messages when user is at bottom or should auto-scroll
-      else if (this.shouldScrollToBottom || this.isNearBottom) {
-        setTimeout(() => this.scrollToBottom(), 100);
-        this.resetNewMessageIndicator();
-      }
-    }
-  }
-
   ngAfterViewChecked(): void {
     // Only auto-scroll to bottom for new messages, not when loading older ones
-    if (this.shouldScrollToBottom && this.isNearBottom && !this.isLoadingOlderMessages) {
+    if (
+      this.shouldScrollToBottom &&
+      this.isNearBottom &&
+      !this.isLoadingOlderMessages
+    ) {
       this.scrollToBottom();
       this.shouldScrollToBottom = false;
     }
@@ -123,29 +153,29 @@ export class PrivateChatComponent implements OnInit, OnDestroy, AfterViewChecked
     if (this.typingTimer) {
       clearTimeout(this.typingTimer);
     }
-    
+
     // Stop typing indicator if active
     if (this.activeConversation) {
       this.privateChatService.stopTyping(this.activeConversation.id);
     }
-    
+
     this.destroy$.next();
     this.destroy$.complete();
   }
 
   private loadData(): void {
     this.loading = true;
-    
+
     const conversations$ = this.privateChatService.loadConversations();
     const friends$ = this.friendshipService.loadFriends();
-    
+
     conversations$.subscribe({
       error: (error) => {
         console.error('Error loading conversations:', error);
         this.loading = false;
-      }
+      },
     });
-    
+
     friends$.subscribe({
       next: () => {
         this.loading = false;
@@ -153,32 +183,49 @@ export class PrivateChatComponent implements OnInit, OnDestroy, AfterViewChecked
       error: (error) => {
         console.error('Error loading friends:', error);
         this.loading = false;
-      }
+      },
     });
   }
 
   private loadConversationMessages(conversationId: number): void {
-    this.privateChatService.loadConversationMessages(conversationId)
-      .subscribe({
-        next: (messages) => {
-          this.messages = this.privateChatService.getMessagesForConversation(conversationId);
-          this.shouldScrollToBottom = true;
-          this.markMessagesAsRead(conversationId);
-        },
-        error: (error) => {
-          console.error('Error loading messages:', error);
-        }
-      });
+    this.privateChatService.loadConversationMessages(conversationId).subscribe({
+      next: (messages) => {
+        // Messages are now handled by the messages$ observable subscription
+        this.shouldScrollToBottom = true;
+        this.markMessagesAsRead(conversationId);
+      },
+      error: (error) => {
+        console.error('Error loading messages:', error);
+      },
+    });
   }
 
   private markMessagesAsRead(conversationId: number): void {
-    const unreadMessages = this.messages.filter(msg => 
-      msg.sender_id !== this.currentUser?.id && msg.read_status !== 'read'
+    const unreadMessages = this.messages.filter(
+      (msg) =>
+        msg.sender_id !== this.currentUser?.id && msg.read_status !== 'read'
     );
-    
+
     if (unreadMessages.length > 0) {
-      const messageIds = unreadMessages.map(msg => msg.id);
-      this.privateChatService.markMessagesAsRead(conversationId, messageIds)
+      const messageIds = unreadMessages.map((msg) => msg.id);
+      this.privateChatService
+        .markMessagesAsRead(conversationId, messageIds)
+        .subscribe();
+    }
+  }
+
+  private markNewMessagesAsReadIfViewing(): void {
+    if (!this.activeConversation || !this.isNearBottom) return;
+
+    const unreadMessages = this.messages.filter(
+      (msg) =>
+        msg.sender_id !== this.currentUser?.id && msg.read_status !== 'read'
+    );
+
+    if (unreadMessages.length > 0) {
+      const messageIds = unreadMessages.map((msg) => msg.id);
+      this.privateChatService
+        .markMessagesAsRead(this.activeConversation.id, messageIds)
         .subscribe();
     }
   }
@@ -190,21 +237,21 @@ export class PrivateChatComponent implements OnInit, OnDestroy, AfterViewChecked
 
   onSelectFriend(friendReq: FriendRequest): void {
     const friend = friendReq.friend;
-    const existingConversation = this.privateChatService.findConversationByParticipant(friend.id);
-    
+    const existingConversation =
+      this.privateChatService.findConversationByParticipant(friend.id);
+
     if (existingConversation) {
       this.onSelectConversation(existingConversation);
     } else {
-      this.privateChatService.getOrCreateConversation(friend.id)
-        .subscribe({
-          next: (conversation) => {
-            this.privateChatService.setActiveConversation(conversation);
-            this.showFriendsList = false;
-          },
-          error: (error) => {
-            console.error('Error creating conversation:', error);
-          }
-        });
+      this.privateChatService.getOrCreateConversation(friend.id).subscribe({
+        next: (conversation) => {
+          this.privateChatService.setActiveConversation(conversation);
+          this.showFriendsList = false;
+        },
+        error: (error) => {
+          console.error('Error creating conversation:', error);
+        },
+      });
     }
   }
 
@@ -212,24 +259,29 @@ export class PrivateChatComponent implements OnInit, OnDestroy, AfterViewChecked
   send(): void {
     console.log('📨 PrivateChat: send() method called');
     console.log('💬 NewMessage content:', this.newMessage);
-    
+
     if (!this.activeConversation || !this.newMessage.trim()) {
-      console.log('⚠️ PrivateChat: Empty message or no active conversation, returning');
+      console.log(
+        '⚠️ PrivateChat: Empty message or no active conversation, returning'
+      );
       return;
     }
 
     const messageContent = this.newMessage.trim();
     console.log('🚀 PrivateChat: Sending message:', messageContent);
 
-    this.privateChatService.sendMessage(this.activeConversation.id, messageContent)
+    this.privateChatService
+      .sendMessage(this.activeConversation.id, messageContent)
       .subscribe({
         next: () => {
           console.log('✅ PrivateChat: Message sent successfully');
-          this.messages = this.privateChatService.getMessagesForConversation(this.activeConversation!.id);
+          this.messages = this.privateChatService.getMessagesForConversation(
+            this.activeConversation!.id
+          );
           this.shouldScrollToBottom = true;
           this.isNearBottom = true;
           this.resetNewMessageIndicator();
-          
+
           // Stop typing indicator
           this.stopTypingIndicator();
         },
@@ -237,11 +289,11 @@ export class PrivateChatComponent implements OnInit, OnDestroy, AfterViewChecked
           console.error('Error sending message:', error);
           // Restore message text on error
           this.newMessage = messageContent;
-        }
+        },
       });
 
     this.newMessage = '';
-    
+
     // Reset textarea height
     setTimeout(() => {
       const textarea = this.messageInput.nativeElement;
@@ -261,7 +313,7 @@ export class PrivateChatComponent implements OnInit, OnDestroy, AfterViewChecked
     const textarea = this.messageInput.nativeElement;
     textarea.style.height = 'auto';
     textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
-    
+
     // Handle typing indicators
     if (this.activeConversation && this.newMessage.trim()) {
       this.startTypingIndicator();
@@ -277,7 +329,7 @@ export class PrivateChatComponent implements OnInit, OnDestroy, AfterViewChecked
     const diffMinutes = Math.floor(diffMs / (1000 * 60));
     const diffHours = Math.floor(diffMinutes / 60);
     const diffDays = Math.floor(diffHours / 24);
-    
+
     if (diffMinutes < 1) {
       return 'Vừa xong';
     } else if (diffMinutes < 60) {
@@ -309,22 +361,31 @@ export class PrivateChatComponent implements OnInit, OnDestroy, AfterViewChecked
     const element = event.target;
     const threshold = 100; // pixels from bottom
     const topThreshold = 100; // pixels from top for loading older messages
-    
-    const atBottom = element.scrollHeight - element.scrollTop <= element.clientHeight + threshold;
+
+    const atBottom =
+      element.scrollHeight - element.scrollTop <=
+      element.clientHeight + threshold;
     const nearTop = element.scrollTop <= topThreshold;
-    
+
     this.isNearBottom = atBottom;
-    
+
     // Handle bottom scroll behavior
     if (atBottom) {
       this.resetNewMessageIndicator();
       this.shouldScrollToBottom = true;
+      // Mark messages as read when user scrolls to view them
+      this.markNewMessagesAsReadIfViewing();
     } else {
       this.shouldScrollToBottom = false;
     }
-    
+
     // Handle top scroll behavior for loading older messages (future feature)
-    if (nearTop && !this.isLoadingOlderMessages && this.hasMoreMessages && this.messages.length > 0) {
+    if (
+      nearTop &&
+      !this.isLoadingOlderMessages &&
+      this.hasMoreMessages &&
+      this.messages.length > 0
+    ) {
       // this.loadOlderMessages(); // Future implementation
     }
   }
@@ -334,7 +395,7 @@ export class PrivateChatComponent implements OnInit, OnDestroy, AfterViewChecked
       const element = this.messagesContainer.nativeElement;
       element.scrollTo({
         top: element.scrollHeight,
-        behavior: 'smooth'
+        behavior: 'smooth',
       });
     }
   }
@@ -361,15 +422,15 @@ export class PrivateChatComponent implements OnInit, OnDestroy, AfterViewChecked
   // Typing indicator methods
   private startTypingIndicator(): void {
     if (!this.activeConversation) return;
-    
+
     // Clear existing timer
     if (this.typingTimer) {
       clearTimeout(this.typingTimer);
     }
-    
+
     // Start typing
     this.privateChatService.startTyping(this.activeConversation.id);
-    
+
     // Set timer to stop typing after 3 seconds of inactivity
     this.typingTimer = setTimeout(() => {
       this.stopTypingIndicator();
@@ -378,13 +439,13 @@ export class PrivateChatComponent implements OnInit, OnDestroy, AfterViewChecked
 
   private stopTypingIndicator(): void {
     if (!this.activeConversation) return;
-    
+
     // Clear timer
     if (this.typingTimer) {
       clearTimeout(this.typingTimer);
       this.typingTimer = null;
     }
-    
+
     // Stop typing
     this.privateChatService.stopTyping(this.activeConversation.id);
   }
@@ -392,7 +453,9 @@ export class PrivateChatComponent implements OnInit, OnDestroy, AfterViewChecked
   // Message and UI utility methods
   getGroupedMessages(): { date: string; messages: PrivateMessage[] }[] {
     if (!this.activeConversation) return [];
-    return this.privateChatService.getGroupedMessages(this.activeConversation.id);
+    return this.privateChatService.getGroupedMessages(
+      this.activeConversation.id
+    );
   }
 
   getMessageTime(message: PrivateMessage): string {
@@ -411,11 +474,15 @@ export class PrivateChatComponent implements OnInit, OnDestroy, AfterViewChecked
     if (this.typingUsers.length === 0) return '';
     if (this.typingUsers.length === 1)
       return `${this.typingUsers[0].name} đang nhập...`;
-    return `${this.typingUsers[0].name} và ${this.typingUsers.length - 1} người khác đang nhập...`;
+    return `${this.typingUsers[0].name} và ${this.typingUsers.length - 1
+      } người khác đang nhập...`;
   }
 
   // Track by functions for ngFor optimization
-  trackByConversationId(index: number, conversation: PrivateConversation): number {
+  trackByConversationId(
+    index: number,
+    conversation: PrivateConversation
+  ): number {
     return conversation.id;
   }
 
@@ -427,7 +494,10 @@ export class PrivateChatComponent implements OnInit, OnDestroy, AfterViewChecked
     return message.id;
   }
 
-  trackByDate(index: number, group: { date: string; messages: PrivateMessage[] }): string {
+  trackByDate(
+    index: number,
+    group: { date: string; messages: PrivateMessage[] }
+  ): string {
     return group.date;
   }
 

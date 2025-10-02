@@ -261,18 +261,15 @@ export class ChatService {
     is_public?: boolean;
     memberIds?: number[];
   }): Observable<ChatRoom> {
+    console.log('🏠 ChatService: Creating room via HTTP API only');
+    
     return this.http.post<{success: boolean, data: ChatRoom}>(`${this.apiUrl}/chat/rooms`, roomData)
       .pipe(
         map(response => response.data),
         tap(room => {
-          // Also send via socket for real-time notification to members
-          this.socketService.createRoom({
-            name: roomData.name,
-            description: roomData.description,
-            type: roomData.type,
-            isPublic: roomData.is_public,
-            memberIds: roomData.memberIds
-          });
+          console.log('✅ Room created successfully:', room.name);
+          // Add room to local state immediately
+          this.addRoom(room);
         })
       );
   }
