@@ -29,16 +29,17 @@
   flex: 1;
   min-height: 0;
   max-height: calc(
-    100vh - 66px - 60px
+    100vh - 100px - 90px - 50px
   ); /* Adjust for header and input heights */
   overflow-y: auto;
   overflow-x: hidden;
   scroll-behavior: smooth;
-  padding-bottom: 8px;
+  padding-bottom: 18px;
   overflow-anchor: none; /* Prevents scroll jumping */
-  padding-bottom: 115px; /* Space for fixed input */
 }
-
+.space-main-and-input {
+  min-height: 115px; /* Space for fixed input */
+}
 /* Fixed input at bottom */
 .chat-input-fixed {
   flex-shrink: 0;

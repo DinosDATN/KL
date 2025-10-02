@@ -49,7 +49,7 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
   @Output() deleteRoom = new EventEmitter<number>();
   @Output() leaveRoom = new EventEmitter<number>();
   @Output() loadOlderMessages = new EventEmitter<void>();
-  
+
   // Inputs for pagination state from parent
   @Input() set isLoadingOlderMessagesProp(value: boolean) {
     // This is managed by computed getter now
@@ -78,16 +78,16 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
   showNewMessageIndicator = false;
   newMessageCount = 0;
   previousScrollHeight = 0;
-  
+
   // Pagination state - will be managed by parent component
   get isLoadingOlderMessages(): boolean {
     return this.room ? this.isLoadingPagination(this.room.id) : false;
   }
-  
+
   get hasMoreMessages(): boolean {
     return this.room ? this.hasMorePagination(this.room.id) : true;
   }
-  
+
   // Callbacks for pagination state from parent
   private isLoadingPagination = (roomId: number): boolean => false;
   private hasMorePagination = (roomId: number): boolean => true;
@@ -104,18 +104,18 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
     // Check if new messages were added
     if (this.messages && this.messages.length > 0) {
       const lastMessage = this.messages[this.messages.length - 1];
-      
+
       // Handle new messages from others when user is not at bottom
       if (lastMessage.sender_id !== this.currentUser.id && !this.isNearBottom) {
         this.showNewMessageIndicator = true;
         this.newMessageCount++;
-      } 
+      }
       // Handle new messages when user is at bottom or should auto-scroll
       else if (this.shouldScrollToBottom || this.isNearBottom) {
         setTimeout(() => this.scrollToBottom(), 100);
         this.resetNewMessageIndicator();
       }
-      
+
       // Handle older messages being loaded (maintain scroll position)
       if (this.room && this.isLoadingPagination(this.room.id) && this.messagesContainer) {
         setTimeout(() => this.maintainScrollPositionAfterLoad(), 50);
@@ -147,14 +147,14 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
 
   onScroll(event: any): void {
     const element = event.target;
-    const threshold = 100; // pixels from bottom
+    const threshold = 50; // pixels from bottom
     const topThreshold = 100; // pixels from top for loading older messages
-    
+
     const atBottom = element.scrollHeight - element.scrollTop <= element.clientHeight + threshold;
     const nearTop = element.scrollTop <= topThreshold;
-    
+
     this.isNearBottom = atBottom;
-    
+
     // Handle bottom scroll behavior
     if (atBottom) {
       this.resetNewMessageIndicator();
@@ -162,7 +162,7 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
     } else {
       this.shouldScrollToBottom = false;
     }
-    
+
     // Handle top scroll behavior for loading older messages
     if (nearTop && !this.isLoadingOlderMessages && this.hasMoreMessages && this.messages.length > 0) {
       this.loadOlderMessagesHandler();
@@ -172,7 +172,7 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
   send(): void {
     console.log('📨 ChatMain: send() method called');
     console.log('💬 NewMessage content:', this.newMessage);
-    
+
     if (!this.newMessage.trim()) {
       console.log('⚠️ ChatMain: Empty message, returning');
       return;
@@ -275,40 +275,40 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
     if (this.isLoadingOlderMessages || !this.hasMoreMessages) {
       return;
     }
-    
+
     console.log('📜 Loading older messages...');
-    
+
     // Store current scroll position to maintain it after loading
     if (this.messagesContainer) {
       this.previousScrollHeight = this.messagesContainer.nativeElement.scrollHeight;
     }
-    
+
     // Emit event to parent component to load older messages
     this.loadOlderMessages.emit();
   }
-  
+
   private maintainScrollPositionAfterLoad(): void {
     if (this.messagesContainer && this.previousScrollHeight > 0) {
       const element = this.messagesContainer.nativeElement;
       const newScrollHeight = element.scrollHeight;
       const heightDifference = newScrollHeight - this.previousScrollHeight;
-      
+
       // Maintain scroll position by adjusting scrollTop
       element.scrollTop = element.scrollTop + heightDifference;
-      
+
       console.log('📍 Scroll position maintained after loading older messages');
     }
-    
+
     // Reset scroll height tracking
     this.previousScrollHeight = 0;
   }
-  
+
   // Called by parent when older messages are loaded
   onOlderMessagesLoaded(): void {
     // maintainScrollPositionAfterLoad will be called automatically through ngOnChanges
     // Pagination state is now managed by parent component
   }
-  
+
   // Called by parent when no more older messages are available  
   onNoMoreOlderMessages(): void {
     // Pagination state is now managed by parent component
@@ -433,9 +433,8 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
       return `${this.typingUsers[0].name} đang nhập...`;
     if (this.typingUsers.length === 2)
       return `${this.typingUsers[0].name} và ${this.typingUsers[1].name} đang nhập...`;
-    return `${this.typingUsers[0].name} và ${
-      this.typingUsers.length - 1
-    } người khác đang nhập...`;
+    return `${this.typingUsers[0].name} và ${this.typingUsers.length - 1
+      } người khác đang nhập...`;
   }
 
   // Track by functions

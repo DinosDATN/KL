@@ -19,15 +19,14 @@ import {
 } from '../../../../core/models/private-chat.model';
 import { FriendRequest } from '../../../../core/models/friendship.model';
 import { User } from '../../../../core/models/user.model';
-
 @Component({
-  selector: 'app-private-chat',
+  selector: 'app-private-chat-sidebar',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './private-chat.component.html',
-  styleUrl: './private-chat.component.css',
+  templateUrl: './private-chat-sidebar.component.html',
+  styleUrl: './private-chat-sidebar.component.css'
 })
-export class PrivateChatComponent
+export class PrivateChatSidebarComponent
   implements OnInit, OnDestroy, AfterViewChecked {
   @ViewChild('messagesContainer') messagesContainer!: ElementRef;
   @ViewChild('messageInput') messageInput!: ElementRef;
@@ -366,6 +365,7 @@ export class PrivateChatComponent
       element.scrollHeight - element.scrollTop <=
       element.clientHeight + threshold;
     const nearTop = element.scrollTop <= topThreshold;
+
     this.isNearBottom = atBottom;
 
     // Handle bottom scroll behavior

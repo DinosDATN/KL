@@ -40,6 +40,7 @@ import { FriendsListComponent } from './components/friends-list/friends-list.com
 import { FriendRequestsComponent } from './components/friend-requests/friend-requests.component';
 import { UserSearchComponent } from './components/user-search/user-search.component';
 import { PrivateChatComponent } from './components/private-chat/private-chat.component';
+import { PrivateChatSidebarComponent } from "./components/private-chat-sidebar/private-chat-sidebar.component";
 
 @Component({
   selector: 'app-chat',
@@ -56,6 +57,7 @@ import { PrivateChatComponent } from './components/private-chat/private-chat.com
     FriendRequestsComponent,
     UserSearchComponent,
     PrivateChatComponent,
+    PrivateChatSidebarComponent
   ],
   templateUrl: './chat.component.html',
   styleUrl: './chat.component.css',
@@ -628,8 +630,7 @@ export class ChatComponent implements OnInit, OnDestroy {
     }
 
     console.log(
-      `📜 Loading older messages for room ${roomId}, page ${
-        pagination.page + 1
+      `📜 Loading older messages for room ${roomId}, page ${pagination.page + 1
       }`
     );
 
