@@ -129,7 +129,7 @@
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background-color: currentColor;
+  background-color: #2563eb;
   animation: typingDot 1.4s infinite ease-in-out;
 }
 

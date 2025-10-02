@@ -76,7 +76,7 @@
       </div>
 
       <!-- Messages Area -->
-      <div #messagesContainer class="chat-messages-scroll flex-1 p-4 overflow-x-hidden relative"
+      <div #messagesContainer class="chat-messages-scroll flex-1 p-4 overflow-x-hidden relative pb-0"
         (scroll)="onScroll($event)">
         <!-- Loading Older Messages Indicator -->
         <div *ngIf="isLoadingOlderMessages" class="flex justify-center items-center py-4 loading-indicator">
@@ -195,24 +195,23 @@
             </div>
           </div>
         </div>
-
+        <!-- Typing Indicator (Fixed above input) -->
+        <div *ngIf="typingUsers.length > 0">
+          <div class="flex items-center gap-2 text-sm">
+            <div class="typing-dots">
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+            </div>
+            <span class="text-blue-600 dark:text-blue-400">
+              {{ getTypingText() }}
+            </span>
+          </div>
+        </div>
       </div>
       <!-- space-->
 
-      <!-- Typing Indicator (Fixed above input) -->
-      <div *ngIf="typingUsers.length > 0"
-        class="px-4 py-2 bg-white/95 dark:bg-gray-800/95 border-t border-gray-200 dark:border-gray-700">
-        <div class="flex items-center gap-2 text-sm">
-          <div class="typing-dots">
-            <div class="typing-dot"></div>
-            <div class="typing-dot"></div>
-            <div class="typing-dot"></div>
-          </div>
-          <span class="text-blue-600 dark:text-blue-400">
-            {{ getTypingText() }}
-          </span>
-        </div>
-      </div>
+
 
       <!-- Message Input -->
       <div class="chat-input-fixed p-4 bg-white/95 dark:bg-gray-800/95">

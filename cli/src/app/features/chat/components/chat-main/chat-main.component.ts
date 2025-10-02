@@ -74,10 +74,13 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
   showSettings = false;
   showChatSettingsModal = false;
   shouldScrollToBottom = true;
-  isNearBottom = true;
   showNewMessageIndicator = false;
   newMessageCount = 0;
   previousScrollHeight = 0;
+  
+  // Simplified scroll tracking
+  private isUserNearBottom = true;
+  private messageCountOnLastCheck = 0;
 
   // Pagination state - will be managed by parent component
   get isLoadingOlderMessages(): boolean {
@@ -101,21 +104,29 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
   ];
 
   ngOnChanges(): void {
-    // Check if new messages were added
-    if (this.messages && this.messages.length > 0) {
-      const lastMessage = this.messages[this.messages.length - 1];
-
-      // Handle new messages from others when user is not at bottom
-      if (lastMessage.sender_id !== this.currentUser.id && !this.isNearBottom) {
-        this.showNewMessageIndicator = true;
-        this.newMessageCount++;
+    // Simple logic: if new messages were added, decide whether to scroll
+    if (this.messages && this.messages.length > this.messageCountOnLastCheck) {
+      const isNewMessage = this.messageCountOnLastCheck > 0; // Skip first load
+      this.messageCountOnLastCheck = this.messages.length;
+      
+      if (isNewMessage) {
+        const lastMessage = this.messages[this.messages.length - 1];
+        const isMyMessage = lastMessage.sender_id === this.currentUser.id;
+        
+        // Always scroll for user's own messages or when user is near bottom
+        if (isMyMessage || this.isUserNearBottom) {
+          this.shouldScrollToBottom = true;
+          this.resetNewMessageIndicator();
+        } else {
+          // Show indicator if user scrolled up and received a message from someone else
+          this.showNewMessageIndicator = true;
+          this.newMessageCount++;
+        }
+      } else {
+        // First time loading conversation - always scroll to bottom
+        this.shouldScrollToBottom = true;
       }
-      // Handle new messages when user is at bottom or should auto-scroll
-      else if (this.shouldScrollToBottom || this.isNearBottom) {
-        setTimeout(() => this.scrollToBottom(), 100);
-        this.resetNewMessageIndicator();
-      }
-
+      
       // Handle older messages being loaded (maintain scroll position)
       if (this.room && this.isLoadingPagination(this.room.id) && this.messagesContainer) {
         setTimeout(() => this.maintainScrollPositionAfterLoad(), 50);
@@ -124,8 +135,8 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
   }
 
   ngAfterViewChecked(): void {
-    // Only auto-scroll to bottom for new messages, not when loading older ones
-    if (this.shouldScrollToBottom && this.isNearBottom && !this.isLoadingOlderMessages) {
+    // Simple: if we need to scroll, scroll (unless loading older messages)
+    if (this.shouldScrollToBottom && !this.isLoadingOlderMessages) {
       this.scrollToBottom();
       this.shouldScrollToBottom = false;
     }
@@ -147,23 +158,19 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
 
   onScroll(event: any): void {
     const element = event.target;
-    const threshold = 50; // pixels from bottom
+    const threshold = 100; // pixels from bottom
     const topThreshold = 100; // pixels from top for loading older messages
 
-    const atBottom = element.scrollHeight - element.scrollTop <= element.clientHeight + threshold;
-    const nearTop = element.scrollTop <= topThreshold;
+    // Track if user is near bottom (simplified)
+    this.isUserNearBottom = element.scrollHeight - element.scrollTop <= element.clientHeight + threshold;
 
-    this.isNearBottom = atBottom;
-
-    // Handle bottom scroll behavior
-    if (atBottom) {
+    // Hide new message indicator if user scrolled to bottom
+    if (this.isUserNearBottom && this.showNewMessageIndicator) {
       this.resetNewMessageIndicator();
-      this.shouldScrollToBottom = true;
-    } else {
-      this.shouldScrollToBottom = false;
     }
 
-    // Handle top scroll behavior for loading older messages
+    // Handle loading older messages
+    const nearTop = element.scrollTop <= topThreshold;
     if (nearTop && !this.isLoadingOlderMessages && this.hasMoreMessages && this.messages.length > 0) {
       this.loadOlderMessagesHandler();
     }
@@ -187,8 +194,9 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
 
     this.newMessage = '';
     this.replyToMessage = null;
+    // Always scroll when user sends a message
     this.shouldScrollToBottom = true;
-    this.isNearBottom = true; // Force scroll for user's own messages
+    this.isUserNearBottom = true;
     this.resetNewMessageIndicator();
 
     // Reset textarea height
@@ -242,7 +250,7 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
   onNewMessageIndicatorClick(): void {
     this.scrollToBottom();
     this.resetNewMessageIndicator();
-    this.isNearBottom = true;
+    this.isUserNearBottom = true;
   }
 
   // Settings modal methods

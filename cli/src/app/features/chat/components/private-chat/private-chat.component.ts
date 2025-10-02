@@ -43,14 +43,17 @@ export class PrivateChatComponent
   selectedFriend: User | null = null;
   showFriendsList = false;
 
-  // Modern UI features
+  // Simplified scroll tracking
   shouldScrollToBottom = true;
-  isNearBottom = true;
   showNewMessageIndicator = false;
   newMessageCount = 0;
   isLoadingOlderMessages = false;
   hasMoreMessages = true;
   previousScrollHeight = 0;
+
+  // Simple scroll state
+  private isUserNearBottom = true;
+  private messageCountOnLastCheck = 0;
 
   // Typing management
   private typingTimer: any;
@@ -94,27 +97,31 @@ export class PrivateChatComponent
       .subscribe((messagesMap) => {
         if (this.activeConversation) {
           const newMessages = messagesMap[this.activeConversation.id] || [];
-          const previousLength = this.messages.length;
+          const previousLength = this.messageCountOnLastCheck;
           this.messages = newMessages;
+          this.messageCountOnLastCheck = newMessages.length;
 
           // Check if new messages were added
           if (newMessages.length > previousLength && previousLength > 0) {
             const lastMessage = newMessages[newMessages.length - 1];
+            const isMyMessage = lastMessage.sender_id === this.currentUser?.id;
 
-            // If user is at bottom or near bottom, auto-scroll and mark as read
-            if (this.isNearBottom) {
+            // Always scroll for user's own messages or when user is near bottom
+            if (isMyMessage || this.isUserNearBottom) {
               this.shouldScrollToBottom = true;
+              this.resetNewMessageIndicator();
               // Mark new messages as read if user is viewing them
               setTimeout(() => {
                 this.markNewMessagesAsReadIfViewing();
               }, 100);
             } else {
-              // Show new message indicator if user is not at bottom
-              if (lastMessage.sender_id !== this.currentUser?.id) {
-                this.showNewMessageIndicator = true;
-                this.newMessageCount++;
-              }
+              // Show indicator if user scrolled up and received a message from someone else
+              this.showNewMessageIndicator = true;
+              this.newMessageCount++;
             }
+          } else if (previousLength === 0 && newMessages.length > 0) {
+            // First time loading conversation - always scroll to bottom
+            this.shouldScrollToBottom = true;
           }
         }
       });
@@ -137,12 +144,8 @@ export class PrivateChatComponent
   }
 
   ngAfterViewChecked(): void {
-    // Only auto-scroll to bottom for new messages, not when loading older ones
-    if (
-      this.shouldScrollToBottom &&
-      this.isNearBottom &&
-      !this.isLoadingOlderMessages
-    ) {
+    // Simple: if we need to scroll, scroll (unless loading older messages)
+    if (this.shouldScrollToBottom && !this.isLoadingOlderMessages) {
       this.scrollToBottom();
       this.shouldScrollToBottom = false;
     }
@@ -188,10 +191,13 @@ export class PrivateChatComponent
   }
 
   private loadConversationMessages(conversationId: number): void {
+    // Reset message count when loading a new conversation
+    this.messageCountOnLastCheck = 0;
+    this.shouldScrollToBottom = true;
+
     this.privateChatService.loadConversationMessages(conversationId).subscribe({
       next: (messages) => {
         // Messages are now handled by the messages$ observable subscription
-        this.shouldScrollToBottom = true;
         this.markMessagesAsRead(conversationId);
       },
       error: (error) => {
@@ -215,7 +221,7 @@ export class PrivateChatComponent
   }
 
   private markNewMessagesAsReadIfViewing(): void {
-    if (!this.activeConversation || !this.isNearBottom) return;
+    if (!this.activeConversation || !this.isUserNearBottom) return;
 
     const unreadMessages = this.messages.filter(
       (msg) =>
@@ -278,8 +284,9 @@ export class PrivateChatComponent
           this.messages = this.privateChatService.getMessagesForConversation(
             this.activeConversation!.id
           );
+          // Always scroll when user sends a message
           this.shouldScrollToBottom = true;
-          this.isNearBottom = true;
+          this.isUserNearBottom = true;
           this.resetNewMessageIndicator();
 
           // Stop typing indicator
@@ -362,23 +369,19 @@ export class PrivateChatComponent
     const threshold = 100; // pixels from bottom
     const topThreshold = 100; // pixels from top for loading older messages
 
-    const atBottom =
-      element.scrollHeight - element.scrollTop <=
-      element.clientHeight + threshold;
-    const nearTop = element.scrollTop <= topThreshold;
-    this.isNearBottom = atBottom;
+    // Track if user is near bottom (simplified)
+    this.isUserNearBottom =
+      element.scrollHeight - element.scrollTop <= element.clientHeight + threshold;
 
-    // Handle bottom scroll behavior
-    if (atBottom) {
+    // Hide new message indicator if user scrolled to bottom
+    if (this.isUserNearBottom && this.showNewMessageIndicator) {
       this.resetNewMessageIndicator();
-      this.shouldScrollToBottom = true;
       // Mark messages as read when user scrolls to view them
       this.markNewMessagesAsReadIfViewing();
-    } else {
-      this.shouldScrollToBottom = false;
     }
 
-    // Handle top scroll behavior for loading older messages (future feature)
+    // Handle loading older messages (future feature)
+    const nearTop = element.scrollTop <= topThreshold;
     if (
       nearTop &&
       !this.isLoadingOlderMessages &&
@@ -415,7 +418,7 @@ export class PrivateChatComponent
   onNewMessageIndicatorClick(): void {
     this.scrollToBottom();
     this.resetNewMessageIndicator();
-    this.isNearBottom = true;
+    this.isUserNearBottom = true;
   }
 
   // Typing indicator methods
@@ -471,8 +474,10 @@ export class PrivateChatComponent
 
   getTypingText(): string {
     if (this.typingUsers.length === 0) return '';
-    if (this.typingUsers.length === 1)
+    if (this.typingUsers.length === 1) {
+      this.shouldScrollToBottom = true;
       return `${this.typingUsers[0].name} đang nhập...`;
+    }
     return `${this.typingUsers[0].name} và ${this.typingUsers.length - 1
       } người khác đang nhập...`;
   }
