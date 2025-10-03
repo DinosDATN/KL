@@ -622,7 +622,7 @@ export class ChatComponent implements OnInit, OnDestroy {
         friend.friend.name.toLowerCase().includes(term)
       );
     }
-
+    // alert(friends);
     // sort by last_seen_at
     return friends.sort((a, b) => {
       const aTime = new Date(a.friend.last_seen_at || '').getTime();

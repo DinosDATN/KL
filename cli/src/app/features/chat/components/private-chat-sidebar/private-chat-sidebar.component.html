@@ -38,7 +38,7 @@
                 [class.bg-blue-900]="showFriendsList && themeService.isDarkMode()"
                 [class.text-blue-600]="showFriendsList" [class.dark:text-blue-400]="showFriendsList"
                 class="flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
-                Bạn bè ({{ getFilteredFriends().length }})
+                Bạn bè ({{ friends.length }})
             </button>
         </div>
     </div>
@@ -58,7 +58,8 @@
             </p>
         </div>
 
-        <div *ngIf="!loading && getFilteredConversations().length > 0" class="divide-y divide-gray-200 dark:divide-gray-700">
+        <div *ngIf="!loading && getFilteredConversations().length > 0"
+            class="divide-y divide-gray-200 dark:divide-gray-700">
             <div *ngFor="
             let conversation of getFilteredConversations();
             trackBy: trackByConversationId
@@ -120,14 +121,14 @@
 
     <!-- Friends List -->
     <div *ngIf="showFriendsList" class="flex-1 overflow-y-auto">
-        <div *ngIf="getFilteredFriends().length === 0" class="p-4 text-center">
+        <div *ngIf="friends.length === 0" class="p-4 text-center">
             <p class="text-gray-500 dark:text-gray-400 text-sm">
                 {{ searchTerm.trim() ? 'Không tìm thấy bạn bè nào' : 'Chưa có bạn bè nào' }}
             </p>
         </div>
 
-        <div *ngIf="getFilteredFriends().length > 0" class="divide-y divide-gray-200 dark:divide-gray-700">
-            <div *ngFor="let friendReq of getFilteredFriends(); trackBy: trackByFriendId" (click)="onSelectFriend(friendReq)"
+        <div *ngIf="friends.length > 0" class="divide-y divide-gray-200 dark:divide-gray-700">
+            <div *ngFor="let friendReq of friends; trackBy: trackByFriendId" (click)="onSelectFriend(friendReq)"
                 class="friend-item p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-all duration-200">
                 <div class="flex items-center space-x-3">
                     <div class="relative flex-shrink-0" [class]="

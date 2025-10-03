@@ -55,7 +55,6 @@ export class PrivateChatSidebarComponent
   previousScrollHeight = 0;
 
   @Input() searchTerm: string = '';
-  @Input() listFriends: FriendRequest[] = [];
   @Input() selectedUser: User | null = null;
 
 
@@ -547,31 +546,5 @@ export class PrivateChatSidebarComponent
     });
   }
 
-  getFilteredFriends(): FriendRequest[] {
-    let filtered = this.listFriends;
 
-    // Apply search filter
-    if (this.searchTerm.trim()) {
-      const term = this.searchTerm.toLowerCase();
-      filtered = filtered.filter((friendReq) => {
-        const friendName = friendReq.friend.name?.toLowerCase() || '';
-        return friendName.includes(term);
-      });
-    }
-
-    // Sort by online status first, then by last seen
-    return filtered.sort((a, b) => {
-      // Online friends first
-      const aOnline = this.getOnlineStatus(a.friend);
-      const bOnline = this.getOnlineStatus(b.friend);
-
-      if (aOnline && !bOnline) return -1;
-      if (!aOnline && bOnline) return 1;
-
-      // Then sort by last seen
-      const aTime = new Date(a.friend.last_seen_at || '').getTime();
-      const bTime = new Date(b.friend.last_seen_at || '').getTime();
-      return bTime - aTime;
-    });
-  }
 }

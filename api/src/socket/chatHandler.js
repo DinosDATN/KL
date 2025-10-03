@@ -617,8 +617,8 @@ const handleConnection = (io) => {
         const userConversations = await PrivateConversation.findAll({
           where: {
             [require("sequelize").Op.or]: [
-              { user1_id: socket.userId },
-              { user2_id: socket.userId },
+              { participant1_id: socket.userId },
+              { participant2_id: socket.userId },
             ],
           },
           attributes: ["id"],
@@ -672,8 +672,8 @@ const joinUserPrivateConversations = async (socket) => {
     const userConversations = await PrivateConversation.findAll({
       where: {
         [require("sequelize").Op.or]: [
-          { user1_id: socket.userId },
-          { user2_id: socket.userId },
+          { participant1_id: socket.userId },
+          { participant2_id: socket.userId },
         ],
       },
       attributes: ["id"],
