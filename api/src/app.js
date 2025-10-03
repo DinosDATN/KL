@@ -31,6 +31,7 @@ const documentAdminRoutes = require("./routes/documentAdminRoutes");
 const problemAdminRoutes = require("./routes/problemAdminRoutes");
 const contestAdminRoutes = require("./routes/contestAdminRoutes");
 const userAdminRoutes = require("./routes/userAdminRoutes");
+const courseContentRoutes = require("./routes/courseContentRoutes");
 
 // Create Express app and HTTP server
 const app = express();
@@ -102,6 +103,9 @@ app.use(apiPrefix + "/admin/documents", documentAdminRoutes);
 app.use(apiPrefix + "/admin/problems", problemAdminRoutes);
 app.use(apiPrefix + "/admin/contests", contestAdminRoutes);
 app.use(apiPrefix + "/admin/users", userAdminRoutes);
+
+// Course content routes
+app.use(apiPrefix + "/course-content", courseContentRoutes);
 
 // Homepage-specific routes
 app.use(apiPrefix + "/homepage", homepageRoutes);
