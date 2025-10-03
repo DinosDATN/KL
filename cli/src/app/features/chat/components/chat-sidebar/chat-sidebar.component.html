@@ -1,59 +1,28 @@
 <div
-  class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900"
->
+  class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900">
   <div class="flex items-center justify-between mb-4">
-    <h1
-      class="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
-    >
+    <h1 class="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
       💬 Chat
     </h1>
-    <button
-      (click)="createGroup.emit()"
+    <button (click)="createGroup.emit()"
       class="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
-      title="Tạo nhóm mới"
-    >
-      <svg
-        class="w-5 h-5"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-        ></path>
+      title="Tạo nhóm mới">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
       </svg>
     </button>
   </div>
 
   <!-- Search Bar -->
   <div class="relative mb-4">
-    <div
-      class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-    >
-      <svg
-        class="w-5 h-5 text-gray-400"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-        ></path>
+    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+      <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
       </svg>
     </div>
-    <input
-      type="text"
-      [value]="searchTerm"
-      (input)="onSearchChange($event)"
-      placeholder="Tìm kiếm cuộc trò chuyện..."
-      class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
-    />
+    <input type="text" [value]="searchTerm" (input)="onSearchChange($event)" placeholder="Tìm kiếm cuộc trò chuyện..."
+      class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200" />
   </div>
 </div>
 
@@ -62,18 +31,10 @@
   <!-- No results -->
   <div *ngIf="rooms.length === 0" class="p-4 text-center">
     <div class="text-gray-400 dark:text-gray-500 mb-2">
-      <svg
-        class="w-12 h-12 mx-auto"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-        ></path>
+      <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
+        </path>
       </svg>
     </div>
     <p class="text-gray-600 dark:text-gray-400 text-sm">
@@ -83,28 +44,18 @@
 
   <!-- Room Items -->
   <div class="space-y-1 p-2">
-    <div
-      *ngFor="let room of rooms; trackBy: trackByRoomId"
-      (click)="selectRoom(room)"
-      [class]="
+    <div *ngFor="let room of rooms; trackBy: trackByRoomId" (click)="selectRoom(room)" [class]="
         'room-item flex items-center p-3 rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md group ' +
         (selectedRoom?.id === room.id
           ? 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-l-4 border-blue-500 shadow-sm'
           : 'hover:bg-gradient-to-r hover:from-gray-50 hover:to-blue-50/30 dark:hover:from-gray-700/50 dark:hover:to-blue-900/10 hover:scale-[1.02]')
-      "
-    >
+      ">
       <!-- Room Avatar -->
       <div class="relative flex-shrink-0">
         <div
-          class="w-12 h-12 bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl group-hover:scale-105 transition-all duration-200"
-        >
-          <img
-            *ngIf="room.avatar_url; else defaultAvatar"
-            [src]="room.avatar_url"
-            [alt]="room.name"
-            class="w-full h-full rounded-lg object-cover"
-            (error)="onImageError($event)"
-          />
+          class="w-12 h-12 bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl group-hover:scale-105 transition-all duration-200">
+          <img *ngIf="room.avatar_url; else defaultAvatar" [src]="room.avatar_url" [alt]="room.name"
+            class="w-full h-full rounded-lg object-cover" (error)="onImageError($event)" />
           <ng-template #defaultAvatar>
             <span class="text-white font-semibold text-lg">
               {{ getRoomInitials(room.name) }}
@@ -113,41 +64,20 @@
         </div>
 
         <!-- Room Type Indicator -->
-        <div
-          [class]="
+        <div [class]="
             'absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-xs ' +
             getRoomTypeClass(room.type)
-          "
-        >
-          <svg
-            *ngIf="room.type === 'course'"
-            class="w-3 h-3"
-            fill="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-            />
+          ">
+          <svg *ngIf="room.type === 'course'" class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
           </svg>
-          <svg
-            *ngIf="room.type === 'global'"
-            class="w-3 h-3"
-            fill="currentColor"
-            viewBox="0 0 24 24"
-          >
+          <svg *ngIf="room.type === 'global'" class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
             <path
-              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"
-            />
+              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
           </svg>
-          <svg
-            *ngIf="room.type === 'group'"
-            class="w-3 h-3"
-            fill="currentColor"
-            viewBox="0 0 24 24"
-          >
+          <svg *ngIf="room.type === 'group'" class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
             <path
-              d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A2.99 2.99 0 0 0 17 6.5c-.59 0-1.15.17-1.61.46L12 10.5 8.61 6.96C8.15 6.67 7.59 6.5 7 6.5c-1.66 0-2.96 1.36-2.96 3.04L1.5 16H4v6h16z"
-            />
+              d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A2.99 2.99 0 0 0 17 6.5c-.59 0-1.15.17-1.61.46L12 10.5 8.61 6.96C8.15 6.67 7.59 6.5 7 6.5c-1.66 0-2.96 1.36-2.96 3.04L1.5 16H4v6h16z" />
           </svg>
         </div>
       </div>
@@ -155,24 +85,19 @@
       <!-- Room Info -->
       <div class="flex-1 min-w-0 ml-3">
         <div class="flex items-center justify-between mb-1">
-          <h3
-            [class]="
+          <h3 [class]="
               'font-medium truncate ' +
               (selectedRoom?.id === room.id
                 ? 'text-blue-900 dark:text-blue-200'
                 : 'text-gray-900 dark:text-white')
-            "
-          >
+            ">
             {{ room.name }}
           </h3>
           <div class="flex items-center gap-1">
-            <span
-              *ngIf="room.unread_count > 0"
-              [class]="
+            <span *ngIf="room.unread_count > 0" [class]="
                 'unread-badge inline-flex items-center justify-center min-w-[20px] h-5 px-2 text-xs font-medium text-white bg-red-500 rounded-full ' +
                 (room.unread_count > 0 ? 'animate-pulse' : '')
-              "
-            >
+              ">
               {{ room.unread_count > 99 ? "99+" : room.unread_count }}
             </span>
             <span class="text-xs text-gray-500 dark:text-gray-400">
@@ -187,24 +112,19 @@
           </p>
           <div class="flex items-center gap-1 ml-2">
             <!-- Total member count -->
-            <div
-              *ngIf="room.member_count && room.member_count > 0"
+            <div *ngIf="room.member_count && room.member_count > 0"
               class="flex items-center text-xs text-gray-500 dark:text-gray-400"
-              [title]="'Tổng số thành viên: ' + room.member_count"
-            >
+              [title]="'Tổng số thành viên: ' + room.member_count">
               <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 24 24">
                 <path
-                  d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A2.99 2.99 0 0 0 17 6.5c-.59 0-1.15.17-1.61.46L12 10.5 8.61 6.96C8.15 6.67 7.59 6.5 7 6.5c-1.66 0-2.96 1.36-2.96 3.04L1.5 16H4v6h16z"
-                />
+                  d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A2.99 2.99 0 0 0 17 6.5c-.59 0-1.15.17-1.61.46L12 10.5 8.61 6.96C8.15 6.67 7.59 6.5 7 6.5c-1.66 0-2.96 1.36-2.96 3.04L1.5 16H4v6h16z" />
               </svg>
               {{ room.member_count }}
             </div>
             <!-- Online members count -->
-            <div
-              *ngIf="getOnlineMembersCount(room) > 0"
+            <div *ngIf="getOnlineMembersCount(room) > 0"
               class="flex items-center text-xs text-green-600 dark:text-green-400"
-              [title]="'Đang trực tuyến: ' + getOnlineMembersCount(room)"
-            >
+              [title]="'Đang trực tuyến: ' + getOnlineMembersCount(room)">
               <div class="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
               {{ getOnlineMembersCount(room) }}
             </div>

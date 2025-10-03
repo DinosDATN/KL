@@ -41,6 +41,7 @@ import { FriendRequestsComponent } from './components/friend-requests/friend-req
 import { UserSearchComponent } from './components/user-search/user-search.component';
 import { PrivateChatComponent } from './components/private-chat/private-chat.component';
 import { PrivateChatSidebarComponent } from "./components/private-chat-sidebar/private-chat-sidebar.component";
+import { FriendRequest } from '../../core/models/friendship.model';
 
 @Component({
   selector: 'app-chat',
@@ -69,6 +70,7 @@ export class ChatComponent implements OnInit, OnDestroy {
   users: User[] = [];
   roomMembers: ChatRoomMember[] = [];
   reactions: ChatReaction[] = [];
+  friends: FriendRequest[] = []; // Placeholder - replace with actual friends data from service
 
   // Current state
   selectedRoom: ChatRoom | null = null;
@@ -93,6 +95,9 @@ export class ChatComponent implements OnInit, OnDestroy {
 
   // Search
   searchTerm = '';
+
+  // Search private chat 
+  searchPrivateChatTerm = '';
 
   private destroy$ = new Subject<void>();
 
@@ -608,6 +613,25 @@ export class ChatComponent implements OnInit, OnDestroy {
     });
   }
 
+  getFriendsList(): FriendRequest[] {
+    let friends = this.friends;
+    // Apply search filter
+    if (this.searchTerm.trim()) {
+      const term = this.searchTerm.toLowerCase();
+      friends = friends.filter((friend) =>
+        friend.friend.name.toLowerCase().includes(term)
+      );
+    }
+
+    // sort by last_seen_at
+    return friends.sort((a, b) => {
+      const aTime = new Date(a.friend.last_seen_at || '').getTime();
+      const bTime = new Date(b.friend.last_seen_at || '').getTime();
+      return bTime - aTime;
+    }
+    );
+
+  }
   // Pagination Methods
   onLoadOlderMessages(): void {
     if (!this.selectedRoom || !this.currentUser) {

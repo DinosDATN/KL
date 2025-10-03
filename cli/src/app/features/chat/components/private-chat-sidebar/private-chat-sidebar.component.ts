@@ -5,6 +5,9 @@ import {
   ViewChild,
   ElementRef,
   AfterViewChecked,
+  Input,
+  Output,
+  EventEmitter,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -50,6 +53,13 @@ export class PrivateChatSidebarComponent
   isLoadingOlderMessages = false;
   hasMoreMessages = true;
   previousScrollHeight = 0;
+
+  @Input() searchTerm: string = '';
+  @Input() listFriends: FriendRequest[] = [];
+  @Input() selectedUser: User | null = null;
+
+
+  @Output() searchChanged = new EventEmitter<string>();
 
   // Typing management
   private typingTimer: any;
@@ -161,7 +171,9 @@ export class PrivateChatSidebarComponent
     this.destroy$.next();
     this.destroy$.complete();
   }
-
+  onSearchChange(event: any): void {
+    this.searchChanged.emit(event.target.value);
+  }
   private loadData(): void {
     this.loading = true;
 
@@ -507,5 +519,59 @@ export class PrivateChatSidebarComponent
 
   getOnlineStatus(user: User): boolean {
     return user.is_online || false;
+  }
+
+  // Search filtering methods
+  getFilteredConversations(): PrivateConversation[] {
+    let filtered = this.conversations;
+
+    // Apply search filter
+    if (this.searchTerm.trim()) {
+      const term = this.searchTerm.toLowerCase();
+      filtered = filtered.filter((conversation) => {
+        // Search by other participant's name
+        const participantName = conversation.other_participant?.name?.toLowerCase() || '';
+
+        // Search by last message content
+        const lastMessageContent = conversation.last_message?.content?.toLowerCase() || '';
+
+        return participantName.includes(term) || lastMessageContent.includes(term);
+      });
+    }
+
+    // Sort by last activity (most recent first)
+    return filtered.sort((a, b) => {
+      const aTime = new Date(a.updated_at || a.created_at).getTime();
+      const bTime = new Date(b.updated_at || b.created_at).getTime();
+      return bTime - aTime;
+    });
+  }
+
+  getFilteredFriends(): FriendRequest[] {
+    let filtered = this.listFriends;
+
+    // Apply search filter
+    if (this.searchTerm.trim()) {
+      const term = this.searchTerm.toLowerCase();
+      filtered = filtered.filter((friendReq) => {
+        const friendName = friendReq.friend.name?.toLowerCase() || '';
+        return friendName.includes(term);
+      });
+    }
+
+    // Sort by online status first, then by last seen
+    return filtered.sort((a, b) => {
+      // Online friends first
+      const aOnline = this.getOnlineStatus(a.friend);
+      const bOnline = this.getOnlineStatus(b.friend);
+
+      if (aOnline && !bOnline) return -1;
+      if (!aOnline && bOnline) return 1;
+
+      // Then sort by last seen
+      const aTime = new Date(a.friend.last_seen_at || '').getTime();
+      const bTime = new Date(b.friend.last_seen_at || '').getTime();
+      return bTime - aTime;
+    });
   }
 }

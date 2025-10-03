@@ -58,7 +58,7 @@
     </div>
 
     <!-- Sidebar Content -->
-    <div class="flex-1 overflow-hidden">
+    <div class="flex-1 overflow-hidden min-w-[355px]">
       <!-- Group Chat Sidebar -->
       <div *ngIf="chatMode === 'groups'" class="h-full">
         <app-chat-sidebar [rooms]="getFilteredRooms()" [currentUser]="currentUser!" [selectedRoom]="selectedRoom"
@@ -69,7 +69,9 @@
 
       <!-- Private Chat Mode -->
       <div *ngIf="chatMode === 'private'" class="h-full p-4">
-        <app-private-chat-sidebar> </app-private-chat-sidebar>
+        <app-private-chat-sidebar [listFriends]="getFriendsList()" [searchTerm]="searchPrivateChatTerm"
+          (searchChanged)="searchPrivateChatTerm = $event">
+        </app-private-chat-sidebar>
       </div>
 
       <!-- Friends Management -->
