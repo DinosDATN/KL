@@ -1,0 +1,183 @@
+<!-- Course List -->
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 transition-colors duration-200">
+  <!-- Loading State -->
+  <div *ngIf="loading" class="p-8">
+    <div class="animate-pulse">
+      <div class="space-y-4">
+        <div *ngFor="let i of [1,2,3,4,5]" class="flex items-center space-x-4">
+          <div class="w-4 h-4 bg-gray-300 dark:bg-gray-600 rounded"></div>
+          <div class="flex-1 space-y-2">
+            <div class="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4"></div>
+            <div class="h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="p-8 text-center">
+    <div class="text-red-500 mb-4">
+      <i class="icon-alert-circle text-2xl"></i>
+    </div>
+    <p class="text-red-600 dark:text-red-400 font-medium">{{ error }}</p>
+  </div>
+
+  <!-- Course Table -->
+  <div *ngIf="!loading && !error" class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+      <!-- Table Header -->
+      <thead class="bg-gray-50 dark:bg-gray-700">
+        <tr>
+          <th scope="col" class="w-4 p-4">
+            <input
+              type="checkbox"
+              [(ngModel)]="selectAllChecked"
+              (change)="onSelectAll()"
+              class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600"
+            >
+          </th>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" (click)="onSort('title')">
+            Title
+            <i class="icon-chevron-up ml-1 text-xs" *ngIf="sortBy === 'title' && sortOrder === 'asc'"></i>
+            <i class="icon-chevron-down ml-1 text-xs" *ngIf="sortBy === 'title' && sortOrder === 'desc'"></i>
+          </th>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+            Status
+          </th>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+            Instructor
+          </th>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" (click)="onSort('students')">
+            Students
+            <i class="icon-chevron-up ml-1 text-xs" *ngIf="sortBy === 'students' && sortOrder === 'asc'"></i>
+            <i class="icon-chevron-down ml-1 text-xs" *ngIf="sortBy === 'students' && sortOrder === 'desc'"></i>
+          </th>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" (click)="onSort('rating')">
+            Rating
+            <i class="icon-chevron-up ml-1 text-xs" *ngIf="sortBy === 'rating' && sortOrder === 'asc'"></i>
+            <i class="icon-chevron-down ml-1 text-xs" *ngIf="sortBy === 'rating' && sortOrder === 'desc'"></i>
+          </th>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" (click)="onSort('created_at')">
+            Created
+            <i class="icon-chevron-up ml-1 text-xs" *ngIf="sortBy === 'created_at' && sortOrder === 'asc'"></i>
+            <i class="icon-chevron-down ml-1 text-xs" *ngIf="sortBy === 'created_at' && sortOrder === 'desc'"></i>
+          </th>
+          <th scope="col" class="relative px-6 py-3">
+            <span class="sr-only">Actions</span>
+          </th>
+        </tr>
+      </thead>
+      
+      <!-- Table Body -->
+      <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+        <tr *ngFor="let course of courses" class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+          <td class="w-4 p-4">
+            <input
+              type="checkbox"
+              [checked]="isCourseSelected(course.id)"
+              (change)="onCourseToggle(course.id, $event)"
+              class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600"
+            >
+          </td>
+          <td class="px-6 py-4">
+            <div class="text-sm font-medium text-gray-900 dark:text-white">{{ course.title }}</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">{{ course.description || 'No description' }}</div>
+          </td>
+          <td class="px-6 py-4">
+            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full" [ngClass]="getStatusColor(course.status)">
+              {{ course.status | titlecase }}
+            </span>
+          </td>
+          <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+            {{ course.Instructor?.name || 'N/A' }}
+          </td>
+          <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+            {{ course.students }}
+          </td>
+          <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+            <div class="flex items-center">
+              <span>{{ course.rating }}</span>
+              <i class="icon-star text-yellow-500 ml-1 text-xs"></i>
+            </div>
+          </td>
+          <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+            {{ formatDate(course.created_at) }}
+          </td>
+          <td class="px-6 py-4 text-right text-sm font-medium">
+            <div class="flex items-center gap-2">
+              <button
+                (click)="onEdit(course)"
+                class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
+              >
+                <i class="icon-edit"></i>
+              </button>
+              
+              <button
+                *ngIf="showDeletedActions"
+                class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200 transition-colors"
+                title="Restore"
+              >
+                <i class="icon-rotate-ccw"></i>
+              </button>
+              
+              <button
+                (click)="onDelete(course.id)"
+                class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 transition-colors"
+                [title]="showDeletedActions ? 'Permanently Delete' : 'Delete'"
+              >
+                <i class="icon-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && !error && courses.length === 0" class="text-center py-12">
+    <div class="text-gray-400 dark:text-gray-500 text-4xl mb-4">
+      <i class="icon-book"></i>
+    </div>
+    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+      No courses found
+    </h3>
+    <p class="text-gray-600 dark:text-gray-400">
+      {{ showDeletedActions ? 'No deleted courses to show' : 'No courses match your current filters' }}
+    </p>
+  </div>
+
+  <!-- Pagination -->
+  <div *ngIf="!loading && courses.length > 0" class="border-t border-gray-200 dark:border-gray-700 px-6 py-4">
+    <div class="flex items-center justify-between">
+      <div class="text-sm text-gray-700 dark:text-gray-300">
+        Showing {{ (currentPage - 1) * itemsPerPage + 1 }} to 
+        {{ Math.min(currentPage * itemsPerPage, totalItems) }} of 
+        {{ totalItems }} results
+      </div>
+      
+      <div class="flex items-center space-x-2">
+        <button
+          (click)="pageChange.emit(currentPage - 1)"
+          [disabled]="currentPage <= 1"
+          class="px-3 py-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          Previous
+        </button>
+        
+        <span class="px-3 py-1 text-sm text-gray-700 dark:text-gray-300">
+          Page {{ currentPage }} of {{ totalPages }}
+        </span>
+        
+        <button
+          (click)="pageChange.emit(currentPage + 1)"
+          [disabled]="currentPage >= totalPages"
+          class="px-3 py-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

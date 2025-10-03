@@ -1,0 +1,274 @@
+<!-- Course Form Modal -->
+<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" (click)="onCancel()">
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden" (click)="$event.stopPropagation()">
+    <!-- Form Header -->
+    <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+        {{ isEdit ? 'Edit Course' : 'Create New Course' }}
+      </h2>
+      <button
+        type="button"
+        (click)="onCancel()"
+        class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+      >
+        <i class="icon-x text-xl"></i>
+      </button>
+    </div>
+
+    <!-- Form Content -->
+    <div class="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+      <form [formGroup]="courseForm" (ngSubmit)="onSubmit()">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Basic Information -->
+          <div class="md:col-span-2">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Basic Information</h3>
+          </div>
+
+          <!-- Title -->
+          <div class="md:col-span-2">
+            <label for="title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Course Title *
+            </label>
+            <input
+              type="text"
+              id="title"
+              formControlName="title"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              placeholder="Enter course title"
+            >
+            <div *ngIf="courseForm.get('title')?.touched && courseForm.get('title')?.errors" class="mt-1 text-sm text-red-600 dark:text-red-400">
+              <div *ngIf="courseForm.get('title')?.errors?.['required']">Title is required</div>
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div class="md:col-span-2">
+            <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Description
+            </label>
+            <textarea
+              id="description"
+              formControlName="description"
+              rows="4"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              placeholder="Enter course description"
+            ></textarea>
+          </div>
+
+          <!-- Category -->
+          <div>
+            <label for="category" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Category *
+            </label>
+            <select
+              id="category"
+              formControlName="category"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            >
+              <option value="">Select a category</option>
+              <option value="programming">Programming</option>
+              <option value="design">Design</option>
+              <option value="business">Business</option>
+              <option value="marketing">Marketing</option>
+              <option value="data-science">Data Science</option>
+              <option value="other">Other</option>
+            </select>
+            <div *ngIf="courseForm.get('category')?.touched && courseForm.get('category')?.errors" class="mt-1 text-sm text-red-600 dark:text-red-400">
+              <div *ngIf="courseForm.get('category')?.errors?.['required']">Category is required</div>
+            </div>
+          </div>
+
+          <!-- Level -->
+          <div>
+            <label for="level" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Level *
+            </label>
+            <select
+              id="level"
+              formControlName="level"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            >
+              <option value="">Select a level</option>
+              <option value="beginner">Beginner</option>
+              <option value="intermediate">Intermediate</option>
+              <option value="advanced">Advanced</option>
+            </select>
+            <div *ngIf="courseForm.get('level')?.touched && courseForm.get('level')?.errors" class="mt-1 text-sm text-red-600 dark:text-red-400">
+              <div *ngIf="courseForm.get('level')?.errors?.['required']">Level is required</div>
+            </div>
+          </div>
+
+          <!-- Instructor -->
+          <div>
+            <label for="instructor_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Instructor *
+            </label>
+            <select
+              id="instructor_id"
+              formControlName="instructor_id"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            >
+              <option value="">Select an instructor</option>
+              <!-- Instructor options would be loaded dynamically -->
+            </select>
+            <div *ngIf="courseForm.get('instructor_id')?.touched && courseForm.get('instructor_id')?.errors" class="mt-1 text-sm text-red-600 dark:text-red-400">
+              <div *ngIf="courseForm.get('instructor_id')?.errors?.['required']">Instructor is required</div>
+            </div>
+          </div>
+
+          <!-- Duration -->
+          <div>
+            <label for="duration" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Duration (hours)
+            </label>
+            <input
+              type="number"
+              id="duration"
+              formControlName="duration"
+              min="0"
+              step="0.5"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              placeholder="0"
+            >
+          </div>
+
+          <!-- Pricing Section -->
+          <div class="md:col-span-2 border-t border-gray-200 dark:border-gray-700 pt-6 mt-4">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Pricing</h3>
+          </div>
+
+          <!-- Price -->
+          <div>
+            <label for="price" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Price ($)
+            </label>
+            <input
+              type="number"
+              id="price"
+              formControlName="price"
+              min="0"
+              step="0.01"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              placeholder="0.00"
+            >
+          </div>
+
+          <!-- Discount Percentage -->
+          <div>
+            <label for="discount_percentage" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Discount (%)
+            </label>
+            <input
+              type="number"
+              id="discount_percentage"
+              formControlName="discount_percentage"
+              min="0"
+              max="100"
+              step="1"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              placeholder="0"
+            >
+          </div>
+
+          <!-- Course Settings -->
+          <div class="md:col-span-2 border-t border-gray-200 dark:border-gray-700 pt-6 mt-4">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Course Settings</h3>
+          </div>
+
+          <!-- Status -->
+          <div>
+            <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Status
+            </label>
+            <select
+              id="status"
+              formControlName="status"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            >
+              <option value="draft">Draft</option>
+              <option value="published">Published</option>
+              <option value="archived">Archived</option>
+            </select>
+          </div>
+
+          <!-- Maximum Students -->
+          <div>
+            <label for="max_students" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Max Students
+            </label>
+            <input
+              type="number"
+              id="max_students"
+              formControlName="max_students"
+              min="1"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              placeholder="Unlimited"
+            >
+          </div>
+
+          <!-- Course Image -->
+          <div class="md:col-span-2">
+            <label for="image_url" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Course Image URL
+            </label>
+            <input
+              type="url"
+              id="image_url"
+              formControlName="image_url"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              placeholder="https://example.com/image.jpg"
+            >
+          </div>
+
+          <!-- Prerequisites -->
+          <div class="md:col-span-2">
+            <label for="prerequisites" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Prerequisites
+            </label>
+            <textarea
+              id="prerequisites"
+              formControlName="prerequisites"
+              rows="3"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              placeholder="List any prerequisites for this course"
+            ></textarea>
+          </div>
+
+          <!-- Learning Objectives -->
+          <div class="md:col-span-2">
+            <label for="learning_objectives" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Learning Objectives
+            </label>
+            <textarea
+              id="learning_objectives"
+              formControlName="learning_objectives"
+              rows="3"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              placeholder="What will students learn from this course?"
+            ></textarea>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Form Footer -->
+    <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+      <button
+        type="button"
+        (click)="onCancel()"
+        class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        (click)="onSubmit()"
+        [disabled]="courseForm.invalid || loading"
+        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed rounded-md transition-colors flex items-center gap-2"
+      >
+        <i *ngIf="loading" class="icon-loader animate-spin"></i>
+        {{ isEdit ? 'Update Course' : 'Create Course' }}
+      </button>
+    </div>
+  </div>
+</div>

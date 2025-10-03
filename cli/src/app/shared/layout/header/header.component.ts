@@ -224,11 +224,19 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
 
   updateUserMenuItems(): void {
     if (this.isAuthenticated) {
-      this.userMenuItems = [
+      const baseItems = [
         { label: 'Hồ sơ', link: '/profile', icon: 'user' },
         { label: 'Cài đặt', link: '/settings', icon: 'settings' },
-        { label: 'Đăng xuất', link: '#', icon: 'log-out', action: 'logout' },
       ];
+      
+      // Add admin menu if user is admin
+      if (this.currentUser?.role === 'admin') {
+        baseItems.splice(1, 0, { label: 'Admin Panel', link: '/admin/courses', icon: 'settings' });
+      }
+      
+      baseItems.push({ label: 'Đăng xuất', link: '#', icon: 'log-out', action: 'logout' } as MenuItem);
+      
+      this.userMenuItems = baseItems;
     } else {
       this.userMenuItems = [
         { label: 'Đăng nhập', link: '/auth/login', icon: 'log-in' },

@@ -1,0 +1,128 @@
+<!-- Course Statistics Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+  <!-- Loading State -->
+  <ng-container *ngIf="loading">
+    <div *ngFor="let i of [1,2,3,4,5]" class="animate-pulse">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+        <div class="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4 mb-3"></div>
+        <div class="h-8 bg-gray-300 dark:bg-gray-600 rounded w-1/2 mb-2"></div>
+        <div class="h-3 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- Statistics Cards -->
+  <ng-container *ngIf="!loading && stats">
+    <!-- Total Courses -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors duration-200">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Courses</h3>
+        <i [class]="'icon-' + getStatusIcon('total')" [ngClass]="getStatusColor('total')"></i>
+      </div>
+      <div class="text-2xl font-bold" [ngClass]="getStatusColor('total')">
+        {{ formatNumber(stats.totalCourses) }}
+      </div>
+      <div class="flex items-center gap-4 mt-3 text-xs text-gray-500 dark:text-gray-400">
+        <span class="flex items-center gap-1">
+          <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+          Published: {{ stats.publishedCourses }}
+        </span>
+        <span class="flex items-center gap-1">
+          <span class="w-2 h-2 bg-yellow-500 rounded-full"></span>
+          Draft: {{ stats.draftCourses }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Published Courses -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors duration-200">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Published</h3>
+        <i [class]="'icon-' + getStatusIcon('published')" [ngClass]="getStatusColor('published')"></i>
+      </div>
+      <div class="text-2xl font-bold" [ngClass]="getStatusColor('published')">
+        {{ formatNumber(stats.publishedCourses) }}
+      </div>
+      <div class="flex items-center gap-4 mt-3 text-xs text-gray-500 dark:text-gray-400">
+        <span class="flex items-center gap-1">
+          <span class="w-2 h-2 bg-purple-500 rounded-full"></span>
+          Archived: {{ stats.archivedCourses }}
+        </span>
+        <span class="flex items-center gap-1">
+          <span class="w-2 h-2 bg-red-500 rounded-full"></span>
+          Deleted: {{ stats.deletedCourses }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Premium vs Free -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors duration-200">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Course Types</h3>
+        <i [class]="'icon-' + getStatusIcon('premium')" [ngClass]="getStatusColor('premium')"></i>
+      </div>
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-sm text-gray-600 dark:text-gray-400">Premium</span>
+          <span class="text-lg font-semibold" [ngClass]="getStatusColor('premium')">
+            {{ formatNumber(stats.premiumCourses) }}
+          </span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-sm text-gray-600 dark:text-gray-400">Free</span>
+          <span class="text-lg font-semibold" [ngClass]="getStatusColor('free')">
+            {{ formatNumber(stats.freeCourses) }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Revenue -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors duration-200">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Revenue</h3>
+        <i [class]="'icon-' + getStatusIcon('revenue')" [ngClass]="getStatusColor('revenue')"></i>
+      </div>
+      <div class="text-2xl font-bold" [ngClass]="getStatusColor('revenue')">
+        {{ formatCurrency(stats.totalRevenue) }}
+      </div>
+      <div class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+        From {{ formatNumber(stats.totalStudents) }} students
+      </div>
+    </div>
+
+    <!-- Students & Rating -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors duration-200">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Performance</h3>
+        <i [class]="'icon-' + getStatusIcon('students')" [ngClass]="getStatusColor('students')"></i>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <div class="text-lg font-semibold" [ngClass]="getStatusColor('students')">
+            {{ formatNumber(stats.totalStudents) }}
+          </div>
+          <div class="text-xs text-gray-500 dark:text-gray-400">Total Students</div>
+        </div>
+        <div class="border-t border-gray-200 dark:border-gray-700 pt-3">
+          <div class="flex items-center gap-1">
+            <span class="text-lg font-semibold" [ngClass]="getStatusColor('rating')">
+              {{ stats.averageRating }}
+            </span>
+            <i class="icon-star text-amber-500 text-sm"></i>
+          </div>
+          <div class="text-xs text-gray-500 dark:text-gray-400">Average Rating</div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- Error State -->
+  <ng-container *ngIf="!loading && !stats">
+    <div class="col-span-full bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
+      <i class="icon-alert-circle text-red-500 text-2xl mb-2"></i>
+      <p class="text-red-600 dark:text-red-400 font-medium">Failed to load statistics</p>
+      <p class="text-red-500 dark:text-red-400 text-sm mt-1">Please refresh the page to try again</p>
+    </div>
+  </ng-container>
+</div>

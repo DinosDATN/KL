@@ -153,6 +153,24 @@ export const routes: Routes = [
           import('./features/chat/chat.component').then((m) => m.ChatComponent),
         canActivate: [AuthGuard],
       },
+      {
+        path: 'admin',
+        children: [
+          {
+            path: 'courses',
+            loadComponent: () =>
+              import('./features/admin/course-management/course-management.component').then(
+                (m) => m.CourseManagementComponent
+              ),
+            canActivate: [AuthGuard],
+          },
+          {
+            path: '',
+            redirectTo: 'courses',
+            pathMatch: 'full',
+          },
+        ],
+      },
     ],
   },
   {
