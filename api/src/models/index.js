@@ -36,6 +36,17 @@ const CourseEnrollment = require('./CourseEnrollment');
 const CourseReview = require('./CourseReview');
 const InstructorQualification = require('./InstructorQualification');
 
+// Document models
+const Document = require('./Document');
+const DocumentCategory = require('./DocumentCategory');
+const DocumentCategoryLink = require('./DocumentCategoryLink');
+const DocumentCompletion = require('./DocumentCompletion');
+const DocumentModule = require('./DocumentModule');
+const DocumentLesson = require('./DocumentLesson');
+const DocumentLessonCompletion = require('./DocumentLessonCompletion');
+const Topic = require('./Topic');
+const Animation = require('./Animation');
+
 // Friendship and Private Chat models
 const Friendship = require('./Friendship');
 const UserBlock = require('./UserBlock');
@@ -666,6 +677,152 @@ PrivateConversation.belongsTo(PrivateMessage, {
   as: 'LastMessage'
 });
 
+// Document associations
+// Document belongs to Topic
+Document.belongsTo(Topic, {
+  foreignKey: 'topic_id',
+  as: 'Topic'
+});
+
+Topic.hasMany(Document, {
+  foreignKey: 'topic_id',
+  as: 'Documents'
+});
+
+// Document belongs to User (creator)
+Document.belongsTo(User, {
+  foreignKey: 'created_by',
+  as: 'Creator'
+});
+
+User.hasMany(Document, {
+  foreignKey: 'created_by',
+  as: 'CreatedDocuments'
+});
+
+// Document has many DocumentModules
+Document.hasMany(DocumentModule, {
+  foreignKey: 'document_id',
+  as: 'Modules'
+});
+
+DocumentModule.belongsTo(Document, {
+  foreignKey: 'document_id',
+  as: 'Document'
+});
+
+// DocumentModule has many DocumentLessons
+DocumentModule.hasMany(DocumentLesson, {
+  foreignKey: 'module_id',
+  as: 'Lessons'
+});
+
+DocumentLesson.belongsTo(DocumentModule, {
+  foreignKey: 'module_id',
+  as: 'Module'
+});
+
+// Document category associations
+Document.belongsToMany(DocumentCategory, {
+  through: DocumentCategoryLink,
+  foreignKey: 'document_id',
+  otherKey: 'category_id',
+  as: 'Categories'
+});
+
+DocumentCategory.belongsToMany(Document, {
+  through: DocumentCategoryLink,
+  foreignKey: 'category_id',
+  otherKey: 'document_id',
+  as: 'Documents'
+});
+
+DocumentCategoryLink.belongsTo(Document, {
+  foreignKey: 'document_id',
+  as: 'Document'
+});
+
+DocumentCategoryLink.belongsTo(DocumentCategory, {
+  foreignKey: 'category_id',
+  as: 'Category'
+});
+
+// Document completion associations
+User.belongsToMany(Document, {
+  through: DocumentCompletion,
+  foreignKey: 'user_id',
+  otherKey: 'document_id',
+  as: 'CompletedDocuments'
+});
+
+Document.belongsToMany(User, {
+  through: DocumentCompletion,
+  foreignKey: 'document_id',
+  otherKey: 'user_id',
+  as: 'CompletedByUsers'
+});
+
+DocumentCompletion.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'User'
+});
+
+DocumentCompletion.belongsTo(Document, {
+  foreignKey: 'document_id',
+  as: 'Document'
+});
+
+// Document lesson completion associations
+User.belongsToMany(DocumentLesson, {
+  through: DocumentLessonCompletion,
+  foreignKey: 'user_id',
+  otherKey: 'lesson_id',
+  as: 'CompletedLessons'
+});
+
+DocumentLesson.belongsToMany(User, {
+  through: DocumentLessonCompletion,
+  foreignKey: 'lesson_id',
+  otherKey: 'user_id',
+  as: 'CompletedByUsers'
+});
+
+DocumentLessonCompletion.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'User'
+});
+
+DocumentLessonCompletion.belongsTo(DocumentLesson, {
+  foreignKey: 'lesson_id',
+  as: 'Lesson'
+});
+
+DocumentLesson.hasMany(DocumentLessonCompletion, {
+  foreignKey: 'lesson_id',
+  as: 'Completions'
+});
+
+// Animation associations
+Animation.belongsTo(Document, {
+  foreignKey: 'document_id',
+  as: 'Document'
+});
+
+Animation.belongsTo(DocumentLesson, {
+  foreignKey: 'lesson_id',
+  as: 'Lesson'
+});
+
+Document.hasMany(Animation, {
+  foreignKey: 'document_id',
+  as: 'Animations'
+});
+
+DocumentLesson.hasMany(Animation, {
+  foreignKey: 'lesson_id',
+  as: 'Animations'
+});
+
 module.exports = {
   Problem,
   ProblemCategory,
@@ -703,6 +860,16 @@ module.exports = {
   CourseEnrollment,
   CourseReview,
   InstructorQualification,
+  // Document models
+  Document,
+  DocumentCategory,
+  DocumentCategoryLink,
+  DocumentCompletion,
+  DocumentModule,
+  DocumentLesson,
+  DocumentLessonCompletion,
+  Topic,
+  Animation,
   // Friendship and Private Chat models
   Friendship,
   UserBlock,

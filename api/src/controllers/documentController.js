@@ -11,6 +11,140 @@ const User = require('../models/User');
 const { Op } = require('sequelize');
 
 class DocumentController {
+  // Create a new document
+  async createDocument(req, res) {
+    try {
+      const { title, description, content, topic_id, level, duration, thumbnail_url } = req.body;
+      const userId = req.user.id;
+      
+      const documentData = {
+        title,
+        description,
+        content,
+        topic_id,
+        level: level || 'Beginner',
+        duration,
+        thumbnail_url,
+        created_by: userId
+      };
+
+      const document = await Document.create(documentData);
+
+      res.status(201).json({
+        success: true,
+        message: 'Document created successfully',
+        data: document
+      });
+    } catch (error) {
+      console.error('Error in createDocument:', error);
+      res.status(400).json({
+        success: false,
+        message: error.message || 'Failed to create document'
+      });
+    }
+  }
+
+  // Update a document
+  async updateDocument(req, res) {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+      const userId = req.user.id;
+      const userRole = req.user.role;
+
+      // Remove fields that shouldn't be updated directly
+      delete updateData.id;
+      delete updateData.created_by;
+      delete updateData.created_at;
+      delete updateData.updated_at;
+      delete updateData.students;
+      delete updateData.rating;
+      delete updateData.is_deleted;
+
+      const document = await Document.findOne({
+        where: { 
+          id,
+          is_deleted: false
+        }
+      });
+
+      if (!document) {
+        return res.status(404).json({
+          success: false,
+          message: 'Document not found'
+        });
+      }
+
+      // Authorization check (already handled by middleware, but double-check)
+      if (userRole !== 'admin' && document.created_by !== userId) {
+        return res.status(403).json({
+          success: false,
+          message: 'You can only update your own documents'
+        });
+      }
+
+      await document.update(updateData);
+      await document.reload();
+
+      res.status(200).json({
+        success: true,
+        message: 'Document updated successfully',
+        data: document
+      });
+    } catch (error) {
+      console.error('Error in updateDocument:', error);
+      res.status(400).json({
+        success: false,
+        message: error.message || 'Failed to update document'
+      });
+    }
+  }
+
+  // Delete a document (soft delete)
+  async deleteDocument(req, res) {
+    try {
+      const { id } = req.params;
+      const userId = req.user.id;
+      const userRole = req.user.role;
+
+      const document = await Document.findOne({
+        where: { 
+          id,
+          is_deleted: false
+        }
+      });
+
+      if (!document) {
+        return res.status(404).json({
+          success: false,
+          message: 'Document not found'
+        });
+      }
+
+      // Authorization check
+      if (userRole !== 'admin' && document.created_by !== userId) {
+        return res.status(403).json({
+          success: false,
+          message: 'You can only delete your own documents'
+        });
+      }
+
+      await document.update({ is_deleted: true });
+
+      res.status(200).json({
+        success: true,
+        message: 'Document deleted successfully'
+      });
+    } catch (error) {
+      console.error('Error in deleteDocument:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to delete document',
+        error: error.message
+      });
+    }
+  }
+
   // Get all documents with pagination and filtering
   async getAllDocuments(req, res) {
     try {
