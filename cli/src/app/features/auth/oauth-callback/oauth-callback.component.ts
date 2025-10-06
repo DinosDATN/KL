@@ -84,9 +84,13 @@ export class OAuthCallbackComponent implements OnInit {
         this.isProcessing = false;
         this.statusMessage = 'Đăng nhập thành công! Đang chuyển hướng...';
 
-        // Wait a moment then redirect to dashboard
+        // Wait a moment then redirect based on user role
         setTimeout(() => {
-          this.router.navigate(['/']);
+          if (userData.role === 'admin') {
+            this.router.navigate(['/admin/dashboard']);
+          } else {
+            this.router.navigate(['/']);
+          }
         }, 1500);
 
       } catch (parseError) {

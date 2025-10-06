@@ -1,0 +1,96 @@
+<aside 
+  class="bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 fixed left-0 top-16 h-[calc(100vh-4rem)] z-40 overflow-y-auto"
+  [class.w-64]="!isCollapsed"
+  [class.w-16]="isCollapsed">
+  
+  <!-- Navigation Menu -->
+  <nav class="p-4 space-y-2">
+    <div *ngFor="let item of menuItems" class="sidebar-item">
+      <!-- Main Menu Item -->
+      <div 
+        (click)="toggleSubmenu(item)"
+        class="flex items-center justify-between p-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition-colors group"
+        [class.bg-blue-50]="!item.children && isActive(item.route)"
+        [class.dark:bg-blue-900/20]="!item.children && isActive(item.route)"
+        [class.text-blue-600]="!item.children && isActive(item.route)"
+        [class.dark:text-blue-400]="!item.children && isActive(item.route)"
+        [class.bg-gray-100]="item.children && hasActiveChild(item)"
+        [class.dark:bg-gray-700]="item.children && hasActiveChild(item)"
+        [title]="isCollapsed ? item.label : ''">
+        
+        <div class="flex items-center space-x-3 min-w-0 flex-1">
+          <!-- Icon -->
+          <svg 
+            class="w-5 h-5 flex-shrink-0 transition-colors"
+            [class.text-blue-600]="(!item.children && isActive(item.route)) || (item.children && hasActiveChild(item))"
+            [class.dark:text-blue-400]="(!item.children && isActive(item.route)) || (item.children && hasActiveChild(item))"
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="item.icon"></path>
+          </svg>
+          
+          <!-- Label (hidden when collapsed) -->
+          <span 
+            *ngIf="!isCollapsed"
+            class="font-medium text-sm truncate transition-colors"
+            [class.text-blue-600]="(!item.children && isActive(item.route)) || (item.children && hasActiveChild(item))"
+            [class.dark:text-blue-400]="(!item.children && isActive(item.route)) || (item.children && hasActiveChild(item))">
+            {{ item.label }}
+          </span>
+        </div>
+
+        <!-- Expand/Collapse Icon for parent items -->
+        <svg 
+          *ngIf="item.children && !isCollapsed"
+          class="w-4 h-4 transition-transform duration-200"
+          [class.rotate-90]="item.isExpanded"
+          fill="none" 
+          stroke="currentColor" 
+          viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+
+        <!-- Badge (if exists) -->
+        <span 
+          *ngIf="item.badge && !isCollapsed"
+          class="ml-2 px-2 py-1 text-xs font-medium bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 rounded-full">
+          {{ item.badge }}
+        </span>
+      </div>
+
+      <!-- Submenu Items -->
+      <div 
+        *ngIf="item.children && item.isExpanded && !isCollapsed"
+        class="mt-2 ml-8 space-y-1 border-l-2 border-gray-200 dark:border-gray-700 pl-4">
+        
+        <div *ngFor="let child of item.children">
+          <a
+            [routerLink]="child.route"
+            routerLinkActive="active-child"
+            class="flex items-center space-x-3 p-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-md transition-colors group">
+            
+            <!-- Child Icon -->
+            <svg 
+              class="w-4 h-4 flex-shrink-0"
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="child.icon"></path>
+            </svg>
+            
+            <!-- Child Label -->
+            <span class="truncate">{{ child.label }}</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Collapsed Menu Tooltip (shown when hovering over collapsed items) -->
+  <div 
+    *ngIf="isCollapsed" 
+    class="fixed left-16 bg-gray-900 dark:bg-gray-700 text-white text-sm px-3 py-2 rounded-md shadow-lg z-50 opacity-0 pointer-events-none transition-opacity"
+    id="sidebar-tooltip">
+  </div>
+</aside>

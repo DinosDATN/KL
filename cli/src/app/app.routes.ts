@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { AuthGuard, NoAuthGuard } from './core/guards/auth.guard';
+import { AdminGuard } from './core/guards/admin.guard';
 
 export const routes: Routes = [
   // Authentication routes (no layout)
@@ -25,6 +26,127 @@ export const routes: Routes = [
       import('./features/auth/oauth-callback/oauth-callback.component').then(
         (m) => m.OAuthCallbackComponent
       ),
+  },
+  // Admin layout routes
+  {
+    path: 'admin',
+    loadComponent: () =>
+      import('./shared/layout/admin-layout/admin-layout.component').then(
+        (m) => m.AdminLayoutComponent
+      ),
+    canActivate: [AdminGuard],
+    children: [
+      {
+        path: '',
+        redirectTo: 'dashboard',
+        pathMatch: 'full'
+      },
+      {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./features/admin/dashboard/dashboard.component').then(
+            (m) => m.DashboardComponent
+          )
+      },
+      {
+        path: 'users',
+        loadComponent: () =>
+          import('./features/admin/user-management/user-management.component').then(
+            (m) => m.UserManagementComponent
+          )
+      },
+      {
+        path: 'users/analytics',
+        loadComponent: () =>
+          import('./features/admin/user-analytics/user-analytics.component').then(
+            (m) => m.UserAnalyticsComponent
+          )
+      },
+      {
+        path: 'users/reports',
+        loadComponent: () =>
+          import('./features/admin/user-reports/user-reports.component').then(
+            (m) => m.UserReportsComponent
+          )
+      },
+      {
+        path: 'courses',
+        loadComponent: () =>
+          import('./features/admin/course-management/course-management.component').then(
+            (m) => m.CourseManagementComponent
+          )
+      },
+      {
+        path: 'documents',
+        loadComponent: () =>
+          import('./features/admin/document-management/document-management.component').then(
+            (m) => m.DocumentManagementComponent
+          )
+      },
+      {
+        path: 'problems',
+        loadComponent: () =>
+          import('./features/admin/problem-management/problem-management.component').then(
+            (m) => m.ProblemManagementComponent
+          )
+      },
+      {
+        path: 'contests',
+        loadComponent: () =>
+          import('./features/admin/contest-management/contest-management.component').then(
+            (m) => m.ContestManagementComponent
+          )
+      },
+      {
+        path: 'contests/analytics',
+        loadComponent: () =>
+          import('./features/admin/contest-analytics/contest-analytics.component').then(
+            (m) => m.ContestAnalyticsComponent
+          )
+      },
+      {
+        path: 'analytics/platform',
+        loadComponent: () =>
+          import('./features/admin/platform-analytics/platform-analytics.component').then(
+            (m) => m.PlatformAnalyticsComponent
+          )
+      },
+      {
+        path: 'analytics/engagement',
+        loadComponent: () =>
+          import('./features/admin/engagement-analytics/engagement-analytics.component').then(
+            (m) => m.EngagementAnalyticsComponent
+          )
+      },
+      {
+        path: 'analytics/revenue',
+        loadComponent: () =>
+          import('./features/admin/revenue-reports/revenue-reports.component').then(
+            (m) => m.RevenueReportsComponent
+          )
+      },
+      {
+        path: 'system/settings',
+        loadComponent: () =>
+          import('./features/admin/system-settings/system-settings.component').then(
+            (m) => m.SystemSettingsComponent
+          )
+      },
+      {
+        path: 'system/logs',
+        loadComponent: () =>
+          import('./features/admin/system-logs/system-logs.component').then(
+            (m) => m.SystemLogsComponent
+          )
+      },
+      {
+        path: 'system/backups',
+        loadComponent: () =>
+          import('./features/admin/system-backups/system-backups.component').then(
+            (m) => m.SystemBackupsComponent
+          )
+      }
+    ]
   },
   // Main layout routes
   {
@@ -152,24 +274,6 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/chat/chat.component').then((m) => m.ChatComponent),
         canActivate: [AuthGuard],
-      },
-      {
-        path: 'admin',
-        children: [
-          {
-            path: 'courses',
-            loadComponent: () =>
-              import('./features/admin/course-management/course-management.component').then(
-                (m) => m.CourseManagementComponent
-              ),
-            canActivate: [AuthGuard],
-          },
-          {
-            path: '',
-            redirectTo: 'courses',
-            pathMatch: 'full',
-          },
-        ],
       },
     ],
   },

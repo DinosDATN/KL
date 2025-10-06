@@ -1,0 +1,26 @@
+<div class="admin-layout min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+  <!-- Admin Header -->
+  <app-admin-header 
+    [isSidebarCollapsed]="isSidebarCollapsed"
+    (toggleSidebar)="onToggleSidebar()">
+  </app-admin-header>
+  
+  <!-- Content wrapper -->
+  <div class="flex">
+    <!-- Admin Sidebar -->
+    <app-admin-sidebar 
+      [isCollapsed]="isSidebarCollapsed">
+    </app-admin-sidebar>
+    
+    <!-- Main content area -->
+    <main 
+      class="flex-1 p-6 transition-all duration-300"
+      [class.ml-64]="!isSidebarCollapsed"
+      [class.ml-16]="isSidebarCollapsed">
+      
+      <div class="max-w-7xl mx-auto">
+        <router-outlet></router-outlet>
+      </div>
+    </main>
+  </div>
+</div>

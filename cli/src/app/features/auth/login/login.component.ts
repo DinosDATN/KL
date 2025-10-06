@@ -58,9 +58,17 @@ export class LoginComponent implements OnInit {
       this.authService.login(loginData).subscribe({
         next: (response) => {
           this.isLoading = false;
-          if (response.success) {
-            // Successful login, redirect to return URL or home
-            this.router.navigate([this.returnUrl]);
+          if (response.success && response.data?.user) {
+            const user = response.data.user;
+            
+            // Check if user is an admin and redirect appropriately
+            if (user.role === 'admin') {
+              // Admin users go to admin dashboard
+              this.router.navigate(['/admin/dashboard']);
+            } else {
+              // Regular users go to return URL or home
+              this.router.navigate([this.returnUrl]);
+            }
           }
         },
         error: (error) => {

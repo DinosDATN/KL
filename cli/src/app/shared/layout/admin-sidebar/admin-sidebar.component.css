@@ -1,0 +1,149 @@
+/* Admin Sidebar Specific Styles */
+
+/* Custom scrollbar for sidebar */
+aside {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+aside::-webkit-scrollbar {
+  width: 4px;
+}
+
+aside::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+aside::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.5);
+  border-radius: 2px;
+}
+
+aside::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.8);
+}
+
+/* Dark mode scrollbar */
+.dark aside::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.5);
+}
+
+.dark aside::-webkit-scrollbar-thumb:hover {
+  background: rgba(75, 85, 99, 0.8);
+}
+
+/* Active submenu item styling */
+.active-child {
+  @apply bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400;
+}
+
+.active-child svg {
+  @apply text-blue-600 dark:text-blue-400;
+}
+
+/* Smooth transitions for all interactive elements */
+.sidebar-item > div,
+.sidebar-item a {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hover effects */
+.sidebar-item > div:hover,
+.sidebar-item a:hover {
+  transform: translateX(2px);
+}
+
+/* Icon animations */
+.sidebar-item svg {
+  transition: all 0.2s ease;
+}
+
+.sidebar-item > div:hover svg {
+  transform: scale(1.1);
+}
+
+/* Submenu expand animation */
+.submenu-enter {
+  animation: expandSubmenu 0.3s ease-out;
+}
+
+@keyframes expandSubmenu {
+  from {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    max-height: 200px;
+    transform: translateY(0);
+  }
+}
+
+/* Badge pulse animation */
+.badge {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Collapsed sidebar tooltip */
+#sidebar-tooltip {
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.sidebar-item:hover #sidebar-tooltip {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Focus styles for accessibility */
+.sidebar-item > div:focus,
+.sidebar-item a:focus {
+  @apply outline-none ring-2 ring-blue-500 ring-opacity-50;
+}
+
+/* Mobile responsive behavior */
+@media (max-width: 768px) {
+  aside {
+    @apply -translate-x-full;
+  }
+  
+  aside.mobile-open {
+    @apply translate-x-0;
+  }
+  
+  /* Backdrop for mobile */
+  .mobile-backdrop {
+    @apply fixed inset-0 bg-black bg-opacity-50 z-30;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .sidebar-item > div,
+  .sidebar-item a {
+    @apply border border-gray-300 dark:border-gray-600;
+  }
+  
+  .active-child {
+    @apply border-blue-500;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
