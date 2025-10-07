@@ -31,6 +31,7 @@ const documentAdminRoutes = require("./routes/documentAdminRoutes");
 const problemAdminRoutes = require("./routes/problemAdminRoutes");
 const contestAdminRoutes = require("./routes/contestAdminRoutes");
 const userAdminRoutes = require("./routes/userAdminRoutes");
+const dashboardAdminRoutes = require("./routes/dashboardAdminRoutes");
 const courseContentRoutes = require("./routes/courseContentRoutes");
 
 // Create Express app and HTTP server
@@ -98,6 +99,7 @@ app.use(apiPrefix + "/friendship", friendshipRoutes);
 app.use(apiPrefix + "/private-chat", privateChatRoutes);
 
 // Admin routes
+app.use(apiPrefix + "/admin/dashboard", dashboardAdminRoutes);
 app.use(apiPrefix + "/admin/courses", courseAdminRoutes);
 app.use(apiPrefix + "/admin/documents", documentAdminRoutes);
 app.use(apiPrefix + "/admin/problems", problemAdminRoutes);

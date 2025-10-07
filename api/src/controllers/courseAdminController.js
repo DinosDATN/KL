@@ -335,10 +335,39 @@ class CourseAdminController {
   async getCourseStatistics(req, res) {
     try {
       const stats = await courseService.getCourseStatistics();
+      
+      // Calculate growth rate based on monthly data
+      const now = new Date();
+      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      
+      const lastMonthCourses = await Course.count({
+        where: {
+          created_at: {
+            [Op.gte]: lastMonth,
+            [Op.lt]: thisMonth
+          },
+          is_deleted: false
+        }
+      });
+      
+      const currentMonthCourses = await Course.count({
+        where: {
+          created_at: { [Op.gte]: thisMonth },
+          is_deleted: false
+        }
+      });
+      
+      const growthRate = lastMonthCourses > 0 
+        ? ((currentMonthCourses - lastMonthCourses) / lastMonthCourses) * 100 
+        : currentMonthCourses > 0 ? 100 : 0;
 
       res.status(200).json({
         success: true,
-        data: stats
+        data: {
+          ...stats,
+          growthRate: Math.round(growthRate * 100) / 100
+        }
       });
     } catch (error) {
       console.error('Error in getCourseStatistics:', error);

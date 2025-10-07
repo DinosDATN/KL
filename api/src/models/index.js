@@ -126,6 +126,12 @@ CourseEnrollment.belongsTo(Course, {
   as: 'Course'
 });
 
+// Course has many CourseEnrollments (direct relationship)
+Course.hasMany(CourseEnrollment, {
+  foreignKey: 'course_id',
+  as: 'Enrollments'
+});
+
 // Course review associations
 Course.hasMany(CourseReview, {
   foreignKey: 'course_id',
@@ -235,6 +241,11 @@ Submission.belongsTo(User, {
   as: 'User'
 });
 
+User.hasMany(Submission, {
+  foreignKey: 'user_id',
+  as: 'Submissions'
+});
+
 Submission.belongsTo(SubmissionCode, {
   foreignKey: 'code_id',
   as: 'Code'
@@ -256,6 +267,11 @@ ProblemComment.belongsTo(Problem, {
 ProblemComment.belongsTo(User, {
   foreignKey: 'user_id',
   as: 'User'
+});
+
+User.hasMany(ProblemComment, {
+  foreignKey: 'user_id',
+  as: 'ProblemComments'
 });
 
 // User associations

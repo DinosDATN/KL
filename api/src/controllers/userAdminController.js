@@ -1,13 +1,13 @@
-const User = require('../models/User');
-const UserProfile = require('../models/UserProfile');
-const UserStats = require('../models/UserStats');
-const Course = require('../models/Course');
-const Problem = require('../models/Problem');
-const Contest = require('../models/Contest');
-const CourseEnrollment = require('../models/CourseEnrollment');
-const Submission = require('../models/Submission');
-const ContestSubmission = require('../models/ContestSubmission');
-const { Op } = require('sequelize');
+const User = require("../models/User");
+const UserProfile = require("../models/UserProfile");
+const UserStats = require("../models/UserStats");
+const Course = require("../models/Course");
+const Problem = require("../models/Problem");
+const Contest = require("../models/Contest");
+const CourseEnrollment = require("../models/CourseEnrollment");
+const Submission = require("../models/Submission");
+const ContestSubmission = require("../models/ContestSubmission");
+const { Op } = require("sequelize");
 
 class UserAdminController {
   // Get all users for admin with comprehensive filtering
@@ -24,23 +24,24 @@ class UserAdminController {
         search,
         sortBy,
         registration_date,
-        last_activity
+        last_activity,
       } = req.query;
 
       // Build where clause
       const whereClause = {};
 
       if (role) whereClause.role = role;
-      if (is_active !== undefined) whereClause.is_active = is_active === 'true';
-      if (is_online !== undefined) whereClause.is_online = is_online === 'true';
-      if (subscription_status) whereClause.subscription_status = subscription_status;
+      if (is_active !== undefined) whereClause.is_active = is_active === "true";
+      if (is_online !== undefined) whereClause.is_online = is_online === "true";
+      if (subscription_status)
+        whereClause.subscription_status = subscription_status;
 
       // Search functionality
       if (search && search.trim()) {
         const searchTerm = search.trim().toLowerCase();
         whereClause[Op.or] = [
           { name: { [Op.like]: `%${searchTerm}%` } },
-          { email: { [Op.like]: `%${searchTerm}%` } }
+          { email: { [Op.like]: `%${searchTerm}%` } },
         ];
       }
 
@@ -48,20 +49,22 @@ class UserAdminController {
       if (registration_date) {
         const now = new Date();
         switch (registration_date) {
-          case 'today':
+          case "today":
             const today = new Date(now.setHours(0, 0, 0, 0));
             const endOfDay = new Date(now.setHours(23, 59, 59, 999));
             whereClause.created_at = { [Op.between]: [today, endOfDay] };
             break;
-          case 'this_week':
-            const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
+          case "this_week":
+            const weekStart = new Date(
+              now.setDate(now.getDate() - now.getDay())
+            );
             whereClause.created_at = { [Op.gte]: weekStart };
             break;
-          case 'this_month':
+          case "this_month":
             const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
             whereClause.created_at = { [Op.gte]: monthStart };
             break;
-          case 'this_year':
+          case "this_year":
             const yearStart = new Date(now.getFullYear(), 0, 1);
             whereClause.created_at = { [Op.gte]: yearStart };
             break;
@@ -72,18 +75,18 @@ class UserAdminController {
       if (last_activity) {
         const now = new Date();
         switch (last_activity) {
-          case 'online':
+          case "online":
             whereClause.is_online = true;
             break;
-          case 'recent':
+          case "recent":
             const recent = new Date(now.getTime() - 24 * 60 * 60 * 1000); // 24 hours ago
             whereClause.last_seen_at = { [Op.gte]: recent };
             break;
-          case 'inactive':
+          case "inactive":
             const inactive = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
             whereClause[Op.or] = [
               { last_seen_at: { [Op.lt]: inactive } },
-              { last_seen_at: { [Op.is]: null } }
+              { last_seen_at: { [Op.is]: null } },
             ];
             break;
         }
@@ -92,23 +95,23 @@ class UserAdminController {
       // Define sorting
       let orderClause;
       switch (sortBy) {
-        case 'name':
-          orderClause = [['name', 'ASC']];
+        case "name":
+          orderClause = [["name", "ASC"]];
           break;
-        case 'email':
-          orderClause = [['email', 'ASC']];
+        case "email":
+          orderClause = [["email", "ASC"]];
           break;
-        case 'role':
-          orderClause = [['role', 'ASC']];
+        case "role":
+          orderClause = [["role", "ASC"]];
           break;
-        case 'created_at':
-          orderClause = [['created_at', 'DESC']];
+        case "created_at":
+          orderClause = [["created_at", "DESC"]];
           break;
-        case 'last_seen':
-          orderClause = [['last_seen_at', 'DESC']];
+        case "last_seen":
+          orderClause = [["last_seen_at", "DESC"]];
           break;
         default:
-          orderClause = [['created_at', 'DESC']];
+          orderClause = [["created_at", "DESC"]];
       }
 
       const { count, rows: users } = await User.findAndCountAll({
@@ -116,33 +119,41 @@ class UserAdminController {
         include: [
           {
             model: UserProfile,
-            as: 'Profile',
-            required: false
+            as: "Profile",
+            required: false,
           },
           {
             model: UserStats,
-            as: 'Stats',
-            required: false
-          }
+            as: "Stats",
+            required: false,
+          },
         ],
         limit,
         offset,
-        order: orderClause
+        order: orderClause,
       });
 
       // Add additional statistics for each user
-      const usersWithStats = await Promise.all(users.map(async (user) => {
-        const courseCount = await Course.count({ where: { instructor_id: user.id } });
-        const enrollmentCount = await CourseEnrollment.count({ where: { user_id: user.id } });
-        const submissionCount = await Submission.count({ where: { user_id: user.id } });
+      const usersWithStats = await Promise.all(
+        users.map(async (user) => {
+          const courseCount = await Course.count({
+            where: { instructor_id: user.id },
+          });
+          const enrollmentCount = await CourseEnrollment.count({
+            where: { user_id: user.id },
+          });
+          const submissionCount = await Submission.count({
+            where: { user_id: user.id },
+          });
 
-        return {
-          ...user.toJSON(),
-          courseCount,
-          enrollmentCount,
-          submissionCount
-        };
-      }));
+          return {
+            ...user.toJSON(),
+            courseCount,
+            enrollmentCount,
+            submissionCount,
+          };
+        })
+      );
 
       res.status(200).json({
         success: true,
@@ -151,15 +162,15 @@ class UserAdminController {
           current_page: page,
           total_pages: Math.ceil(count / limit),
           total_items: count,
-          items_per_page: limit
-        }
+          items_per_page: limit,
+        },
       });
     } catch (error) {
-      console.error('Error in getAllUsersForAdmin:', error);
+      console.error("Error in getAllUsersForAdmin:", error);
       res.status(500).json({
         success: false,
-        message: 'Failed to fetch users',
-        error: error.message
+        message: "Failed to fetch users",
+        error: error.message,
       });
     }
   }
@@ -173,51 +184,61 @@ class UserAdminController {
         include: [
           {
             model: UserProfile,
-            as: 'Profile'
+            as: "Profile",
           },
           {
             model: UserStats,
-            as: 'Stats'
-          }
-        ]
+            as: "Stats",
+          },
+        ],
       });
 
       if (!user) {
         return res.status(404).json({
           success: false,
-          message: 'User not found'
+          message: "User not found",
         });
       }
 
       // Get additional user statistics
-      const createdCourses = await Course.count({ where: { instructor_id: id } });
-      const enrolledCourses = await CourseEnrollment.count({ where: { user_id: id } });
-      const totalSubmissions = await Submission.count({ where: { user_id: id } });
+      const createdCourses = await Course.count({
+        where: { instructor_id: id },
+      });
+      const enrolledCourses = await CourseEnrollment.count({
+        where: { user_id: id },
+      });
+      const totalSubmissions = await Submission.count({
+        where: { user_id: id },
+      });
       const contestParticipations = await ContestSubmission.count({
         distinct: true,
-        col: 'contest_problem_id',
-        where: { user_id: id }
+        col: "contest_problem_id",
+        where: { user_id: id },
       });
 
       // Get recent activity
       const recentSubmissions = await Submission.findAll({
         where: { user_id: id },
-        include: [{
-          model: Problem,
-          attributes: ['id', 'title']
-        }],
-        order: [['created_at', 'DESC']],
-        limit: 5
+        include: [
+          {
+            model: Problem,
+            attributes: ["id", "title"],
+          },
+        ],
+        order: [["created_at", "DESC"]],
+        limit: 5,
       });
 
       const recentEnrollments = await CourseEnrollment.findAll({
         where: { user_id: id },
-        include: [{
-          model: Course,
-          attributes: ['id', 'title']
-        }],
-        order: [['enrolled_at', 'DESC']],
-        limit: 5
+        include: [
+          {
+            model: Course,
+            attributes: ["id", "title"],
+          },
+        ],
+        order: [["enrolled_at", "DESC"]],
+        limit: 5,
       });
 
       const userData = {
@@ -226,24 +247,24 @@ class UserAdminController {
           createdCourses,
           enrolledCourses,
           totalSubmissions,
-          contestParticipations
+          contestParticipations,
         },
         recentActivity: {
           recentSubmissions,
-          recentEnrollments
-        }
+          recentEnrollments,
+        },
       };
 
       res.status(200).json({
         success: true,
-        data: userData
+        data: userData,
       });
     } catch (error) {
-      console.error('Error in getUserByIdForAdmin:', error);
+      console.error("Error in getUserByIdForAdmin:", error);
       res.status(500).json({
         success: false,
-        message: 'Failed to fetch user',
-        error: error.message
+        message: "Failed to fetch user",
+        error: error.message,
       });
     }
   }
@@ -255,10 +276,10 @@ class UserAdminController {
       const updateData = req.body;
       const userRole = req.user.role;
 
-      if (userRole !== 'admin') {
+      if (userRole !== "admin") {
         return res.status(403).json({
           success: false,
-          message: 'Only admins can update user information'
+          message: "Only admins can update user information",
         });
       }
 
@@ -270,11 +291,11 @@ class UserAdminController {
 
       // Find the user
       const user = await User.findByPk(id);
-      
+
       if (!user) {
         return res.status(404).json({
           success: false,
-          message: 'User not found'
+          message: "User not found",
         });
       }
 
@@ -287,25 +308,25 @@ class UserAdminController {
         include: [
           {
             model: UserProfile,
-            as: 'Profile'
+            as: "Profile",
           },
           {
             model: UserStats,
-            as: 'Stats'
-          }
-        ]
+            as: "Stats",
+          },
+        ],
       });
 
       res.status(200).json({
         success: true,
-        message: 'User updated successfully',
-        data: updatedUser
+        message: "User updated successfully",
+        data: updatedUser,
       });
     } catch (error) {
-      console.error('Error in updateUser:', error);
+      console.error("Error in updateUser:", error);
       res.status(400).json({
         success: false,
-        message: error.message || 'Failed to update user'
+        message: error.message || "Failed to update user",
       });
     }
   }
@@ -317,26 +338,26 @@ class UserAdminController {
       const { role } = req.body;
       const userRole = req.user.role;
 
-      if (userRole !== 'admin') {
+      if (userRole !== "admin") {
         return res.status(403).json({
           success: false,
-          message: 'Only admins can update user roles'
+          message: "Only admins can update user roles",
         });
       }
 
-      if (!role || !['user', 'creator', 'admin'].includes(role)) {
+      if (!role || !["user", "creator", "admin"].includes(role)) {
         return res.status(400).json({
           success: false,
-          message: 'Invalid role. Must be user, creator, or admin'
+          message: "Invalid role. Must be user, creator, or admin",
         });
       }
 
       const user = await User.findByPk(id);
-      
+
       if (!user) {
         return res.status(404).json({
           success: false,
-          message: 'User not found'
+          message: "User not found",
         });
       }
 
@@ -345,13 +366,13 @@ class UserAdminController {
       res.status(200).json({
         success: true,
         message: `User role updated to ${role}`,
-        data: { id, role }
+        data: { id, role },
       });
     } catch (error) {
-      console.error('Error in updateUserRole:', error);
+      console.error("Error in updateUserRole:", error);
       res.status(400).json({
         success: false,
-        message: error.message || 'Failed to update user role'
+        message: error.message || "Failed to update user role",
       });
     }
   }
@@ -363,19 +384,19 @@ class UserAdminController {
       const { is_active } = req.body;
       const userRole = req.user.role;
 
-      if (userRole !== 'admin') {
+      if (userRole !== "admin") {
         return res.status(403).json({
           success: false,
-          message: 'Only admins can activate/deactivate users'
+          message: "Only admins can activate/deactivate users",
         });
       }
 
       const user = await User.findByPk(id);
-      
+
       if (!user) {
         return res.status(404).json({
           success: false,
-          message: 'User not found'
+          message: "User not found",
         });
       }
 
@@ -383,14 +404,14 @@ class UserAdminController {
 
       res.status(200).json({
         success: true,
-        message: `User ${is_active ? 'activated' : 'deactivated'} successfully`,
-        data: { id, is_active }
+        message: `User ${is_active ? "activated" : "deactivated"} successfully`,
+        data: { id, is_active },
       });
     } catch (error) {
-      console.error('Error in toggleUserStatus:', error);
+      console.error("Error in toggleUserStatus:", error);
       res.status(400).json({
         success: false,
-        message: error.message || 'Failed to update user status'
+        message: error.message || "Failed to update user status",
       });
     }
   }
@@ -401,19 +422,19 @@ class UserAdminController {
       const { id } = req.params;
       const userRole = req.user.role;
 
-      if (userRole !== 'admin') {
+      if (userRole !== "admin") {
         return res.status(403).json({
           success: false,
-          message: 'Only admins can delete users'
+          message: "Only admins can delete users",
         });
       }
 
       const user = await User.findByPk(id);
-      
+
       if (!user) {
         return res.status(404).json({
           success: false,
-          message: 'User not found'
+          message: "User not found",
         });
       }
 
@@ -424,7 +445,7 @@ class UserAdminController {
       if (courseCount > 0 || problemCount > 0) {
         return res.status(400).json({
           success: false,
-          message: `Cannot delete user. They have created ${courseCount} courses and ${problemCount} problems. Consider deactivating instead.`
+          message: `Cannot delete user. They have created ${courseCount} courses and ${problemCount} problems. Consider deactivating instead.`,
         });
       }
 
@@ -433,19 +454,19 @@ class UserAdminController {
       await UserStats.destroy({ where: { user_id: id } });
       await CourseEnrollment.destroy({ where: { user_id: id } });
       await Submission.destroy({ where: { user_id: id } });
-      
+
       await user.destroy();
 
       res.status(200).json({
         success: true,
-        message: 'User deleted successfully'
+        message: "User deleted successfully",
       });
     } catch (error) {
-      console.error('Error in deleteUser:', error);
+      console.error("Error in deleteUser:", error);
       res.status(500).json({
         success: false,
-        message: 'Failed to delete user',
-        error: error.message
+        message: "Failed to delete user",
+        error: error.message,
       });
     }
   }
@@ -460,47 +481,87 @@ class UserAdminController {
 
       // Users by role
       const usersByRole = await User.findAll({
-        attributes: ['role', [User.sequelize.fn('COUNT', '*'), 'count']],
-        group: ['role']
+        attributes: ["role", [User.sequelize.fn("COUNT", "*"), "count"]],
+        group: ["role"],
       });
 
       // Users by subscription
       const usersBySubscription = await User.findAll({
-        attributes: ['subscription_status', [User.sequelize.fn('COUNT', '*'), 'count']],
-        group: ['subscription_status']
+        attributes: [
+          "subscription_status",
+          [User.sequelize.fn("COUNT", "*"), "count"],
+        ],
+        group: ["subscription_status"],
       });
 
       // Registration trends (last 12 months)
       const registrationTrends = await User.findAll({
         attributes: [
-          [User.sequelize.fn('DATE_FORMAT', User.sequelize.col('created_at'), '%Y-%m'), 'month'],
-          [User.sequelize.fn('COUNT', '*'), 'count']
+          [
+            User.sequelize.fn(
+              "DATE_FORMAT",
+              User.sequelize.col("created_at"),
+              "%Y-%m"
+            ),
+            "month",
+          ],
+          [User.sequelize.fn("COUNT", "*"), "count"],
         ],
         where: {
           created_at: {
-            [Op.gte]: new Date(new Date().setFullYear(new Date().getFullYear() - 1))
-          }
+            [Op.gte]: new Date(
+              new Date().setFullYear(new Date().getFullYear() - 1)
+            ),
+          },
         },
-        group: [User.sequelize.fn('DATE_FORMAT', User.sequelize.col('created_at'), '%Y-%m')],
-        order: [[User.sequelize.fn('DATE_FORMAT', User.sequelize.col('created_at'), '%Y-%m'), 'ASC']]
+        group: [
+          User.sequelize.fn(
+            "DATE_FORMAT",
+            User.sequelize.col("created_at"),
+            "%Y-%m"
+          ),
+        ],
+        order: [
+          [
+            User.sequelize.fn(
+              "DATE_FORMAT",
+              User.sequelize.col("created_at"),
+              "%Y-%m"
+            ),
+            "ASC",
+          ],
+        ],
       });
 
-      // Top creators
-      const topCreators = await User.findAll({
-        where: { role: 'creator' },
-        attributes: ['id', 'name', 'email'],
-        include: [
-          {
-            model: Course,
-            as: 'CreatedCourses',
-            attributes: []
-          }
-        ],
-        group: ['User.id'],
-        having: User.sequelize.where(User.sequelize.fn('COUNT', User.sequelize.col('CreatedCourses.id')), '>', 0),
-        order: [[User.sequelize.fn('COUNT', User.sequelize.col('CreatedCourses.id')), 'DESC']],
-        limit: 10
+      // Top creators - simplified approach using separate queries
+      const allCreators = await User.findAll({
+        where: { role: "creator" },
+        attributes: ["id", "name", "email"]
       });
+      
+      // Get course counts for each creator
+      const creatorsWithCounts = await Promise.all(
+        allCreators.map(async (creator) => {
+          const courseCount = await Course.count({
+            where: { 
+              instructor_id: creator.id,
+              is_deleted: false 
+            }
+          });
+          return {
+            id: creator.id,
+            name: creator.name,
+            email: creator.email,
+            courseCount
+          };
+        })
+      );
+      
+      // Filter and sort creators by course count
+      const topCreators = creatorsWithCounts
+        .filter(creator => creator.courseCount > 0)
+        .sort((a, b) => b.courseCount - a.courseCount)
+        .slice(0, 10);
 
       // Activity statistics
       const now = new Date();
@@ -509,10 +570,42 @@ class UserAdminController {
       const last30days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
       const recentActivity = {
-        last24h: await User.count({ where: { last_seen_at: { [Op.gte]: last24h } } }),
-        last7days: await User.count({ where: { last_seen_at: { [Op.gte]: last7days } } }),
-        last30days: await User.count({ where: { last_seen_at: { [Op.gte]: last30days } } })
+        last24h: await User.count({
+          where: { last_seen_at: { [Op.gte]: last24h } },
+        }),
+        last7days: await User.count({
+          where: { last_seen_at: { [Op.gte]: last7days } },
+        }),
+        last30days: await User.count({
+          where: { last_seen_at: { [Op.gte]: last30days } },
+        }),
       };
+
+      // Calculate growth rate
+      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      const lastMonthUsers = await User.count({
+        where: {
+          created_at: {
+            [Op.gte]: lastMonth,
+            [Op.lt]: thisMonth,
+          },
+        },
+      });
+
+      const currentMonthUsers = await User.count({
+        where: {
+          created_at: { [Op.gte]: thisMonth },
+        },
+      });
+
+      const growthRate =
+        lastMonthUsers > 0
+          ? ((currentMonthUsers - lastMonthUsers) / lastMonthUsers) * 100
+          : currentMonthUsers > 0
+          ? 100
+          : 0;
 
       res.status(200).json({
         success: true,
@@ -521,28 +614,29 @@ class UserAdminController {
           activeUsers,
           inactiveUsers,
           onlineUsers,
-          usersByRole: usersByRole.map(item => ({
+          usersByRole: usersByRole.map((item) => ({
             role: item.role,
-            count: parseInt(item.dataValues.count)
+            count: parseInt(item.dataValues.count),
           })),
-          usersBySubscription: usersBySubscription.map(item => ({
+          usersBySubscription: usersBySubscription.map((item) => ({
             subscription: item.subscription_status,
-            count: parseInt(item.dataValues.count)
+            count: parseInt(item.dataValues.count),
           })),
-          registrationTrends: registrationTrends.map(item => ({
+          registrationTrends: registrationTrends.map((item) => ({
             month: item.dataValues.month,
-            count: parseInt(item.dataValues.count)
+            count: parseInt(item.dataValues.count),
           })),
           topCreators,
-          recentActivity
-        }
+          recentActivity,
+          growthRate: Math.round(growthRate * 100) / 100,
+        },
       });
     } catch (error) {
-      console.error('Error in getUserStatistics:', error);
+      console.error("Error in getUserStatistics:", error);
       res.status(500).json({
         success: false,
-        message: 'Failed to fetch user statistics',
-        error: error.message
+        message: "Failed to fetch user statistics",
+        error: error.message,
       });
     }
   }
@@ -553,24 +647,24 @@ class UserAdminController {
       const { user_ids, update_data } = req.body;
       const userRole = req.user.role;
 
-      if (userRole !== 'admin') {
+      if (userRole !== "admin") {
         return res.status(403).json({
           success: false,
-          message: 'Only admins can bulk update users'
+          message: "Only admins can bulk update users",
         });
       }
 
       if (!user_ids || !Array.isArray(user_ids) || user_ids.length === 0) {
         return res.status(400).json({
           success: false,
-          message: 'user_ids array is required'
+          message: "user_ids array is required",
         });
       }
 
       if (!update_data || Object.keys(update_data).length === 0) {
         return res.status(400).json({
           success: false,
-          message: 'update_data is required'
+          message: "update_data is required",
         });
       }
 
@@ -582,8 +676,8 @@ class UserAdminController {
 
       const [updatedCount] = await User.update(update_data, {
         where: {
-          id: { [Op.in]: user_ids }
-        }
+          id: { [Op.in]: user_ids },
+        },
       });
 
       res.status(200).json({
@@ -591,14 +685,14 @@ class UserAdminController {
         message: `${updatedCount} users updated successfully`,
         data: {
           updatedCount,
-          totalRequested: user_ids.length
-        }
+          totalRequested: user_ids.length,
+        },
       });
     } catch (error) {
-      console.error('Error in bulkUpdateUsers:', error);
+      console.error("Error in bulkUpdateUsers:", error);
       res.status(400).json({
         success: false,
-        message: error.message || 'Failed to bulk update users'
+        message: error.message || "Failed to bulk update users",
       });
     }
   }
@@ -608,54 +702,61 @@ class UserAdminController {
     try {
       const userRole = req.user.role;
 
-      if (userRole !== 'admin') {
+      if (userRole !== "admin") {
         return res.status(403).json({
           success: false,
-          message: 'Only admins can export users'
+          message: "Only admins can export users",
         });
       }
 
-      const { format = 'json', include_profiles = false, include_stats = false } = req.query;
+      const {
+        format = "json",
+        include_profiles = false,
+        include_stats = false,
+      } = req.query;
 
       const includeOptions = [
         {
           model: UserProfile,
-          as: 'Profile',
-          required: false
+          as: "Profile",
+          required: false,
         },
         {
           model: UserStats,
-          as: 'Stats',
-          required: false
-        }
+          as: "Stats",
+          required: false,
+        },
       ];
 
       const users = await User.findAll({
-        include: include_profiles === 'true' || include_stats === 'true' ? includeOptions : [],
-        order: [['created_at', 'DESC']]
+        include:
+          include_profiles === "true" || include_stats === "true"
+            ? includeOptions
+            : [],
+        order: [["created_at", "DESC"]],
       });
 
-      if (format === 'csv') {
+      if (format === "csv") {
         const csv = this.convertToCSV(users);
-        res.setHeader('Content-Type', 'text/csv');
-        res.setHeader('Content-Disposition', 'attachment; filename=users.csv');
+        res.setHeader("Content-Type", "text/csv");
+        res.setHeader("Content-Disposition", "attachment; filename=users.csv");
         res.status(200).send(csv);
       } else {
-        res.setHeader('Content-Type', 'application/json');
-        res.setHeader('Content-Disposition', 'attachment; filename=users.json');
+        res.setHeader("Content-Type", "application/json");
+        res.setHeader("Content-Disposition", "attachment; filename=users.json");
         res.status(200).json({
           success: true,
           exportDate: new Date().toISOString(),
           totalUsers: users.length,
-          data: users
+          data: users,
         });
       }
     } catch (error) {
-      console.error('Error in exportUsers:', error);
+      console.error("Error in exportUsers:", error);
       res.status(500).json({
         success: false,
-        message: 'Failed to export users',
-        error: error.message
+        message: "Failed to export users",
+        error: error.message,
       });
     }
   }
@@ -663,51 +764,52 @@ class UserAdminController {
   // Helper method to convert users to CSV
   convertToCSV(users) {
     if (!users || users.length === 0) {
-      return 'No users to export';
+      return "No users to export";
     }
 
     const headers = [
-      'ID', 'Name', 'Email', 'Role', 'Subscription Status', 
-      'Is Active', 'Is Online', 'Last Seen', 'Created At'
+      "ID",
+      "Name",
+      "Email",
+      "Role",
+      "Subscription Status",
+      "Is Active",
+      "Is Online",
+      "Last Seen",
+      "Created At",
     ];
 
-    const csvRows = [headers.join(',')];
+    const csvRows = [headers.join(",")];
 
-    users.forEach(user => {
+    users.forEach((user) => {
       const row = [
         user.id,
-        `"${user.name?.replace(/"/g, '""') || ''}"`,
+        `"${user.name?.replace(/"/g, '""') || ""}"`,
         user.email,
         user.role,
         user.subscription_status,
         user.is_active,
         user.is_online,
-        user.last_seen_at || '',
-        user.created_at
+        user.last_seen_at || "",
+        user.created_at,
       ];
-      csvRows.push(row.join(','));
+      csvRows.push(row.join(","));
     });
 
-    return csvRows.join('\n');
+    return csvRows.join("\n");
   }
 
   // Create user (Admin only)
   async createUser(req, res) {
     try {
-      const {
-        name,
-        email,
-        password,
-        role,
-        is_active,
-        subscription_status
-      } = req.body;
+      const { name, email, password, role, is_active, subscription_status } =
+        req.body;
       const userRole = req.user.role;
 
-      if (userRole !== 'admin') {
+      if (userRole !== "admin") {
         return res.status(403).json({
           success: false,
-          message: 'Only admins can create users'
+          message: "Only admins can create users",
         });
       }
 
@@ -715,21 +817,21 @@ class UserAdminController {
       if (!name) {
         return res.status(400).json({
           success: false,
-          message: 'User name is required'
+          message: "User name is required",
         });
       }
 
       if (!email) {
         return res.status(400).json({
           success: false,
-          message: 'User email is required'
+          message: "User email is required",
         });
       }
 
       if (!password) {
         return res.status(400).json({
           success: false,
-          message: 'Password is required'
+          message: "Password is required",
         });
       }
 
@@ -737,9 +839,9 @@ class UserAdminController {
         name,
         email,
         password,
-        role: role || 'user',
+        role: role || "user",
         is_active: is_active !== undefined ? is_active : true,
-        subscription_status: subscription_status || 'free'
+        subscription_status: subscription_status || "free",
       };
 
       const user = await User.create(userData);
@@ -750,20 +852,20 @@ class UserAdminController {
 
       res.status(201).json({
         success: true,
-        message: 'User created successfully',
-        data: user.toAuthJSON()
+        message: "User created successfully",
+        data: user.toAuthJSON(),
       });
     } catch (error) {
-      console.error('Error in createUser:', error);
-      if (error.name === 'SequelizeUniqueConstraintError') {
+      console.error("Error in createUser:", error);
+      if (error.name === "SequelizeUniqueConstraintError") {
         res.status(400).json({
           success: false,
-          message: 'Email already exists'
+          message: "Email already exists",
         });
       } else {
         res.status(400).json({
           success: false,
-          message: error.message || 'Failed to create user'
+          message: error.message || "Failed to create user",
         });
       }
     }
@@ -778,50 +880,54 @@ class UserAdminController {
       const offset = (page - 1) * limit;
       const userRole = req.user.role;
 
-      if (userRole !== 'admin') {
+      if (userRole !== "admin") {
         return res.status(403).json({
           success: false,
-          message: 'Only admins can view user activity logs'
+          message: "Only admins can view user activity logs",
         });
       }
 
       // Get various types of user activities
       const submissions = await Submission.findAll({
         where: { user_id: id },
-        include: [{
-          model: Problem,
-          attributes: ['id', 'title']
-        }],
-        order: [['created_at', 'DESC']],
-        limit: limit / 2
+        include: [
+          {
+            model: Problem,
+            attributes: ["id", "title"],
+          },
+        ],
+        order: [["created_at", "DESC"]],
+        limit: limit / 2,
       });
 
       const enrollments = await CourseEnrollment.findAll({
         where: { user_id: id },
-        include: [{
-          model: Course,
-          attributes: ['id', 'title']
-        }],
-        order: [['enrolled_at', 'DESC']],
-        limit: limit / 2
+        include: [
+          {
+            model: Course,
+            attributes: ["id", "title"],
+          },
+        ],
+        order: [["enrolled_at", "DESC"]],
+        limit: limit / 2,
       });
 
       // Format activities with type and timestamp
       const activities = [
-        ...submissions.map(sub => ({
-          type: 'submission',
-          action: 'Submitted solution',
+        ...submissions.map((sub) => ({
+          type: "submission",
+          action: "Submitted solution",
           details: `Problem: ${sub.Problem.title}`,
           timestamp: sub.created_at,
-          status: sub.status
+          status: sub.status,
         })),
-        ...enrollments.map(enr => ({
-          type: 'enrollment',
-          action: 'Enrolled in course',
+        ...enrollments.map((enr) => ({
+          type: "enrollment",
+          action: "Enrolled in course",
           details: `Course: ${enr.Course.title}`,
           timestamp: enr.enrolled_at,
-          status: 'enrolled'
-        }))
+          status: "enrolled",
+        })),
       ];
 
       // Sort all activities by timestamp
@@ -837,15 +943,15 @@ class UserAdminController {
           current_page: page,
           total_pages: Math.ceil(activities.length / limit),
           total_items: activities.length,
-          items_per_page: limit
-        }
+          items_per_page: limit,
+        },
       });
     } catch (error) {
-      console.error('Error in getUserActivityLog:', error);
+      console.error("Error in getUserActivityLog:", error);
       res.status(500).json({
         success: false,
-        message: 'Failed to fetch user activity log',
-        error: error.message
+        message: "Failed to fetch user activity log",
+        error: error.message,
       });
     }
   }

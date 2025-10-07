@@ -523,6 +523,32 @@ class ProblemAdminController {
       const publishedProblems = await Problem.count({ where: { is_deleted: false } });
       const deletedProblems = await Problem.count({ where: { is_deleted: true } });
       
+      // Calculate growth rate based on monthly data
+      const now = new Date();
+      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      
+      const lastMonthProblems = await Problem.count({
+        where: {
+          created_at: {
+            [Op.gte]: lastMonth,
+            [Op.lt]: thisMonth
+          },
+          is_deleted: false
+        }
+      });
+      
+      const currentMonthProblems = await Problem.count({
+        where: {
+          created_at: { [Op.gte]: thisMonth },
+          is_deleted: false
+        }
+      });
+      
+      const growthRate = lastMonthProblems > 0 
+        ? ((currentMonthProblems - lastMonthProblems) / lastMonthProblems) * 100 
+        : currentMonthProblems > 0 ? 100 : 0;
+      
       const problemsByDifficulty = await Problem.findAll({
         where: { is_deleted: false },
         attributes: ['difficulty', [Problem.sequelize.fn('COUNT', '*'), 'count']],
@@ -572,7 +598,8 @@ class ProblemAdminController {
           averageAcceptance: parseFloat(avgAcceptance.dataValues.avg_acceptance || 0).toFixed(2),
           popularProblems,
           newProblems,
-          premiumProblems
+          premiumProblems,
+          growthRate: Math.round(growthRate * 100) / 100
         }
       });
     } catch (error) {
