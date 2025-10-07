@@ -17,7 +17,7 @@ export class AdminHeaderComponent implements OnInit {
   @Output() toggleSidebar = new EventEmitter<void>();
 
   currentUser: User | null = null;
-  currentTheme$ = this.themeService.theme$;
+  currentTheme$: any;
   showUserDropdown = false;
 
   constructor(
@@ -27,6 +27,7 @@ export class AdminHeaderComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    this.currentTheme$ = this.themeService.theme$;
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
     });

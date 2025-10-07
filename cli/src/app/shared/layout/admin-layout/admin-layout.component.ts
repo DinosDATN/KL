@@ -20,7 +20,7 @@ import { AdminHeaderComponent } from '../admin-header/admin-header.component';
 })
 export class AdminLayoutComponent implements OnInit {
   isSidebarCollapsed = false;
-  currentTheme$ = this.themeService.theme$;
+  currentTheme$: any;
 
   constructor(
     private authService: AuthService,
@@ -29,6 +29,7 @@ export class AdminLayoutComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    this.currentTheme$ = this.themeService.theme$;
     // Check if user has admin role
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser || currentUser.role !== 'admin') {

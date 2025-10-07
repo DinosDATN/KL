@@ -189,7 +189,7 @@
         </tr>
       </thead>
       <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-        <tr *ngFor="let user of users; trackBy: user.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+        <tr *ngFor="let user of users; trackBy: trackByUserId" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
           <!-- Checkbox -->
           <td class="px-6 py-4 whitespace-nowrap">
             <input
@@ -222,7 +222,7 @@
           <td class="px-6 py-4 whitespace-nowrap">
             <select
               [value]="user.role"
-              (change)="updateUserRole(user.id, $event.target.value)"
+              (change)="updateUserRole(user.id, $any($event.target).value)"
               [class]="'px-2 py-1 text-xs font-medium rounded-full border-0 focus:ring-2 focus:ring-blue-500 ' + getRoleColor(user.role)">
               <option value="user">User</option>
               <option value="creator">Creator</option>
@@ -314,15 +314,16 @@
         
         <!-- Page numbers -->
         <div class="flex space-x-1">
-          <button
-            *ngFor="let page of [].constructor(pagination.total_pages); let i = index"
-            [class]="'px-3 py-2 text-sm rounded transition-colors ' + (i + 1 === currentPage 
-              ? 'bg-blue-600 text-white' 
-              : 'text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700')"
-            (click)="onPageChange(i + 1)"
-            *ngIf="i + 1 <= 10 || Math.abs(i + 1 - currentPage) <= 2 || i + 1 > pagination.total_pages - 3">
-            {{ i + 1 }}
-          </button>
+          <ng-container *ngFor="let page of [].constructor(pagination.total_pages); let i = index">
+            <button
+              *ngIf="i + 1 <= 10 || Math.abs(i + 1 - currentPage) <= 2 || i + 1 > pagination.total_pages - 3"
+              [class]="'px-3 py-2 text-sm rounded transition-colors ' + (i + 1 === currentPage 
+                ? 'bg-blue-600 text-white' 
+                : 'text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700')"
+              (click)="onPageChange(i + 1)">
+              {{ i + 1 }}
+            </button>
+          </ng-container>
         </div>
         
         <button

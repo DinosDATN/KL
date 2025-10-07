@@ -57,6 +57,9 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   // Selected users for bulk operations
   selectedUsers: number[] = [];
   showBulkActions = false;
+  
+  // Expose Math for template
+  Math = Math;
 
   constructor(
     private adminService: AdminService,
@@ -170,6 +173,11 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     return this.selectedUsers.includes(userId);
   }
 
+  // TrackBy function for better performance
+  trackByUserId(index: number, user: AdminUser): number {
+    return user.id;
+  }
+  
   updateUserRole(userId: number, newRole: string) {
     this.adminService.updateUserRole(userId, newRole)
       .pipe(takeUntil(this.destroy$))

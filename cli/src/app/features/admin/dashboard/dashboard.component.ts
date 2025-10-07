@@ -46,6 +46,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   
   // System health
   systemHealth: any = null;
+  
+  // Expose Math for template
+  Math = Math;
 
   constructor(
     private adminService: AdminService,
@@ -274,5 +277,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   onRefreshData() {
     this.loadDashboardData();
+  }
+  
+  // Helper methods for template calculations
+  getMaxValue(data: number[]): number {
+    return Math.max(...data);
+  }
+  
+  calculateBarHeight(value: number, data: number[], maxHeight: number = 200): number {
+    const max = this.getMaxValue(data);
+    return max > 0 ? (value / max) * maxHeight : 0;
   }
 }

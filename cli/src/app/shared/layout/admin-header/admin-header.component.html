@@ -58,7 +58,7 @@
           (click)="onToggleUserDropdown()"
           class="flex items-center space-x-2 p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors">
           <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
-            {{ currentUser?.name?.charAt(0).toUpperCase() || 'A' }}
+            {{ currentUser?.name?.charAt(0)?.toUpperCase() || 'A' }}
           </div>
           <div class="hidden md:block text-left">
             <p class="text-sm font-medium text-gray-900 dark:text-white">{{ currentUser?.name || 'Admin' }}</p>
