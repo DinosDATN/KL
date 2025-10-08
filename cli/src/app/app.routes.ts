@@ -77,11 +77,18 @@ export const routes: Routes = [
           ),
       },
       {
-        path: 'courses',
+        path: 'courses/analytics',
         loadComponent: () =>
-          import(
-            './features/admin/course-management/course-management.component'
-          ).then((m) => m.CourseManagementComponent),
+          import('./features/admin/course-analytics/course-analytics.component').then(
+            (m) => m.CourseAnalyticsComponent
+          ),
+      },
+      {
+        path: 'courses/reports',
+        loadComponent: () =>
+          import('./features/admin/course-reports/course-reports.component').then(
+            (m) => m.CourseReportsComponent
+          ),
       },
       {
         path: 'documents',

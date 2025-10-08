@@ -34,11 +34,21 @@ aside::-webkit-scrollbar-thumb:hover {
 
 /* Active submenu item styling */
 .active-child {
-  @apply bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400;
+  @apply bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-l-4 border-blue-600 dark:border-blue-400;
+  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.1);
 }
 
 .active-child svg {
   @apply text-blue-600 dark:text-blue-400;
+}
+
+/* Active parent item styling when child is active */
+.sidebar-item:has(.active-child) > div {
+  @apply bg-blue-50/50 dark:bg-blue-900/10 text-blue-700 dark:text-blue-300;
+}
+
+.sidebar-item:has(.active-child) > div svg {
+  @apply text-blue-700 dark:text-blue-300;
 }
 
 /* Smooth transitions for all interactive elements */
@@ -64,20 +74,62 @@ aside::-webkit-scrollbar-thumb:hover {
 
 /* Submenu expand animation */
 .submenu-enter {
-  animation: expandSubmenu 0.3s ease-out;
+  animation: expandSubmenu 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
 
 @keyframes expandSubmenu {
   from {
     opacity: 0;
     max-height: 0;
-    transform: translateY(-10px);
+    transform: translateY(-8px);
   }
   to {
     opacity: 1;
-    max-height: 200px;
+    max-height: 300px;
     transform: translateY(0);
   }
+}
+
+/* Submenu items styling */
+.submenu-enter a {
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.submenu-enter a::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 0;
+  background: linear-gradient(to bottom, #3B82F6, #1D4ED8);
+  transition: height 0.2s ease;
+}
+
+.submenu-enter a:hover::before,
+.submenu-enter a.active-child::before {
+  height: 20px;
+}
+
+/* Chevron rotation animation */
+.sidebar-item svg.rotate-180 {
+  transform: rotate(180deg);
+}
+
+/* Enhanced hover effects for main items */
+.sidebar-item > div:hover {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(16, 185, 129, 0.05) 100%);
+  border-left: 3px solid #3B82F6;
+  padding-left: 12px;
+}
+
+/* Submenu hover effects */
+.submenu-enter a:hover {
+  transform: translateX(4px);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%);
 }
 
 /* Badge pulse animation */
@@ -95,14 +147,48 @@ aside::-webkit-scrollbar-thumb:hover {
 }
 
 /* Collapsed sidebar tooltip */
+.sidebar-item {
+  position: relative;
+}
+
 #sidebar-tooltip {
   pointer-events: none;
-  transform: translateX(-50%);
+  transform: translateY(-50%);
+  background: linear-gradient(135deg, #1F2937 0%, #374151 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  max-width: 200px;
+  font-size: 11px;
+  line-height: 1.3;
 }
 
 .sidebar-item:hover #sidebar-tooltip {
   opacity: 1;
   pointer-events: auto;
+  animation: tooltipFadeIn 0.2s ease-out;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+/* Tooltip arrow */
+#sidebar-tooltip::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 4px solid transparent;
+  border-right-color: #1F2937;
 }
 
 /* Focus styles for accessibility */

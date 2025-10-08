@@ -1,6 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { AuthService } from '../../../core/services/auth.service';
 
 interface MenuItem {
@@ -163,14 +164,37 @@ export class AdminSidebarComponent implements OnInit {
   ngOnInit() {
     // Initialize expanded state for current route
     this.updateActiveState();
+    
+    // Listen to route changes to update active state
+    this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe(() => {
+        this.updateActiveState();
+      });
   }
 
   toggleSubmenu(item: MenuItem) {
-    if (item.children) {
+    if (item.children && item.children.length > 0) {
+      // Toggle the submenu
       item.isExpanded = !item.isExpanded;
+      
+      // Close other expanded items (optional - for accordion behavior)
+      // this.menuItems.forEach(menuItem => {
+      //   if (menuItem !== item && menuItem.children) {
+      //     menuItem.isExpanded = false;
+      //   }
+      // });
     } else {
-      this.router.navigate([item.route]);
+      // Navigate to the route for items without children
+      this.navigateToRoute(item.route);
     }
+  }
+
+  navigateToRoute(route: string) {
+    this.router.navigate([route]).catch(err => {
+      console.error('Navigation error:', err);
+      // Optionally show a user-friendly error message
+    });
   }
 
   private updateActiveState() {
