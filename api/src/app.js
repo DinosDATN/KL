@@ -33,7 +33,6 @@ const contestAdminRoutes = require("./routes/contestAdminRoutes");
 const userAdminRoutes = require("./routes/userAdminRoutes");
 const dashboardAdminRoutes = require("./routes/dashboardAdminRoutes");
 const courseContentRoutes = require("./routes/courseContentRoutes");
-const chatAIRoutes = require("./routes/chatAIRoutes");
 
 // Create Express app and HTTP server
 const app = express();
@@ -98,7 +97,6 @@ app.use(apiPrefix + "/chat", chatRoutes);
 app.use(apiPrefix + "/submissions", submissionRoutes);
 app.use(apiPrefix + "/friendship", friendshipRoutes);
 app.use(apiPrefix + "/private-chat", privateChatRoutes);
-app.use(apiPrefix + "/chat-ai", chatAIRoutes);
 
 // Admin routes
 app.use(apiPrefix + "/admin/dashboard", dashboardAdminRoutes);
