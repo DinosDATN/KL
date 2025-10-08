@@ -6,12 +6,12 @@ const path = require("path");
 require("dotenv").config();
 
 // Initialize Passport
-const passport = require('./config/passport');
+const passport = require("./config/passport");
 
 const { sequelize, testConnection } = require("./config/sequelize");
 
 // Import models with associations
-require('./models');
+require("./models");
 
 // Import routes
 const authRoutes = require("./routes/authRoutes");
@@ -33,6 +33,7 @@ const contestAdminRoutes = require("./routes/contestAdminRoutes");
 const userAdminRoutes = require("./routes/userAdminRoutes");
 const dashboardAdminRoutes = require("./routes/dashboardAdminRoutes");
 const courseContentRoutes = require("./routes/courseContentRoutes");
+const chatAIRoutes = require("./routes/chatAIRoutes");
 
 // Create Express app and HTTP server
 const app = express();
@@ -42,12 +43,12 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: process.env.CLIENT_URL || "http://localhost:4200",
-    methods: ["GET", "POST"]
-  }
+    methods: ["GET", "POST"],
+  },
 });
 
 // Import and setup Socket.IO chat handler
-const { handleConnection } = require('./socket/chatHandler');
+const { handleConnection } = require("./socket/chatHandler");
 handleConnection(io);
 
 // Middleware
@@ -59,7 +60,7 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(passport.initialize());
 
 // Serve static files for uploads
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // Add Socket.IO instance to requests
 app.use((req, res, next) => {
@@ -97,6 +98,7 @@ app.use(apiPrefix + "/chat", chatRoutes);
 app.use(apiPrefix + "/submissions", submissionRoutes);
 app.use(apiPrefix + "/friendship", friendshipRoutes);
 app.use(apiPrefix + "/private-chat", privateChatRoutes);
+app.use(apiPrefix + "/chat-ai", chatAIRoutes);
 
 // Admin routes
 app.use(apiPrefix + "/admin/dashboard", dashboardAdminRoutes);
@@ -113,9 +115,33 @@ app.use(apiPrefix + "/course-content", courseContentRoutes);
 app.use(apiPrefix + "/homepage", homepageRoutes);
 
 // Alternative homepage routes (for direct access)
-app.use(apiPrefix + "/overview", (req, res, next) => req.originalUrl = req.originalUrl.replace('/overview', '/homepage/overview'), homepageRoutes);
-app.use(apiPrefix + "/leaderboard", (req, res, next) => req.originalUrl = req.originalUrl.replace('/leaderboard', '/homepage/leaderboard'), homepageRoutes);
-app.use(apiPrefix + "/testimonials", (req, res, next) => req.originalUrl = req.originalUrl.replace('/testimonials', '/homepage/testimonials'), homepageRoutes);
+app.use(
+  apiPrefix + "/overview",
+  (req, res, next) =>
+    (req.originalUrl = req.originalUrl.replace(
+      "/overview",
+      "/homepage/overview"
+    )),
+  homepageRoutes
+);
+app.use(
+  apiPrefix + "/leaderboard",
+  (req, res, next) =>
+    (req.originalUrl = req.originalUrl.replace(
+      "/leaderboard",
+      "/homepage/leaderboard"
+    )),
+  homepageRoutes
+);
+app.use(
+  apiPrefix + "/testimonials",
+  (req, res, next) =>
+    (req.originalUrl = req.originalUrl.replace(
+      "/testimonials",
+      "/homepage/testimonials"
+    )),
+  homepageRoutes
+);
 
 // Catch-all route for undefined endpoints
 app.use((req, res) => {
