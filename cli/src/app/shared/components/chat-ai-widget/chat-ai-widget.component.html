@@ -222,13 +222,15 @@
 
     <!-- Chat Input -->
     <div class="chat-input">
-      <div class="input-container">
+      <div class="input-container" (click)="onTextareaClick()">
         <textarea
           #messageInput
           class="message-textarea"
           placeholder="Nhập câu hỏi của bạn..."
           [(ngModel)]="currentMessage"
           (keydown)="onKeyDown($event)"
+          (click)="onTextareaClick()"
+          (focus)="onTextareaClick()"
           [disabled]="isLoading"
           maxlength="1000"
           rows="1"

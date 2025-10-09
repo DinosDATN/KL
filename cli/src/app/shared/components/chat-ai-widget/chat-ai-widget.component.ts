@@ -235,8 +235,14 @@ export class ChatAiWidgetComponent
   }
 
   private focusInput(): void {
-    if (!this.messageInput || this.isMobile) return;
+    if (!this.messageInput) return;
+    // Remove mobile restriction to allow focus on all devices
     this.messageInput.nativeElement.focus();
+  }
+
+  // Add method to handle textarea click/focus events
+  onTextareaClick(): void {
+    this.focusInput();
   }
 
   private scrollToBottom(): void {
