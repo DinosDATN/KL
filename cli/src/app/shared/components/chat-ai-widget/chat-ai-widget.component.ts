@@ -6,13 +6,15 @@ import {
   ElementRef,
   AfterViewChecked,
   HostListener,
+  Inject,
+  PLATFORM_ID,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { ChatAIService } from '../../../core/services/chat-ai.service';
 import { ChatAIMessage } from '../../../core/models/ai.model';
-
+import { isPlatformBrowser } from '@angular/common';
 @Component({
   selector: 'app-chat-ai-widget',
   standalone: true,
@@ -53,7 +55,10 @@ export class ChatAiWidgetComponent
   private subscriptions: Subscription[] = [];
   private shouldScrollToBottom = false;
 
-  constructor(private chatAIService: ChatAIService) {}
+  constructor(
+    private chatAIService: ChatAIService,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {}
 
   ngOnInit(): void {
     this.detectMobile();
@@ -78,10 +83,15 @@ export class ChatAiWidgetComponent
     this.detectMobile();
   }
 
-  private detectMobile(): void {
-    this.isMobile = window.innerWidth < 768;
+  // private detectMobile(): void {
+  //   this.isMobile = window.innerWidth < 768;
+  // }
+  detectMobile() {
+    if (isPlatformBrowser(this.platformId)) {
+      return window.innerWidth < 768;
+    }
+    return false;
   }
-
   private setupSubscriptions(): void {
     // Subscribe to chat messages
     const messagesSubscription = this.chatAIService.messages$.subscribe(
