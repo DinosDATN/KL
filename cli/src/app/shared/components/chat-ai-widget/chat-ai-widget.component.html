@@ -1,0 +1,171 @@
+<!-- ChatAI Widget Container -->
+<div class="chat-ai-widget" [class.mobile]="isMobile" [class.desktop]="!isMobile">
+  <!-- Floating Chat Icon -->
+  <div 
+    class="chat-icon" 
+    [class.open]="isOpen" 
+    (click)="toggleChat()"
+    [title]="isOpen ? 'Đóng chat' : 'Mở chat AI'"
+  >
+    <div class="icon-container">
+      <svg 
+        *ngIf="!isOpen" 
+        class="chat-svg"
+        viewBox="0 0 24 24" 
+        fill="currentColor"
+        width="24" 
+        height="24"
+      >
+        <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+      </svg>
+      <svg 
+        *ngIf="isOpen" 
+        class="close-svg"
+        viewBox="0 0 24 24" 
+        fill="currentColor"
+        width="18" 
+        height="18"
+      >
+        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+      </svg>
+    </div>
+    <!-- Notification badge -->
+    <div class="notification-badge" *ngIf="hasNewMessage && !isOpen"></div>
+  </div>
+
+  <!-- Chat Window -->
+  <div 
+    class="chat-window" 
+    [class.open]="isOpen"
+    [class.mobile-fullscreen]="isMobile"
+  >
+    <!-- Chat Header -->
+    <div class="chat-header">
+      <div class="header-left">
+        <div class="ai-avatar">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+          </svg>
+        </div>
+        <div class="header-info">
+          <h4 class="ai-name">ChatAI Assistant</h4>
+          <span class="ai-status" [class.online]="isHealthy">{{ statusText }}</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button 
+          class="action-btn"
+          (click)="clearChat()"
+          title="Xóa lịch sử chat"
+        >
+          <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+          </svg>
+        </button>
+        <button 
+          class="action-btn"
+          (click)="exportChat()"
+          title="Xuất lịch sử chat"
+        >
+          <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+          </svg>
+        </button>
+        <button 
+          class="action-btn close-btn"
+          (click)="closeChat()"
+          title="Đóng chat"
+          *ngIf="!isMobile"
+        >
+          <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Chat Messages Area -->
+    <div class="chat-messages" #messagesContainer>
+      <div class="messages-container">
+        <!-- Welcome/Quick Questions -->
+        <div class="quick-questions" *ngIf="messages.length <= 1">
+          <p class="quick-title">💡 Hỏi nhanh:</p>
+          <div class="quick-buttons">
+            <button 
+              class="quick-btn"
+              *ngFor="let question of quickQuestions; trackBy: trackByQuestion"
+              (click)="askQuickQuestion(question)"
+              [disabled]="isLoading"
+            >
+              {{ question }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Chat Messages -->
+        <div 
+          class="message"
+          *ngFor="let message of messages; trackBy: trackByMessage"
+          [class.user]="message.isUser"
+          [class.ai]="!message.isUser"
+          [class.typing]="message.isTyping"
+        >
+          <div class="message-avatar" *ngIf="!message.isUser">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+            </svg>
+          </div>
+          <div class="message-content">
+            <div class="message-text">
+              <div *ngIf="message.isTyping" class="typing-indicator">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <div *ngIf="!message.isTyping" [innerHTML]="formatMessage(message.text)"></div>
+            </div>
+            <div class="message-time">{{ formatTime(message.timestamp) }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat Input -->
+    <div class="chat-input">
+      <div class="input-container">
+        <textarea 
+          #messageInput
+          class="message-textarea"
+          placeholder="Nhập câu hỏi của bạn..."
+          [(ngModel)]="currentMessage"
+          (keydown)="onKeyDown($event)"
+          [disabled]="isLoading"
+          maxlength="1000"
+          rows="1"
+        ></textarea>
+        <div class="input-actions">
+          <div class="char-count" [class.warning]="currentMessage.length > 800">
+            {{ currentMessage.length }}/1000
+          </div>
+          <button 
+            class="send-btn"
+            (click)="sendMessage()"
+            [disabled]="!canSend"
+            title="Gửi tin nhắn"
+          >
+            <svg 
+              *ngIf="!isLoading" 
+              viewBox="0 0 24 24" 
+              fill="currentColor" 
+              width="20" 
+              height="20"
+            >
+              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+            </svg>
+            <div *ngIf="isLoading" class="loading-spinner"></div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
