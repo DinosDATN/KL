@@ -35,11 +35,14 @@ export class ChatAiWidgetComponent
   isHealthy = true;
   hasNewMessage = false;
   isMobile = false;
+  isSoundEnabled = true;
 
   // Chat data
   messages: ChatAIMessage[] = [];
   currentMessage = '';
   quickQuestions: string[] = [];
+  likedMessages = new Set<string>();
+  newMessageIds = new Set<string>();
 
   // UI computed properties
   get canSend(): boolean {
@@ -65,6 +68,7 @@ export class ChatAiWidgetComponent
     this.setupSubscriptions();
     this.loadQuickQuestions();
     this.checkHealthStatus();
+    this.loadSettings();
   }
 
   ngOnDestroy(): void {
@@ -86,22 +90,33 @@ export class ChatAiWidgetComponent
   // private detectMobile(): void {
   //   this.isMobile = window.innerWidth < 768;
   // }
-  detectMobile() {
+  detectMobile(): void {
     if (isPlatformBrowser(this.platformId)) {
-      return window.innerWidth < 768;
+      this.isMobile = window.innerWidth < 768;
+    } else {
+      this.isMobile = false;
     }
-    return false;
   }
   private setupSubscriptions(): void {
     // Subscribe to chat messages
     const messagesSubscription = this.chatAIService.messages$.subscribe(
       (messages) => {
+        const previousLength = this.messages.length;
         this.messages = messages;
         this.shouldScrollToBottom = true;
 
         // Check for new messages when chat is closed
         if (!this.isOpen && messages.length > 1) {
           this.hasNewMessage = true;
+        }
+
+        // Play sound and mark new messages
+        if (messages.length > previousLength) {
+          const newMessage = messages[messages.length - 1];
+          if (!newMessage.isUser && !newMessage.isTyping) {
+            this.playSound('message');
+            this.newMessageIds.add(newMessage.id);
+          }
         }
       }
     );
@@ -146,6 +161,15 @@ export class ChatAiWidgetComponent
     });
   }
 
+  private loadSettings(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      const soundSetting = localStorage.getItem('chat-sound-enabled');
+      if (soundSetting !== null) {
+        this.isSoundEnabled = soundSetting === 'true';
+      }
+    }
+  }
+
   // Chat controls
   toggleChat(): void {
     this.chatAIService.toggleChat();
@@ -166,6 +190,7 @@ export class ChatAiWidgetComponent
     const message = this.currentMessage.trim();
     this.currentMessage = '';
     this.resizeTextarea();
+    this.playSound('send');
 
     this.chatAIService.askQuestion(message).subscribe({
       next: () => {
@@ -285,5 +310,158 @@ export class ChatAiWidgetComponent
     link.download = filename;
     link.click();
     window.URL.revokeObjectURL(url);
+  }
+
+  // New interactive features
+  copyMessage(text: string): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard
+        .writeText(text)
+        .then(() => {
+          this.showToast('Đã sao chép tin nhắn!');
+        })
+        .catch(() => {
+          this.fallbackCopyTextToClipboard(text);
+        });
+    } else {
+      this.fallbackCopyTextToClipboard(text);
+    }
+  }
+
+  private fallbackCopyTextToClipboard(text: string): void {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-9999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      this.showToast('Đã sao chép tin nhắn!');
+    } catch (err) {
+      this.showToast('Không thể sao chép tin nhắn');
+    }
+    document.body.removeChild(textArea);
+  }
+
+  likeMessage(messageId: string): void {
+    if (this.likedMessages.has(messageId)) {
+      this.likedMessages.delete(messageId);
+    } else {
+      this.likedMessages.add(messageId);
+      this.playSound('like');
+    }
+  }
+
+  isMessageLiked(messageId: string): boolean {
+    return this.likedMessages.has(messageId);
+  }
+
+  isNewMessage(message: ChatAIMessage): boolean {
+    const isNew = this.newMessageIds.has(message.id);
+    if (isNew) {
+      // Remove from new messages after a delay
+      setTimeout(() => {
+        this.newMessageIds.delete(message.id);
+      }, 1000);
+    }
+    return isNew;
+  }
+
+  toggleSound(): void {
+    this.isSoundEnabled = !this.isSoundEnabled;
+    this.showToast(this.isSoundEnabled ? 'Âm thanh đã bật' : 'Âm thanh đã tắt');
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem(
+        'chat-sound-enabled',
+        this.isSoundEnabled.toString()
+      );
+    }
+  }
+
+  private playSound(type: 'message' | 'send' | 'like' = 'message'): void {
+    if (!this.isSoundEnabled || !isPlatformBrowser(this.platformId)) return;
+
+    try {
+      const frequencies = {
+        message: [800, 600],
+        send: [600, 800],
+        like: [400, 800, 1200],
+      };
+
+      const audioContext = new (window.AudioContext ||
+        (window as any).webkitAudioContext)();
+      const freqs = frequencies[type];
+
+      freqs.forEach((freq, index) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        oscillator.frequency.value = freq;
+        oscillator.type = 'sine';
+
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(
+          0.1,
+          audioContext.currentTime + 0.01
+        );
+        gainNode.gain.exponentialRampToValueAtTime(
+          0.01,
+          audioContext.currentTime + 0.3
+        );
+
+        const startTime = audioContext.currentTime + index * 0.1;
+        oscillator.start(startTime);
+        oscillator.stop(startTime + 0.3);
+      });
+    } catch (error) {
+      // Fallback for older browsers or when audio context fails
+      console.warn('Could not play sound:', error);
+    }
+  }
+
+  private showToast(message: string): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    // Simple toast implementation - you could replace this with a proper toast library
+    const toast = document.createElement('div');
+    toast.textContent = message;
+    toast.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--chat-primary);
+      color: white;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 10001;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    `;
+
+    document.body.appendChild(toast);
+
+    // Trigger animation
+    requestAnimationFrame(() => {
+      toast.style.opacity = '1';
+    });
+
+    // Remove after delay
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      setTimeout(() => {
+        if (document.body.contains(toast)) {
+          document.body.removeChild(toast);
+        }
+      }, 300);
+    }, 3000);
   }
 }
