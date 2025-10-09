@@ -101,13 +101,27 @@
   }
 }
 
+/* 
+ * Button Positioning Layout:
+ * 
+ * Desktop:
+ * - Scroll to Top Button: bottom: 152px, right: 24px (ABOVE)
+ * - ChatAI Button: bottom: 24px, right: 24px (BELOW)
+ * - Spacing between buttons: ~64px gap
+ * 
+ * Mobile:
+ * - Scroll to Top Button: bottom: 100px, right: 20px (ABOVE)
+ * - ChatAI Button: bottom: 20px, right: 20px (BELOW)
+ * - Spacing between buttons: ~36px gap
+ */
+
 /* Desktop positioning */
 .chat-ai-widget.desktop {
   bottom: 24px;
   right: 24px;
 }
 
-/* Mobile positioning */
+/* Mobile positioning - balanced with scroll button */
 .chat-ai-widget.mobile {
   bottom: 20px;
   right: 20px;
@@ -884,24 +898,18 @@
   }
 }
 
-/* Mobile responsive */
+/* Mobile responsive - balanced positioning with scroll button */
 @media (max-width: 768px) {
   .chat-window {
     width: calc(100vw - 40px);
     height: 70vh;
     max-height: 600px;
+    border-radius: 12px;
   }
 
   .chat-icon {
     width: 56px;
     height: 56px;
-  }
-
-  .chat-window {
-    width: calc(100vw - 32px);
-    height: 75vh;
-    max-height: 650px;
-    border-radius: 12px;
   }
 
   .message {
@@ -911,6 +919,13 @@
   .quick-btn {
     font-size: 12px;
     padding: 8px 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .chat-icon {
+    width: 52px;
+    height: 52px;
   }
 }
 
