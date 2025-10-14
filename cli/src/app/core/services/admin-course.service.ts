@@ -1,6 +1,7 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { isPlatformBrowser } from '@angular/common';
 import { environment } from '../../../environments/environment';
 
 export interface AdminCourse {
@@ -93,7 +94,10 @@ export interface BulkActionRequest {
 export class AdminCourseService {
   private readonly apiUrl = `${environment.apiUrl}/admin/courses`;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {}
 
   /**
    * Get all courses for admin with filters and pagination
@@ -238,6 +242,11 @@ export class AdminCourseService {
    * Download export file
    */
   downloadExport(blob: Blob, filename: string): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      console.warn('File download is not available during server-side rendering');
+      return;
+    }
+    
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;

@@ -80,7 +80,7 @@ export class DocumentsComponent implements OnInit {
     
     // Load all required data in parallel
     forkJoin({
-      documents: this.documentService.getDocuments({ limit: 1000 }), // Get all documents initially
+      documents: this.documentService.getDocuments({ limit: 100 }), // Use reasonable limit
       categories: this.documentService.getDocumentCategories(),
       topics: this.documentService.getTopics(),
       categoryLinks: this.documentService.getDocumentCategoryLinks()

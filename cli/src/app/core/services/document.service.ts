@@ -1,7 +1,8 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { map, catchError, retry, delay } from 'rxjs/operators';
+import { isPlatformBrowser } from '@angular/common';
 import { environment } from '../../../environments/environment';
 import {
   Document,
@@ -44,7 +45,10 @@ interface DocumentFilters {
 export class DocumentService {
   private apiUrl = `${environment.apiUrl}/documents`;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {}
 
   // Get all documents with filtering and pagination
   getDocuments(filters: DocumentFilters = {}): Observable<{
@@ -298,14 +302,17 @@ export class DocumentService {
   }
 
   // Error handling
-  private handleError(error: any): Observable<never> {
+  private handleError = (error: any): Observable<never> => {
     let errorMessage = 'An unknown error occurred';
     
-    if (error.error instanceof ErrorEvent) {
+    // Check if we're in browser environment before using ErrorEvent
+    if (isPlatformBrowser(this.platformId) && 
+        typeof ErrorEvent !== 'undefined' && 
+        error.error instanceof ErrorEvent) {
       // Client-side error
       errorMessage = `Error: ${error.error.message}`;
     } else {
-      // Server-side error
+      // Server-side error or other error types
       errorMessage = `Error Code: ${error.status}\nMessage: ${error.message}`;
       if (error.error && error.error.message) {
         errorMessage = error.error.message;

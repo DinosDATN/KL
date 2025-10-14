@@ -1,5 +1,6 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { Observable, from } from 'rxjs';
+import { isPlatformBrowser } from '@angular/common';
 import { environment } from '../../../environments/environment';
 
 declare global {
@@ -15,7 +16,7 @@ export class OAuthService {
   private googleLoaded = false;
   private readonly apiUrl = environment.apiUrl || 'http://localhost:3000/api/v1';
 
-  constructor() {
+  constructor(@Inject(PLATFORM_ID) private platformId: Object) {
     this.loadGoogleScript();
   }
 
@@ -23,7 +24,7 @@ export class OAuthService {
    * Load Google OAuth script dynamically (for One Tap if needed)
    */
   private loadGoogleScript(): void {
-    if (typeof document !== 'undefined' && !this.googleLoaded) {
+    if (isPlatformBrowser(this.platformId) && !this.googleLoaded) {
       const script = document.createElement('script');
       script.src = 'https://accounts.google.com/gsi/client';
       script.async = true;
@@ -43,7 +44,8 @@ export class OAuthService {
    * Check if Google OAuth is ready
    */
   private isGoogleReady(): boolean {
-    return this.googleLoaded && typeof window !== 'undefined' && window.google;
+    return this.googleLoaded && isPlatformBrowser(this.platformId) && 
+           typeof window !== 'undefined' && window.google;
   }
 
   /**
@@ -76,6 +78,10 @@ export class OAuthService {
    */
   async loginWithGoogle(): Promise<void> {
     try {
+      if (!isPlatformBrowser(this.platformId)) {
+        throw new Error('Google OAuth is not available during server-side rendering');
+      }
+      
       // Simple redirect approach - let the backend handle OAuth
       const googleAuthUrl = `${this.apiUrl}/auth/google`;
       console.log('Redirecting to Google OAuth:', googleAuthUrl);
@@ -91,6 +97,10 @@ export class OAuthService {
    */
   async loginWithGitHub(): Promise<void> {
     try {
+      if (!isPlatformBrowser(this.platformId)) {
+        throw new Error('GitHub OAuth is not available during server-side rendering');
+      }
+      
       // Simple redirect approach - let the backend handle OAuth
       const githubAuthUrl = `${this.apiUrl}/auth/github`;
       console.log('Redirecting to GitHub OAuth:', githubAuthUrl);
