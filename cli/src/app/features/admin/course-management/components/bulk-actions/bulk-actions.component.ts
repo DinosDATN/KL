@@ -6,7 +6,7 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './bulk-actions.component.html',
-  styleUrl: './bulk-actions.component.css'
+  styleUrl: './bulk-actions.component.css',
 })
 export class BulkActionsComponent {
   @Input() selectedCount = 0;

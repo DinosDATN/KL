@@ -1,9 +1,15 @@
 <!-- Admin Course Management Page -->
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+<div
+  class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200"
+>
   <!-- Header -->
-  <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-200">
+  <div
+    class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-200"
+  >
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+      <div
+        class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6"
+      >
         <!-- Title -->
         <div>
           <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -63,27 +69,37 @@
         <button
           (click)="onTabChange('all')"
           [ngClass]="{
-            'border-blue-500 text-blue-600 dark:text-blue-400': activeTab === 'all',
-            'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600': activeTab !== 'all'
+            'border-blue-500 text-blue-600 dark:text-blue-400':
+              activeTab === 'all',
+            'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600':
+              activeTab !== 'all'
           }"
           class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200"
         >
           All Courses
-          <span *ngIf="stats" class="ml-2 px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded-full">
+          <span
+            *ngIf="stats"
+            class="ml-2 px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded-full"
+          >
             {{ stats.totalCourses }}
           </span>
         </button>
-        
+
         <button
           (click)="onTabChange('deleted')"
           [ngClass]="{
-            'border-red-500 text-red-600 dark:text-red-400': activeTab === 'deleted',
-            'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600': activeTab !== 'deleted'
+            'border-red-500 text-red-600 dark:text-red-400':
+              activeTab === 'deleted',
+            'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600':
+              activeTab !== 'deleted'
           }"
           class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200"
         >
           Deleted Courses
-          <span *ngIf="stats" class="ml-2 px-2 py-1 text-xs bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-full">
+          <span
+            *ngIf="stats"
+            class="ml-2 px-2 py-1 text-xs bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-full"
+          >
             {{ stats.deletedCourses }}
           </span>
         </button>
@@ -106,7 +122,9 @@
         <!-- Search Bar -->
         <div class="mb-6">
           <div class="relative">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <div
+              class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+            >
               <i class="icon-search text-gray-400 text-lg"></i>
             </div>
             <input

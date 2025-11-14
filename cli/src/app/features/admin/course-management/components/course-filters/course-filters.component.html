@@ -1,5 +1,7 @@
 <!-- Filters Panel -->
-<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 transition-colors duration-200">
+<div
+  class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 transition-colors duration-200"
+>
   <div class="p-6">
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
@@ -19,7 +21,9 @@
     <form class="space-y-6">
       <!-- Status Filter -->
       <div *ngIf="!showDeletedOptions">
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+        >
           Status
         </label>
         <select
@@ -36,7 +40,9 @@
 
       <!-- Level Filter -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+        >
           Level
         </label>
         <select
@@ -53,7 +59,9 @@
 
       <!-- Premium Filter -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+        >
           Course Type
         </label>
         <select
@@ -70,7 +78,9 @@
 
       <!-- Price Range Filter -->
       <div *ngIf="!showDeletedOptions">
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+        >
           Price Range
         </label>
         <select
@@ -79,7 +89,10 @@
           name="priceRange"
           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
         >
-          <option *ngFor="let option of priceRangeOptions" [value]="option.value">
+          <option
+            *ngFor="let option of priceRangeOptions"
+            [value]="option.value"
+          >
             {{ option.label }}
           </option>
         </select>
@@ -87,7 +100,9 @@
 
       <!-- Category Filter (Placeholder - would need category service) -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+        >
           Category
         </label>
         <select
@@ -106,7 +121,9 @@
 
       <!-- Instructor Filter (Placeholder - would need instructor service) -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+        >
           Instructor
         </label>
         <select
@@ -124,7 +141,9 @@
 
       <!-- Sort By -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+        >
           Sort By
         </label>
         <select
@@ -141,7 +160,9 @@
 
       <!-- Items Per Page -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+        >
           Items Per Page
         </label>
         <select
@@ -161,7 +182,10 @@
   </div>
 
   <!-- Active Filters Summary -->
-  <div *ngIf="hasActiveFilters()" class="border-t border-gray-200 dark:border-gray-700 p-4">
+  <div
+    *ngIf="hasActiveFilters()"
+    class="border-t border-gray-200 dark:border-gray-700 p-4"
+  >
     <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">
       Active Filters:
     </div>
@@ -179,7 +203,10 @@
         Level: {{ localFilters.level }}
       </span>
       <span
-        *ngIf="localFilters.is_premium !== undefined && localFilters.is_premium !== null"
+        *ngIf="
+          localFilters.is_premium !== undefined &&
+          localFilters.is_premium !== null
+        "
         class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200"
       >
         Type: {{ getTypeLabel(localFilters.is_premium) }}

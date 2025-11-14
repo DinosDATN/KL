@@ -7,7 +7,7 @@ import { CourseStats } from '../../../../../core/services/admin-course.service';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './course-stats.component.html',
-  styleUrl: './course-stats.component.css'
+  styleUrl: './course-stats.component.css',
 })
 export class CourseStatsComponent {
   @Input() stats: CourseStats | null = null;
@@ -16,7 +16,7 @@ export class CourseStatsComponent {
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
-      currency: 'VND'
+      currency: 'VND',
     }).format(amount);
   }
 
@@ -35,7 +35,7 @@ export class CourseStatsComponent {
       free: 'text-gray-600 dark:text-gray-400',
       revenue: 'text-emerald-600 dark:text-emerald-400',
       students: 'text-orange-600 dark:text-orange-400',
-      rating: 'text-amber-600 dark:text-amber-400'
+      rating: 'text-amber-600 dark:text-amber-400',
     };
     return colors[type as keyof typeof colors] || colors.total;
   }
@@ -51,7 +51,7 @@ export class CourseStatsComponent {
       free: 'gift',
       revenue: 'dollar-sign',
       students: 'users',
-      rating: 'star'
+      rating: 'star',
     };
     return icons[type as keyof typeof icons] || icons.total;
   }
