@@ -124,6 +124,11 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
       ],
     },
     {
+      label: 'Gamification',
+      icon: 'gamepad-2',
+      children: [{ label: 'Sudoku', link: '/games/sudoku', icon: 'grid' }],
+    },
+    {
       label: 'Diễn đàn',
       // link: '/forum',
       icon: 'message-circle',
@@ -228,14 +233,23 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
         { label: 'Hồ sơ', link: '/profile', icon: 'user' },
         { label: 'Cài đặt', link: '/settings', icon: 'settings' },
       ];
-      
+
       // Add admin menu if user is admin
       if (this.currentUser?.role === 'admin') {
-        baseItems.splice(1, 0, { label: 'Admin Panel', link: '/admin/courses', icon: 'settings' });
+        baseItems.splice(1, 0, {
+          label: 'Admin Panel',
+          link: '/admin/courses',
+          icon: 'settings',
+        });
       }
-      
-      baseItems.push({ label: 'Đăng xuất', link: '#', icon: 'log-out', action: 'logout' } as MenuItem);
-      
+
+      baseItems.push({
+        label: 'Đăng xuất',
+        link: '#',
+        icon: 'log-out',
+        action: 'logout',
+      } as MenuItem);
+
       this.userMenuItems = baseItems;
     } else {
       this.userMenuItems = [

@@ -1,0 +1,65 @@
+/* Sudoku Grid Styling */
+.grid {
+  /* Border styling for 3x3 boxes */
+}
+
+.grid > div:nth-child(3n) {
+  border-right: 2px solid rgb(17 24 39) !important; /* dark:border-gray-100 equivalent */
+}
+
+.grid > div:nth-child(3n) > div {
+  border-bottom: 2px solid rgb(17 24 39) !important;
+}
+
+.grid > div:nth-child(3n) > div:nth-child(3n) {
+  border-right: 2px solid rgb(17 24 39) !important;
+}
+
+/* Dark mode adjustments */
+.dark .grid > div:nth-child(3n) {
+  border-right-color: rgb(243 244 246) !important;
+}
+
+.dark .grid > div:nth-child(3n) > div {
+  border-bottom-color: rgb(243 244 246) !important;
+}
+
+.dark .grid > div:nth-child(3n) > div:nth-child(3n) {
+  border-right-color: rgb(243 244 246) !important;
+}
+
+/* Cell border adjustments for 3x3 boxes */
+.grid > div:nth-child(n + 4):nth-child(-n + 6) > div {
+  border-top: 2px solid rgb(17 24 39) !important;
+}
+
+.dark .grid > div:nth-child(n + 4):nth-child(-n + 6) > div {
+  border-top-color: rgb(243 244 246) !important;
+}
+
+/* Animation for number placement */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.grid > div > div > span {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .grid {
+    max-width: 100%;
+  }
+
+  .grid > div > div {
+    font-size: 1.25rem;
+  }
+}

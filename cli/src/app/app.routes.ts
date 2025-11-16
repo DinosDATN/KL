@@ -79,16 +79,16 @@ export const routes: Routes = [
       {
         path: 'courses/analytics',
         loadComponent: () =>
-          import('./features/admin/course-analytics/course-analytics.component').then(
-            (m) => m.CourseAnalyticsComponent
-          ),
+          import(
+            './features/admin/course-analytics/course-analytics.component'
+          ).then((m) => m.CourseAnalyticsComponent),
       },
       {
         path: 'courses/reports',
         loadComponent: () =>
-          import('./features/admin/course-reports/course-reports.component').then(
-            (m) => m.CourseReportsComponent
-          ),
+          import(
+            './features/admin/course-reports/course-reports.component'
+          ).then((m) => m.CourseReportsComponent),
       },
       {
         path: 'documents',
@@ -288,6 +288,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/chat/chat.component').then((m) => m.ChatComponent),
         canActivate: [AuthGuard],
+      },
+      {
+        path: 'games/sudoku',
+        loadComponent: () =>
+          import('./features/games/sudoku/sudoku.component').then(
+            (m) => m.SudokuComponent
+          ),
       },
     ],
   },

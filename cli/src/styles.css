@@ -111,6 +111,12 @@
 .icon-moon::before {
   content: "🌙";
 }
+.icon-game::before {
+  content: "🎮";
+}
+.icon-grid::before {
+  content: "⬜";
+}
 
 /* Custom styles for better visual appeal */
 body {
