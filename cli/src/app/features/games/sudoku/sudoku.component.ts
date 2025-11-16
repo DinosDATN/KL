@@ -18,8 +18,10 @@ type CellState = {
   value: number;
   isGiven: boolean;
   isError: boolean;
+  isCorrect: boolean; // Thêm trạng thái đúng
   isSelected: boolean;
   isHighlighted: boolean;
+  notes: number[]; // Ghi chú bút chì
 };
 
 @Component({
@@ -48,6 +50,11 @@ export class SudokuComponent implements OnInit, OnDestroy {
   showSolution = false;
   showHints = false;
   showDifficultySelector = true;
+  pencilMode = false; // Chế độ bút chì
+  errorCount = 0; // Số lần sai
+  maxErrors = 3; // Số lần sai tối đa
+  gameLost = false; // Trạng thái thua
+  errorCells: Set<string> = new Set(); // Track các ô đã sai để không đếm lại
 
   private destroy$ = new Subject<void>();
 
@@ -78,10 +85,14 @@ export class SudokuComponent implements OnInit, OnDestroy {
     this.error = null;
     this.gameStarted = false;
     this.gameCompleted = false;
+    this.gameLost = false;
     this.showSolution = false;
     this.showHints = false;
     this.selectedCell = null;
     this.selectedNumber = null;
+    this.pencilMode = false;
+    this.errorCount = 0;
+    this.errorCells.clear();
     this.clearTimer();
 
     this.gameService
@@ -117,8 +128,10 @@ export class SudokuComponent implements OnInit, OnDestroy {
           value: value,
           isGiven: value !== 0,
           isError: false,
+          isCorrect: false,
           isSelected: false,
           isHighlighted: false,
+          notes: [],
         };
       }
     }
@@ -152,7 +165,15 @@ export class SudokuComponent implements OnInit, OnDestroy {
   /**
    * Handle number selection
    */
-  onNumberSelect(number: number): void {
+  onNumberSelect(number: number | null): void {
+    if (number === null || number === 0) {
+      this.selectedNumber = null;
+      if (this.selectedCell) {
+        this.clearCell();
+      }
+      return;
+    }
+
     this.selectedNumber = number;
 
     if (this.selectedCell) {
@@ -161,19 +182,63 @@ export class SudokuComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Toggle pencil mode
+   */
+  togglePencilMode(): void {
+    this.pencilMode = !this.pencilMode;
+  }
+
+  /**
    * Place a number in a cell
    */
   private placeNumber(row: number, col: number, number: number): void {
-    if (!this.gameStarted || this.gameCompleted) return;
+    if (!this.gameStarted || this.gameCompleted || this.gameLost) return;
     if (this.grid[row][col].isGiven) return;
 
+    // Nếu ở chế độ bút chì, thêm/xóa note
+    if (this.pencilMode) {
+      const cell = this.grid[row][col];
+      const index = cell.notes.indexOf(number);
+      if (index > -1) {
+        cell.notes.splice(index, 1);
+      } else {
+        cell.notes.push(number);
+        cell.notes.sort();
+      }
+      return;
+    }
+
+    // Chế độ điền số bình thường
     // Clear previous value
     if (this.grid[row][col].value === number) {
       this.grid[row][col].value = 0;
       this.grid[row][col].isError = false;
+      this.grid[row][col].isCorrect = false;
+      this.grid[row][col].notes = [];
     } else {
       this.grid[row][col].value = number;
+      this.grid[row][col].notes = []; // Xóa notes khi điền số
       this.checkForErrors(row, col);
+
+      // Kiểm tra nếu sai quá 3 lần (chỉ đếm lần đầu tiên sai ở ô này)
+      if (this.grid[row][col].isError) {
+        const cellKey = `${row}-${col}`;
+        if (!this.errorCells.has(cellKey)) {
+          this.errorCells.add(cellKey);
+          this.errorCount++;
+          if (this.errorCount >= this.maxErrors) {
+            this.gameLost = true;
+            this.clearTimer();
+          }
+        }
+      } else {
+        // Nếu sửa thành đúng, xóa khỏi danh sách error cells
+        const cellKey = `${row}-${col}`;
+        if (this.errorCells.has(cellKey)) {
+          this.errorCells.delete(cellKey);
+          // Không giảm errorCount vì đã sai rồi
+        }
+      }
     }
 
     // Check if game is completed
@@ -181,44 +246,28 @@ export class SudokuComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Check for errors in a cell
+   * Check for errors in a cell - so sánh với solution thực tế
    */
   private checkForErrors(row: number, col: number): void {
+    if (!this.puzzle) return;
+
     const value = this.grid[row][col].value;
     if (value === 0) {
       this.grid[row][col].isError = false;
+      this.grid[row][col].isCorrect = false;
       return;
     }
 
-    // Check row
-    for (let c = 0; c < 9; c++) {
-      if (c !== col && this.grid[row][c].value === value) {
-        this.grid[row][col].isError = true;
-        return;
-      }
-    }
+    const correctValue = this.puzzle.solution[row][col];
 
-    // Check column
-    for (let r = 0; r < 9; r++) {
-      if (r !== row && this.grid[r][col].value === value) {
-        this.grid[row][col].isError = true;
-        return;
-      }
+    // So sánh với solution
+    if (value === correctValue) {
+      this.grid[row][col].isError = false;
+      this.grid[row][col].isCorrect = true;
+    } else {
+      this.grid[row][col].isError = true;
+      this.grid[row][col].isCorrect = false;
     }
-
-    // Check 3x3 box
-    const boxRow = Math.floor(row / 3) * 3;
-    const boxCol = Math.floor(col / 3) * 3;
-    for (let r = boxRow; r < boxRow + 3; r++) {
-      for (let c = boxCol; c < boxCol + 3; c++) {
-        if (r !== row && c !== col && this.grid[r][c].value === value) {
-          this.grid[row][col].isError = true;
-          return;
-        }
-      }
-    }
-
-    this.grid[row][col].isError = false;
   }
 
   /**
@@ -357,6 +406,8 @@ export class SudokuComponent implements OnInit, OnDestroy {
     if (!this.grid[row][col].isGiven) {
       this.grid[row][col].value = 0;
       this.grid[row][col].isError = false;
+      this.grid[row][col].isCorrect = false;
+      this.grid[row][col].notes = [];
     }
   }
 
@@ -370,7 +421,10 @@ export class SudokuComponent implements OnInit, OnDestroy {
     this.selectedCell = null;
     this.selectedNumber = null;
     this.gameCompleted = false;
+    this.gameLost = false;
     this.showSolution = false;
+    this.errorCount = 0;
+    this.errorCells.clear();
     this.startTimer();
   }
 
@@ -410,6 +464,13 @@ export class SudokuComponent implements OnInit, OnDestroy {
     return `${mins.toString().padStart(2, '0')}:${secs
       .toString()
       .padStart(2, '0')}`;
+  }
+
+  /**
+   * Parse integer helper for template
+   */
+  parseInt(value: string): number {
+    return parseInt(value, 10);
   }
 
   /**
@@ -482,30 +543,33 @@ export class SudokuComponent implements OnInit, OnDestroy {
   getCellClasses(cell: CellState, row: number, col: number): string {
     let classes = '';
 
-    // Border styling for 3x3 boxes
+    // Thicker borders for 3x3 box separation - bottom border for rows 2, 5, 8
     if (row % 3 === 2 && row < 8) {
-      classes += 'border-b-2 border-gray-900 dark:border-gray-100 ';
+      classes += 'border-b-[3px] border-gray-900 dark:border-gray-100 ';
     }
+    // Thicker borders for 3x3 box separation - right border for columns 2, 5, 8
     if (col % 3 === 2 && col < 8) {
-      classes += 'border-r-2 border-gray-900 dark:border-gray-100 ';
+      classes += 'border-r-[3px] border-gray-900 dark:border-gray-100 ';
     }
 
-    // State-based styling
-    if (cell.isSelected) {
+    // State-based styling - ưu tiên error và correct
+    if (cell.isError) {
+      classes +=
+        'bg-red-200 dark:bg-red-900/50 border-red-400 dark:border-red-600 ';
+    } else if (cell.isCorrect && !cell.isGiven) {
+      classes +=
+        'bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700 ';
+    } else if (cell.isSelected) {
       classes +=
         'bg-blue-200 dark:bg-blue-800 ring-2 ring-blue-500 dark:ring-blue-400 ';
     } else if (cell.isHighlighted) {
-      classes += 'bg-blue-50 dark:bg-blue-900/30 ';
+      classes += 'bg-blue-50 dark:bg-blue-900/20 ';
     } else {
       classes += 'bg-white dark:bg-gray-800 ';
     }
 
     if (cell.isGiven) {
-      classes += 'font-bold text-gray-900 dark:text-gray-100 ';
-    }
-
-    if (cell.isError) {
-      classes += 'bg-red-200 dark:bg-red-900 text-red-800 dark:text-red-200 ';
+      classes += 'font-bold ';
     }
 
     return classes.trim();
@@ -519,12 +583,12 @@ export class SudokuComponent implements OnInit, OnDestroy {
 
     if (cell.isGiven) {
       classes += 'text-gray-900 dark:text-gray-100 font-bold ';
+    } else if (cell.isError) {
+      classes += 'text-red-800 dark:text-red-200 font-semibold ';
+    } else if (cell.isCorrect) {
+      classes += 'text-green-700 dark:text-green-300 font-semibold ';
     } else {
       classes += 'text-blue-600 dark:text-blue-400 ';
-    }
-
-    if (cell.isError) {
-      classes += 'text-red-800 dark:text-red-200 ';
     }
 
     return classes.trim();

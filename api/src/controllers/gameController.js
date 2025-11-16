@@ -249,7 +249,7 @@ class GameController {
       // Validate solution
       const isValid = sudokuService.validateSolution(solution);
 
-      // If user is authenticated and solution is valid, save/update progress
+      // If user is authenticated and solution is valid, save progress as new record
       if (isValid && req.user && gameId && levelId) {
         try {
           const userId = req.user.id;
@@ -262,34 +262,16 @@ class GameController {
             score = Math.max(100, score - Math.floor(timeSpentSeconds / 10));
           }
 
-          // Find or create user game process
-          let userProcess = await UserGameProcess.findByUserGameAndLevel(
-            userId,
-            gameId,
-            levelId
-          );
-
-          if (userProcess) {
-            // Update existing process
-            if (userProcess.status !== "completed") {
-              userProcess.status = "completed";
-              userProcess.completed_at = new Date();
-            }
-            userProcess.score = Math.max(userProcess.score, score);
-            userProcess.time_spent += timeSpentSeconds;
-            await userProcess.save();
-          } else {
-            // Create new process
-            userProcess = await UserGameProcess.create({
-              user_id: userId,
-              game_id: gameId,
-              level_id: levelId,
-              status: "completed",
-              score: score,
-              time_spent: timeSpentSeconds,
-              completed_at: new Date(),
-            });
-          }
+          // Always create a new record for each completion
+          await UserGameProcess.create({
+            user_id: userId,
+            game_id: gameId,
+            level_id: levelId,
+            status: "completed",
+            score: score,
+            time_spent: timeSpentSeconds,
+            completed_at: new Date(),
+          });
         } catch (progressError) {
           console.error("Error saving game progress:", progressError);
           // Don't fail the request if progress saving fails
@@ -419,38 +401,15 @@ class GameController {
         });
       }
 
-      // Find or create user game process
-      let userProcess = await UserGameProcess.findByUserGameAndLevel(
-        userId,
-        gameId,
-        levelId
-      );
-
-      if (userProcess) {
-        // Update existing process
-        if (userProcess.status === "completed") {
-          return res.status(200).json({
-            success: true,
-            message: "Level already completed",
-            data: {
-              id: userProcess.id,
-              status: userProcess.status,
-              score: userProcess.score,
-              timeSpent: userProcess.time_spent,
-            },
-          });
-        }
-      } else {
-        // Create new process
-        userProcess = await UserGameProcess.create({
-          user_id: userId,
-          game_id: gameId,
-          level_id: levelId,
-          status: "playing",
-          score: 0,
-          time_spent: 0,
-        });
-      }
+      // Always create a new session for each game attempt
+      const userProcess = await UserGameProcess.create({
+        user_id: userId,
+        game_id: gameId,
+        level_id: levelId,
+        status: "playing",
+        score: 0,
+        time_spent: 0,
+      });
 
       res.status(200).json({
         success: true,

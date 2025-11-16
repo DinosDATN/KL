@@ -1,40 +1,6 @@
 /* Sudoku Grid Styling */
 .grid {
-  /* Border styling for 3x3 boxes */
-}
-
-.grid > div:nth-child(3n) {
-  border-right: 2px solid rgb(17 24 39) !important; /* dark:border-gray-100 equivalent */
-}
-
-.grid > div:nth-child(3n) > div {
-  border-bottom: 2px solid rgb(17 24 39) !important;
-}
-
-.grid > div:nth-child(3n) > div:nth-child(3n) {
-  border-right: 2px solid rgb(17 24 39) !important;
-}
-
-/* Dark mode adjustments */
-.dark .grid > div:nth-child(3n) {
-  border-right-color: rgb(243 244 246) !important;
-}
-
-.dark .grid > div:nth-child(3n) > div {
-  border-bottom-color: rgb(243 244 246) !important;
-}
-
-.dark .grid > div:nth-child(3n) > div:nth-child(3n) {
-  border-right-color: rgb(243 244 246) !important;
-}
-
-/* Cell border adjustments for 3x3 boxes */
-.grid > div:nth-child(n + 4):nth-child(-n + 6) > div {
-  border-top: 2px solid rgb(17 24 39) !important;
-}
-
-.dark .grid > div:nth-child(n + 4):nth-child(-n + 6) > div {
-  border-top-color: rgb(243 244 246) !important;
+  /* 3x3 box borders are handled via TypeScript getCellClasses method */
 }
 
 /* Animation for number placement */
@@ -53,6 +19,34 @@
   animation: fadeIn 0.2s ease-in-out;
 }
 
+/* Pencil notes styling */
+.grid > div > div > div[class*="grid-cols-3"] {
+  font-size: 0.65rem;
+  line-height: 1.2;
+  pointer-events: none;
+}
+
+.grid > div > div > div[class*="grid-cols-3"] > span {
+  min-height: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Improve cell hover and selection */
+.grid > div > div {
+  transition: all 0.2s ease;
+}
+
+.grid > div > div:hover {
+  transform: scale(1.02);
+  z-index: 10;
+}
+
+.grid > div > div[class*="isSelected"] {
+  z-index: 20;
+}
+
 /* Responsive adjustments */
 @media (max-width: 640px) {
   .grid {
@@ -61,5 +55,9 @@
 
   .grid > div > div {
     font-size: 1.25rem;
+  }
+
+  .grid > div > div > div[class*="grid-cols-3"] {
+    font-size: 0.5rem;
   }
 }

@@ -79,10 +79,7 @@ const UserGameProcess = sequelize.define(
       {
         fields: ["status"],
       },
-      {
-        unique: true,
-        fields: ["user_id", "game_id", "level_id"],
-      },
+      // Removed unique constraint to allow multiple attempts per level
     ],
   }
 );
