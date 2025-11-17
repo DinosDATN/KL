@@ -44,6 +44,8 @@ export class SudokuComponent implements OnInit, OnDestroy {
   gameCompleted = false;
   startTime: Date | null = null;
   elapsedTime = 0;
+  pausedTime = 0; // Thời gian đã pause (tính bằng milliseconds)
+  pauseStartTime: Date | null = null; // Thời điểm bắt đầu pause
   timerInterval: any = null;
 
   // UI state
@@ -55,6 +57,7 @@ export class SudokuComponent implements OnInit, OnDestroy {
   maxErrors = 3; // Số lần sai tối đa
   gameLost = false; // Trạng thái thua
   errorCells: Set<string> = new Set(); // Track các ô đã sai để không đếm lại
+  isPaused = false; // Trạng thái pause
 
   private destroy$ = new Subject<void>();
 
@@ -93,6 +96,9 @@ export class SudokuComponent implements OnInit, OnDestroy {
     this.pencilMode = false;
     this.errorCount = 0;
     this.errorCells.clear();
+    this.isPaused = false;
+    this.pausedTime = 0;
+    this.pauseStartTime = null;
     this.clearTimer();
 
     this.gameService
@@ -141,7 +147,7 @@ export class SudokuComponent implements OnInit, OnDestroy {
    * Handle cell click
    */
   onCellClick(row: number, col: number): void {
-    if (!this.gameStarted || this.gameCompleted) return;
+    if (!this.gameStarted || this.gameCompleted || this.isPaused) return;
     if (this.grid[row][col].isGiven) return;
 
     // Deselect previous cell
@@ -164,6 +170,8 @@ export class SudokuComponent implements OnInit, OnDestroy {
    * Handle number selection
    */
   onNumberSelect(number: number | null): void {
+    if (this.isPaused) return;
+
     if (number === null || number === 0) {
       this.selectedNumber = null;
       if (this.selectedCell) {
@@ -426,6 +434,11 @@ export class SudokuComponent implements OnInit, OnDestroy {
     this.showSolution = false;
     this.errorCount = 0;
     this.errorCells.clear();
+    this.isPaused = false;
+    this.startTime = null;
+    this.elapsedTime = 0;
+    this.pausedTime = 0;
+    this.pauseStartTime = null;
     this.startTimer();
   }
 
@@ -434,14 +447,25 @@ export class SudokuComponent implements OnInit, OnDestroy {
    */
   private startTimer(): void {
     this.clearTimer();
-    this.startTime = new Date();
-    this.elapsedTime = 0;
+
+    if (!this.startTime) {
+      // Game mới bắt đầu
+      this.startTime = new Date();
+      this.elapsedTime = 0;
+      this.pausedTime = 0;
+    } else if (this.pauseStartTime) {
+      // Resume từ pause: cộng thêm thời gian đã pause
+      const pauseDuration =
+        new Date().getTime() - this.pauseStartTime.getTime();
+      this.pausedTime += pauseDuration;
+      this.pauseStartTime = null;
+    }
 
     this.timerInterval = setInterval(() => {
-      if (this.startTime) {
-        this.elapsedTime = Math.floor(
-          (new Date().getTime() - this.startTime!.getTime()) / 1000
-        );
+      if (this.startTime && !this.isPaused) {
+        const now = new Date().getTime();
+        const totalElapsed = now - this.startTime.getTime() - this.pausedTime;
+        this.elapsedTime = Math.floor(totalElapsed / 1000);
       }
     }, 1000);
   }
@@ -453,6 +477,24 @@ export class SudokuComponent implements OnInit, OnDestroy {
     if (this.timerInterval) {
       clearInterval(this.timerInterval);
       this.timerInterval = null;
+    }
+  }
+
+  /**
+   * Toggle pause/resume game
+   */
+  togglePause(): void {
+    if (this.gameCompleted || this.gameLost || !this.gameStarted) return;
+
+    this.isPaused = !this.isPaused;
+
+    if (this.isPaused) {
+      // Pause: lưu thời điểm pause và dừng timer
+      this.pauseStartTime = new Date();
+      this.clearTimer();
+    } else {
+      // Resume: tiếp tục timer
+      this.startTimer();
     }
   }
 
