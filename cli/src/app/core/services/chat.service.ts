@@ -393,14 +393,97 @@ export class ChatService {
     }
 
     // Check for duplicate messages to prevent duplication bug
+    // First, check by exact ID match
+    const existingMessageById = currentMessages[message.room_id].find(
+      (m) => m.id === message.id
+    );
+
+    if (existingMessageById) {
+      console.log('🚫 Duplicate message detected by ID, skipping:', message.id);
+      return;
+    }
+
+    // Check for optimistic message that should be replaced
+    // Look for messages with same sender, timestamp, and file_url (if present)
+    const isOptimisticMessage = (id: number) => {
+      // Optimistic messages have temp IDs (Date.now() + Math.random())
+      // Real message IDs are integers from database
+      return id > 10000000000000; // Temp IDs are very large numbers
+    };
+
+    const existingOptimisticMessage = currentMessages[message.room_id].find(
+      (m) => {
+        // Check if this is an optimistic message from the same sender
+        if (!isOptimisticMessage(m.id) || m.sender_id !== message.sender_id) {
+          return false;
+        }
+
+        // Check timestamp (within 5 seconds)
+        const timeDiff = Math.abs(
+          new Date(m.sent_at).getTime() - new Date(message.sent_at).getTime()
+        );
+        if (timeDiff > 5000) {
+          return false;
+        }
+
+        // For file messages, check file_url match
+        if (message.file_url || m.file_url) {
+          return message.file_url === m.file_url;
+        }
+
+        // For text messages, check content match
+        if (message.content && m.content) {
+          return message.content === m.content;
+        }
+
+        // If both are empty and same sender/time, likely the same message
+        return !message.content && !m.content;
+      }
+    );
+
+    // Replace optimistic message with real message
+    if (existingOptimisticMessage) {
+      console.log(
+        '🔄 Replacing optimistic message with real message:',
+        existingOptimisticMessage.id,
+        '->',
+        message.id
+      );
+      const optimisticIndex = currentMessages[message.room_id].findIndex(
+        (m) => m.id === existingOptimisticMessage.id
+      );
+      if (optimisticIndex !== -1) {
+        // Ensure message has proper structure with sender info
+        const enhancedMessage = {
+          ...message,
+          Sender: message.Sender || existingOptimisticMessage.Sender || {
+            id: message.sender_id,
+            name: 'Unknown User',
+            email: '',
+            role: 'user' as const,
+            is_active: true,
+            is_online: false,
+            subscription_status: 'free' as const,
+            subscription_end_date: null,
+            created_at: '',
+            updated_at: null,
+          },
+        };
+        currentMessages[message.room_id][optimisticIndex] = enhancedMessage;
+        this.messagesSubject.next({ ...currentMessages });
+        return;
+      }
+    }
+
+    // Check for duplicate by content/sender/timestamp (fallback)
     const existingMessage = currentMessages[message.room_id].find(
       (m) =>
-        m.id === message.id ||
-        (m.content === message.content &&
-          m.sender_id === message.sender_id &&
-          Math.abs(
-            new Date(m.sent_at).getTime() - new Date(message.sent_at).getTime()
-          ) < 1000)
+        m.content === message.content &&
+        m.sender_id === message.sender_id &&
+        (!message.file_url || m.file_url === message.file_url) &&
+        Math.abs(
+          new Date(m.sent_at).getTime() - new Date(message.sent_at).getTime()
+        ) < 1000
     );
 
     if (existingMessage) {
