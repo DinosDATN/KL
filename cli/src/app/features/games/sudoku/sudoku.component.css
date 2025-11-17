@@ -1,3 +1,25 @@
+/* Sudoku Page Background */
+.sudoku-page-bg {
+  background: linear-gradient(
+    135deg,
+    #e0f2fe 0%,
+    #bae6fd 30%,
+    #e9d5ff 70%,
+    #d8b4fe 100%
+  );
+}
+
+.dark .sudoku-page-bg {
+  background: linear-gradient(
+    135deg,
+    #0f172a 0%,
+    #1e293b 20%,
+    #1e1b4b 50%,
+    #312e81 80%,
+    #1e1b4b 100%
+  );
+}
+
 /* Sudoku Grid Styling */
 .grid {
   /* 3x3 box borders are handled via TypeScript getCellClasses method */

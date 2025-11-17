@@ -9,7 +9,9 @@
       <router-outlet></router-outlet>
     </div>
   </main>
-  <app-footer *ngIf="!currentUrl.startsWith('/chat')"></app-footer>
+  <app-footer
+    *ngIf="!currentUrl.startsWith('/chat') && !currentUrl.startsWith('/games')"
+  ></app-footer>
 
   <!-- Back to Top Button -->
   <app-back-to-top></app-back-to-top>

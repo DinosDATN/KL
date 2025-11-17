@@ -156,10 +156,8 @@ export class SudokuComponent implements OnInit, OnDestroy {
     this.grid[row][col].isSelected = true;
     this.highlightRelatedCells(row, col);
 
-    // If a number is selected, place it
-    if (this.selectedNumber !== null) {
-      this.placeNumber(row, col, this.selectedNumber);
-    }
+    // Hủy chọn số khi chọn ô mới
+    this.selectedNumber = null;
   }
 
   /**
@@ -174,10 +172,13 @@ export class SudokuComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.selectedNumber = number;
-
+    // Nếu có ô được chọn, điền số vào ô đó và hủy chọn số
     if (this.selectedCell) {
       this.placeNumber(this.selectedCell.row, this.selectedCell.col, number);
+      this.selectedNumber = null; // Hủy chọn số sau khi điền
+    } else {
+      // Nếu chưa có ô được chọn, chỉ chọn số
+      this.selectedNumber = number;
     }
   }
 
@@ -545,11 +546,11 @@ export class SudokuComponent implements OnInit, OnDestroy {
 
     // Thicker borders for 3x3 box separation - bottom border for rows 2, 5, 8
     if (row % 3 === 2 && row < 8) {
-      classes += 'border-b-[3px] border-gray-900 dark:border-gray-100 ';
+      classes += 'border-b-[3px] border-blue-500 dark:border-blue-400/60 ';
     }
     // Thicker borders for 3x3 box separation - right border for columns 2, 5, 8
     if (col % 3 === 2 && col < 8) {
-      classes += 'border-r-[3px] border-gray-900 dark:border-gray-100 ';
+      classes += 'border-r-[3px] border-blue-500 dark:border-blue-400/60 ';
     }
 
     // State-based styling - ưu tiên error và correct
@@ -565,7 +566,7 @@ export class SudokuComponent implements OnInit, OnDestroy {
     } else if (cell.isHighlighted) {
       classes += 'bg-blue-50 dark:bg-blue-900/20 ';
     } else {
-      classes += 'bg-white dark:bg-gray-800 ';
+      classes += 'bg-white/60 dark:bg-gray-800 ';
     }
 
     if (cell.isGiven) {

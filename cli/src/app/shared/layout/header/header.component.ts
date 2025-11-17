@@ -42,6 +42,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
   // Authentication state
   currentUser: User | null = null;
   isAuthenticated = false;
+  authLoaded = false; // Flag to track if auth state has been loaded
   private authSubscription?: Subscription;
 
   ngAfterViewInit(): void {
@@ -98,6 +99,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     this.authSubscription = this.authService.currentUser$.subscribe((user) => {
       this.currentUser = user;
       this.isAuthenticated = !!user;
+      this.authLoaded = true; // Mark auth as loaded
 
       // Update user menu items based on authentication state
       this.updateUserMenuItems();

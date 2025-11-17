@@ -184,7 +184,7 @@
         <!-- User Menu -->
         <div class="relative">
           <button
-            *ngIf="isAuthenticated"
+            *ngIf="authLoaded && isAuthenticated"
             (click)="toggleUserMenu()"
             class="flex items-center gap-2 p-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
@@ -208,7 +208,10 @@
           </button>
 
           <!-- Login/Register buttons when not authenticated -->
-          <div *ngIf="!isAuthenticated" class="flex items-center gap-2">
+          <div
+            *ngIf="authLoaded && !isAuthenticated"
+            class="flex items-center gap-2"
+          >
             <a
               routerLink="/auth/login"
               class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
