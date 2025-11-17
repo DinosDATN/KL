@@ -62,6 +62,10 @@ const UserGameProcess = require("./UserGameProcess");
 // Notification model
 const Notification = require("./Notification");
 
+// Reward models
+const RewardTransaction = require("./RewardTransaction");
+const RewardConfig = require("./RewardConfig");
+
 // Define associations
 
 // Course associations
@@ -901,6 +905,17 @@ User.hasMany(Notification, {
   as: "Notifications",
 });
 
+// Reward Transaction associations
+RewardTransaction.belongsTo(User, {
+  foreignKey: "user_id",
+  as: "User",
+});
+
+User.hasMany(RewardTransaction, {
+  foreignKey: "user_id",
+  as: "RewardTransactions",
+});
+
 module.exports = {
   Problem,
   ProblemCategory,
@@ -960,4 +975,7 @@ module.exports = {
   UserGameProcess,
   // Notification model
   Notification,
+  // Reward models
+  RewardTransaction,
+  RewardConfig,
 };

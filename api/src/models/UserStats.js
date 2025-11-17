@@ -85,6 +85,14 @@ const UserStats = sequelize.define('UserStats', {
       min: 0,
       max: 100
     }
+  },
+  reward_points: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+    allowNull: false,
+    validate: {
+      min: 0
+    }
   }
 }, {
   tableName: 'user_stats',

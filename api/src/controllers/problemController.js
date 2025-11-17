@@ -15,6 +15,7 @@ const {
 const { sequelize } = require('../config/sequelize');
 const { Op } = require('sequelize');
 const judgeService = require('../services/judgeService');
+const rewardService = require('../services/rewardService');
 
 class ProblemController {
   // Get all problems with pagination and filtering
@@ -563,7 +564,7 @@ class ProblemController {
           }
 
           // Save submission
-          await Submission.create({
+          const submission = await Submission.create({
             user_id: userId,
             problem_id: id,
             code_id: submissionCode.id,
@@ -574,6 +575,43 @@ class ProblemController {
             memory_used: result.memoryUsed || null,
             submitted_at: new Date()
           });
+
+          // Award reward points if submission is accepted
+          if (dbStatus === 'accepted') {
+            try {
+              // Get problem to determine difficulty
+              const problem = await Problem.findByPk(id);
+              if (problem) {
+                // Check if user has already received reward for this problem
+                const hasReward = await rewardService.hasReceivedReward(
+                  userId,
+                  'problem',
+                  id,
+                  'problem_solved'
+                );
+
+                if (!hasReward) {
+                  const rewardResult = await rewardService.rewardProblemSolved(
+                    userId,
+                    id,
+                    problem.difficulty,
+                    {
+                      language: language,
+                      score: result.score,
+                      executionTime: result.executionTime
+                    }
+                  );
+
+                  if (rewardResult) {
+                    console.log(`Awarded ${rewardResult.transaction.points} points to user ${userId} for solving problem ${id}`);
+                  }
+                }
+              }
+            } catch (rewardError) {
+              console.error('Error awarding reward points:', rewardError);
+              // Don't fail the request if reward fails
+            }
+          }
         } catch (saveError) {
           console.error('Failed to save submission:', saveError);
           // Continue with response even if save fails
@@ -1032,7 +1070,7 @@ class ProblemController {
           });
           
           // Save submission
-          await Submission.create({
+          const submission = await Submission.create({
             user_id: userId,
             problem_id: id,
             code_id: submissionCode.id,
@@ -1043,6 +1081,43 @@ class ProblemController {
             memory_used: finalResult.memoryUsed,
             submitted_at: new Date()
           });
+
+          // Award reward points if submission is accepted
+          if (status === 'accepted') {
+            try {
+              // Get problem to determine difficulty
+              const problem = await Problem.findByPk(id);
+              if (problem) {
+                // Check if user has already received reward for this problem
+                const hasReward = await rewardService.hasReceivedReward(
+                  userId,
+                  'problem',
+                  id,
+                  'problem_solved'
+                );
+
+                if (!hasReward) {
+                  const rewardResult = await rewardService.rewardProblemSolved(
+                    userId,
+                    id,
+                    problem.difficulty,
+                    {
+                      language: language,
+                      score: finalResult.score,
+                      executionTime: finalResult.executionTime
+                    }
+                  );
+
+                  if (rewardResult) {
+                    console.log(`Awarded ${rewardResult.transaction.points} points to user ${userId} for solving problem ${id}`);
+                  }
+                }
+              }
+            } catch (rewardError) {
+              console.error('Error awarding reward points:', rewardError);
+              // Don't fail the request if reward fails
+            }
+          }
         } catch (saveError) {
           console.error('Failed to save batch submission:', saveError);
           // Continue with response even if save fails

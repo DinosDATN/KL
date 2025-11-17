@@ -1,6 +1,7 @@
 const sudokuService = require("../services/sudokuService");
 const { Game, GameLevel, UserGameProcess } = require("../models");
 const { Op } = require("sequelize");
+const rewardService = require("../services/rewardService");
 
 class GameController {
   /**
@@ -272,6 +273,28 @@ class GameController {
             time_spent: timeSpentSeconds,
             completed_at: new Date(),
           });
+
+          // Get game level to determine difficulty
+          const gameLevel = await GameLevel.findByPk(levelId);
+          if (gameLevel) {
+            // Award reward points for completing Sudoku
+            try {
+              const rewardResult = await rewardService.rewardSudokuCompleted(
+                userId,
+                gameId,
+                levelId,
+                gameLevel.difficulty,
+                timeSpentSeconds
+              );
+              
+              if (rewardResult) {
+                console.log(`Awarded ${rewardResult.transaction.points} points to user ${userId} for completing Sudoku`);
+              }
+            } catch (rewardError) {
+              console.error("Error awarding reward points:", rewardError);
+              // Don't fail the request if reward fails
+            }
+          }
         } catch (progressError) {
           console.error("Error saving game progress:", progressError);
           // Don't fail the request if progress saving fails
