@@ -7,6 +7,7 @@ const {
   PrivateConversation,
   PrivateMessage,
   PrivateMessageStatus,
+  Notification,
 } = require("../models");
 const {
   authenticateSocket,
@@ -602,7 +603,17 @@ const handleConnection = (io) => {
         });
 
         // Notify all members about the new room
-        validMemberIds.forEach((memberId) => {
+        for (const memberId of validMemberIds) {
+          // Create notification in database
+          await Notification.createNotification(
+            memberId,
+            'room_invite',
+            'Mời vào nhóm chat',
+            `${socket.user.name} đã thêm bạn vào nhóm ${room.name}`,
+            { room_id: room.id, inviter_id: socket.userId }
+          );
+
+          // Emit socket notification
           const userSocket = Array.from(io.sockets.sockets.values()).find(
             (s) => s.userId === memberId
           );
@@ -615,12 +626,12 @@ const handleConnection = (io) => {
             });
             userSocket.emit("notification", {
               type: "room_invite",
-              message: `You've been added to ${room.name} by ${socket.user.name}`,
+              message: `${socket.user.name} đã thêm bạn vào nhóm ${room.name}`,
               roomId: room.id,
               timestamp: new Date().toISOString(),
             });
           }
-        });
+        }
 
         // Send welcome message to room
         const welcomeMessage = await ChatMessage.create({

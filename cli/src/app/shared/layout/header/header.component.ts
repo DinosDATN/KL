@@ -12,6 +12,8 @@ import { ThemeService } from '../../../core/services/theme.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { User } from '../../../core/models/user.model';
 import { Subscription } from 'rxjs';
+import { AppNotificationService, AppNotification } from '../../../core/services/app-notification.service';
+import { NotificationService } from '../../../core/services/notification.service';
 
 interface MenuItem {
   label: string;
@@ -60,40 +62,28 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.observer) this.observer.disconnect();
     if (this.authSubscription) this.authSubscription.unsubscribe();
+    if (this.notificationSubscription) this.notificationSubscription.unsubscribe();
+    if (this.unreadCountSubscription) this.unreadCountSubscription.unsubscribe();
   }
-  notificationsUnread(): boolean {
-    return this.notifications.some((n) => !n.read);
-  }
+
   isMenuOpen = false;
   isUserMenuOpen = false;
   isNotificationOpen = false;
   activeDropdown: string | null = null;
-  // Removed hover-related properties for click-only functionality
-  notifications = [
-    {
-      id: 1,
-      title: 'Chào mừng bạn đến với L-FYS!',
-      time: '1 phút trước',
-      read: false,
-    },
-    {
-      id: 2,
-      title: 'Bạn có bài tập mới cần làm.',
-      time: '10 phút trước',
-      read: false,
-    },
-    {
-      id: 3,
-      title: 'Cập nhật hệ thống thành công.',
-      time: '1 giờ trước',
-      read: true,
-    },
-  ];
+  
+  // Notification state
+  notifications: AppNotification[] = [];
+  unreadCount = 0;
+  private notificationSubscription?: Subscription;
+  private unreadCountSubscription?: Subscription;
+  private previousUnreadCount = 0;
 
   constructor(
     public themeService: ThemeService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private appNotificationService: AppNotificationService,
+    private notificationService: NotificationService
   ) {
     // Subscribe to authentication state changes
     this.authSubscription = this.authService.currentUser$.subscribe((user) => {
@@ -103,7 +93,55 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
 
       // Update user menu items based on authentication state
       this.updateUserMenuItems();
+
+      // Subscribe to notifications if authenticated
+      if (user) {
+        this.subscribeToNotifications();
+      } else {
+        this.unsubscribeFromNotifications();
+      }
     });
+  }
+
+  private subscribeToNotifications(): void {
+    // Subscribe to notifications list
+    this.notificationSubscription = this.appNotificationService.notifications$.subscribe(
+      (notifications) => {
+        this.notifications = notifications;
+      }
+    );
+
+    // Subscribe to unread count with toast notification on new notifications
+    this.unreadCountSubscription = this.appNotificationService.unreadCount$.subscribe(
+      (count) => {
+        // Show toast if unread count increased (new notification)
+        if (count > this.previousUnreadCount && this.previousUnreadCount > 0) {
+          const newNotifications = this.notifications.filter(n => !n.is_read).slice(0, count - this.previousUnreadCount);
+          if (newNotifications.length > 0) {
+            const latestNotification = newNotifications[0];
+            this.notificationService.info(
+              latestNotification.title,
+              latestNotification.message,
+              5000
+            );
+          }
+        }
+        this.previousUnreadCount = count;
+        this.unreadCount = count;
+      }
+    );
+  }
+
+  private unsubscribeFromNotifications(): void {
+    if (this.notificationSubscription) {
+      this.notificationSubscription.unsubscribe();
+    }
+    if (this.unreadCountSubscription) {
+      this.unreadCountSubscription.unsubscribe();
+    }
+    this.notifications = [];
+    this.unreadCount = 0;
+    this.previousUnreadCount = 0;
   }
 
   navigationItems: NavigationItem[] = [
@@ -208,11 +246,111 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
   }
 
   markAllAsRead(): void {
-    this.notifications = this.notifications.map((n) => ({ ...n, read: true }));
+    this.appNotificationService.markAllAsRead().subscribe({
+      next: () => {
+        console.log('✅ All notifications marked as read');
+      },
+      error: (error) => {
+        console.error('❌ Error marking all as read:', error);
+        this.notificationService.error('Lỗi', 'Không thể đánh dấu tất cả đã đọc');
+      }
+    });
   }
 
-  removeNotification(id: number): void {
-    this.notifications = this.notifications.filter((n) => n.id !== id);
+  markAsRead(notification: AppNotification): void {
+    if (!notification.is_read) {
+      this.appNotificationService.markAsRead(notification.id).subscribe({
+        next: () => {
+          console.log('✅ Notification marked as read:', notification.id);
+        },
+        error: (error) => {
+          console.error('❌ Error marking as read:', error);
+        }
+      });
+    }
+  }
+
+  removeNotification(id: number, event: Event): void {
+    event.stopPropagation();
+    this.appNotificationService.deleteNotification(id).subscribe({
+      next: () => {
+        console.log('✅ Notification deleted:', id);
+      },
+      error: (error) => {
+        console.error('❌ Error deleting notification:', error);
+        this.notificationService.error('Lỗi', 'Không thể xóa thông báo');
+      }
+    });
+  }
+
+  getNotificationIcon(type: string): string {
+    const iconMap: { [key: string]: string } = {
+      'friend_request': 'user-plus',
+      'friend_accepted': 'user-check',
+      'friend_declined': 'user-x',
+      'room_invite': 'users',
+      'room_created': 'message-circle',
+      'message': 'mail',
+      'system': 'info',
+      'achievement': 'award',
+      'contest': 'trophy'
+    };
+    return iconMap[type] || 'bell';
+  }
+
+  getNotificationColor(type: string): string {
+    const colorMap: { [key: string]: string } = {
+      'friend_request': 'text-blue-500',
+      'friend_accepted': 'text-green-500',
+      'friend_declined': 'text-red-500',
+      'room_invite': 'text-purple-500',
+      'room_created': 'text-indigo-500',
+      'message': 'text-yellow-500',
+      'system': 'text-gray-500',
+      'achievement': 'text-orange-500',
+      'contest': 'text-pink-500'
+    };
+    return colorMap[type] || 'text-gray-500';
+  }
+
+  getTimeAgo(dateString: string): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (seconds < 60) return 'Vừa xong';
+    if (seconds < 3600) return `${Math.floor(seconds / 60)} phút trước`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)} giờ trước`;
+    if (seconds < 604800) return `${Math.floor(seconds / 86400)} ngày trước`;
+    return date.toLocaleDateString('vi-VN');
+  }
+
+  onNotificationClick(notification: AppNotification): void {
+    // Mark as read
+    this.markAsRead(notification);
+
+    // Navigate based on notification type
+    if (notification.data) {
+      switch (notification.type) {
+        case 'friend_request':
+          this.router.navigate(['/chat'], { queryParams: { tab: 'friends' } });
+          break;
+        case 'friend_accepted':
+          this.router.navigate(['/chat'], { queryParams: { tab: 'friends' } });
+          break;
+        case 'room_invite':
+        case 'room_created':
+          if (notification.data.room_id) {
+            this.router.navigate(['/chat'], { queryParams: { room: notification.data.room_id } });
+          }
+          break;
+        default:
+          // Do nothing for other types
+          break;
+      }
+    }
+
+    this.closeNotification();
   }
 
   // Authentication methods

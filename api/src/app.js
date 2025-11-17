@@ -26,6 +26,7 @@ const chatRoutes = require("./routes/chatRoutes");
 const submissionRoutes = require("./routes/submissionRoutes");
 const friendshipRoutes = require("./routes/friendshipRoutes");
 const privateChatRoutes = require("./routes/privateChatRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 const courseAdminRoutes = require("./routes/courseAdminRoutes");
 const documentAdminRoutes = require("./routes/documentAdminRoutes");
 const problemAdminRoutes = require("./routes/problemAdminRoutes");
@@ -99,6 +100,7 @@ app.use(apiPrefix + "/chat", chatRoutes);
 app.use(apiPrefix + "/submissions", submissionRoutes);
 app.use(apiPrefix + "/friendship", friendshipRoutes);
 app.use(apiPrefix + "/private-chat", privateChatRoutes);
+app.use(apiPrefix + "/notifications", notificationRoutes);
 app.use(apiPrefix + "/chat-ai", chatAIRoutes);
 app.use(apiPrefix + "/games", gameRoutes);
 

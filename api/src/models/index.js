@@ -59,6 +59,9 @@ const Game = require("./Game");
 const GameLevel = require("./GameLevel");
 const UserGameProcess = require("./UserGameProcess");
 
+// Notification model
+const Notification = require("./Notification");
+
 // Define associations
 
 // Course associations
@@ -887,6 +890,17 @@ GameLevel.hasMany(UserGameProcess, {
   as: "UserProcesses",
 });
 
+// Notification associations
+Notification.belongsTo(User, {
+  foreignKey: "user_id",
+  as: "User",
+});
+
+User.hasMany(Notification, {
+  foreignKey: "user_id",
+  as: "Notifications",
+});
+
 module.exports = {
   Problem,
   ProblemCategory,
@@ -944,4 +958,6 @@ module.exports = {
   Game,
   GameLevel,
   UserGameProcess,
+  // Notification model
+  Notification,
 };

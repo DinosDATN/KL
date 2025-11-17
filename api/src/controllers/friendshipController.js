@@ -1,4 +1,4 @@
-const { Friendship, UserBlock, User } = require('../models');
+const { Friendship, UserBlock, User, Notification } = require('../models');
 const { Op } = require('sequelize');
 
 // Send a friend request
@@ -92,6 +92,15 @@ const sendFriendRequest = async (req, res) => {
       ]
     });
 
+    // Create notification in database
+    await Notification.createNotification(
+      addressee_id,
+      'friend_request',
+      'Lời mời kết bạn mới',
+      `${completeFriendship.Requester.name} đã gửi lời mời kết bạn cho bạn`,
+      { friendship_id: completeFriendship.id, requester_id: requesterId }
+    );
+
     // Emit socket notification to addressee (receiver of friend request)
     if (req.io) {
       console.log(`📬 Emitting friend_request_received to room: user_${addressee_id}`);
@@ -179,9 +188,19 @@ const respondToFriendRequest = async (req, res) => {
       ]
     });
 
-    // Emit socket notification to requester when request is accepted/declined
-    if (req.io) {
-      if (action === 'accept') {
+    // Create notification in database and emit socket notification
+    if (action === 'accept') {
+      // Create notification for requester
+      await Notification.createNotification(
+        friendship.requester_id,
+        'friend_accepted',
+        'Chấp nhận kết bạn',
+        `${updatedFriendship.Addressee.name} đã chấp nhận lời mời kết bạn của bạn`,
+        { friendship_id: updatedFriendship.id, addressee_id: userId }
+      );
+
+      // Emit socket notification
+      if (req.io) {
         console.log(`✅ Emitting friend_request_accepted to room: user_${friendship.requester_id}`);
         console.log(`📊 Friendship ID: ${updatedFriendship.id}, Addressee: ${updatedFriendship.Addressee.name}`);
         req.io.to(`user_${friendship.requester_id}`).emit('friend_request_accepted', {
@@ -190,7 +209,19 @@ const respondToFriendRequest = async (req, res) => {
           timestamp: new Date().toISOString()
         });
         console.log(`✅ Friend request accepted notification sent to user ${friendship.requester_id}`);
-      } else {
+      }
+    } else {
+      // Create notification for requester
+      await Notification.createNotification(
+        friendship.requester_id,
+        'friend_declined',
+        'Từ chối kết bạn',
+        `${updatedFriendship.Addressee.name} đã từ chối lời mời kết bạn của bạn`,
+        { friendship_id: updatedFriendship.id, addressee_id: userId }
+      );
+
+      // Emit socket notification
+      if (req.io) {
         console.log(`❌ Emitting friend_request_declined to room: user_${friendship.requester_id}`);
         console.log(`📊 Friendship ID: ${updatedFriendship.id}, Addressee: ${updatedFriendship.Addressee.name}`);
         req.io.to(`user_${friendship.requester_id}`).emit('friend_request_declined', {
