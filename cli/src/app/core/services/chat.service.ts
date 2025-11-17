@@ -418,22 +418,66 @@ export class ChatService {
           return false;
         }
 
-        // Check timestamp (within 5 seconds)
+        // Check timestamp (within 10 seconds to account for network delay)
         const timeDiff = Math.abs(
           new Date(m.sent_at).getTime() - new Date(message.sent_at).getTime()
         );
-        if (timeDiff > 5000) {
+        if (timeDiff > 10000) {
           return false;
         }
 
-        // For file messages, check file_url match
-        if (message.file_url || m.file_url) {
-          return message.file_url === m.file_url;
+        // For file messages, check file_url match (primary identifier)
+        const hasFile = !!(message.file_url || m.file_url);
+        if (hasFile) {
+          // Both should have file_url
+          if (!message.file_url || !m.file_url) {
+            console.log('❌ File message mismatch: missing file_url', {
+              optimistic: { has_url: !!m.file_url },
+              real: { has_url: !!message.file_url }
+            });
+            return false;
+          }
+          
+          // Compare file_url (normalize paths for comparison)
+          const normalizeUrl = (url: string | null) => {
+            if (!url) return '';
+            // Normalize path separators and remove query params
+            return url.replace(/\\/g, '/').split('?')[0].toLowerCase().trim();
+          };
+          
+          const optimisticUrl = normalizeUrl(m.file_url);
+          const realUrl = normalizeUrl(message.file_url);
+          const urlMatch = optimisticUrl === realUrl;
+          
+          if (urlMatch) {
+            console.log('✅ Found matching optimistic file message by URL:', {
+              optimistic: { 
+                id: m.id, 
+                file_url: m.file_url, 
+                file_name: m.file_name,
+                normalized_url: optimisticUrl
+              },
+              real: { 
+                id: message.id, 
+                file_url: message.file_url, 
+                file_name: message.file_name,
+                normalized_url: realUrl
+              }
+            });
+            return true;
+          } else {
+            console.log('❌ File URL mismatch:', {
+              optimistic: { url: m.file_url, normalized: optimisticUrl },
+              real: { url: message.file_url, normalized: realUrl }
+            });
+          }
+          
+          return false;
         }
 
         // For text messages, check content match
         if (message.content && m.content) {
-          return message.content === m.content;
+          return message.content.trim() === m.content.trim();
         }
 
         // If both are empty and same sender/time, likely the same message
@@ -453,9 +497,15 @@ export class ChatService {
         (m) => m.id === existingOptimisticMessage.id
       );
       if (optimisticIndex !== -1) {
-        // Ensure message has proper structure with sender info
+        // Ensure message has proper structure with sender info and file metadata
+        // Preserve file_name and file_size from optimistic message if real message doesn't have them
         const enhancedMessage = {
           ...message,
+          // Preserve file metadata from optimistic message if missing in real message
+          file_name: message.file_name || existingOptimisticMessage.file_name || null,
+          file_size: message.file_size || existingOptimisticMessage.file_size || null,
+          // Ensure file_url is present
+          file_url: message.file_url || existingOptimisticMessage.file_url || null,
           Sender: message.Sender || existingOptimisticMessage.Sender || {
             id: message.sender_id,
             name: 'Unknown User',
@@ -471,23 +521,64 @@ export class ChatService {
         };
         currentMessages[message.room_id][optimisticIndex] = enhancedMessage;
         this.messagesSubject.next({ ...currentMessages });
+        console.log('✅ Optimistic message replaced successfully');
         return;
       }
     }
 
     // Check for duplicate by content/sender/timestamp (fallback)
+    // Also check for file messages with same file_url
     const existingMessage = currentMessages[message.room_id].find(
-      (m) =>
-        m.content === message.content &&
-        m.sender_id === message.sender_id &&
-        (!message.file_url || m.file_url === message.file_url) &&
-        Math.abs(
-          new Date(m.sent_at).getTime() - new Date(message.sent_at).getTime()
-        ) < 1000
+      (m) => {
+        // Skip if this is the same message (already checked by ID)
+        if (m.id === message.id) {
+          return false;
+        }
+        
+        // For file messages, check file_url match
+        if (message.file_url && m.file_url) {
+          const normalizeUrl = (url: string | null) => {
+            if (!url) return '';
+            return url.replace(/\\/g, '/').split('?')[0].toLowerCase().trim();
+          };
+          
+          const urlMatch = normalizeUrl(message.file_url) === normalizeUrl(m.file_url);
+          const senderMatch = m.sender_id === message.sender_id;
+          const timeMatch = Math.abs(
+            new Date(m.sent_at).getTime() - new Date(message.sent_at).getTime()
+          ) < 10000; // 10 seconds window
+          
+          if (urlMatch && senderMatch && timeMatch) {
+            console.log('🚫 Duplicate file message detected by URL, removing old one:', {
+              old: { id: m.id, file_url: m.file_url, file_name: m.file_name },
+              new: { id: message.id, file_url: message.file_url, file_name: message.file_name }
+            });
+            // Remove the old duplicate message
+            const duplicateIndex = currentMessages[message.room_id].findIndex(msg => msg.id === m.id);
+            if (duplicateIndex !== -1) {
+              currentMessages[message.room_id].splice(duplicateIndex, 1);
+            }
+            return true; // Indicate duplicate found
+          }
+        }
+        
+        // For text messages, check content match
+        return (
+          m.content === message.content &&
+          m.sender_id === message.sender_id &&
+          Math.abs(
+            new Date(m.sent_at).getTime() - new Date(message.sent_at).getTime()
+          ) < 1000
+        );
+      }
     );
 
     if (existingMessage) {
       console.log('🚫 Duplicate message detected, skipping:', message.id);
+      // If we removed a duplicate, update the subject
+      if (message.file_url) {
+        this.messagesSubject.next({ ...currentMessages });
+      }
       return;
     }
 
