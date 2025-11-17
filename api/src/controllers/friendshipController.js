@@ -94,12 +94,14 @@ const sendFriendRequest = async (req, res) => {
 
     // Emit socket notification to addressee (receiver of friend request)
     if (req.io) {
+      console.log(`📬 Emitting friend_request_received to room: user_${addressee_id}`);
+      console.log(`📊 Friendship ID: ${completeFriendship.id}, Requester: ${completeFriendship.Requester.name}`);
       req.io.to(`user_${addressee_id}`).emit('friend_request_received', {
         friendship: completeFriendship,
         requester: completeFriendship.Requester,
         timestamp: new Date().toISOString()
       });
-      console.log(`📬 Friend request notification sent to user ${addressee_id}`);
+      console.log(`✅ Friend request notification sent to user ${addressee_id}`);
     }
 
     res.status(201).json({
@@ -180,6 +182,8 @@ const respondToFriendRequest = async (req, res) => {
     // Emit socket notification to requester when request is accepted/declined
     if (req.io) {
       if (action === 'accept') {
+        console.log(`✅ Emitting friend_request_accepted to room: user_${friendship.requester_id}`);
+        console.log(`📊 Friendship ID: ${updatedFriendship.id}, Addressee: ${updatedFriendship.Addressee.name}`);
         req.io.to(`user_${friendship.requester_id}`).emit('friend_request_accepted', {
           friendship: updatedFriendship,
           addressee: updatedFriendship.Addressee,
@@ -187,6 +191,8 @@ const respondToFriendRequest = async (req, res) => {
         });
         console.log(`✅ Friend request accepted notification sent to user ${friendship.requester_id}`);
       } else {
+        console.log(`❌ Emitting friend_request_declined to room: user_${friendship.requester_id}`);
+        console.log(`📊 Friendship ID: ${updatedFriendship.id}, Addressee: ${updatedFriendship.Addressee.name}`);
         req.io.to(`user_${friendship.requester_id}`).emit('friend_request_declined', {
           friendship: updatedFriendship,
           addressee: updatedFriendship.Addressee,

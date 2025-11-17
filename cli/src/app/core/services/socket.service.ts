@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, BehaviorSubject } from 'rxjs';
+import { Observable, BehaviorSubject, Subject } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 import { ChatRoom, ChatMessage, ChatReaction } from '../models/chat.model';
 import { User } from '../models/user.model';
@@ -57,25 +57,25 @@ export class SocketService {
   } | null>(null);
   public notification$ = this.notificationSubject.asObservable();
 
-  private friendRequestReceivedSubject = new BehaviorSubject<{
+  private friendRequestReceivedSubject = new Subject<{
     friendship: any;
     requester: any;
     timestamp: string;
-  } | null>(null);
+  }>();
   public friendRequestReceived$ = this.friendRequestReceivedSubject.asObservable();
 
-  private friendRequestAcceptedSubject = new BehaviorSubject<{
+  private friendRequestAcceptedSubject = new Subject<{
     friendship: any;
     addressee: any;
     timestamp: string;
-  } | null>(null);
+  }>();
   public friendRequestAccepted$ = this.friendRequestAcceptedSubject.asObservable();
 
-  private friendRequestDeclinedSubject = new BehaviorSubject<{
+  private friendRequestDeclinedSubject = new Subject<{
     friendship: any;
     addressee: any;
     timestamp: string;
-  } | null>(null);
+  }>();
   public friendRequestDeclined$ = this.friendRequestDeclinedSubject.asObservable();
 
   private errorSubject = new BehaviorSubject<{

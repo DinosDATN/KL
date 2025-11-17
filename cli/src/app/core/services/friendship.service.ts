@@ -53,76 +53,85 @@ export class FriendshipService implements OnDestroy {
 
   // Initialize socket listeners for real-time friend request notifications
   private initializeSocketListeners(): void {
+    console.log('🔧 FriendshipService: Initializing socket listeners');
+    
     // Listen for new friend request received
     this.socketService.friendRequestReceived$
       .pipe(takeUntil(this.destroy$))
       .subscribe((data) => {
-        if (data && data.friendship) {
-          console.log('📬 FriendshipService: Friend request received via socket', data);
-          
-          // Add to pending requests
-          const pendingRequests = this.pendingRequestsSubject.value;
-          const exists = pendingRequests.some(req => req.id === data.friendship.id);
-          if (!exists) {
-            this.pendingRequestsSubject.next([...pendingRequests, data.friendship]);
-          }
-          
-          // Update unread count
-          const currentCount = this.unreadFriendRequestsCountSubject.value;
-          this.unreadFriendRequestsCountSubject.next(currentCount + 1);
-          
-          // Show notification
-          this.notificationService.info(
-            'Lời mời kết bạn mới',
-            `${data.requester?.name || 'Ai đó'} đã gửi lời mời kết bạn cho bạn`,
-            5000
-          );
+        console.log('📬 FriendshipService: Friend request received via socket', data);
+        console.log('📊 Current pending requests count:', this.pendingRequestsSubject.value.length);
+        
+        // Add to pending requests
+        const pendingRequests = this.pendingRequestsSubject.value;
+        const exists = pendingRequests.some(req => req.id === data.friendship.id);
+        if (!exists) {
+          this.pendingRequestsSubject.next([...pendingRequests, data.friendship]);
+          console.log('✅ Added to pending requests');
+        } else {
+          console.log('⚠️ Friend request already exists in pending list');
         }
+        
+        // Update unread count
+        const currentCount = this.unreadFriendRequestsCountSubject.value;
+        this.unreadFriendRequestsCountSubject.next(currentCount + 1);
+        console.log('📊 Updated unread count:', currentCount + 1);
+        
+        // Show notification ONLY ONCE
+        console.log('🔔 Showing notification for friend request received');
+        this.notificationService.info(
+          'Lời mời kết bạn mới',
+          `${data.requester?.name || 'Ai đó'} đã gửi lời mời kết bạn cho bạn`,
+          5000
+        );
       });
 
     // Listen for friend request accepted
     this.socketService.friendRequestAccepted$
       .pipe(takeUntil(this.destroy$))
       .subscribe((data) => {
-        if (data && data.friendship) {
-          console.log('✅ FriendshipService: Friend request accepted via socket', data);
-          
-          // Remove from sent requests
-          const sentRequests = this.sentRequestsSubject.value;
-          const updatedSent = sentRequests.filter(req => req.id !== data.friendship.id);
-          this.sentRequestsSubject.next(updatedSent);
-          
-          // Reload friends list
-          this.loadFriends().subscribe();
-          
-          // Show notification
-          this.notificationService.success(
-            'Chấp nhận kết bạn',
-            `${data.addressee?.name || 'Người dùng'} đã chấp nhận lời mời kết bạn của bạn`,
-            5000
-          );
-        }
+        console.log('✅ FriendshipService: Friend request accepted via socket', data);
+        console.log('📊 Current sent requests count:', this.sentRequestsSubject.value.length);
+        
+        // Remove from sent requests
+        const sentRequests = this.sentRequestsSubject.value;
+        const updatedSent = sentRequests.filter(req => req.id !== data.friendship.id);
+        this.sentRequestsSubject.next(updatedSent);
+        console.log('✅ Removed from sent requests, new count:', updatedSent.length);
+        
+        // Reload friends list
+        this.loadFriends().subscribe();
+        console.log('🔄 Reloading friends list');
+        
+        // Show notification ONLY ONCE
+        console.log('🔔 Showing notification for friend request accepted');
+        this.notificationService.success(
+          'Chấp nhận kết bạn',
+          `${data.addressee?.name || 'Người dùng'} đã chấp nhận lời mời kết bạn của bạn`,
+          5000
+        );
       });
 
     // Listen for friend request declined
     this.socketService.friendRequestDeclined$
       .pipe(takeUntil(this.destroy$))
       .subscribe((data) => {
-        if (data && data.friendship) {
-          console.log('❌ FriendshipService: Friend request declined via socket', data);
-          
-          // Remove from sent requests
-          const sentRequests = this.sentRequestsSubject.value;
-          const updatedSent = sentRequests.filter(req => req.id !== data.friendship.id);
-          this.sentRequestsSubject.next(updatedSent);
-          
-          // Show notification
-          this.notificationService.info(
-            'Từ chối kết bạn',
-            `${data.addressee?.name || 'Người dùng'} đã từ chối lời mời kết bạn của bạn`,
-            5000
-          );
-        }
+        console.log('❌ FriendshipService: Friend request declined via socket', data);
+        console.log('📊 Current sent requests count:', this.sentRequestsSubject.value.length);
+        
+        // Remove from sent requests
+        const sentRequests = this.sentRequestsSubject.value;
+        const updatedSent = sentRequests.filter(req => req.id !== data.friendship.id);
+        this.sentRequestsSubject.next(updatedSent);
+        console.log('✅ Removed from sent requests, new count:', updatedSent.length);
+        
+        // Show notification ONLY ONCE
+        console.log('🔔 Showing notification for friend request declined');
+        this.notificationService.info(
+          'Từ chối kết bạn',
+          `${data.addressee?.name || 'Người dùng'} đã từ chối lời mời kết bạn của bạn`,
+          5000
+        );
       });
   }
   
@@ -181,11 +190,15 @@ export class FriendshipService implements OnDestroy {
           // Add to friends list
           this.loadFriends().subscribe();
           
+          // Show notification for the person who accepted (current user)
+          // Note: The requester will receive notification via socket
           this.notificationService.success(
             'Chấp nhận kết bạn',
             `Bạn đã trở thành bạn bè với ${friendship.Requester?.name || 'người dùng'}`
           );
         } else {
+          // Show notification for the person who declined (current user)
+          // Note: The requester will receive notification via socket
           this.notificationService.info(
             'Từ chối kết bạn',
             `Đã từ chối lời mời kết bạn từ ${friendship.Requester?.name || 'người dùng'}`

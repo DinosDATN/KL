@@ -34,6 +34,19 @@ const handleConnection = (io) => {
     );
     console.log(`📊 Active users count: ${activeUsers.size + 1}`);
 
+    // Check if user already has an active connection
+    const existingConnection = activeUsers.get(socket.userId);
+    if (existingConnection) {
+      console.log(`⚠️ User ${socket.user.name} already has an active connection (Socket ID: ${existingConnection.socketId})`);
+      console.log(`🔄 Disconnecting old socket and replacing with new one`);
+      
+      // Find and disconnect the old socket
+      const oldSocket = io.sockets.sockets.get(existingConnection.socketId);
+      if (oldSocket) {
+        oldSocket.disconnect(true);
+      }
+    }
+
     // Store user connection
     activeUsers.set(socket.userId, {
       socketId: socket.id,
@@ -49,7 +62,11 @@ const handleConnection = (io) => {
 
     // Join user to their personal notification room
     socket.join(`user_${socket.userId}`);
-    console.log(`✅ User ${socket.user.name} joined personal notification room: user_${socket.userId}`);
+    console.log(`✅ User ${socket.user.name} (Socket ID: ${socket.id}) joined personal notification room: user_${socket.userId}`);
+    
+    // Log how many sockets are in this room
+    const roomSockets = io.sockets.adapter.rooms.get(`user_${socket.userId}`);
+    console.log(`📊 Total sockets in room user_${socket.userId}: ${roomSockets ? roomSockets.size : 0}`);
 
     // Join user to their group chat rooms
     joinUserRooms(socket);
