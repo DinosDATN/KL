@@ -163,8 +163,73 @@
                       ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-blue-500/20'
                       : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-600 hover:shadow-md transition-shadow duration-200')
                   ">
+                  <!-- Image Message -->
+                  <div *ngIf="message.message_type === 'image' && message.file_url" class="mb-2">
+                    <img
+                      [src]="getFileUrl(message.file_url)"
+                      [alt]="message.file_name || 'Image'"
+                      class="max-w-xs rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                      (click)="openFileInNewTab(message.file_url)"
+                    />
+                  </div>
+
+                  <!-- File Message -->
+                  <div *ngIf="message.message_type === 'file' && message.file_url" class="mb-2">
+                    <a
+                      [href]="getFileUrl(message.file_url)"
+                      target="_blank"
+                      [class]="
+                        'flex items-center gap-3 p-3 rounded-lg border-2 transition-colors ' +
+                        (message.sender_id === currentUser?.id
+                          ? 'bg-white/20 border-white/30 hover:bg-white/30'
+                          : 'bg-gray-50 dark:bg-gray-600 border-gray-300 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-500')
+                      "
+                    >
+                      <div [class]="
+                          'flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg ' +
+                          (message.sender_id === currentUser?.id
+                            ? 'bg-white/20 text-white'
+                            : 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300')
+                        ">
+                        {{ getFileExtension(message.file_name || '') }}
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <div [class]="
+                            'font-medium truncate ' +
+                            (message.sender_id === currentUser?.id ? 'text-white' : 'text-gray-900 dark:text-white')
+                          ">
+                          {{ message.file_name || 'File' }}
+                        </div>
+                        <div [class]="
+                            'text-xs ' +
+                            (message.sender_id === currentUser?.id
+                              ? 'text-white/80'
+                              : 'text-gray-500 dark:text-gray-400')
+                          ">
+                          {{ formatFileSize(message.file_size || 0) }}
+                        </div>
+                      </div>
+                      <svg
+                        [class]="
+                          'w-5 h-5 flex-shrink-0 ' +
+                          (message.sender_id === currentUser?.id ? 'text-white' : 'text-gray-400 dark:text-gray-300')
+                        "
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                        ></path>
+                      </svg>
+                    </a>
+                  </div>
+
                   <!-- Message Text -->
-                  <div class="break-words">{{ message.content }}</div>
+                  <div *ngIf="message.content" class="break-words">{{ message.content }}</div>
                 </div>
 
                 <!-- Message Actions -->
@@ -213,17 +278,79 @@
 
 
 
+      <!-- File Preview -->
+      <div *ngIf="selectedFile" class="px-4 py-2 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+        <div class="flex items-center gap-3">
+          <!-- Image Preview -->
+          <div *ngIf="previewImageUrl" class="relative">
+            <img
+              [src]="previewImageUrl"
+              alt="Preview"
+              class="w-20 h-20 object-cover rounded-lg"
+            />
+            <button
+              (click)="removeSelectedFile()"
+              class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          <!-- File Preview -->
+          <div *ngIf="!previewImageUrl" class="flex items-center gap-3 flex-1">
+            <div class="flex-shrink-0 w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+              <span class="text-blue-600 dark:text-blue-300 font-bold text-lg">
+                {{ getFileExtension(selectedFile.name) }}
+              </span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="font-medium text-gray-900 dark:text-white truncate">
+                {{ selectedFile.name }}
+              </div>
+              <div class="text-sm text-gray-500 dark:text-gray-400">
+                {{ formatFileSize(selectedFile.size) }}
+              </div>
+            </div>
+            <button
+              (click)="removeSelectedFile()"
+              class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg transition-colors"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Message Input -->
       <div class="chat-input-fixed p-4 bg-white/95 dark:bg-gray-800/95">
         <div class="flex items-center justify-center gap-3">
+          <!-- Hidden File Input -->
+          <input
+            #fileInput
+            type="file"
+            (change)="onFileSelected($event)"
+            class="hidden"
+            accept="*/*"
+          />
+
           <!-- File Upload Button -->
-          <button type="button"
-            class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
-            title="Đính kèm file">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button
+            type="button"
+            (click)="openFileSelector()"
+            [disabled]="isUploading"
+            class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Đính kèm file"
+          >
+            <svg *ngIf="!isUploading" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13">
               </path>
+            </svg>
+            <svg *ngIf="isUploading" class="w-6 h-6 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
             </svg>
           </button>
 
@@ -236,15 +363,18 @@
           </div>
 
           <!-- Send Button -->
-          <button (click)="send()" [disabled]="!newMessage.trim()" [class]="
+          <button (click)="send()" [disabled]="(!newMessage.trim() && !selectedFile) || isUploading" [class]="
               'p-3 rounded-2xl transition-all duration-200 ' +
-              (newMessage.trim()
+              ((newMessage.trim() || selectedFile) && !isUploading
                 ? 'bg-blue-600 hover:bg-blue-700 text-white btn-primary'
                 : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed')
             ">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg *ngIf="!isUploading" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+            </svg>
+            <svg *ngIf="isUploading" class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
             </svg>
           </button>
         </div>

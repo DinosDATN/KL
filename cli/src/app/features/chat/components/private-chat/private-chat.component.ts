@@ -10,9 +10,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
 import { PrivateChatService } from '../../../../core/services/private-chat.service';
+import { ChatService } from '../../../../core/services/chat.service';
 import { FriendshipService } from '../../../../core/services/friendship.service';
 import { ThemeService } from '../../../../core/services/theme.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { environment } from '../../../../../environments/environment';
 import {
   PrivateConversation,
   PrivateMessage,
@@ -31,6 +33,7 @@ export class PrivateChatComponent
   implements OnInit, OnDestroy, AfterViewChecked {
   @ViewChild('messagesContainer') messagesContainer!: ElementRef;
   @ViewChild('messageInput') messageInput!: ElementRef;
+  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
   conversations: PrivateConversation[] = [];
   activeConversation: PrivateConversation | null = null;
@@ -42,6 +45,11 @@ export class PrivateChatComponent
   loading = false;
   selectedFriend: User | null = null;
   showFriendsList = false;
+
+  // File upload state
+  selectedFile: File | null = null;
+  previewImageUrl: string | null = null;
+  isUploading = false;
 
   // Simplified scroll tracking
   shouldScrollToBottom = true;
@@ -62,6 +70,7 @@ export class PrivateChatComponent
 
   constructor(
     private privateChatService: PrivateChatService,
+    private chatService: ChatService,
     private friendshipService: FriendshipService,
     public themeService: ThemeService,
     private authService: AuthService
@@ -266,6 +275,12 @@ export class PrivateChatComponent
     console.log('📨 PrivateChat: send() method called');
     console.log('💬 NewMessage content:', this.newMessage);
 
+    // If there's a file, upload it first
+    if (this.selectedFile) {
+      this.sendFile();
+      return;
+    }
+
     if (!this.activeConversation || !this.newMessage.trim()) {
       console.log(
         '⚠️ PrivateChat: Empty message or no active conversation, returning'
@@ -306,6 +321,123 @@ export class PrivateChatComponent
       const textarea = this.messageInput.nativeElement;
       textarea.style.height = '44px';
     });
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      this.selectedFile = file;
+
+      // Preview image if it's an image file
+      const imageTypes = [
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+      ];
+      if (imageTypes.includes(file.type)) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          this.previewImageUrl = e.target?.result as string;
+        };
+        reader.readAsDataURL(file);
+      } else {
+        this.previewImageUrl = null;
+      }
+    }
+  }
+
+  removeSelectedFile(): void {
+    this.selectedFile = null;
+    this.previewImageUrl = null;
+    if (this.fileInput) {
+      this.fileInput.nativeElement.value = '';
+    }
+  }
+
+  sendFile(): void {
+    if (!this.selectedFile || !this.activeConversation) {
+      return;
+    }
+
+    this.isUploading = true;
+    this.chatService.uploadFile(this.selectedFile).subscribe({
+      next: (fileData) => {
+        console.log('✅ File uploaded:', fileData);
+
+        // Send message with file
+        this.privateChatService.sendMessageWithFile(
+          this.activeConversation!.id,
+          this.newMessage.trim() || '',
+          fileData.file_url,
+          fileData.file_name,
+          fileData.file_size,
+          fileData.type
+        );
+
+        // Reset state
+        this.newMessage = '';
+        this.selectedFile = null;
+        this.previewImageUrl = null;
+        this.isUploading = false;
+        if (this.fileInput) {
+          this.fileInput.nativeElement.value = '';
+        }
+
+        // Always scroll when user sends a message
+        this.shouldScrollToBottom = true;
+        this.isUserNearBottom = true;
+        this.resetNewMessageIndicator();
+
+        // Stop typing indicator
+        this.stopTypingIndicator();
+
+        // Reset textarea height
+        setTimeout(() => {
+          const textarea = this.messageInput.nativeElement;
+          textarea.style.height = '44px';
+        });
+      },
+      error: (error) => {
+        console.error('❌ Error uploading file:', error);
+        this.isUploading = false;
+        alert('Lỗi khi tải file lên. Vui lòng thử lại.');
+      },
+    });
+  }
+
+  openFileSelector(): void {
+    if (this.fileInput) {
+      this.fileInput.nativeElement.click();
+    }
+  }
+
+  formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+  }
+
+  getFileExtension(fileName: string): string {
+    return fileName.split('.').pop()?.toUpperCase() || '';
+  }
+
+  getFileUrl(fileUrl: string | null | undefined): string {
+    if (!fileUrl) return '';
+    const baseUrl = environment.production
+      ? environment.apiUrl
+      : 'http://localhost:3000';
+    return baseUrl + fileUrl;
+  }
+
+  openFileInNewTab(fileUrl: string | null | undefined): void {
+    if (fileUrl) {
+      window.open(this.getFileUrl(fileUrl), '_blank');
+    }
   }
 
   onKeyDown(event: KeyboardEvent): void {

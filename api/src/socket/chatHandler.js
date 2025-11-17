@@ -351,12 +351,20 @@ const handleConnection = (io) => {
           `💬 Private message received from user ${socket.user.name}:`,
           data
         );
-        const { conversationId, content } = data;
+        const { 
+          conversationId, 
+          content,
+          message_type = "text",
+          file_url = null,
+          file_name = null,
+          file_size = null
+        } = data;
 
-        if (!content || !content.trim()) {
-          console.log("❌ Empty private message content");
+        // Content is required unless it's a file/image message
+        if (!content && !file_url) {
+          console.log("❌ Empty private message content and no file");
           return socket.emit("error", {
-            message: "Message content is required",
+            message: "Message content or file is required",
           });
         }
 
@@ -383,8 +391,11 @@ const handleConnection = (io) => {
           conversation_id: conversationId,
           sender_id: socket.userId,
           receiver_id: receiverId,
-          content: content.trim(),
-          message_type: "text",
+          content: content ? content.trim() : (file_name || "Đã gửi file"),
+          message_type: message_type,
+          file_url: file_url,
+          file_name: file_name,
+          file_size: file_size,
         });
 
         // Update conversation last activity

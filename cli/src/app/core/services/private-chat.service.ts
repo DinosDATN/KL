@@ -198,6 +198,27 @@ export class PrivateChatService {
       observer.complete();
     });
   }
+
+  sendMessageWithFile(
+    conversationId: number,
+    content: string,
+    fileUrl: string,
+    fileName: string,
+    fileSize: number,
+    messageType: string = 'file'
+  ): void {
+    console.log('🚀 PrivateChat: Sending file message via Socket.IO');
+    
+    // Send via Socket.IO for real-time delivery (this will save to DB)
+    this.socketService.emit('send_private_message', {
+      conversationId,
+      content: content.trim() || fileName || 'Đã gửi file',
+      message_type: messageType,
+      file_url: fileUrl,
+      file_name: fileName,
+      file_size: fileSize
+    });
+  }
   
   markMessagesAsRead(conversationId: number, messageIds: number[]): Observable<void> {
     return this.http.put<{success: boolean}>(
