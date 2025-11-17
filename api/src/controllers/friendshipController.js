@@ -92,6 +92,16 @@ const sendFriendRequest = async (req, res) => {
       ]
     });
 
+    // Emit socket notification to addressee (receiver of friend request)
+    if (req.io) {
+      req.io.to(`user_${addressee_id}`).emit('friend_request_received', {
+        friendship: completeFriendship,
+        requester: completeFriendship.Requester,
+        timestamp: new Date().toISOString()
+      });
+      console.log(`📬 Friend request notification sent to user ${addressee_id}`);
+    }
+
     res.status(201).json({
       success: true,
       message: 'Friend request sent successfully',
@@ -166,6 +176,25 @@ const respondToFriendRequest = async (req, res) => {
         }
       ]
     });
+
+    // Emit socket notification to requester when request is accepted/declined
+    if (req.io) {
+      if (action === 'accept') {
+        req.io.to(`user_${friendship.requester_id}`).emit('friend_request_accepted', {
+          friendship: updatedFriendship,
+          addressee: updatedFriendship.Addressee,
+          timestamp: new Date().toISOString()
+        });
+        console.log(`✅ Friend request accepted notification sent to user ${friendship.requester_id}`);
+      } else {
+        req.io.to(`user_${friendship.requester_id}`).emit('friend_request_declined', {
+          friendship: updatedFriendship,
+          addressee: updatedFriendship.Addressee,
+          timestamp: new Date().toISOString()
+        });
+        console.log(`❌ Friend request declined notification sent to user ${friendship.requester_id}`);
+      }
+    }
 
     res.json({
       success: true,

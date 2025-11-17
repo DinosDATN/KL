@@ -47,6 +47,10 @@ const handleConnection = (io) => {
       { where: { id: socket.userId } }
     );
 
+    // Join user to their personal notification room
+    socket.join(`user_${socket.userId}`);
+    console.log(`✅ User ${socket.user.name} joined personal notification room: user_${socket.userId}`);
+
     // Join user to their group chat rooms
     joinUserRooms(socket);
 

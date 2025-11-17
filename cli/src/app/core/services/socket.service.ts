@@ -57,6 +57,27 @@ export class SocketService {
   } | null>(null);
   public notification$ = this.notificationSubject.asObservable();
 
+  private friendRequestReceivedSubject = new BehaviorSubject<{
+    friendship: any;
+    requester: any;
+    timestamp: string;
+  } | null>(null);
+  public friendRequestReceived$ = this.friendRequestReceivedSubject.asObservable();
+
+  private friendRequestAcceptedSubject = new BehaviorSubject<{
+    friendship: any;
+    addressee: any;
+    timestamp: string;
+  } | null>(null);
+  public friendRequestAccepted$ = this.friendRequestAcceptedSubject.asObservable();
+
+  private friendRequestDeclinedSubject = new BehaviorSubject<{
+    friendship: any;
+    addressee: any;
+    timestamp: string;
+  } | null>(null);
+  public friendRequestDeclined$ = this.friendRequestDeclinedSubject.asObservable();
+
   private errorSubject = new BehaviorSubject<{
     message: string;
     details?: string;
@@ -166,6 +187,34 @@ export class SocketService {
         this.notificationSubject.next(data);
       }
     );
+
+    // Listen for friend request notifications
+    this.socket.on('friend_request_received', (data: {
+      friendship: any;
+      requester: any;
+      timestamp: string;
+    }) => {
+      console.log('📬 Friend request received notification:', data);
+      this.friendRequestReceivedSubject.next(data);
+    });
+
+    this.socket.on('friend_request_accepted', (data: {
+      friendship: any;
+      addressee: any;
+      timestamp: string;
+    }) => {
+      console.log('✅ Friend request accepted notification:', data);
+      this.friendRequestAcceptedSubject.next(data);
+    });
+
+    this.socket.on('friend_request_declined', (data: {
+      friendship: any;
+      addressee: any;
+      timestamp: string;
+    }) => {
+      console.log('❌ Friend request declined notification:', data);
+      this.friendRequestDeclinedSubject.next(data);
+    });
 
     // Listen for errors
     this.socket.on('error', (error: { message: string; details?: string }) => {
