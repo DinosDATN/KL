@@ -32,6 +32,51 @@ export class DocumentFiltersComponent {
   @Output() filtersChange = new EventEmitter<DocumentFilters>();
   @Output() clearFilters = new EventEmitter<void>();
   
+  // Collapsible sections state
+  expandedSections: { [key: string]: boolean } = {
+    topic: false,
+    category: false,
+    level: false,
+    sort: false
+  };
+  
+  toggleSection(section: string): void {
+    this.expandedSections[section] = !this.expandedSections[section];
+  }
+  
+  getSelectedTopicName(): string {
+    if (!this.filters.selectedTopic) return 'Tất cả';
+    const topic = this.topics.find(t => t.id === this.filters.selectedTopic);
+    return topic ? topic.name : 'Tất cả';
+  }
+  
+  getSelectedCategoryName(): string {
+    if (!this.filters.selectedCategory) return 'Tất cả';
+    const category = this.categories.find(c => c.id === this.filters.selectedCategory);
+    return category ? category.name : 'Tất cả';
+  }
+  
+  getSelectedLevelName(): string {
+    const levelMap: { [key: string]: string } = {
+      '': 'Tất cả',
+      'Beginner': 'Cơ bản',
+      'Intermediate': 'Trung cấp',
+      'Advanced': 'Nâng cao'
+    };
+    return levelMap[this.filters.selectedLevel] || 'Tất cả';
+  }
+  
+  getSortByName(): string {
+    const sortMap: { [key: string]: string } = {
+      'title': 'Tên tài liệu',
+      'rating': 'Đánh giá cao nhất',
+      'students': 'Lượt đọc nhiều nhất',
+      'duration': 'Thời gian đọc',
+      'created_at': 'Mới nhất'
+    };
+    return sortMap[this.filters.sortBy] || 'Tên tài liệu';
+  }
+  
   onFilterChange(): void {
     this.filtersChange.emit({ ...this.filters });
   }

@@ -1,0 +1,10 @@
+/* Smooth rotation animation for chevron */
+.rotate-180 {
+  transform: rotate(180deg);
+}
+
+/* Smooth transitions for collapsible sections */
+[class*="transition-transform"] {
+  transition: transform 0.2s ease-in-out;
+}
+

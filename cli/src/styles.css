@@ -117,6 +117,9 @@
 .icon-grid::before {
   content: "⬜";
 }
+.icon-folder::before {
+  content: "📁";
+}
 
 /* Custom styles for better visual appeal */
 body {
