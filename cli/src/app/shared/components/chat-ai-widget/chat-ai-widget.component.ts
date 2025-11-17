@@ -5,6 +5,7 @@ import {
   ViewChild,
   ElementRef,
   AfterViewChecked,
+  AfterViewInit,
   HostListener,
   Inject,
   PLATFORM_ID,
@@ -23,7 +24,7 @@ import { isPlatformBrowser } from '@angular/common';
   styleUrl: './chat-ai-widget.component.css',
 })
 export class ChatAiWidgetComponent
-  implements OnInit, OnDestroy, AfterViewChecked
+  implements OnInit, OnDestroy, AfterViewChecked, AfterViewInit
 {
   @ViewChild('messagesContainer', { static: false })
   messagesContainer!: ElementRef;
@@ -57,6 +58,10 @@ export class ChatAiWidgetComponent
 
   private subscriptions: Subscription[] = [];
   private shouldScrollToBottom = false;
+  private scrollPreventionHandlers: {
+    wheel?: (e: WheelEvent) => void;
+    touchmove?: (e: TouchEvent) => void;
+  } = {};
 
   constructor(
     private chatAIService: ChatAIService,
@@ -73,6 +78,11 @@ export class ChatAiWidgetComponent
 
   ngOnDestroy(): void {
     this.subscriptions.forEach((sub) => sub.unsubscribe());
+    this.cleanupScrollPrevention();
+  }
+
+  ngAfterViewInit(): void {
+    this.setupScrollPrevention();
   }
 
   ngAfterViewChecked(): void {
@@ -243,6 +253,89 @@ export class ChatAiWidgetComponent
   // Add method to handle textarea click/focus events
   onTextareaClick(): void {
     this.focusInput();
+  }
+
+  private setupScrollPrevention(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    // Setup scroll prevention after view init
+    setTimeout(() => {
+      if (this.messagesContainer) {
+        const element = this.messagesContainer.nativeElement;
+
+        // Create bound handlers and store them for cleanup
+        this.scrollPreventionHandlers.wheel =
+          this.preventScrollPropagation.bind(this);
+        this.scrollPreventionHandlers.touchmove =
+          this.preventScrollPropagation.bind(this);
+
+        element.addEventListener('wheel', this.scrollPreventionHandlers.wheel, {
+          passive: false,
+        });
+        element.addEventListener(
+          'touchmove',
+          this.scrollPreventionHandlers.touchmove,
+          { passive: false }
+        );
+      }
+    }, 100);
+  }
+
+  private cleanupScrollPrevention(): void {
+    if (!isPlatformBrowser(this.platformId) || !this.messagesContainer) return;
+
+    const element = this.messagesContainer.nativeElement;
+
+    if (this.scrollPreventionHandlers.wheel) {
+      element.removeEventListener('wheel', this.scrollPreventionHandlers.wheel);
+    }
+
+    if (this.scrollPreventionHandlers.touchmove) {
+      element.removeEventListener(
+        'touchmove',
+        this.scrollPreventionHandlers.touchmove
+      );
+    }
+
+    this.scrollPreventionHandlers = {};
+  }
+
+  private preventScrollPropagation(event: WheelEvent | TouchEvent): void {
+    if (!this.messagesContainer) return;
+
+    const element = this.messagesContainer.nativeElement;
+    const { scrollTop, scrollHeight, clientHeight } = element;
+
+    // Check if we're at the boundaries of the scroll container
+    const isAtTop = scrollTop <= 0;
+    const isAtBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 1;
+
+    // For wheel events
+    if (event instanceof WheelEvent) {
+      const deltaY = event.deltaY;
+
+      // If scrolling up and at top, prevent default to stop page scroll
+      if (deltaY < 0 && isAtTop) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+
+      // If scrolling down and at bottom, prevent default to stop page scroll
+      if (deltaY > 0 && isAtBottom) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+
+      // Stop propagation to prevent page scroll while scrolling within container
+      event.stopPropagation();
+    }
+
+    // For touch events, stop propagation to prevent page scroll
+    if (event instanceof TouchEvent) {
+      event.stopPropagation();
+    }
   }
 
   private scrollToBottom(): void {
