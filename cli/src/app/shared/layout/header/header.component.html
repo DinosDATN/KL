@@ -301,8 +301,9 @@
             <!-- Overlay to close menu when clicking outside -->
             <div class="fixed inset-0 z-40" (click)="closeMenus()"></div>
             <div
-              class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50"
+              class="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50"
             >
+              <!-- User Info -->
               <div
                 class="px-4 py-2 border-b border-gray-200 dark:border-gray-700"
               >
@@ -314,6 +315,50 @@
                 <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
                   {{ currentUser?.email }}
                 </p>
+              </div>
+
+              <!-- User Stats (Mobile) -->
+              <div *ngIf="userStats" class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 space-y-2">
+                <!-- Reward Points -->
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <i class="icon-award text-yellow-500 text-sm"></i>
+                    <span class="text-sm text-gray-600 dark:text-gray-400">Điểm thưởng</span>
+                  </div>
+                  <span class="text-sm font-semibold text-yellow-600 dark:text-yellow-400">
+                    {{ userStats.reward_points | number }}
+                  </span>
+                </div>
+
+                <!-- Level & XP -->
+                <div class="space-y-1">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <i class="icon-zap text-blue-500 text-sm"></i>
+                      <span class="text-sm text-gray-600 dark:text-gray-400">Level {{ userStats.level }}</span>
+                    </div>
+                    <span class="text-xs text-gray-500 dark:text-gray-500">
+                      {{ userStats.xp | number }} / {{ levelProgress?.xpForNextLevel | number }} XP
+                    </span>
+                  </div>
+                  <div class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div 
+                      class="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-300"
+                      [style.width.%]="levelProgress?.progressPercentage || 0"
+                    ></div>
+                  </div>
+                </div>
+
+                <!-- Rank -->
+                <div *ngIf="userStats.rank > 0" class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <i class="icon-trophy text-purple-500 text-sm"></i>
+                    <span class="text-sm text-gray-600 dark:text-gray-400">Xếp hạng</span>
+                  </div>
+                  <span class="text-sm font-semibold text-purple-600 dark:text-purple-400">
+                    #{{ userStats.rank }}
+                  </span>
+                </div>
               </div>
               <button
                 *ngFor="let item of userMenuItems"

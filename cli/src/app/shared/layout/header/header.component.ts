@@ -9,11 +9,14 @@ import {
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { ThemeService } from '../../../core/services/theme.service';
+import { UserStatsBadgeComponent } from '../../components/user-stats-badge/user-stats-badge.component';
 import { AuthService } from '../../../core/services/auth.service';
 import { User } from '../../../core/models/user.model';
 import { Subscription } from 'rxjs';
 import { AppNotificationService, AppNotification } from '../../../core/services/app-notification.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { UserStatsService } from '../../../core/services/user-stats.service';
+import { UserStats, LevelProgress } from '../../../core/models/user-stats.model';
 
 interface MenuItem {
   label: string;
@@ -32,7 +35,7 @@ interface NavigationItem {
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, UserStatsBadgeComponent],
   templateUrl: './header.component.html',
   styleUrl: './header.component.css',
 })
@@ -64,6 +67,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     if (this.authSubscription) this.authSubscription.unsubscribe();
     if (this.notificationSubscription) this.notificationSubscription.unsubscribe();
     if (this.unreadCountSubscription) this.unreadCountSubscription.unsubscribe();
+    if (this.statsSubscription) this.statsSubscription.unsubscribe();
   }
 
   isMenuOpen = false;
@@ -78,12 +82,18 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
   private unreadCountSubscription?: Subscription;
   private previousUnreadCount = 0;
 
+  // User stats state
+  userStats: UserStats | null = null;
+  levelProgress: LevelProgress | null = null;
+  private statsSubscription?: Subscription;
+
   constructor(
     public themeService: ThemeService,
     private authService: AuthService,
     private router: Router,
     private appNotificationService: AppNotificationService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private userStatsService: UserStatsService
   ) {
     // Subscribe to authentication state changes
     this.authSubscription = this.authService.currentUser$.subscribe((user) => {
@@ -94,13 +104,48 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
       // Update user menu items based on authentication state
       this.updateUserMenuItems();
 
-      // Subscribe to notifications if authenticated
+      // Subscribe to notifications and stats if authenticated
       if (user) {
         this.subscribeToNotifications();
+        this.loadUserStats();
       } else {
         this.unsubscribeFromNotifications();
+        this.clearUserStats();
       }
     });
+  }
+
+  private loadUserStats(): void {
+    // Load initial stats
+    this.userStatsService.loadUserStats().subscribe({
+      next: () => {
+        console.log('✅ User stats loaded');
+      },
+      error: (error) => {
+        console.error('❌ Error loading user stats:', error);
+      }
+    });
+
+    // Subscribe to stats updates
+    this.statsSubscription = this.userStatsService.userStats$.subscribe(
+      (stats) => {
+        this.userStats = stats;
+        if (stats) {
+          this.levelProgress = this.userStatsService.calculateLevelProgress(stats);
+        } else {
+          this.levelProgress = null;
+        }
+      }
+    );
+  }
+
+  private clearUserStats(): void {
+    if (this.statsSubscription) {
+      this.statsSubscription.unsubscribe();
+    }
+    this.userStatsService.clearStats();
+    this.userStats = null;
+    this.levelProgress = null;
   }
 
   private subscribeToNotifications(): void {

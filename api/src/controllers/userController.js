@@ -312,6 +312,24 @@ const userController = {
         user.Profile = newProfile;
       }
 
+      // Create stats if it doesn't exist
+      if (!user.Stats) {
+        const newStats = await UserStats.create({
+          user_id: userId,
+          xp: 0,
+          level: 1,
+          rank: 0,
+          reward_points: 0,
+          courses_completed: 0,
+          hours_learned: 0,
+          problems_solved: 0,
+          current_streak: 0,
+          longest_streak: 0,
+          average_score: 0
+        });
+        user.Stats = newStats;
+      }
+
       res.status(200).json({
         success: true,
         data: {
