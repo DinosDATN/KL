@@ -31,6 +31,9 @@ export interface ChatMessage {
   is_edited: boolean;
   reply_to?: number | null;
   sent_at: string;
+  file_url?: string | null;
+  file_name?: string | null;
+  file_size?: number | null;
   Sender?: User; // For associations
 }
 

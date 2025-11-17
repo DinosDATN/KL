@@ -200,13 +200,16 @@ export class SocketService {
     roomId: number,
     content: string,
     type: string = 'text',
-    replyTo?: number
+    replyTo?: number,
+    fileUrl?: string | null,
+    fileName?: string | null,
+    fileSize?: number | null
   ): void {
     console.log('💬 Attempting to send message...');
     console.log('📋 Room ID:', roomId);
     console.log('💬 Content:', content);
     console.log('🔗 Socket connected:', this.socket?.connected);
-    
+
     if (this.socket) {
       console.log('🚀 Emitting send_message event...');
       this.socket.emit('send_message', {
@@ -214,6 +217,9 @@ export class SocketService {
         content,
         type,
         replyTo,
+        file_url: fileUrl,
+        file_name: fileName,
+        file_size: fileSize,
       });
       console.log('✅ Message sent via Socket.IO');
     } else {

@@ -1,6 +1,6 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { authenticateToken } = require('../middleware/authMiddleware');
+const { authenticateToken } = require("../middleware/authMiddleware");
 const {
   getUserChatRooms,
   getRoomMessages,
@@ -10,27 +10,47 @@ const {
   getRoomMembers,
   searchUsers,
   getOnlineUsers,
-  validateRoomMembers
-} = require('../controllers/chatController');
+  validateRoomMembers,
+  uploadChatFile,
+  chatUpload,
+} = require("../controllers/chatController");
 
 // All chat routes require authentication
 router.use(authenticateToken);
 
 // Chat room routes
-router.get('/rooms', getUserChatRooms);
-router.post('/rooms', createChatRoom);
+router.get("/rooms", getUserChatRooms);
+router.post("/rooms", createChatRoom);
 
 // Room-specific routes
-router.get('/rooms/:roomId/messages', getRoomMessages);
-router.post('/rooms/:roomId/messages', sendMessage);
-router.get('/rooms/:roomId/members', getRoomMembers);
+router.get("/rooms/:roomId/messages", getRoomMessages);
+router.post("/rooms/:roomId/messages", sendMessage);
+router.get("/rooms/:roomId/members", getRoomMembers);
+
+// File upload route with error handling
+router.post(
+  "/upload",
+  (req, res, next) => {
+    chatUpload.single("file")(req, res, (err) => {
+      if (err) {
+        console.error("Multer error:", err);
+        return res.status(400).json({
+          success: false,
+          message: err.message || "File upload error",
+        });
+      }
+      next();
+    });
+  },
+  uploadChatFile
+);
 
 // Message reactions
-router.post('/messages/:messageId/reactions', addReaction);
+router.post("/messages/:messageId/reactions", addReaction);
 
 // User search and management routes
-router.get('/users/search', searchUsers);
-router.get('/users/online', getOnlineUsers);
-router.post('/rooms/validate-members', validateRoomMembers);
+router.get("/users/search", searchUsers);
+router.get("/users/online", getOnlineUsers);
+router.post("/rooms/validate-members", validateRoomMembers);
 
 module.exports = router;

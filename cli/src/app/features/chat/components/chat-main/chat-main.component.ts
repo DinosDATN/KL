@@ -16,7 +16,15 @@ import {
   ChatReaction,
 } from '../../../../core/models/chat.model';
 import { User } from '../../../../core/models/user.model';
-import { ChatSettingsModalComponent, ChatSettings, MemberAction } from '../chat-settings-modal/chat-settings-modal.component';
+import {
+  ChatSettingsModalComponent,
+  ChatSettings,
+  MemberAction,
+} from '../chat-settings-modal/chat-settings-modal.component';
+import { ChatService } from '../../../../core/services/chat.service';
+import { environment } from '../../../../../environments/environment';
+
+export const environmentApiUrl = environment;
 @Component({
   selector: 'app-chat-main',
   standalone: true,
@@ -27,6 +35,7 @@ import { ChatSettingsModalComponent, ChatSettings, MemberAction } from '../chat-
 export class ChatMainComponent implements OnChanges, AfterViewChecked {
   @ViewChild('messagesContainer') messagesContainer!: ElementRef;
   @ViewChild('messageInput') messageInput!: ElementRef;
+  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
   @Input() room!: ChatRoom;
   @Input() messages: ChatMessage[] = [];
@@ -55,7 +64,7 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
     // This is managed by computed getter now
   }
   @Input() set hasMoreMessagesProp(value: boolean) {
-    // This is managed by computed getter now  
+    // This is managed by computed getter now
   }
   @Input() set paginationCallbacks(callbacks: {
     isLoading: (roomId: number) => boolean;
@@ -77,7 +86,13 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
   showNewMessageIndicator = false;
   newMessageCount = 0;
   previousScrollHeight = 0;
-  
+
+  // File upload state
+  selectedFile: File | null = null;
+  previewImageUrl: string | null = null;
+  isUploading = false;
+  environment = environment;
+
   // Simplified scroll tracking
   private isUserNearBottom = true;
   private messageCountOnLastCheck = 0;
@@ -108,11 +123,11 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
     if (this.messages && this.messages.length > this.messageCountOnLastCheck) {
       const isNewMessage = this.messageCountOnLastCheck > 0; // Skip first load
       this.messageCountOnLastCheck = this.messages.length;
-      
+
       if (isNewMessage) {
         const lastMessage = this.messages[this.messages.length - 1];
         const isMyMessage = lastMessage.sender_id === this.currentUser.id;
-        
+
         // Always scroll for user's own messages or when user is near bottom
         if (isMyMessage || this.isUserNearBottom) {
           this.shouldScrollToBottom = true;
@@ -126,9 +141,13 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
         // First time loading conversation - always scroll to bottom
         this.shouldScrollToBottom = true;
       }
-      
+
       // Handle older messages being loaded (maintain scroll position)
-      if (this.room && this.isLoadingPagination(this.room.id) && this.messagesContainer) {
+      if (
+        this.room &&
+        this.isLoadingPagination(this.room.id) &&
+        this.messagesContainer
+      ) {
         setTimeout(() => this.maintainScrollPositionAfterLoad(), 50);
       }
     }
@@ -162,7 +181,9 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
     const topThreshold = 100; // pixels from top for loading older messages
 
     // Track if user is near bottom (simplified)
-    this.isUserNearBottom = element.scrollHeight - element.scrollTop <= element.clientHeight + threshold;
+    this.isUserNearBottom =
+      element.scrollHeight - element.scrollTop <=
+      element.clientHeight + threshold;
 
     // Hide new message indicator if user scrolled to bottom
     if (this.isUserNearBottom && this.showNewMessageIndicator) {
@@ -171,14 +192,73 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
 
     // Handle loading older messages
     const nearTop = element.scrollTop <= topThreshold;
-    if (nearTop && !this.isLoadingOlderMessages && this.hasMoreMessages && this.messages.length > 0) {
+    if (
+      nearTop &&
+      !this.isLoadingOlderMessages &&
+      this.hasMoreMessages &&
+      this.messages.length > 0
+    ) {
       this.loadOlderMessagesHandler();
     }
+  }
+
+  constructor(private chatService: ChatService) {}
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      this.selectedFile = file;
+
+      // Preview image if it's an image file
+      const imageTypes = [
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+      ];
+      if (imageTypes.includes(file.type)) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          this.previewImageUrl = e.target?.result as string;
+        };
+        reader.readAsDataURL(file);
+      } else {
+        this.previewImageUrl = null;
+      }
+    }
+  }
+
+  removeSelectedFile(): void {
+    this.selectedFile = null;
+    this.previewImageUrl = null;
+    if (this.fileInput) {
+      this.fileInput.nativeElement.value = '';
+    }
+  }
+
+  formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+  }
+
+  getFileExtension(fileName: string): string {
+    return fileName.split('.').pop()?.toUpperCase() || '';
   }
 
   send(): void {
     console.log('📨 ChatMain: send() method called');
     console.log('💬 NewMessage content:', this.newMessage);
+
+    // If there's a file, upload it first
+    if (this.selectedFile) {
+      this.sendFile();
+      return;
+    }
 
     if (!this.newMessage.trim()) {
       console.log('⚠️ ChatMain: Empty message, returning');
@@ -186,7 +266,10 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
     }
 
     const messageContent = this.newMessage.trim();
-    console.log('🚀 ChatMain: Emitting sendMessage event with content:', messageContent);
+    console.log(
+      '🚀 ChatMain: Emitting sendMessage event with content:',
+      messageContent
+    );
 
     // If replying, include reply context (in a real app, this would be handled by the backend)
     this.sendMessage.emit(messageContent);
@@ -204,6 +287,76 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
       const textarea = this.messageInput.nativeElement;
       textarea.style.height = '44px';
     });
+  }
+
+  sendFile(): void {
+    if (!this.selectedFile || !this.room) {
+      return;
+    }
+
+    this.isUploading = true;
+    this.chatService.uploadFile(this.selectedFile).subscribe({
+      next: (fileData) => {
+        console.log('✅ File uploaded:', fileData);
+
+        // Send message with file
+        this.chatService.sendMessage(
+          this.room.id,
+          this.newMessage.trim() || '',
+          fileData.type,
+          this.replyToMessage?.id,
+          fileData.file_url,
+          fileData.file_name,
+          fileData.file_size
+        );
+
+        // Reset state
+        this.newMessage = '';
+        this.selectedFile = null;
+        this.previewImageUrl = null;
+        this.replyToMessage = null;
+        this.isUploading = false;
+        if (this.fileInput) {
+          this.fileInput.nativeElement.value = '';
+        }
+
+        // Always scroll when user sends a message
+        this.shouldScrollToBottom = true;
+        this.isUserNearBottom = true;
+        this.resetNewMessageIndicator();
+
+        // Reset textarea height
+        setTimeout(() => {
+          const textarea = this.messageInput.nativeElement;
+          textarea.style.height = '44px';
+        });
+      },
+      error: (error) => {
+        console.error('❌ Error uploading file:', error);
+        this.isUploading = false;
+        alert('Lỗi khi tải file lên. Vui lòng thử lại.');
+      },
+    });
+  }
+
+  openFileSelector(): void {
+    if (this.fileInput) {
+      this.fileInput.nativeElement.click();
+    }
+  }
+
+  getFileUrl(fileUrl: string | null | undefined): string {
+    if (!fileUrl) return '';
+    const baseUrl = environment.production
+      ? environment.apiUrl
+      : 'http://localhost:3000';
+    return baseUrl + fileUrl;
+  }
+
+  openFileInNewTab(fileUrl: string | null | undefined): void {
+    if (fileUrl) {
+      window.open(this.getFileUrl(fileUrl), '_blank');
+    }
   }
 
   setReplyTo(message: ChatMessage): void {
@@ -229,7 +382,7 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
       const element = this.messagesContainer.nativeElement;
       element.scrollTo({
         top: element.scrollHeight,
-        behavior: 'smooth'
+        behavior: 'smooth',
       });
     }
   }
@@ -288,7 +441,8 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
 
     // Store current scroll position to maintain it after loading
     if (this.messagesContainer) {
-      this.previousScrollHeight = this.messagesContainer.nativeElement.scrollHeight;
+      this.previousScrollHeight =
+        this.messagesContainer.nativeElement.scrollHeight;
     }
 
     // Emit event to parent component to load older messages
@@ -317,7 +471,7 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
     // Pagination state is now managed by parent component
   }
 
-  // Called by parent when no more older messages are available  
+  // Called by parent when no more older messages are available
   onNoMoreOlderMessages(): void {
     // Pagination state is now managed by parent component
   }
@@ -441,8 +595,9 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
       return `${this.typingUsers[0].name} đang nhập...`;
     if (this.typingUsers.length === 2)
       return `${this.typingUsers[0].name} và ${this.typingUsers[1].name} đang nhập...`;
-    return `${this.typingUsers[0].name} và ${this.typingUsers.length - 1
-      } người khác đang nhập...`;
+    return `${this.typingUsers[0].name} và ${
+      this.typingUsers.length - 1
+    } người khác đang nhập...`;
   }
 
   // Track by functions

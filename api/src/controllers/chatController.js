@@ -1,5 +1,68 @@
-const { ChatRoom, ChatMessage, ChatRoomMember, ChatReaction, User } = require('../models');
-const { Op } = require('sequelize');
+const {
+  ChatRoom,
+  ChatMessage,
+  ChatRoomMember,
+  ChatReaction,
+  User,
+} = require("../models");
+const { Op } = require("sequelize");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs").promises;
+
+// Configure multer for chat file uploads
+const chatStorage = multer.diskStorage({
+  destination: async (req, file, cb) => {
+    const uploadPath = path.join(__dirname, "../../uploads/chat");
+    try {
+      await fs.mkdir(uploadPath, { recursive: true });
+      cb(null, uploadPath);
+    } catch (error) {
+      cb(error);
+    }
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(
+      null,
+      `chat-${req.user.id}-${uniqueSuffix}${path.extname(file.originalname)}`
+    );
+  },
+});
+
+// File filter for chat uploads (images and files including zip, rar)
+const chatFileFilter = (req, file, cb) => {
+  const allowedImageTypes = /jpeg|jpg|png|gif|webp/;
+  const allowedFileTypes = /zip|rar|pdf|doc|docx|xls|xlsx|ppt|pptx|txt/;
+  const extname = path
+    .extname(file.originalname)
+    .toLowerCase()
+    .replace(".", "");
+
+  // Check if it's an image by extension
+  if (allowedImageTypes.test(extname)) {
+    return cb(null, true);
+  }
+
+  // Check if it's an allowed file type by extension
+  if (allowedFileTypes.test(extname)) {
+    return cb(null, true);
+  }
+
+  cb(
+    new Error(
+      "File type not allowed. Images: jpeg, jpg, png, gif, webp. Files: zip, rar, pdf, doc, docx, xls, xlsx, ppt, pptx, txt"
+    )
+  );
+};
+
+const chatUpload = multer({
+  storage: chatStorage,
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB limit
+  },
+  fileFilter: chatFileFilter,
+});
 
 // Get all chat rooms for a user
 const getUserChatRooms = async (req, res) => {
@@ -10,71 +73,79 @@ const getUserChatRooms = async (req, res) => {
       include: [
         {
           model: User,
-          as: 'Members',
+          as: "Members",
           where: { id: userId },
-          through: { attributes: ['is_admin'] }
+          through: { attributes: ["is_admin"] },
         },
         {
           model: User,
-          as: 'Creator',
-          attributes: ['id', 'name', 'email']
+          as: "Creator",
+          attributes: ["id", "name", "email"],
         },
         {
           model: ChatMessage,
-          as: 'Messages',
+          as: "Messages",
           limit: 1,
-          order: [['sent_at', 'DESC']],
+          order: [["sent_at", "DESC"]],
           required: false,
-          include: [{
-            model: User,
-            as: 'Sender',
-            attributes: ['id', 'name']
-          }]
-        }
+          include: [
+            {
+              model: User,
+              as: "Sender",
+              attributes: ["id", "name"],
+            },
+          ],
+        },
       ],
-      order: [['updated_at', 'DESC']]
+      order: [["updated_at", "DESC"]],
     });
 
     // Add member count and online member count for each room
     const roomsWithMemberInfo = await Promise.all(
       userRooms.map(async (room) => {
         const roomData = room.toJSON();
-        
+
         // Get total member count
         const memberCount = await ChatRoomMember.count({
-          where: { room_id: room.id }
+          where: { room_id: room.id },
         });
-        
+
         // Get all members with their online status
         const allMembers = await ChatRoomMember.findAll({
           where: { room_id: room.id },
-          include: [{
-            model: User,
-            as: 'User',
-            attributes: ['id', 'name', 'email', 'is_online', 'avatar_url']
-          }]
+          include: [
+            {
+              model: User,
+              as: "User",
+              attributes: ["id", "name", "email", "is_online", "avatar_url"],
+            },
+          ],
         });
-        
-        const onlineCount = allMembers.filter(member => member.User?.is_online).length;
-        
+
+        const onlineCount = allMembers.filter(
+          (member) => member.User?.is_online
+        ).length;
+
         return {
           ...roomData,
           member_count: memberCount,
           online_member_count: onlineCount,
-          all_members: allMembers.map(m => m.User)
+          all_members: allMembers.map((m) => m.User),
         };
       })
     );
 
     res.json({
       success: true,
-      data: roomsWithMemberInfo
+      data: roomsWithMemberInfo,
     });
   } catch (error) {
-    console.error('Error fetching user chat rooms:', error);
+    console.error("Error fetching user chat rooms:", error);
+    console.error("Error stack:", error.stack);
     res.status(500).json({
       success: false,
-      message: 'Error fetching chat rooms'
+      message: "Error fetching chat rooms",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
@@ -90,14 +161,14 @@ const getRoomMessages = async (req, res) => {
     const isMember = await ChatRoomMember.findOne({
       where: {
         room_id: roomId,
-        user_id: userId
-      }
+        user_id: userId,
+      },
     });
 
     if (!isMember) {
       return res.status(403).json({
         success: false,
-        message: 'You are not a member of this chat room'
+        message: "You are not a member of this chat room",
       });
     }
 
@@ -108,31 +179,35 @@ const getRoomMessages = async (req, res) => {
       include: [
         {
           model: User,
-          as: 'Sender',
-          attributes: ['id', 'name', 'email', 'is_online', 'last_seen_at']
+          as: "Sender",
+          attributes: ["id", "name", "email", "is_online", "last_seen_at"],
         },
         {
           model: ChatReaction,
-          as: 'Reactions',
-          include: [{
-            model: User,
-            as: 'User',
-            attributes: ['id', 'name']
-          }]
+          as: "Reactions",
+          include: [
+            {
+              model: User,
+              as: "User",
+              attributes: ["id", "name"],
+            },
+          ],
         },
         {
           model: ChatMessage,
-          as: 'ReplyToMessage',
-          include: [{
-            model: User,
-            as: 'Sender',
-            attributes: ['id', 'name']
-          }]
-        }
+          as: "ReplyToMessage",
+          include: [
+            {
+              model: User,
+              as: "Sender",
+              attributes: ["id", "name"],
+            },
+          ],
+        },
       ],
-      order: [['sent_at', 'DESC']],
+      order: [["sent_at", "DESC"]],
       limit: parseInt(limit),
-      offset: offset
+      offset: offset,
     });
 
     res.json({
@@ -141,14 +216,69 @@ const getRoomMessages = async (req, res) => {
         messages: messages.rows.reverse(),
         totalCount: messages.count,
         currentPage: parseInt(page),
-        totalPages: Math.ceil(messages.count / limit)
-      }
+        totalPages: Math.ceil(messages.count / limit),
+      },
     });
   } catch (error) {
-    console.error('Error fetching room messages:', error);
+    console.error("Error fetching room messages:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching messages'
+      message: "Error fetching messages",
+    });
+  }
+};
+
+// Upload file for chat message
+const uploadChatFile = async (req, res) => {
+  try {
+    if (!req.file) {
+      console.error("No file in request");
+      return res.status(400).json({
+        success: false,
+        message: "No file uploaded",
+      });
+    }
+
+    const fileUrl = `/uploads/chat/${req.file.filename}`;
+    const fileSize = req.file.size;
+    const fileName = req.file.originalname;
+
+    // Determine file type
+    const extname = path.extname(fileName).toLowerCase().replace(".", "");
+    const imageTypes = ["jpeg", "jpg", "png", "gif", "webp"];
+    const fileType = imageTypes.includes(extname) ? "image" : "file";
+
+    console.log("File uploaded successfully:", {
+      fileUrl,
+      fileName,
+      fileSize,
+      fileType,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        file_url: fileUrl,
+        file_name: fileName,
+        file_size: fileSize,
+        type: fileType,
+      },
+    });
+  } catch (error) {
+    console.error("Error uploading file:", error);
+    console.error("Error stack:", error.stack);
+    // Clean up uploaded file on error
+    if (req.file) {
+      try {
+        await fs.unlink(req.file.path);
+      } catch (cleanupError) {
+        console.error("Error cleaning up file:", cleanupError);
+      }
+    }
+    res.status(500).json({
+      success: false,
+      message: "Failed to upload file",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
@@ -158,12 +288,20 @@ const sendMessage = async (req, res) => {
   try {
     const { roomId } = req.params;
     const userId = req.user.id;
-    const { content, type = 'text', reply_to = null } = req.body;
+    const {
+      content,
+      type = "text",
+      reply_to = null,
+      file_url = null,
+      file_name = null,
+      file_size = null,
+    } = req.body;
 
-    if (!content || !content.trim()) {
+    // Content is required unless it's a file/image message
+    if (!content && !file_url) {
       return res.status(400).json({
         success: false,
-        message: 'Message content is required'
+        message: "Message content or file is required",
       });
     }
 
@@ -171,33 +309,36 @@ const sendMessage = async (req, res) => {
     const isMember = await ChatRoomMember.findOne({
       where: {
         room_id: roomId,
-        user_id: userId
-      }
+        user_id: userId,
+      },
     });
 
     if (!isMember) {
       return res.status(403).json({
         success: false,
-        message: 'You are not a member of this chat room'
+        message: "You are not a member of this chat room",
       });
     }
 
     const message = await ChatMessage.create({
       room_id: roomId,
       sender_id: userId,
-      content: content.trim(),
+      content: content ? content.trim() : file_name || "Đã gửi file",
       type: type,
-      reply_to: reply_to
+      reply_to: reply_to,
+      file_url: file_url,
+      file_name: file_name,
+      file_size: file_size,
     });
 
     // Update room's last message and timestamp
     await ChatRoom.update(
       {
         last_message_id: message.id,
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
-        where: { id: roomId }
+        where: { id: roomId },
       }
     );
 
@@ -206,30 +347,32 @@ const sendMessage = async (req, res) => {
       include: [
         {
           model: User,
-          as: 'Sender',
-          attributes: ['id', 'name', 'email', 'is_online', 'last_seen_at']
+          as: "Sender",
+          attributes: ["id", "name", "email", "is_online", "last_seen_at"],
         },
         {
           model: ChatMessage,
-          as: 'ReplyToMessage',
-          include: [{
-            model: User,
-            as: 'Sender',
-            attributes: ['id', 'name']
-          }]
-        }
-      ]
+          as: "ReplyToMessage",
+          include: [
+            {
+              model: User,
+              as: "Sender",
+              attributes: ["id", "name"],
+            },
+          ],
+        },
+      ],
     });
 
     res.status(201).json({
       success: true,
-      data: completeMessage
+      data: completeMessage,
     });
   } catch (error) {
-    console.error('Error sending message:', error);
+    console.error("Error sending message:", error);
     res.status(500).json({
       success: false,
-      message: 'Error sending message'
+      message: "Error sending message",
     });
   }
 };
@@ -238,12 +381,18 @@ const sendMessage = async (req, res) => {
 const createChatRoom = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { name, description, type = 'group', is_public = true, memberIds = [] } = req.body;
+    const {
+      name,
+      description,
+      type = "group",
+      is_public = true,
+      memberIds = [],
+    } = req.body;
 
     if (!name || !name.trim()) {
       return res.status(400).json({
         success: false,
-        message: 'Room name is required'
+        message: "Room name is required",
       });
     }
 
@@ -252,22 +401,22 @@ const createChatRoom = async (req, res) => {
       description: description?.trim(),
       type: type,
       is_public: is_public,
-      created_by: userId
+      created_by: userId,
     });
 
     // Add creator as admin member
     await ChatRoomMember.create({
       room_id: room.id,
       user_id: userId,
-      is_admin: true
+      is_admin: true,
     });
 
     // Add other members
     if (memberIds.length > 0) {
-      const memberData = memberIds.map(memberId => ({
+      const memberData = memberIds.map((memberId) => ({
         room_id: room.id,
         user_id: memberId,
-        is_admin: false
+        is_admin: false,
       }));
       await ChatRoomMember.bulkCreate(memberData);
     }
@@ -277,41 +426,42 @@ const createChatRoom = async (req, res) => {
       include: [
         {
           model: User,
-          as: 'Creator',
-          attributes: ['id', 'name', 'email']
+          as: "Creator",
+          attributes: ["id", "name", "email"],
         },
         {
           model: User,
-          as: 'Members',
-          attributes: ['id', 'name', 'email', 'is_online'],
-          through: { attributes: ['is_admin'] }
-        }
-      ]
+          as: "Members",
+          attributes: ["id", "name", "email", "is_online"],
+          through: { attributes: ["is_admin"] },
+        },
+      ],
     });
 
     // Send real-time notifications to members via Socket.IO
     if (req.io && memberIds.length > 0) {
       const creatorName = req.user.name;
-      
+
       memberIds.forEach((memberId) => {
         // Find the member's socket and notify them
-        const memberSockets = Array.from(req.io.sockets.sockets.values())
-          .filter(socket => socket.userId === memberId);
-        
-        memberSockets.forEach(socket => {
-          socket.emit('room_created', {
+        const memberSockets = Array.from(
+          req.io.sockets.sockets.values()
+        ).filter((socket) => socket.userId === memberId);
+
+        memberSockets.forEach((socket) => {
+          socket.emit("room_created", {
             ...completeRoom.toJSON(),
             isCreator: false,
-            memberCount: memberIds.length + 1
+            memberCount: memberIds.length + 1,
           });
-          
-          socket.emit('notification', {
-            type: 'room_invite',
+
+          socket.emit("notification", {
+            type: "room_invite",
             message: `You've been added to ${room.name} by ${creatorName}`,
             roomId: room.id,
             timestamp: new Date().toISOString(),
           });
-          
+
           // Join the member to the room
           socket.join(`room_${room.id}`);
         });
@@ -320,13 +470,13 @@ const createChatRoom = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      data: completeRoom
+      data: completeRoom,
     });
   } catch (error) {
-    console.error('Error creating chat room:', error);
+    console.error("Error creating chat room:", error);
     res.status(500).json({
       success: false,
-      message: 'Error creating chat room'
+      message: "Error creating chat room",
     });
   }
 };
@@ -338,31 +488,35 @@ const addReaction = async (req, res) => {
     const userId = req.user.id;
     const { reaction_type } = req.body;
 
-    if (!['like', 'love', 'laugh', 'sad', 'angry'].includes(reaction_type)) {
+    if (!["like", "love", "laugh", "sad", "angry"].includes(reaction_type)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid reaction type'
+        message: "Invalid reaction type",
       });
     }
 
     // Check if message exists and user has access
     const message = await ChatMessage.findByPk(messageId, {
-      include: [{
-        model: ChatRoom,
-        as: 'Room',
-        include: [{
-          model: User,
-          as: 'Members',
-          where: { id: userId },
-          required: true
-        }]
-      }]
+      include: [
+        {
+          model: ChatRoom,
+          as: "Room",
+          include: [
+            {
+              model: User,
+              as: "Members",
+              where: { id: userId },
+              required: true,
+            },
+          ],
+        },
+      ],
     });
 
     if (!message) {
       return res.status(404).json({
         success: false,
-        message: 'Message not found or access denied'
+        message: "Message not found or access denied",
       });
     }
 
@@ -370,8 +524,8 @@ const addReaction = async (req, res) => {
     const existingReaction = await ChatReaction.findOne({
       where: {
         message_id: messageId,
-        user_id: userId
-      }
+        user_id: userId,
+      },
     });
 
     if (existingReaction) {
@@ -380,14 +534,14 @@ const addReaction = async (req, res) => {
         await existingReaction.destroy();
         return res.json({
           success: true,
-          data: { action: 'removed', reaction_type }
+          data: { action: "removed", reaction_type },
         });
       } else {
         // Update reaction
         await existingReaction.update({ reaction_type });
         return res.json({
           success: true,
-          data: { action: 'updated', reaction_type }
+          data: { action: "updated", reaction_type },
         });
       }
     } else {
@@ -395,18 +549,18 @@ const addReaction = async (req, res) => {
       await ChatReaction.create({
         message_id: messageId,
         user_id: userId,
-        reaction_type
+        reaction_type,
       });
       return res.json({
         success: true,
-        data: { action: 'added', reaction_type }
+        data: { action: "added", reaction_type },
       });
     }
   } catch (error) {
-    console.error('Error handling reaction:', error);
+    console.error("Error handling reaction:", error);
     res.status(500).json({
       success: false,
-      message: 'Error handling reaction'
+      message: "Error handling reaction",
     });
   }
 };
@@ -421,36 +575,41 @@ const getRoomMembers = async (req, res) => {
     const isMember = await ChatRoomMember.findOne({
       where: {
         room_id: roomId,
-        user_id: userId
-      }
+        user_id: userId,
+      },
     });
 
     if (!isMember) {
       return res.status(403).json({
         success: false,
-        message: 'You are not a member of this chat room'
+        message: "You are not a member of this chat room",
       });
     }
 
     const members = await ChatRoomMember.findAll({
       where: { room_id: roomId },
-      include: [{
-        model: User,
-        as: 'User',
-        attributes: ['id', 'name', 'email', 'is_online', 'last_seen_at']
-      }],
-      order: [['is_admin', 'DESC'], ['joined_at', 'ASC']]
+      include: [
+        {
+          model: User,
+          as: "User",
+          attributes: ["id", "name", "email", "is_online", "last_seen_at"],
+        },
+      ],
+      order: [
+        ["is_admin", "DESC"],
+        ["joined_at", "ASC"],
+      ],
     });
 
     res.json({
       success: true,
-      data: members
+      data: members,
     });
   } catch (error) {
-    console.error('Error fetching room members:', error);
+    console.error("Error fetching room members:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching room members'
+      message: "Error fetching room members",
     });
   }
 };
@@ -464,7 +623,7 @@ const searchUsers = async (req, res) => {
     if (!searchTerm || searchTerm.length < 2) {
       return res.status(400).json({
         success: false,
-        message: 'Search term must be at least 2 characters long'
+        message: "Search term must be at least 2 characters long",
       });
     }
 
@@ -476,30 +635,37 @@ const searchUsers = async (req, res) => {
         [Op.or]: [
           {
             name: {
-              [Op.like]: `%${searchTerm}%`
-            }
+              [Op.like]: `%${searchTerm}%`,
+            },
           },
           {
             email: {
-              [Op.like]: `%${searchTerm}%`
-            }
-          }
-        ]
+              [Op.like]: `%${searchTerm}%`,
+            },
+          },
+        ],
       },
-      attributes: ['id', 'name', 'email', 'avatar_url', 'is_online', 'last_seen_at'],
+      attributes: [
+        "id",
+        "name",
+        "email",
+        "avatar_url",
+        "is_online",
+        "last_seen_at",
+      ],
       limit: parseInt(limit),
-      order: [['name', 'ASC']]
+      order: [["name", "ASC"]],
     });
 
     res.json({
       success: true,
-      data: users
+      data: users,
     });
   } catch (error) {
-    console.error('Error searching users:', error);
+    console.error("Error searching users:", error);
     res.status(500).json({
       success: false,
-      message: 'Error searching users'
+      message: "Error searching users",
     });
   }
 };
@@ -514,22 +680,29 @@ const getOnlineUsers = async (req, res) => {
       where: {
         id: { [Op.ne]: currentUserId },
         is_online: true,
-        is_active: true
+        is_active: true,
       },
-      attributes: ['id', 'name', 'email', 'avatar_url', 'is_online', 'last_seen_at'],
+      attributes: [
+        "id",
+        "name",
+        "email",
+        "avatar_url",
+        "is_online",
+        "last_seen_at",
+      ],
       limit: parseInt(limit),
-      order: [['name', 'ASC']]
+      order: [["name", "ASC"]],
     });
 
     res.json({
       success: true,
-      data: users
+      data: users,
     });
   } catch (error) {
-    console.error('Error fetching online users:', error);
+    console.error("Error fetching online users:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching online users'
+      message: "Error fetching online users",
     });
   }
 };
@@ -545,37 +718,39 @@ const validateRoomMembers = async (req, res) => {
         success: true,
         data: {
           validMembers: [],
-          invalidMembers: []
-        }
+          invalidMembers: [],
+        },
       });
     }
 
     // Remove current user from the list if included
-    const filteredMemberIds = memberIds.filter(id => id !== currentUserId);
+    const filteredMemberIds = memberIds.filter((id) => id !== currentUserId);
 
     const users = await User.findAll({
       where: {
         id: { [Op.in]: filteredMemberIds },
-        is_active: true
+        is_active: true,
       },
-      attributes: ['id', 'name', 'email', 'avatar_url', 'is_online']
+      attributes: ["id", "name", "email", "avatar_url", "is_online"],
     });
 
-    const validMemberIds = users.map(user => user.id);
-    const invalidMemberIds = filteredMemberIds.filter(id => !validMemberIds.includes(id));
+    const validMemberIds = users.map((user) => user.id);
+    const invalidMemberIds = filteredMemberIds.filter(
+      (id) => !validMemberIds.includes(id)
+    );
 
     res.json({
       success: true,
       data: {
         validMembers: users,
-        invalidMembers: invalidMemberIds
-      }
+        invalidMembers: invalidMemberIds,
+      },
     });
   } catch (error) {
-    console.error('Error validating members:', error);
+    console.error("Error validating members:", error);
     res.status(500).json({
       success: false,
-      message: 'Error validating members'
+      message: "Error validating members",
     });
   }
 };
@@ -589,5 +764,7 @@ module.exports = {
   getRoomMembers,
   searchUsers,
   getOnlineUsers,
-  validateRoomMembers
+  validateRoomMembers,
+  uploadChatFile,
+  chatUpload,
 };
