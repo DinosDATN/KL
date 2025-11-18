@@ -139,36 +139,41 @@ export class AppNotificationService implements OnDestroy {
       url += '&unreadOnly=true';
     }
 
-    return this.http.get<{success: boolean, data: {notifications: AppNotification[], totalCount: number}}>(url)
-      .pipe(
-        map(response => response.data.notifications),
-        tap(notifications => {
-          if (page === 1) {
-            this.notificationsSubject.next(notifications);
-          } else {
-            const current = this.notificationsSubject.value;
-            this.notificationsSubject.next([...current, ...notifications]);
-          }
-        })
-      );
+    return this.http.get<{success: boolean, data: {notifications: AppNotification[], totalCount: number}}>(
+      url,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data.notifications),
+      tap(notifications => {
+        if (page === 1) {
+          this.notificationsSubject.next(notifications);
+        } else {
+          const current = this.notificationsSubject.value;
+          this.notificationsSubject.next([...current, ...notifications]);
+        }
+      })
+    );
   }
 
   // Load unread count
   loadUnreadCount(): Observable<number> {
-    return this.http.get<{success: boolean, data: {count: number}}>(`${this.apiUrl}/notifications/unread-count`)
-      .pipe(
-        map(response => response.data.count),
-        tap(count => {
-          this.unreadCountSubject.next(count);
-        })
-      );
+    return this.http.get<{success: boolean, data: {count: number}}>(
+      `${this.apiUrl}/notifications/unread-count`,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data.count),
+      tap(count => {
+        this.unreadCountSubject.next(count);
+      })
+    );
   }
 
   // Mark notification as read
   markAsRead(notificationId: number): Observable<AppNotification> {
     return this.http.put<{success: boolean, data: AppNotification}>(
       `${this.apiUrl}/notifications/${notificationId}/read`,
-      {}
+      {},
+      { withCredentials: true } // ✅ Send HttpOnly cookie
     ).pipe(
       map(response => response.data),
       tap(() => {
@@ -190,7 +195,8 @@ export class AppNotificationService implements OnDestroy {
   markAllAsRead(): Observable<{updatedCount: number}> {
     return this.http.put<{success: boolean, data: {updatedCount: number}}>(
       `${this.apiUrl}/notifications/read-all`,
-      {}
+      {},
+      { withCredentials: true } // ✅ Send HttpOnly cookie
     ).pipe(
       map(response => response.data),
       tap(() => {
@@ -208,7 +214,8 @@ export class AppNotificationService implements OnDestroy {
   // Delete notification
   deleteNotification(notificationId: number): Observable<void> {
     return this.http.delete<{success: boolean}>(
-      `${this.apiUrl}/notifications/${notificationId}`
+      `${this.apiUrl}/notifications/${notificationId}`,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
     ).pipe(
       map(() => void 0),
       tap(() => {

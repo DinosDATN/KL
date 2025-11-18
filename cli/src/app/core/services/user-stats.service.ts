@@ -70,7 +70,10 @@ export class UserStatsService {
    * Get reward points
    */
   getRewardPoints(): Observable<any> {
-    return this.http.get<any>(`${this.rewardApiUrl}/points`);
+    return this.http.get<any>(
+      `${this.rewardApiUrl}/points`,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    );
   }
 
   /**

@@ -124,11 +124,13 @@ export class AdminService {
 
   // Dashboard APIs
   getDashboardStats(): Observable<DashboardStats> {
-    return this.http.get<ApiResponse<DashboardStats>>(`${this.apiUrl}/dashboard/stats`)
-      .pipe(
-        map(response => response.data!),
-        catchError(this.handleError)
-      );
+    return this.http.get<ApiResponse<DashboardStats>>(
+      `${this.apiUrl}/dashboard/stats`,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
   }
 
   // User Management APIs
@@ -142,43 +144,55 @@ export class AdminService {
       }
     });
 
-    return this.http.get<ApiResponse<{ users: AdminUser[], pagination: PaginationInfo }>>(`${this.apiUrl}/users`, { params })
-      .pipe(
-        map(response => response.data!),
-        catchError(this.handleError)
-      );
+    return this.http.get<ApiResponse<{ users: AdminUser[], pagination: PaginationInfo }>>(
+      `${this.apiUrl}/users`, 
+      { params, withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
   }
 
   getUserById(id: number): Observable<AdminUser> {
-    return this.http.get<ApiResponse<AdminUser>>(`${this.apiUrl}/users/${id}`)
-      .pipe(
-        map(response => response.data!),
-        catchError(this.handleError)
-      );
+    return this.http.get<ApiResponse<AdminUser>>(
+      `${this.apiUrl}/users/${id}`,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
   }
 
   updateUserRole(userId: number, role: string): Observable<AdminUser> {
-    return this.http.patch<ApiResponse<AdminUser>>(`${this.apiUrl}/users/${userId}/role`, { role })
-      .pipe(
-        map(response => response.data!),
-        catchError(this.handleError)
-      );
+    return this.http.patch<ApiResponse<AdminUser>>(
+      `${this.apiUrl}/users/${userId}/role`, 
+      { role },
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
   }
 
   toggleUserStatus(userId: number, isActive: boolean): Observable<AdminUser> {
-    return this.http.patch<ApiResponse<AdminUser>>(`${this.apiUrl}/users/${userId}/status`, { is_active: isActive })
-      .pipe(
-        map(response => response.data!),
-        catchError(this.handleError)
-      );
+    return this.http.patch<ApiResponse<AdminUser>>(
+      `${this.apiUrl}/users/${userId}/status`, 
+      { is_active: isActive },
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
   }
 
   getUserStatistics(): Observable<any> {
-    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/users/statistics`)
-      .pipe(
-        map(response => response.data!),
-        catchError(this.handleError)
-      );
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/users/statistics`,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
   }
 
   // Course Management APIs
@@ -192,43 +206,54 @@ export class AdminService {
       }
     });
 
-    return this.http.get<ApiResponse<{ courses: AdminCourse[], pagination: PaginationInfo }>>(`${this.apiUrl}/courses`, { params })
-      .pipe(
-        map(response => response.data!),
-        catchError(this.handleError)
-      );
+    return this.http.get<ApiResponse<{ courses: AdminCourse[], pagination: PaginationInfo }>>(
+      `${this.apiUrl}/courses`, 
+      { params, withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
   }
 
   getCourseById(id: number): Observable<AdminCourse> {
-    return this.http.get<ApiResponse<AdminCourse>>(`${this.apiUrl}/courses/${id}`)
-      .pipe(
-        map(response => response.data!),
-        catchError(this.handleError)
-      );
+    return this.http.get<ApiResponse<AdminCourse>>(
+      `${this.apiUrl}/courses/${id}`,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
   }
 
   updateCourseStatus(courseId: number, status: string): Observable<AdminCourse> {
-    return this.http.patch<ApiResponse<AdminCourse>>(`${this.apiUrl}/courses/${courseId}/status`, { status })
-      .pipe(
-        map(response => response.data!),
-        catchError(this.handleError)
-      );
+    return this.http.patch<ApiResponse<AdminCourse>>(
+      `${this.apiUrl}/courses/${courseId}/status`, 
+      { status },
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
   }
 
   deleteCourse(courseId: number): Observable<void> {
-    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/courses/${courseId}`)
-      .pipe(
-        map(() => void 0),
-        catchError(this.handleError)
-      );
+    return this.http.delete<ApiResponse<void>>(
+      `${this.apiUrl}/courses/${courseId}`,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(() => void 0),
+      catchError(this.handleError)
+    );
   }
 
   getCourseStatistics(): Observable<any> {
-    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/courses/statistics`)
-      .pipe(
-        map(response => response.data!),
-        catchError(this.handleError)
-      );
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/courses/statistics`,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
   }
 
   // Problem Management APIs
@@ -242,19 +267,23 @@ export class AdminService {
       }
     });
 
-    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/problems`, { params })
-      .pipe(
-        map(response => response.data!),
-        catchError(this.handleError)
-      );
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/problems`, 
+      { params, withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
   }
 
   getProblemStatistics(): Observable<any> {
-    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/problems/statistics`)
-      .pipe(
-        map(response => response.data!),
-        catchError(this.handleError)
-      );
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/problems/statistics`,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
   }
 
   // Contest Management APIs
@@ -268,19 +297,23 @@ export class AdminService {
       }
     });
 
-    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/contests`, { params })
-      .pipe(
-        map(response => response.data!),
-        catchError(this.handleError)
-      );
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/contests`, 
+      { params, withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
   }
 
   getContestStatistics(): Observable<any> {
-    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/contests/statistics`)
-      .pipe(
-        map(response => response.data!),
-        catchError(this.handleError)
-      );
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/contests/statistics`,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
   }
 
   // Analytics APIs
@@ -290,11 +323,13 @@ export class AdminService {
       params = params.set('range', dateRange);
     }
 
-    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/analytics/platform`, { params })
-      .pipe(
-        map(response => response.data!),
-        catchError(this.handleError)
-      );
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/analytics/platform`, 
+      { params, withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
   }
 
   getUserEngagementAnalytics(dateRange?: string): Observable<any> {
@@ -303,11 +338,13 @@ export class AdminService {
       params = params.set('range', dateRange);
     }
 
-    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/analytics/engagement`, { params })
-      .pipe(
-        map(response => response.data!),
-        catchError(this.handleError)
-      );
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/analytics/engagement`, 
+      { params, withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
   }
 
   getRevenueReports(dateRange?: string): Observable<any> {
@@ -316,25 +353,27 @@ export class AdminService {
       params = params.set('range', dateRange);
     }
 
-    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/analytics/revenue`, { params })
-      .pipe(
-        map(response => response.data!),
-        catchError(this.handleError)
-      );
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/analytics/revenue`, 
+      { params, withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
   }
 
   // Export APIs
   exportUsers(format: 'csv' | 'json' = 'csv'): Observable<Blob> {
-    return this.http.get(`${this.apiUrl}/users/export?format=${format}`, { 
+    return this.http.get(`${this.apiUrl}/users/export?format=${format}`, {
       responseType: 'blob',
-      observe: 'body'
+      withCredentials: true // ✅ Send HttpOnly cookie
     });
   }
 
   exportCourses(format: 'csv' | 'json' = 'csv'): Observable<Blob> {
-    return this.http.get(`${this.apiUrl}/courses/export?format=${format}`, { 
+    return this.http.get(`${this.apiUrl}/courses/export?format=${format}`, {
       responseType: 'blob',
-      observe: 'body'
+      withCredentials: true // ✅ Send HttpOnly cookie
     });
   }
 

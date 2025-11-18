@@ -417,11 +417,15 @@ export class ProblemsService {
       });
     }
 
-    return this.http.post<{success: boolean, data: any}>(`${this.apiUrl}/problems/execute`, {
-      sourceCode,
-      language,
-      input
-    }).pipe(
+    return this.http.post<{success: boolean, data: any}>(
+      `${this.apiUrl}/problems/execute`, 
+      {
+        sourceCode,
+        language,
+        input
+      },
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
       map(response => response.data),
       catchError(error => {
         console.error('Error executing code:', error);
@@ -451,11 +455,15 @@ export class ProblemsService {
       });
     }
 
-    return this.http.post<{success: boolean, data: any}>(`${this.apiUrl}/problems/${problemId}/submit`, {
-      sourceCode,
-      language,
-      userId
-    }).pipe(
+    return this.http.post<{success: boolean, data: any}>(
+      `${this.apiUrl}/problems/${problemId}/submit`, 
+      {
+        sourceCode,
+        language,
+        userId
+      },
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
       map(response => response.data),
       catchError(error => {
         console.error('Error submitting code:', error);
@@ -479,11 +487,15 @@ export class ProblemsService {
       return this.submitCode(problemId, sourceCode, language, userId);
     }
 
-    return this.http.post<{success: boolean, data: any}>(`${this.apiUrl}/problems/${problemId}/batch-submit`, {
-      sourceCode,
-      language,
-      userId
-    }).pipe(
+    return this.http.post<{success: boolean, data: any}>(
+      `${this.apiUrl}/problems/${problemId}/batch-submit`, 
+      {
+        sourceCode,
+        language,
+        userId
+      },
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
       map(response => response.data),
       catchError(error => {
         console.error('Error in batch submit:', error);
@@ -499,12 +511,16 @@ export class ProblemsService {
       return of({ token: 'MOCK_TOKEN_' + Date.now(), message: 'Mock submission created' });
     }
 
-    return this.http.post<{success: boolean, data: {token: string, message: string}}>(`${this.apiUrl}/problems/async-submit`, {
-      sourceCode,
-      language,
-      input,
-      expectedOutput
-    }).pipe(
+    return this.http.post<{success: boolean, data: {token: string, message: string}}>(
+      `${this.apiUrl}/problems/async-submit`, 
+      {
+        sourceCode,
+        language,
+        input,
+        expectedOutput
+      },
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
       map(response => response.data),
       catchError(error => {
         console.error('Error creating async submission:', error);
@@ -519,9 +535,13 @@ export class ProblemsService {
       return of({ token, formattedResult: { success: true, stdout: 'Mock result' } });
     }
 
-    return this.http.get<{success: boolean, data: any}>(`${this.apiUrl}/problems/submission/${token}`, {
-      params: { base64_encoded: base64Encoded.toString() }
-    }).pipe(
+    return this.http.get<{success: boolean, data: any}>(
+      `${this.apiUrl}/problems/submission/${token}`, 
+      {
+        params: { base64_encoded: base64Encoded.toString() },
+        withCredentials: true // ✅ Send HttpOnly cookie
+      }
+    ).pipe(
       map(response => response.data),
       catchError(error => {
         console.error('Error getting submission result:', error);
@@ -606,7 +626,8 @@ export class ProblemsService {
     }
 
     return this.http.get<{success: boolean, data: any[], pagination: any}>(
-      `${this.apiUrl}/problems/dashboard/submissions`, { params }
+      `${this.apiUrl}/problems/dashboard/submissions`, 
+      { params, withCredentials: true } // ✅ Send HttpOnly cookie
     ).pipe(
       map(response => response),
       catchError(error => {
@@ -641,7 +662,8 @@ export class ProblemsService {
     }
 
     return this.http.get<{success: boolean, data: any}>(
-      `${this.apiUrl}/problems/dashboard/stats`, { params }
+      `${this.apiUrl}/problems/dashboard/stats`, 
+      { params, withCredentials: true } // ✅ Send HttpOnly cookie
     ).pipe(
       map(response => response.data),
       catchError(error => {
@@ -718,7 +740,8 @@ export class ProblemsService {
       {
         sourceCode,
         language
-      }
+      },
+      { withCredentials: true } // ✅ Send HttpOnly cookie
     ).pipe(
       map(response => response.data),
       catchError(error => {

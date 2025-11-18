@@ -150,7 +150,8 @@ export class SubmissionService {
     });
 
     return this.http.get<{ success: boolean; data: PaginatedSubmissions }>(
-      `${this.apiUrl}/user/${userId}`, { params }
+      `${this.apiUrl}/user/${userId}`, 
+      { params, withCredentials: true } // ✅ Send HttpOnly cookie
     ).pipe(
       map(response => response.data),
       tap(data => {
@@ -177,7 +178,8 @@ export class SubmissionService {
     });
 
     return this.http.get<{ success: boolean; data: SubmissionStats }>(
-      `${this.apiUrl}/stats`, { params }
+      `${this.apiUrl}/stats`, 
+      { params, withCredentials: true } // ✅ Send HttpOnly cookie
     ).pipe(
       map(response => response.data)
     );

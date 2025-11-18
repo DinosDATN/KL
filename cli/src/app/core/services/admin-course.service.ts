@@ -112,7 +112,10 @@ export class AdminCourseService {
       }
     });
 
-    return this.http.get<PaginatedResponse<AdminCourse>>(this.apiUrl, { params });
+    return this.http.get<PaginatedResponse<AdminCourse>>(this.apiUrl, { 
+      params,
+      withCredentials: true // ✅ Send HttpOnly cookie
+    });
   }
 
   /**
@@ -124,56 +127,73 @@ export class AdminCourseService {
       params = params.set('include_deleted', 'true');
     }
 
-    return this.http.get<ApiResponse<AdminCourse>>(`${this.apiUrl}/${id}`, { params });
+    return this.http.get<ApiResponse<AdminCourse>>(`${this.apiUrl}/${id}`, { 
+      params,
+      withCredentials: true // ✅ Send HttpOnly cookie
+    });
   }
 
   /**
    * Create a new course
    */
   createCourse(courseData: Partial<AdminCourse>): Observable<ApiResponse<AdminCourse>> {
-    return this.http.post<ApiResponse<AdminCourse>>(this.apiUrl, courseData);
+    return this.http.post<ApiResponse<AdminCourse>>(this.apiUrl, courseData, {
+      withCredentials: true // ✅ Send HttpOnly cookie
+    });
   }
 
   /**
    * Update a course
    */
   updateCourse(id: number, courseData: Partial<AdminCourse>): Observable<ApiResponse<AdminCourse>> {
-    return this.http.put<ApiResponse<AdminCourse>>(`${this.apiUrl}/${id}`, courseData);
+    return this.http.put<ApiResponse<AdminCourse>>(`${this.apiUrl}/${id}`, courseData, {
+      withCredentials: true // ✅ Send HttpOnly cookie
+    });
   }
 
   /**
    * Delete a course (soft delete)
    */
   deleteCourse(id: number): Observable<ApiResponse<void>> {
-    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${id}`);
+    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${id}`, {
+      withCredentials: true // ✅ Send HttpOnly cookie
+    });
   }
 
   /**
    * Permanently delete a course
    */
   permanentlyDeleteCourse(id: number): Observable<ApiResponse<void>> {
-    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${id}/permanent`);
+    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${id}/permanent`, {
+      withCredentials: true // ✅ Send HttpOnly cookie
+    });
   }
 
   /**
    * Restore a deleted course
    */
   restoreCourse(id: number): Observable<ApiResponse<AdminCourse>> {
-    return this.http.post<ApiResponse<AdminCourse>>(`${this.apiUrl}/${id}/restore`, {});
+    return this.http.post<ApiResponse<AdminCourse>>(`${this.apiUrl}/${id}/restore`, {}, {
+      withCredentials: true // ✅ Send HttpOnly cookie
+    });
   }
 
   /**
    * Update course status
    */
   updateCourseStatus(id: number, status: string): Observable<ApiResponse<AdminCourse>> {
-    return this.http.patch<ApiResponse<AdminCourse>>(`${this.apiUrl}/${id}/status`, { status });
+    return this.http.patch<ApiResponse<AdminCourse>>(`${this.apiUrl}/${id}/status`, { status }, {
+      withCredentials: true // ✅ Send HttpOnly cookie
+    });
   }
 
   /**
    * Get course statistics
    */
   getCourseStatistics(): Observable<ApiResponse<CourseStats>> {
-    return this.http.get<ApiResponse<CourseStats>>(`${this.apiUrl}/statistics`);
+    return this.http.get<ApiResponse<CourseStats>>(`${this.apiUrl}/statistics`, {
+      withCredentials: true // ✅ Send HttpOnly cookie
+    });
   }
 
   /**
@@ -189,7 +209,10 @@ export class AdminCourseService {
       }
     });
 
-    return this.http.get<PaginatedResponse<AdminCourse>>(`${this.apiUrl}/deleted`, { params });
+    return this.http.get<PaginatedResponse<AdminCourse>>(`${this.apiUrl}/deleted`, { 
+      params,
+      withCredentials: true // ✅ Send HttpOnly cookie
+    });
   }
 
   /**
@@ -199,6 +222,8 @@ export class AdminCourseService {
     return this.http.patch<ApiResponse<any>>(`${this.apiUrl}/bulk/update`, {
       course_ids: courseIds,
       update_data: updateData
+    }, {
+      withCredentials: true // ✅ Send HttpOnly cookie
     });
   }
 
@@ -209,6 +234,8 @@ export class AdminCourseService {
     return this.http.post<ApiResponse<any>>(`${this.apiUrl}/bulk/delete`, {
       course_ids: courseIds,
       permanent
+    }, {
+      withCredentials: true // ✅ Send HttpOnly cookie
     });
   }
 
@@ -218,6 +245,8 @@ export class AdminCourseService {
   bulkRestoreCourses(courseIds: number[]): Observable<ApiResponse<any>> {
     return this.http.post<ApiResponse<any>>(`${this.apiUrl}/bulk/restore`, {
       course_ids: courseIds
+    }, {
+      withCredentials: true // ✅ Send HttpOnly cookie
     });
   }
 
@@ -234,7 +263,8 @@ export class AdminCourseService {
 
     return this.http.get(`${this.apiUrl}/export`, {
       params,
-      responseType: 'blob'
+      responseType: 'blob',
+      withCredentials: true // ✅ Send HttpOnly cookie
     });
   }
 
