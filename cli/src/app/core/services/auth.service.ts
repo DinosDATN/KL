@@ -45,12 +45,16 @@ export class AuthService {
   public authInitialized$ = this.authInitialized.asObservable();
 
   constructor(private http: HttpClient) {
-    // Delay initialization để đảm bảo localStorage sẵn sàng sau SSR hydration
-    if (typeof window !== 'undefined') {
-      setTimeout(() => {
-        this.initializeAuthState();
-      }, 0);
+    // In SSR, mark as initialized immediately without checking auth
+    if (typeof window === 'undefined') {
+      this.authInitialized.next(true);
+      return;
     }
+
+    // In browser, delay initialization to ensure localStorage is ready after hydration
+    setTimeout(() => {
+      this.initializeAuthState();
+    }, 0);
   }
 
   /**

@@ -1,4 +1,5 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, PLATFORM_ID, Inject } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { Subject, takeUntil, filter, take, switchMap } from 'rxjs';
 import { ChatAiWidgetComponent } from './shared/components/chat-ai-widget/chat-ai-widget.component';
@@ -22,10 +23,19 @@ export class AppComponent implements OnInit, OnDestroy {
   constructor(
     private authService: AuthService,
     private socketService: SocketService,
-    private appNotificationService: AppNotificationService
+    private appNotificationService: AppNotificationService,
+    @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
   ngOnInit(): void {
+    // Mark as hydrated to enable animations
+    if (isPlatformBrowser(this.platformId)) {
+      // Use setTimeout to ensure this runs after initial render
+      setTimeout(() => {
+        document.documentElement.classList.add('hydrated');
+      }, 0);
+    }
+
     // Wait for auth initialization, then listen to user changes
     this.authService.authInitialized$
       .pipe(

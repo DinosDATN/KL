@@ -259,49 +259,60 @@
             <div class="hidden md:block w-20 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
           </div>
 
-          <!-- Authenticated User -->
-          <button
-            *ngIf="authLoaded && isAuthenticated"
-            (click)="toggleUserMenu()"
-            class="flex items-center gap-2 p-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
-            <img
-              [src]="
-                currentUser?.avatar_url ||
-                'https://ui-avatars.com/api/?name=' +
-                  (currentUser?.name | slice : 0 : 2) +
-                  '&background=3b82f6&color=ffffff'
-              "
-              [alt]="currentUser?.name || 'User'"
-              class="w-8 h-8 rounded-full"
-            />
-            <span
-              class="hidden md:block text-gray-700 dark:text-gray-300 font-medium"
-              >{{ currentUser?.name }}</span
+          <!-- User Menu Section -->
+          <ng-container *ngIf="authLoaded; else userSkeleton">
+            <!-- Authenticated User -->
+            <button
+              *ngIf="isAuthenticated"
+              (click)="toggleUserMenu()"
+              class="flex items-center gap-2 p-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             >
-            <i
-              class="icon-chevron-down text-gray-400 dark:text-gray-500 ml-1"
-            ></i>
-          </button>
+              <img
+                [src]="
+                  currentUser?.avatar_url ||
+                  'https://ui-avatars.com/api/?name=' +
+                    (currentUser?.name | slice : 0 : 2) +
+                    '&background=3b82f6&color=ffffff'
+                "
+                [alt]="currentUser?.name || 'User'"
+                class="w-8 h-8 rounded-full"
+              />
+              <span
+                class="hidden md:block text-gray-700 dark:text-gray-300 font-medium"
+                >{{ currentUser?.name }}</span
+              >
+              <i
+                class="icon-chevron-down text-gray-400 dark:text-gray-500 ml-1"
+              ></i>
+            </button>
 
-          <!-- Login/Register buttons when not authenticated -->
-          <div
-            *ngIf="authLoaded && !isAuthenticated"
-            class="flex items-center gap-2"
-          >
-            <a
-              routerLink="/auth/login"
-              class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+            <!-- Login/Register buttons when not authenticated -->
+            <div
+              *ngIf="!isAuthenticated"
+              class="flex items-center gap-2"
             >
-              Đăng nhập
-            </a>
-            <a
-              routerLink="/auth/register"
-              class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-            >
-              Đăng ký
-            </a>
-          </div>
+              <a
+                routerLink="/auth/login"
+                class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+              >
+                Đăng nhập
+              </a>
+              <a
+                routerLink="/auth/register"
+                class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+              >
+                Đăng ký
+              </a>
+            </div>
+          </ng-container>
+
+          <!-- Skeleton Loading State -->
+          <ng-template #userSkeleton>
+            <div class="flex items-center gap-2 p-2">
+              <div class="skeleton skeleton-avatar"></div>
+              <div class="hidden md:block skeleton skeleton-text"></div>
+            </div>
+          </ng-template>
 
           <!-- User Dropdown + Overlay -->
           <ng-container *ngIf="isUserMenuOpen && isAuthenticated">
