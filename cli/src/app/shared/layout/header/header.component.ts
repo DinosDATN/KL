@@ -97,30 +97,27 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     private notificationService: NotificationService,
     private userStatsService: UserStatsService
   ) {
-    // Subscribe to auth initialization status
+    // Wait for auth initialization before subscribing to user changes
     this.authInitSubscription = this.authService.authInitialized$.subscribe((initialized) => {
       if (initialized) {
-        console.log('✅ Auth initialized, updating header state');
         this.authLoaded = true;
-      }
-    });
+        
+        // Now subscribe to user changes after auth is initialized
+        if (!this.authSubscription) {
+          this.authSubscription = this.authService.currentUser$.subscribe((user) => {
+            this.currentUser = user;
+            this.isAuthenticated = !!user;
+            this.updateUserMenuItems();
 
-    // Subscribe to authentication state changes
-    this.authSubscription = this.authService.currentUser$.subscribe((user) => {
-      console.log('👤 Auth state changed in header:', { user: user?.name, isAuth: !!user });
-      this.currentUser = user;
-      this.isAuthenticated = !!user;
-
-      // Update user menu items based on authentication state
-      this.updateUserMenuItems();
-
-      // Subscribe to notifications and stats if authenticated
-      if (user) {
-        this.subscribeToNotifications();
-        this.loadUserStats();
-      } else {
-        this.unsubscribeFromNotifications();
-        this.clearUserStats();
+            if (user) {
+              this.subscribeToNotifications();
+              this.loadUserStats();
+            } else {
+              this.unsubscribeFromNotifications();
+              this.clearUserStats();
+            }
+          });
+        }
       }
     });
   }

@@ -10,7 +10,7 @@ import { PLATFORM_ID, Inject } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, filter, take, switchMap } from 'rxjs';
 
 // Models
 import {
@@ -106,21 +106,19 @@ export class ChatComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
-    // Get current user from auth service
-    this.currentUser = this.authService.getCurrentUser();
-
-    // Subscribe to authentication state changes
-    this.authService.currentUser$
-      .pipe(takeUntil(this.destroy$))
+    // Wait for auth initialization before subscribing
+    this.authService.authInitialized$
+      .pipe(
+        filter(initialized => initialized === true),
+        take(1),
+        switchMap(() => this.authService.currentUser$),
+        takeUntil(this.destroy$)
+      )
       .subscribe((user) => {
         this.currentUser = user;
         if (user) {
-          console.log('✅ Chat: User authenticated:', user.name);
-          // Initialize chat when user becomes available
           this.initializeChat();
         } else {
-          console.log('🔑 Chat: User not authenticated');
-          // Clear chat data when user logs out
           this.clearChatData();
         }
       });
@@ -130,11 +128,6 @@ export class ChatComponent implements OnInit, OnDestroy {
     this.checkScreenSize();
     if (isPlatformBrowser(this.platformId)) {
       window.addEventListener('resize', this.onResize.bind(this));
-    }
-
-    // Initialize chat if user is already authenticated
-    if (this.currentUser) {
-      this.initializeChat();
     }
   }
 
