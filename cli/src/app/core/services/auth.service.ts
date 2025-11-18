@@ -57,39 +57,31 @@ export class AuthService {
    * Initialize authentication state from localStorage and verify with server
    */
   private initializeAuthState(): void {
-    console.log('🔧 Initializing auth state...');
-    
     const user = this.getUserFromStorage();
     
-    console.log('📊 Auth state check:', {
-      hasUser: !!user,
-      userName: user?.name
-    });
-    
     if (user) {
-      console.log('✅ User data found in localStorage, verifying with server...');
-      
-      // ✅ Verify session with server (cookie will be sent automatically)
+      // Verify session with server (HttpOnly cookie will be sent automatically)
       this.getProfile().subscribe({
         next: (response) => {
-          console.log('✅ Session verified, user authenticated');
+          if (environment.enableLogging) {
+            console.log('[Auth] Session verified:', response.data.user.name);
+          }
           this.currentUserSubject.next(response.data.user);
           this.isAuthenticatedSubject.next(true);
           this.authInitialized.next(true);
         },
-        error: (error) => {
-          console.log('❌ Session verification failed, clearing auth data');
+        error: () => {
+          if (environment.enableLogging) {
+            console.warn('[Auth] Session expired, clearing data');
+          }
           this.clearAuthData();
           this.authInitialized.next(true);
         }
       });
     } else {
-      console.log('❌ No user data found, clearing session');
-      this.clearAuthData();
+      // No user data, mark as initialized
       this.authInitialized.next(true);
     }
-    
-    console.log('✅ Auth initialization complete');
   }
 
   /**
@@ -182,40 +174,42 @@ export class AuthService {
   }
 
   /**
-   * ❌ DEPRECATED: Token is now in HttpOnly cookie
+   * @deprecated Token is now in HttpOnly cookie
    * Kept for backward compatibility but returns null
    */
   getToken(): string | null {
-    console.warn('⚠️ getToken() is deprecated. Token is now in HttpOnly cookie.');
+    if (environment.enableLogging) {
+      console.warn('[Auth] getToken() is deprecated. Token is in HttpOnly cookie.');
+    }
     return null;
   }
 
   /**
-   * Set user data (for OAuth callback)
+   * Set user data (for OAuth callback or login)
    * Token is already set in HttpOnly cookie by backend
    */
   setUserData(user: User): void {
-    console.log('🔐 Setting user data:', { userName: user.name });
-    
     if (typeof window !== 'undefined') {
       localStorage.setItem(this.USER_KEY, JSON.stringify(user));
-      console.log('✅ User data saved to localStorage');
     }
     
     this.currentUserSubject.next(user);
     this.isAuthenticatedSubject.next(true);
     
-    console.log('✅ Auth state updated');
+    if (environment.enableLogging) {
+      console.log('[Auth] User authenticated:', user.name);
+    }
   }
 
   /**
-   * Update user data
+   * Update user data (sync with server)
    */
   private updateUserData(user: User): void {
     if (typeof window !== 'undefined') {
       localStorage.setItem(this.USER_KEY, JSON.stringify(user));
     }
     this.currentUserSubject.next(user);
+    this.isAuthenticatedSubject.next(true);
   }
 
   /**
@@ -270,14 +264,16 @@ export class AuthService {
    * Handle HTTP errors
    */
   private handleError = (error: HttpErrorResponse): Observable<never> => {
-    console.error('Authentication error:', error);
+    if (environment.enableLogging) {
+      console.error('[Auth] Error:', error.status, error.message);
+    }
     
     // If unauthorized, clear auth data
     if (error.status === 401) {
       this.clearAuthData();
     }
 
-    // Return user-friendly error
+    // Extract user-friendly error message
     let errorMessage = 'An unexpected error occurred';
     
     if (error.error) {
@@ -286,7 +282,6 @@ export class AuthService {
       } else if (error.error.message) {
         errorMessage = error.error.message;
       } else if (error.error.errors) {
-        // Handle validation errors
         const errors = error.error.errors;
         const errorMessages = Object.values(errors).filter(Boolean);
         if (errorMessages.length > 0) {

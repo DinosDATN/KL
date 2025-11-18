@@ -1,10 +1,11 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { Subject, takeUntil, filter, take, switchMap, pairwise } from 'rxjs';
+import { Subject, takeUntil, filter, take, switchMap } from 'rxjs';
 import { ChatAiWidgetComponent } from './shared/components/chat-ai-widget/chat-ai-widget.component';
 import { AuthService } from './core/services/auth.service';
 import { SocketService } from './core/services/socket.service';
 import { AppNotificationService } from './core/services/app-notification.service';
+import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
@@ -25,47 +26,28 @@ export class AppComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    console.log('🚀 App component initialized');
-    
-    // ✅ Đợi auth initialized trước, sau đó mới listen currentUser$
-    // Điều này đảm bảo AuthService đã verify session với server (qua HttpOnly cookie)
+    // Wait for auth initialization, then listen to user changes
     this.authService.authInitialized$
       .pipe(
-        takeUntil(this.destroy$),
         filter(initialized => initialized === true),
         take(1),
-        switchMap(() => this.authService.currentUser$)
+        switchMap(() => this.authService.currentUser$),
+        takeUntil(this.destroy$)
       )
       .subscribe((user) => {
-        if (user) {
-          console.log('✅ User authenticated (after auth initialized), initializing app');
+        if (user && !this.isAppInitialized) {
+          // User logged in, initialize app
+          if (environment.enableLogging) {
+            console.log('[App] User authenticated, initializing...');
+          }
           this.initializeApp();
-        } else {
-          console.log('ℹ️ No user after auth initialized');
+        } else if (!user && this.isAppInitialized) {
+          // User logged out, cleanup
+          if (environment.enableLogging) {
+            console.log('[App] User logged out, cleaning up...');
+          }
+          this.cleanup();
         }
-      });
-
-    // ✅ Riêng biệt: Listen logout events
-    this.authService.currentUser$
-      .pipe(
-        takeUntil(this.destroy$),
-        pairwise() // Lấy [previous, current] value
-      )
-      .subscribe(([prevUser, currentUser]) => {
-        // Chỉ cleanup khi user logout (từ có user → không có user)
-        if (prevUser && !currentUser) {
-          console.log('❌ User logged out, cleaning up');
-          this.isAppInitialized = false;
-          this.socketService.disconnect();
-          this.appNotificationService.clearData();
-        }
-      });
-
-    // Log socket connection status
-    this.socketService.isConnected$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((connected) => {
-        console.log(`🔌 Socket connection status: ${connected ? 'CONNECTED' : 'DISCONNECTED'}`);
       });
   }
 
@@ -76,71 +58,47 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private initializeApp(): void {
     const user = this.authService.getCurrentUser();
+    if (!user) return;
 
-    console.log('🔧 Initializing app...', { 
-      hasUser: !!user,
-      userName: user?.name,
-      alreadyInitialized: this.isAppInitialized
-    });
-
-    if (!user) {
-      console.log('⚠️ Cannot initialize app: missing user');
-      this.isAppInitialized = false;
-      return;
-    }
-
-    // ✅ Prevent duplicate initialization
-    if (this.isAppInitialized) {
-      console.log('ℹ️ App already initialized, skipping');
-      return;
-    }
-
-    // ✅ Token is in HttpOnly cookie, Socket.IO will send it automatically
-    // Initialize socket connection
-    if (!this.socketService.isConnected()) {
-      console.log('🚀 Initializing socket connection from app component');
-      console.log(`👤 User: ${user.name} (ID: ${user.id})`);
-      console.log('🍪 Socket.IO will use HttpOnly cookie for authentication');
-      
-      // ✅ Pass empty string as token - cookie will be sent automatically
-      this.socketService.connect('', user);
-      
-      // Wait a bit for socket to connect before loading notifications
-      setTimeout(() => {
-        this.loadNotifications();
-      }, 500);
-    } else {
-      console.log('✅ Socket already connected, loading notifications');
+    // Connect socket (HttpOnly cookie sent automatically)
+    this.socketService.connect('', user);
+    
+    // Load notifications after socket connects
+    setTimeout(() => {
       this.loadNotifications();
-    }
+    }, 500);
 
-    // Mark as initialized
     this.isAppInitialized = true;
+    
+    if (environment.enableLogging) {
+      console.log('[App] Initialized for user:', user.name);
+    }
+  }
+
+  private cleanup(): void {
+    this.isAppInitialized = false;
+    this.socketService.disconnect();
+    this.appNotificationService.clearData();
   }
 
   private loadNotifications(): void {
-    // Load notifications
-    console.log('📬 Loading notifications');
     this.appNotificationService.loadNotifications()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (notifications) => {
-          console.log(`✅ Loaded ${notifications.length} notifications`);
-        },
         error: (error) => {
-          console.error('❌ Error loading notifications:', error);
+          if (environment.enableLogging) {
+            console.error('[App] Failed to load notifications:', error);
+          }
         }
       });
 
-    // Load unread count
     this.appNotificationService.loadUnreadCount()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (count) => {
-          console.log(`📊 Unread notifications: ${count}`);
-        },
         error: (error) => {
-          console.error('❌ Error loading unread count:', error);
+          if (environment.enableLogging) {
+            console.error('[App] Failed to load unread count:', error);
+          }
         }
       });
   }

@@ -3,6 +3,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, Router, UrlTree } from '@angular/router';
 import { Observable, map, take, filter, switchMap, timeout, catchError, of } from 'rxjs';
 import { AuthService } from '../services/auth.service';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -20,19 +21,18 @@ export class AuthGuard implements CanActivate {
     state: RouterStateSnapshot
   ): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
     
-    // ✅ In SSR, allow rendering (auth will be checked on client side)
     if (!isPlatformBrowser(this.platformId)) {
-      return true;
+      return true; // SSR: allow rendering, auth checked on client
     }
     
-    // ✅ Wait for auth to be initialized before checking authentication
     return this.authService.authInitialized$.pipe(
-      filter(initialized => initialized === true), // Wait until initialized
+      filter(initialized => initialized === true),
       take(1),
-      timeout(5000), // Timeout after 5 seconds to prevent hanging
+      timeout(5000),
       catchError(() => {
-        // If timeout or error, treat as not authenticated
-        console.warn('Auth initialization timeout, redirecting to login');
+        if (environment.enableLogging) {
+          console.warn('[AuthGuard] Timeout, redirecting to login');
+        }
         return of(false);
       }),
       switchMap(() => this.authService.isAuthenticated$),
@@ -40,14 +40,11 @@ export class AuthGuard implements CanActivate {
       map((isAuthenticated: boolean) => {
         if (isAuthenticated) {
           return true;
-        } else {
-          // Store the attempted URL for redirecting after login
-          const redirectUrl = state.url;
-          this.router.navigate(['/auth/login'], { 
-            queryParams: { returnUrl: redirectUrl }
-          });
-          return false;
         }
+        this.router.navigate(['/auth/login'], { 
+          queryParams: { returnUrl: state.url }
+        });
+        return false;
       })
     );
   }
@@ -69,19 +66,18 @@ export class NoAuthGuard implements CanActivate {
     _state: RouterStateSnapshot
   ): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
     
-    // ✅ In SSR, allow rendering (auth will be checked on client side)
     if (!isPlatformBrowser(this.platformId)) {
-      return true;
+      return true; // SSR: allow rendering, auth checked on client
     }
     
-    // ✅ Wait for auth to be initialized before checking authentication
     return this.authService.authInitialized$.pipe(
-      filter(initialized => initialized === true), // Wait until initialized
+      filter(initialized => initialized === true),
       take(1),
-      timeout(5000), // Timeout after 5 seconds to prevent hanging
+      timeout(5000),
       catchError(() => {
-        // If timeout or error, treat as not authenticated
-        console.warn('Auth initialization timeout in NoAuthGuard');
+        if (environment.enableLogging) {
+          console.warn('[NoAuthGuard] Timeout');
+        }
         return of(false);
       }),
       switchMap(() => this.authService.isAuthenticated$),
@@ -89,11 +85,9 @@ export class NoAuthGuard implements CanActivate {
       map((isAuthenticated: boolean) => {
         if (!isAuthenticated) {
           return true;
-        } else {
-          // User is already authenticated, redirect to home
-          this.router.navigate(['/']);
-          return false;
         }
+        this.router.navigate(['/']);
+        return false;
       })
     );
   }
