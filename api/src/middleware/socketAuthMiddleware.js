@@ -13,6 +13,21 @@ const JWTDebugger = require('../utils/jwtDebugger');
  * @returns {string|null} Extracted token or null
  */
 const extractToken = (socket) => {
+  // ✅ Method 0: HttpOnly Cookie (PRIORITY - Most Secure)
+  const cookieHeader = socket.handshake.headers?.cookie;
+  if (cookieHeader) {
+    const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
+      const [key, value] = cookie.trim().split('=');
+      acc[key] = value;
+      return acc;
+    }, {});
+    
+    if (cookies.auth_token) {
+      console.log('🍪 Token found in HttpOnly cookie');
+      return cookies.auth_token;
+    }
+  }
+  
   const tokenSources = [
     // Method 1: auth.token (most common for Socket.IO)
     socket.handshake.auth?.token,

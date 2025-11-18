@@ -144,7 +144,7 @@ export class CoursesService {
   getCourseModules(courseId: number): Observable<CourseModule[]> {
     return this.http.get<ApiResponse<CourseModule[]>>(
       `${this.apiUrl}/courses/${courseId}/modules`,
-      { headers: this.getAuthHeaders() }
+      { withCredentials: true } // ✅ Send HttpOnly cookie
     ).pipe(
       timeout(environment.apiTimeout),
       retry(2),
@@ -157,7 +157,7 @@ export class CoursesService {
   getCourseLessons(courseId: number): Observable<CourseLesson[]> {
     return this.http.get<ApiResponse<CourseLesson[]>>(
       `${this.apiUrl}/courses/${courseId}/lessons`,
-      { headers: this.getAuthHeaders() }
+      { withCredentials: true } // ✅ Send HttpOnly cookie
     ).pipe(
       timeout(environment.apiTimeout),
       retry(2),
@@ -170,7 +170,7 @@ export class CoursesService {
   getLessonById(lessonId: number): Observable<CourseLesson> {
     return this.http.get<ApiResponse<CourseLesson>>(
       `${this.apiUrl}/courses/lessons/${lessonId}`,
-      { headers: this.getAuthHeaders() }
+      { withCredentials: true } // ✅ Send HttpOnly cookie
     ).pipe(
       timeout(environment.apiTimeout),
       retry(2),
@@ -227,7 +227,7 @@ export class CoursesService {
     return this.http.post<ApiResponse<any>>(
       `${this.apiUrl}/course-enrollments/${courseId}/enroll`,
       {},
-      { headers: this.getAuthHeaders() }
+      { withCredentials: true } // ✅ Send HttpOnly cookie
     ).pipe(
       timeout(environment.apiTimeout),
       map(response => response),
@@ -241,7 +241,7 @@ export class CoursesService {
   checkEnrollment(courseId: number): Observable<any> {
     return this.http.get<ApiResponse<any>>(
       `${this.apiUrl}/course-enrollments/${courseId}/check`,
-      { headers: this.getAuthHeaders() }
+      { withCredentials: true } // ✅ Send HttpOnly cookie
     ).pipe(
       timeout(environment.apiTimeout),
       map(response => response),
@@ -260,7 +260,7 @@ export class CoursesService {
     
     return this.http.get<ApiResponse<any>>(
       `${this.apiUrl}/course-enrollments/my-enrollments`,
-      { params, headers: this.getAuthHeaders() }
+      { params, withCredentials: true } // ✅ Send HttpOnly cookie
     ).pipe(
       timeout(environment.apiTimeout),
       map(response => response),
@@ -274,7 +274,7 @@ export class CoursesService {
   getCourseProgress(courseId: number): Observable<any> {
     return this.http.get<ApiResponse<any>>(
       `${this.apiUrl}/course-enrollments/${courseId}/progress`,
-      { headers: this.getAuthHeaders() }
+      { withCredentials: true } // ✅ Send HttpOnly cookie
     ).pipe(
       timeout(environment.apiTimeout),
       map(response => response),
@@ -289,7 +289,7 @@ export class CoursesService {
     return this.http.post<ApiResponse<any>>(
       `${this.apiUrl}/course-enrollments/${courseId}/lessons/${lessonId}/complete`,
       { timeSpent },
-      { headers: this.getAuthHeaders() }
+      { withCredentials: true } // ✅ Send HttpOnly cookie
     ).pipe(
       timeout(environment.apiTimeout),
       map(response => response),
@@ -303,7 +303,7 @@ export class CoursesService {
   getLearningDashboard(): Observable<any> {
     return this.http.get<ApiResponse<any>>(
       `${this.apiUrl}/course-enrollments/dashboard`,
-      { headers: this.getAuthHeaders() }
+      { withCredentials: true } // ✅ Send HttpOnly cookie
     ).pipe(
       timeout(environment.apiTimeout),
       map(response => response),
@@ -311,20 +311,7 @@ export class CoursesService {
     );
   }
 
-  /**
-   * ❌ DEPRECATED: No longer need auth headers
-   * Token is sent automatically via HttpOnly cookie
-   * Kept for backward compatibility
-   */
-  private getAuthHeaders(): any {
-    if (environment.enableLogging) {
-      console.log('[CoursesService] Auth headers not needed - using HttpOnly cookies');
-    }
-    
-    return {
-      'Content-Type': 'application/json'
-    };
-  }
+
 
   // Private helper methods
   private handleSuccessResponse<T>(response: ApiResponse<T>): T {

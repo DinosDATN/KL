@@ -59,14 +59,14 @@ export class AppComponent implements OnInit {
     });
 
     if (user) {
-      // ✅ Token is in HttpOnly cookie, we just need user data
+      // ✅ Token is in HttpOnly cookie, Socket.IO will send it automatically
       // Initialize socket connection
       if (!this.socketService.isConnected()) {
         console.log('🚀 Initializing socket connection from app component');
         console.log(`👤 User: ${user.name} (ID: ${user.id})`);
+        console.log('🍪 Socket.IO will use HttpOnly cookie for authentication');
         
-        // ⚠️ Socket.IO needs token - we'll need to update socket connection
-        // For now, pass empty string as token (socket will use cookie)
+        // ✅ Pass empty string as token - cookie will be sent automatically
         this.socketService.connect('', user);
         
         // Wait a bit for socket to connect before loading notifications

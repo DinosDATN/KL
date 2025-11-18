@@ -245,6 +245,7 @@ export const routes: Routes = [
           import(
             './features/courses/lesson-learning/lesson-learning.component'
           ).then((m) => m.LessonLearningComponent),
+        canActivate: [AuthGuard], // ✅ Require authentication
       },
       {
         path: 'about',

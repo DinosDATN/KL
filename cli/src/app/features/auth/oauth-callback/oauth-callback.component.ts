@@ -61,49 +61,44 @@ export class OAuthCallbackComponent implements OnInit {
         return;
       }
 
-      // ✅ Check for user data only (token is in HttpOnly cookie)
-      const userDataStr = queryParams['user'];
+      // ✅ Check for success flag (cookie should be set by backend)
+      const success = queryParams['success'];
 
-      if (!userDataStr) {
-        this.handleError('missing_data');
-        return;
-      }
+      if (success === 'true') {
+        console.log('✅ OAuth callback: Success flag received');
+        console.log('✅ Cookie should be set by backend, verifying session...');
+        
+        // ✅ Get user profile from backend (cookie will be sent automatically)
+        this.authService.getProfile().subscribe({
+          next: (response) => {
+            console.log('✅ Session verified, user authenticated:', response.data.user.name);
+            console.log('✅ Cookie is working correctly');
+            
+            // Store user data
+            this.authService.setUserData(response.data.user);
+            
+            this.isProcessing = false;
+            this.statusMessage = 'Đăng nhập thành công! Đang chuyển hướng...';
 
-      try {
-        const userData = JSON.parse(decodeURIComponent(userDataStr));
-        
-        console.log('✅ OAuth callback: Processing user data', { 
-          userName: userData.name
-        });
-        
-        // ✅ Store user data only (token is already in HttpOnly cookie)
-        this.authService.setUserData(userData);
-        
-        console.log('✅ OAuth callback: User data stored successfully');
-        
-        // Verify storage
-        if (isPlatformBrowser(this.platformId)) {
-          console.log('📊 Verify storage:', {
-            user: localStorage.getItem('auth_user') ? 'exists' : 'missing',
-            cookie: 'Token is in HttpOnly cookie (not accessible from JS)'
-          });
-        }
-
-        this.isProcessing = false;
-        this.statusMessage = 'Đăng nhập thành công! Đang chuyển hướng...';
-
-        // Wait a moment then redirect based on user role
-        setTimeout(() => {
-          if (userData.role === 'admin') {
-            this.router.navigate(['/admin/dashboard']);
-          } else {
-            this.router.navigate(['/']);
+            // Wait a moment then redirect based on user role
+            setTimeout(() => {
+              if (response.data.user.role === 'admin') {
+                this.router.navigate(['/admin/dashboard']);
+              } else {
+                this.router.navigate(['/']);
+              }
+            }, 1500);
+          },
+          error: (error) => {
+            console.error('❌ Session verification failed:', error);
+            console.error('Cookie was not set properly during OAuth redirect');
+            console.error('This might be due to browser cookie settings or CORS configuration');
+            this.handleError('session_verification_failed');
           }
-        }, 1500);
-
-      } catch (parseError) {
-        console.error('Error parsing user data:', parseError);
-        this.handleError('invalid_data');
+        });
+      } else {
+        console.error('❌ No success flag in OAuth callback');
+        this.handleError('missing_data');
       }
 
     } catch (error) {
@@ -135,6 +130,9 @@ export class OAuthCallbackComponent implements OnInit {
         break;
       case 'invalid_data':
         this.statusMessage = 'Dữ liệu xác thực không hợp lệ. Vui lòng thử lại.';
+        break;
+      case 'session_verification_failed':
+        this.statusMessage = 'Không thể xác thực phiên đăng nhập. Cookie có thể bị chặn. Vui lòng thử đăng nhập thông thường hoặc kiểm tra cài đặt trình duyệt.';
         break;
       case 'processing_error':
       default:

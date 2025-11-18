@@ -314,14 +314,21 @@ const authController = {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        path: '/'
+        path: '/',
+        domain: process.env.NODE_ENV === 'production' ? process.env.COOKIE_DOMAIN : undefined
       });
 
       console.log('✅ Google OAuth successful, cookie set for user:', user.email);
+      console.log('🍪 Cookie settings:', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        domain: process.env.NODE_ENV === 'production' ? process.env.COOKIE_DOMAIN : 'localhost'
+      });
 
-      // ✅ Redirect to frontend with user data only (no token in URL)
+      // ✅ Redirect to frontend with success flag
       const clientUrl = process.env.CLIENT_URL || 'http://localhost:4200';
-      const redirectUrl = `${clientUrl}/auth/callback?user=${encodeURIComponent(JSON.stringify(user.toAuthJSON()))}`;
+      const redirectUrl = `${clientUrl}/auth/callback?success=true`;
       
       console.log('Google OAuth successful, redirecting to:', redirectUrl);
       res.redirect(redirectUrl);
@@ -365,14 +372,21 @@ const authController = {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        path: '/'
+        path: '/',
+        domain: process.env.NODE_ENV === 'production' ? process.env.COOKIE_DOMAIN : undefined
       });
 
       console.log('✅ GitHub OAuth successful, cookie set for user:', user.email);
+      console.log('🍪 Cookie settings:', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        domain: process.env.NODE_ENV === 'production' ? process.env.COOKIE_DOMAIN : 'localhost'
+      });
 
-      // ✅ Redirect to frontend with user data only (no token in URL)
+      // ✅ Redirect to frontend with success flag
       const clientUrl = process.env.CLIENT_URL || 'http://localhost:4200';
-      const redirectUrl = `${clientUrl}/auth/callback?user=${encodeURIComponent(JSON.stringify(user.toAuthJSON()))}`;
+      const redirectUrl = `${clientUrl}/auth/callback?success=true`;
       
       console.log('GitHub OAuth successful, redirecting to:', redirectUrl);
       res.redirect(redirectUrl);

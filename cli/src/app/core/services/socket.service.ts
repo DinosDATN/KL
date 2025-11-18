@@ -94,7 +94,7 @@ export class SocketService {
 
     console.log('📁 Connecting to Socket.IO server...');
     console.log('👤 User:', user.name);
-    console.log('🔑 Token provided:', !!token);
+    console.log('🍪 Using HttpOnly cookie for authentication');
 
     this.currentUser = user;
     const serverUrl = environment.production
@@ -103,11 +103,11 @@ export class SocketService {
 
     console.log('🌍 Server URL:', serverUrl);
 
+    // ✅ Socket.IO will automatically send cookies with the handshake
     this.socket = io(serverUrl, {
-      auth: {
-        token: token,
-      },
+      withCredentials: true, // ✅ Important: Send cookies
       transports: ['websocket', 'polling'],
+      // ❌ No need to send token in auth - cookie will be sent automatically
     });
 
     this.socket.on('connect', () => {
