@@ -140,37 +140,43 @@ export class CoursesService {
       );
   }
 
-  // Get course modules
+  // Get course modules (requires authentication)
   getCourseModules(courseId: number): Observable<CourseModule[]> {
-    return this.http.get<ApiResponse<CourseModule[]>>(`${this.apiUrl}/courses/${courseId}/modules`)
-      .pipe(
-        timeout(environment.apiTimeout),
-        retry(2),
-        map(response => this.handleSuccessResponse(response)),
-        catchError(error => this.handleError(error, 'Failed to fetch course modules'))
-      );
+    return this.http.get<ApiResponse<CourseModule[]>>(
+      `${this.apiUrl}/courses/${courseId}/modules`,
+      { headers: this.getAuthHeaders() }
+    ).pipe(
+      timeout(environment.apiTimeout),
+      retry(2),
+      map(response => this.handleSuccessResponse(response)),
+      catchError(error => this.handleError(error, 'Failed to fetch course modules'))
+    );
   }
 
-  // Get course lessons
+  // Get course lessons (requires authentication)
   getCourseLessons(courseId: number): Observable<CourseLesson[]> {
-    return this.http.get<ApiResponse<CourseLesson[]>>(`${this.apiUrl}/courses/${courseId}/lessons`)
-      .pipe(
-        timeout(environment.apiTimeout),
-        retry(2),
-        map(response => this.handleSuccessResponse(response)),
-        catchError(error => this.handleError(error, 'Failed to fetch course lessons'))
-      );
+    return this.http.get<ApiResponse<CourseLesson[]>>(
+      `${this.apiUrl}/courses/${courseId}/lessons`,
+      { headers: this.getAuthHeaders() }
+    ).pipe(
+      timeout(environment.apiTimeout),
+      retry(2),
+      map(response => this.handleSuccessResponse(response)),
+      catchError(error => this.handleError(error, 'Failed to fetch course lessons'))
+    );
   }
 
-  // Get single lesson
+  // Get single lesson (requires authentication)
   getLessonById(lessonId: number): Observable<CourseLesson> {
-    return this.http.get<ApiResponse<CourseLesson>>(`${this.apiUrl}/courses/lessons/${lessonId}`)
-      .pipe(
-        timeout(environment.apiTimeout),
-        retry(2),
-        map(response => this.handleSuccessResponse(response)),
-        catchError(error => this.handleError(error, 'Failed to fetch lesson'))
-      );
+    return this.http.get<ApiResponse<CourseLesson>>(
+      `${this.apiUrl}/courses/lessons/${lessonId}`,
+      { headers: this.getAuthHeaders() }
+    ).pipe(
+      timeout(environment.apiTimeout),
+      retry(2),
+      map(response => this.handleSuccessResponse(response)),
+      catchError(error => this.handleError(error, 'Failed to fetch lesson'))
+    );
   }
 
   // Get course reviews
@@ -210,6 +216,152 @@ export class CoursesService {
         retry(2),
         catchError(error => this.handleError(error, 'Failed to fetch category courses'))
       );
+  }
+
+  // ============ ENROLLMENT METHODS ============
+
+  /**
+   * Enroll in a course
+   */
+  enrollCourse(courseId: number): Observable<any> {
+    return this.http.post<ApiResponse<any>>(
+      `${this.apiUrl}/course-enrollments/${courseId}/enroll`,
+      {},
+      { headers: this.getAuthHeaders() }
+    ).pipe(
+      timeout(environment.apiTimeout),
+      map(response => response),
+      catchError(error => this.handleError(error, 'Failed to enroll in course'))
+    );
+  }
+
+  /**
+   * Check if user is enrolled in a course
+   */
+  checkEnrollment(courseId: number): Observable<any> {
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/course-enrollments/${courseId}/check`,
+      { headers: this.getAuthHeaders() }
+    ).pipe(
+      timeout(environment.apiTimeout),
+      map(response => response),
+      catchError(error => this.handleError(error, 'Failed to check enrollment'))
+    );
+  }
+
+  /**
+   * Get user's enrollments
+   */
+  getMyEnrollments(status?: string): Observable<any> {
+    let params = new HttpParams();
+    if (status) {
+      params = params.set('status', status);
+    }
+    
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/course-enrollments/my-enrollments`,
+      { params, headers: this.getAuthHeaders() }
+    ).pipe(
+      timeout(environment.apiTimeout),
+      map(response => response),
+      catchError(error => this.handleError(error, 'Failed to get enrollments'))
+    );
+  }
+
+  /**
+   * Get course progress
+   */
+  getCourseProgress(courseId: number): Observable<any> {
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/course-enrollments/${courseId}/progress`,
+      { headers: this.getAuthHeaders() }
+    ).pipe(
+      timeout(environment.apiTimeout),
+      map(response => response),
+      catchError(error => this.handleError(error, 'Failed to get course progress'))
+    );
+  }
+
+  /**
+   * Mark lesson as complete
+   */
+  completeLesson(courseId: number, lessonId: number, timeSpent: number): Observable<any> {
+    return this.http.post<ApiResponse<any>>(
+      `${this.apiUrl}/course-enrollments/${courseId}/lessons/${lessonId}/complete`,
+      { timeSpent },
+      { headers: this.getAuthHeaders() }
+    ).pipe(
+      timeout(environment.apiTimeout),
+      map(response => response),
+      catchError(error => this.handleError(error, 'Failed to complete lesson'))
+    );
+  }
+
+  /**
+   * Get learning dashboard
+   */
+  getLearningDashboard(): Observable<any> {
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/course-enrollments/dashboard`,
+      { headers: this.getAuthHeaders() }
+    ).pipe(
+      timeout(environment.apiTimeout),
+      map(response => response),
+      catchError(error => this.handleError(error, 'Failed to get learning dashboard'))
+    );
+  }
+
+  /**
+   * Get auth headers with JWT token
+   */
+  private getAuthHeaders(): any {
+    const token = this.getToken();
+    
+    if (environment.enableLogging) {
+      console.log('[CoursesService] Getting auth headers');
+      console.log('[CoursesService] Token exists:', !!token);
+      if (token) {
+        console.log('[CoursesService] Token preview:', token.substring(0, 20) + '...');
+      }
+    }
+    
+    if (token) {
+      return {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+    }
+    
+    console.warn('[CoursesService] No token found! User may not be logged in.');
+    return {
+      'Content-Type': 'application/json'
+    };
+  }
+
+  /**
+   * Get JWT token from localStorage
+   */
+  private getToken(): string | null {
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      // Try 'auth_token' first (used by AuthService)
+      let token = localStorage.getItem('auth_token');
+      
+      // Fallback to 'token' for backward compatibility
+      if (!token) {
+        token = localStorage.getItem('token');
+      }
+      
+      if (!token && environment.enableLogging) {
+        console.warn('[CoursesService] Token not found in localStorage');
+        console.log('[CoursesService] Available localStorage keys:', Object.keys(localStorage));
+        console.log('[CoursesService] Tried keys: auth_token, token');
+      }
+      
+      return token;
+    }
+    
+    console.warn('[CoursesService] localStorage not available (SSR?)');
+    return null;
   }
 
   // Private helper methods

@@ -120,17 +120,14 @@ class CourseContentService {
   }
 
   /**
-   * Get user's completed lessons for a course (placeholder implementation)
-   * In a real application, you would have a lesson completion tracking table
+   * Get user's completed lessons for a course
    * @param {number} userId - User ID
    * @param {number} courseId - Course ID
    * @returns {Array} Array of completed lesson IDs
    */
   async getUserCompletedLessons(userId, courseId) {
-    // TODO: Implement lesson completion tracking
-    // This would typically involve a separate table like 'lesson_completions'
-    // For now, return empty array
-    return [];
+    const CourseLessonCompletion = require('../models/CourseLessonCompletion');
+    return await CourseLessonCompletion.getCompletedLessonIds(userId, courseId);
   }
 
   /**

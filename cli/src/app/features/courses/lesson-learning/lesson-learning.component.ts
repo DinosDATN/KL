@@ -32,6 +32,10 @@ export class LessonLearningComponent implements OnInit, OnDestroy {
   // Progress tracking
   completedLessons = new Set<number>();
   currentLessonIndex = 0;
+  courseProgress: any = null;
+  enrollment: any = null;
+  isEnrolled = false;
+  lessonStartTime = 0;
   
   // Subscription management
   private destroy$ = new Subject<void>();
@@ -64,6 +68,39 @@ export class LessonLearningComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error = null;
 
+    // First check enrollment
+    this.coursesService.checkEnrollment(courseId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.isEnrolled = response.data.isEnrolled;
+          this.enrollment = response.data.enrollment;
+
+          if (!this.isEnrolled) {
+            this.error = 'Bạn cần đăng ký khóa học để xem bài học này';
+            this.loading = false;
+            return;
+          }
+
+          // Load course details
+          this.loadCourseData(courseId, lessonId);
+        },
+        error: (error) => {
+          console.error('Failed to check enrollment:', error);
+          // If not authenticated, redirect to login
+          if (error.status === 401) {
+            this.router.navigate(['/login'], {
+              queryParams: { returnUrl: `/courses/${courseId}/lessons/${lessonId}` }
+            });
+          } else {
+            this.error = 'Không thể kiểm tra đăng ký khóa học';
+            this.loading = false;
+          }
+        }
+      });
+  }
+
+  private loadCourseData(courseId: number, lessonId: number): void {
     this.coursesService.getCourseDetails(courseId)
       .pipe(
         takeUntil(this.destroy$),
@@ -88,8 +125,11 @@ export class LessonLearningComponent implements OnInit, OnDestroy {
           this.currentLesson = this.courseLessons.find((l) => l.id === lessonId) || null;
           this.currentLessonIndex = this.courseLessons.findIndex((l) => l.id === lessonId);
 
-          // Load progress (simulate from localStorage)
-          this.loadProgress();
+          // Load progress from server
+          this.loadProgressFromServer(courseId);
+          
+          // Start tracking time
+          this.lessonStartTime = Date.now();
         },
         error: (error) => {
           console.error('Failed to load learning data:', error);
@@ -98,7 +138,33 @@ export class LessonLearningComponent implements OnInit, OnDestroy {
       });
   }
 
-  private loadProgress(): void {
+  private loadProgressFromServer(courseId: number): void {
+    this.coursesService.getCourseProgress(courseId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.courseProgress = response.data.progress;
+          this.enrollment = response.data.enrollment;
+          
+          // Update completed lessons from server
+          const completedIds = response.data.completedLessonIds || [];
+          this.completedLessons = new Set(completedIds);
+          
+          console.log('Progress loaded from server:', {
+            progress: this.enrollment.progress,
+            completed: completedIds.length,
+            total: this.courseProgress.totalLessons
+          });
+        },
+        error: (error) => {
+          console.error('Failed to load progress:', error);
+          // Fallback to localStorage if server fails
+          this.loadProgressFromLocalStorage();
+        }
+      });
+  }
+
+  private loadProgressFromLocalStorage(): void {
     if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
       const saved = localStorage.getItem(`course-${this.course?.id}-progress`);
       if (saved) {
@@ -107,7 +173,7 @@ export class LessonLearningComponent implements OnInit, OnDestroy {
     }
   }
 
-  private saveProgress(): void {
+  private saveProgressToLocalStorage(): void {
     if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
       localStorage.setItem(
         `course-${this.course?.id}-progress`,
@@ -123,15 +189,53 @@ export class LessonLearningComponent implements OnInit, OnDestroy {
   }
 
   toggleLessonComplete(): void {
-    if (!this.currentLesson) return;
+    if (!this.currentLesson || !this.course) return;
 
-    if (this.completedLessons.has(this.currentLesson.id)) {
+    const isCompleted = this.completedLessons.has(this.currentLesson.id);
+
+    if (isCompleted) {
+      // If already completed, just toggle locally (don't uncomplete on server)
       this.completedLessons.delete(this.currentLesson.id);
+      this.saveProgressToLocalStorage();
     } else {
-      this.completedLessons.add(this.currentLesson.id);
+      // Mark as complete on server
+      this.markLessonComplete(this.currentLesson.id);
     }
+  }
 
-    this.saveProgress();
+  private markLessonComplete(lessonId: number): void {
+    if (!this.course) return;
+
+    // Calculate time spent in seconds
+    const timeSpent = Math.floor((Date.now() - this.lessonStartTime) / 1000);
+
+    console.log(`Marking lesson ${lessonId} as complete. Time spent: ${timeSpent}s`);
+
+    this.coursesService.completeLesson(this.course.id, lessonId, timeSpent)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          console.log('Lesson completed successfully:', response);
+          
+          // Update local state
+          this.completedLessons.add(lessonId);
+          this.enrollment = response.data.enrollment;
+          this.courseProgress = response.data.progress;
+          
+          // Save to localStorage as backup
+          this.saveProgressToLocalStorage();
+          
+          // Show success message
+          alert(`Hoàn thành bài học! Tiến độ: ${this.enrollment.progress}%`);
+          
+          // Reset timer for next lesson
+          this.lessonStartTime = Date.now();
+        },
+        error: (error) => {
+          console.error('Failed to complete lesson:', error);
+          alert('Không thể đánh dấu hoàn thành: ' + (error.error?.message || error.message));
+        }
+      });
   }
 
   goToNextLesson(): void {
@@ -165,6 +269,12 @@ export class LessonLearningComponent implements OnInit, OnDestroy {
   }
 
   getProgressPercentage(): number {
+    // Use server progress if available
+    if (this.enrollment && this.enrollment.progress !== undefined) {
+      return this.enrollment.progress;
+    }
+    
+    // Fallback to local calculation
     if (this.courseLessons.length === 0) return 0;
     return Math.round(
       (this.completedLessons.size / this.courseLessons.length) * 100

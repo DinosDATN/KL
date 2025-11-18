@@ -350,10 +350,11 @@ class CourseController {
     }
   }
   
-  // Get course modules
+  // Get course modules (requires enrollment)
   async getCourseModules(req, res) {
     try {
       const { id } = req.params;
+      const userId = req.user?.id;
       
       // Verify course exists
       const course = await Course.findOne({
@@ -369,6 +370,20 @@ class CourseController {
           success: false,
           message: 'Course not found'
         });
+      }
+
+      // Check enrollment if user is authenticated
+      if (userId) {
+        const enrollment = await CourseEnrollment.findOne({
+          where: { user_id: userId, course_id: id }
+        });
+
+        if (!enrollment) {
+          return res.status(403).json({
+            success: false,
+            message: 'You must enroll in this course to access its content'
+          });
+        }
       }
       
       const modules = await CourseModule.findByCourse(id);
@@ -387,10 +402,11 @@ class CourseController {
     }
   }
   
-  // Get course lessons
+  // Get course lessons (requires enrollment)
   async getCourseLessons(req, res) {
     try {
       const { id } = req.params;
+      const userId = req.user?.id;
       
       // Verify course exists
       const course = await Course.findOne({
@@ -406,6 +422,20 @@ class CourseController {
           success: false,
           message: 'Course not found'
         });
+      }
+
+      // Check enrollment if user is authenticated
+      if (userId) {
+        const enrollment = await CourseEnrollment.findOne({
+          where: { user_id: userId, course_id: id }
+        });
+
+        if (!enrollment) {
+          return res.status(403).json({
+            success: false,
+            message: 'You must enroll in this course to access its content'
+          });
+        }
       }
       
       // Get modules first
@@ -435,18 +465,41 @@ class CourseController {
     }
   }
   
-  // Get single lesson
+  // Get single lesson (requires enrollment)
   async getLessonById(req, res) {
     try {
       const { lessonId } = req.params;
+      const userId = req.user?.id;
       
-      const lesson = await CourseLesson.findByPk(lessonId);
+      const lesson = await CourseLesson.findOne({
+        where: { id: lessonId },
+        include: [{
+          model: CourseModule,
+          as: 'Module',
+          attributes: ['id', 'course_id', 'title']
+        }]
+      });
       
       if (!lesson) {
         return res.status(404).json({
           success: false,
           message: 'Lesson not found'
         });
+      }
+
+      // Check enrollment if user is authenticated
+      if (userId) {
+        const courseId = lesson.Module.course_id;
+        const enrollment = await CourseEnrollment.findOne({
+          where: { user_id: userId, course_id: courseId }
+        });
+
+        if (!enrollment) {
+          return res.status(403).json({
+            success: false,
+            message: 'You must enroll in this course to access its lessons'
+          });
+        }
       }
       
       res.status(200).json({

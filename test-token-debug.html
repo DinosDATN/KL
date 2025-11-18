@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token Debug Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-left: 4px solid #4CAF50;
+        }
+        .section h3 {
+            margin-top: 0;
+            color: #4CAF50;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button.danger {
+            background: #f44336;
+        }
+        button.danger:hover {
+            background: #da190b;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .result {
+            background: #e8f5e9;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .warning {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Token Debug Tool</h1>
+        
+        <!-- Check Token -->
+        <div class="section">
+            <h3>1. Check Current Token</h3>
+            <button onclick="checkToken()">Check Token in localStorage</button>
+            <div id="tokenResult"></div>
+        </div>
+
+        <!-- Login -->
+        <div class="section">
+            <h3>2. Login to Get Token</h3>
+            <input type="email" id="email" placeholder="Email" value="test@example.com">
+            <input type="password" id="password" placeholder="Password" value="password123">
+            <button onclick="login()">Login</button>
+            <div id="loginResult"></div>
+        </div>
+
+        <!-- Test API -->
+        <div class="section">
+            <h3>3. Test Protected API</h3>
+            <input type="number" id="courseId" placeholder="Course ID" value="1">
+            <button onclick="testCheckEnrollment()">Test Check Enrollment</button>
+            <div id="apiResult"></div>
+        </div>
+
+        <!-- Manual Token -->
+        <div class="section">
+            <h3>4. Set Token Manually</h3>
+            <input type="text" id="manualToken" placeholder="Paste token here">
+            <button onclick="setToken()">Set Token</button>
+            <button class="danger" onclick="clearToken()">Clear Token</button>
+            <div id="manualResult"></div>
+        </div>
+
+        <!-- All localStorage -->
+        <div class="section">
+            <h3>5. View All localStorage</h3>
+            <button onclick="viewAllStorage()">View All</button>
+            <div id="storageResult"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api/v1';
+
+        function checkToken() {
+            const token = localStorage.getItem('token');
+            const result = document.getElementById('tokenResult');
+            
+            if (token) {
+                result.className = 'result success';
+                result.innerHTML = `✅ Token found!\n\nLength: ${token.length}\nPreview: ${token.substring(0, 50)}...\n\nFull token:\n${token}`;
+            } else {
+                result.className = 'result error';
+                result.innerHTML = '❌ No token found in localStorage!\n\nPlease login first.';
+            }
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const result = document.getElementById('loginResult');
+            
+            result.className = 'result';
+            result.innerHTML = '⏳ Logging in...';
+            
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.token) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    
+                    result.className = 'result success';
+                    result.innerHTML = `✅ Login successful!\n\nUser: ${data.user.name}\nEmail: ${data.user.email}\nToken saved to localStorage\n\nToken preview: ${data.token.substring(0, 50)}...`;
+                } else {
+                    result.className = 'result error';
+                    result.innerHTML = `❌ Login failed!\n\n${data.message || 'Unknown error'}`;
+                }
+            } catch (error) {
+                result.className = 'result error';
+                result.innerHTML = `❌ Error: ${error.message}`;
+            }
+        }
+
+        async function testCheckEnrollment() {
+            const courseId = document.getElementById('courseId').value;
+            const token = localStorage.getItem('token');
+            const result = document.getElementById('apiResult');
+            
+            if (!token) {
+                result.className = 'result error';
+                result.innerHTML = '❌ No token found! Please login first.';
+                return;
+            }
+            
+            result.className = 'result';
+            result.innerHTML = '⏳ Testing API...';
+            
+            try {
+                const response = await fetch(`${API_URL}/course-enrollments/${courseId}/check`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    result.className = 'result success';
+                    result.innerHTML = `✅ API call successful!\n\nStatus: ${response.status}\nIs Enrolled: ${data.data.isEnrolled}\n\nFull response:\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    result.className = 'result error';
+                    result.innerHTML = `❌ API call failed!\n\nStatus: ${response.status}\nMessage: ${data.message}\nError: ${data.error}\n\nFull response:\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                result.className = 'result error';
+                result.innerHTML = `❌ Error: ${error.message}`;
+            }
+        }
+
+        function setToken() {
+            const token = document.getElementById('manualToken').value;
+            const result = document.getElementById('manualResult');
+            
+            if (token) {
+                localStorage.setItem('token', token);
+                result.className = 'result success';
+                result.innerHTML = `✅ Token set successfully!\n\nToken preview: ${token.substring(0, 50)}...`;
+            } else {
+                result.className = 'result error';
+                result.innerHTML = '❌ Please enter a token';
+            }
+        }
+
+        function clearToken() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            const result = document.getElementById('manualResult');
+            result.className = 'result warning';
+            result.innerHTML = '⚠️ Token cleared from localStorage';
+        }
+
+        function viewAllStorage() {
+            const result = document.getElementById('storageResult');
+            const items = [];
+            
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                items.push(`${key}: ${value.substring(0, 100)}${value.length > 100 ? '...' : ''}`);
+            }
+            
+            if (items.length > 0) {
+                result.className = 'result';
+                result.innerHTML = `📦 localStorage contents (${items.length} items):\n\n${items.join('\n\n')}`;
+            } else {
+                result.className = 'result warning';
+                result.innerHTML = '⚠️ localStorage is empty';
+            }
+        }
+
+        // Auto-check token on load
+        window.onload = function() {
+            checkToken();
+        };
+    </script>
+</body>
+</html>

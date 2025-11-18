@@ -1,5 +1,6 @@
 const express = require('express');
 const courseController = require('../controllers/courseController');
+const { authenticateToken, optionalAuth } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
@@ -13,14 +14,14 @@ router.get('/instructors', courseController.getInstructors);
 router.get('/instructor/:instructor_id', courseController.getCoursesByInstructor);
 router.get('/category/:category_id', courseController.getCoursesByCategory);
 
-// Course details endpoints
+// Course details endpoints (public)
 router.get('/:id', courseController.getCourseById);
-router.get('/:id/details', courseController.getCourseDetails);
-router.get('/:id/modules', courseController.getCourseModules);
-router.get('/:id/lessons', courseController.getCourseLessons);
+router.get('/:id/details', optionalAuth, courseController.getCourseDetails);
 router.get('/:id/reviews', courseController.getCourseReviews);
 
-// Lesson endpoints
-router.get('/lessons/:lessonId', courseController.getLessonById);
+// Protected learning endpoints - require enrollment
+router.get('/:id/modules', authenticateToken, courseController.getCourseModules);
+router.get('/:id/lessons', authenticateToken, courseController.getCourseLessons);
+router.get('/lessons/:lessonId', authenticateToken, courseController.getLessonById);
 
 module.exports = router;

@@ -35,6 +35,7 @@ const CourseLesson = require("./CourseLesson");
 const CourseEnrollment = require("./CourseEnrollment");
 const CourseReview = require("./CourseReview");
 const InstructorQualification = require("./InstructorQualification");
+const CourseLessonCompletion = require("./CourseLessonCompletion");
 
 // Document models
 const Document = require("./Document");
@@ -174,6 +175,37 @@ User.hasMany(InstructorQualification, {
 InstructorQualification.belongsTo(User, {
   foreignKey: "user_id",
   as: "User",
+});
+
+// Course lesson completion associations
+CourseLessonCompletion.belongsTo(User, {
+  foreignKey: "user_id",
+  as: "User",
+});
+
+CourseLessonCompletion.belongsTo(Course, {
+  foreignKey: "course_id",
+  as: "Course",
+});
+
+CourseLessonCompletion.belongsTo(CourseLesson, {
+  foreignKey: "lesson_id",
+  as: "Lesson",
+});
+
+User.hasMany(CourseLessonCompletion, {
+  foreignKey: "user_id",
+  as: "LessonCompletions",
+});
+
+Course.hasMany(CourseLessonCompletion, {
+  foreignKey: "course_id",
+  as: "LessonCompletions",
+});
+
+CourseLesson.hasMany(CourseLessonCompletion, {
+  foreignKey: "lesson_id",
+  as: "Completions",
 });
 
 Problem.belongsTo(ProblemCategory, {
@@ -953,6 +985,7 @@ module.exports = {
   CourseEnrollment,
   CourseReview,
   InstructorQualification,
+  CourseLessonCompletion,
   // Document models
   Document,
   DocumentCategory,
