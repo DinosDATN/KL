@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, BehaviorSubject, throwError } from 'rxjs';
-import { map, catchError, tap } from 'rxjs/operators';
+import { catchError, tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { User } from '../models/user.model';
 
@@ -245,7 +245,7 @@ export class AuthService {
   /**
    * Handle HTTP errors
    */
-  private handleError = (error: HttpErrorResponse) => {
+  private handleError = (error: HttpErrorResponse): Observable<never> => {
     console.error('Authentication error:', error);
     
     // If unauthorized, clear auth data

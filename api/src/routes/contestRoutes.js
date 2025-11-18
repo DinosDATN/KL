@@ -21,6 +21,9 @@ router.get('/past', contestController.getPastContests);
 router.get('/', optionalAuth, contestController.getAllContests);
 router.get('/:id', validateContestId, optionalAuth, contestController.getContestById);
 
+// Contest problems - Anyone can view (no authentication required)
+router.get('/:id/problems', validateContestId, optionalAuth, contestController.getContestProblems);
+
 // Routes requiring authentication
 router.use(authenticateToken); // All routes below require authentication
 
@@ -28,8 +31,7 @@ router.use(authenticateToken); // All routes below require authentication
 router.post('/:id/register', validateContestId, contestController.registerForContest);
 router.delete('/:id/register', validateContestId, contestController.unregisterFromContest);
 
-// Contest problems - Registered users can view and submit
-router.get('/:id/problems', validateContestId, contestController.getContestProblems);
+// Contest problem submission - Must be registered to submit
 router.post('/:id/problems/:problem_id/submit', validateContestId, validateProblemId, validateContestSubmission, contestController.submitToContest);
 
 // User's contest data

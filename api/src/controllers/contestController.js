@@ -528,20 +528,8 @@ class ContestController {
         });
       }
 
-      // Check if user is registered (for non-admin users)
-      if (userId && req.user.role !== 'admin') {
-        const registration = await UserContest.findOne({
-          where: { contest_id: id, user_id: userId }
-        });
-
-        if (!registration) {
-          return res.status(403).json({
-            success: false,
-            message: 'You must register for the contest to view problems'
-          });
-        }
-      }
-
+      // Anyone can view contest problems (no registration check needed)
+      // This allows users to see what problems are in the contest before registering
       const contestProblems = await ContestProblem.findAll({
         where: { contest_id: id },
         include: [{
