@@ -5,7 +5,7 @@
 
 const axios = require('axios');
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'http://localhost:3000/api/v1';
 
 // Màu sắc cho console
 const colors = {

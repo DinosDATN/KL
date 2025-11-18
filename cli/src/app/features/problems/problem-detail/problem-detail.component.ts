@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Inject, PLATFORM_ID } from '@angular/core';
 import { Problem, TestCase, StarterCode, ProblemExample } from '../../../core/models/problem.model';
 import { ProblemsService } from '../../../core/services/problems.service';
@@ -14,6 +14,7 @@ import { ExecutionResultsComponent } from './components/execution-results/execut
   standalone: true,
   imports: [
     CommonModule,
+    RouterLink,
     ProblemDescriptionComponent,
     CodeEditorComponent,
     ExamplesComponent,
@@ -30,6 +31,11 @@ export class ProblemDetailComponent implements OnInit, OnDestroy {
   loading = true;
   error: string | null = null;
   
+  // Contest context
+  contestId: number | null = null;
+  contestProblemId: number | null = null;
+  isContestMode = false;
+  
   // Layout state
   isMobileView = false;
   activeTab: 'description' | 'examples' = 'description';
@@ -42,12 +48,24 @@ export class ProblemDetailComponent implements OnInit, OnDestroy {
   
   ngOnInit(): void {
     this.checkMobileView();
+    this.checkContestMode();
     this.loadProblem();
     
     // Listen for window resize only in browser
     if (isPlatformBrowser(this.platformId)) {
       window.addEventListener('resize', () => this.checkMobileView());
     }
+  }
+  
+  private checkContestMode(): void {
+    // Check if this problem is being solved in contest mode
+    this.route.queryParams.subscribe(params => {
+      if (params['contest_id'] && params['contest_problem_id']) {
+        this.contestId = parseInt(params['contest_id']);
+        this.contestProblemId = parseInt(params['contest_problem_id']);
+        this.isContestMode = true;
+      }
+    });
   }
   
   ngOnDestroy(): void {

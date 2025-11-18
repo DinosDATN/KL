@@ -15,6 +15,7 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProblemsService } from '../../../../../core/services/problems.service';
 import { AuthService } from '../../../../../core/services/auth.service';
+import { ContestService } from '../../../../../core/services/contest.service';
 import {
   StarterCode,
   TestCase,
@@ -48,6 +49,9 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   @Input() starterCodes: StarterCode[] = [];
   @Input() testCases: TestCase[] = [];
   @Input() examples: ProblemExample[] = [];
+  @Input() contestId: number | null = null;
+  @Input() contestProblemId: number | null = null;
+  @Input() isContestMode: boolean = false;
 
   @Output() codeChange = new EventEmitter<string>();
   @Output() executeCode = new EventEmitter<{
@@ -87,6 +91,7 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,
     private problemsService: ProblemsService,
+    private contestService: ContestService,
     private themeService: ThemeService,
     private notificationService: NotificationService,
     private authService: AuthService
@@ -507,20 +512,57 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
       this.selectedLanguage.name
     );
     console.log('Submitting with user ID:', userId);
+    console.log('Contest mode:', this.isContestMode);
 
-    // Use batch submit for better performance if available
-    const submitMethod =
-      this.problemsService.batchSubmitCode || this.problemsService.submitCode;
-
-    submitMethod
-      .call(
-        this.problemsService,
+    // Check if this is a contest submission
+    if (this.isContestMode && this.contestId && this.contestProblemId) {
+      // Submit to contest
+      this.contestService.submitToContest(
+        this.contestId,
         this.problem?.id || 1,
-        this.currentCode,
-        this.selectedLanguage.id,
-        userId || undefined // Pass the actual user ID from authentication, convert null to undefined
-      )
-      .subscribe({
+        {
+          sourceCode: this.currentCode,
+          language: this.selectedLanguage.id
+        }
+      ).subscribe({
+        next: (response) => {
+          console.log('Contest submission result:', response);
+          
+          if (response.success && response.data) {
+            const result = response.data.execution_result;
+            const formattedResult = this.formatSubmissionResult(result);
+            this.submissionResult = formattedResult;
+
+            // Show success notification with contest context
+            this.notificationService.codeSubmissionSuccess(
+              formattedResult.score,
+              formattedResult.testCasesPassed,
+              formattedResult.totalTestCases
+            );
+          }
+
+          this.isSubmitting = false;
+        },
+        error: (error) => {
+          console.error('Contest submission failed:', error);
+          this.handleSubmissionError(error);
+          this.isSubmitting = false;
+        }
+      });
+    } else {
+      // Regular problem submission
+      const submitMethod =
+        this.problemsService.batchSubmitCode || this.problemsService.submitCode;
+
+      submitMethod
+        .call(
+          this.problemsService,
+          this.problem?.id || 1,
+          this.currentCode,
+          this.selectedLanguage.id,
+          userId || undefined
+        )
+        .subscribe({
         next: (result) => {
           console.log('Submission result:', result);
           const formattedResult = this.formatSubmissionResult(result);
@@ -536,35 +578,39 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
           this.isSubmitting = false;
         },
         error: (error) => {
-          console.error('Code submission failed:', error);
-
-          // Handle specific error types
-          if (error.status === 429) {
-            this.notificationService.rateLimitError();
-          } else if (error.status === 503) {
-            this.notificationService.judgeApiError();
-          } else if (error.status === 0) {
-            this.notificationService.networkError();
-          } else {
-            this.notificationService.codeSubmissionError(
-              error.error?.message || error.message || 'Code submission failed'
-            );
-          }
-
-          this.submissionResult = {
-            submissionId: 'ERROR_' + Date.now(),
-            status: 'error',
-            score: 0,
-            executionTime: 0,
-            memoryUsed: 0,
-            testCasesPassed: 0,
-            totalTestCases: this.testCases.length,
-            error:
-              error.error?.message || error.message || 'Code submission failed',
-          };
+          this.handleSubmissionError(error);
           this.isSubmitting = false;
         },
       });
+    }
+  }
+
+  private handleSubmissionError(error: any): void {
+    console.error('Code submission failed:', error);
+
+    // Handle specific error types
+    if (error.status === 429) {
+      this.notificationService.rateLimitError();
+    } else if (error.status === 503) {
+      this.notificationService.judgeApiError();
+    } else if (error.status === 0) {
+      this.notificationService.networkError();
+    } else {
+      this.notificationService.codeSubmissionError(
+        error.error?.message || error.message || 'Code submission failed'
+      );
+    }
+
+    this.submissionResult = {
+      submissionId: 'ERROR_' + Date.now(),
+      status: 'error',
+      score: 0,
+      executionTime: 0,
+      memoryUsed: 0,
+      testCasesPassed: 0,
+      totalTestCases: this.testCases.length,
+      error: error.error?.message || error.message || 'Code submission failed',
+    };
   }
 
   clearResults(): void {

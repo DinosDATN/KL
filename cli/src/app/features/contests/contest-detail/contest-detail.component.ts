@@ -97,4 +97,34 @@ export class ContestDetailComponent implements OnInit {
   goBack(): void {
     this.router.navigate(['/contests']);
   }
+
+  canStartProblem(): boolean {
+    // User must be authenticated, registered, and contest must be active
+    return this.authService.isAuthenticated() && 
+           this.contest?.is_registered === true && 
+           this.contest?.status === 'active';
+  }
+
+  onStartProblem(contestProblem: ContestProblem): void {
+    if (!this.contest || !contestProblem.Problem) {
+      return;
+    }
+
+    // Navigate to problem solving page with contest context
+    this.router.navigate(['/problems', contestProblem.Problem.id], {
+      queryParams: {
+        contest_id: this.contest.id,
+        contest_problem_id: contestProblem.id
+      }
+    });
+  }
+
+  onViewProblem(contestProblem: ContestProblem): void {
+    if (!contestProblem.Problem) {
+      return;
+    }
+
+    // Navigate to problem detail page (read-only)
+    this.router.navigate(['/problems', contestProblem.Problem.id]);
+  }
 }
