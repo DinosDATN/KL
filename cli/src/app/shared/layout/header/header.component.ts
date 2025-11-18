@@ -80,7 +80,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
   unreadCount = 0;
   private notificationSubscription?: Subscription;
   private unreadCountSubscription?: Subscription;
-  private previousUnreadCount = 0;
+  private previousUnreadCount = -1; // -1 means not initialized yet
 
   // User stats state
   userStats: UserStats | null = null;
@@ -160,17 +160,29 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     this.unreadCountSubscription = this.appNotificationService.unreadCount$.subscribe(
       (count) => {
         // Show toast if unread count increased (new notification)
-        if (count > this.previousUnreadCount && this.previousUnreadCount > 0) {
+        // Skip the first emission (initial load) by checking if previousUnreadCount is initialized
+        const isFirstLoad = this.previousUnreadCount === -1;
+        
+        if (!isFirstLoad && count > this.previousUnreadCount) {
+          console.log(`📊 Unread count increased: ${this.previousUnreadCount} → ${count}`);
           const newNotifications = this.notifications.filter(n => !n.is_read).slice(0, count - this.previousUnreadCount);
           if (newNotifications.length > 0) {
             const latestNotification = newNotifications[0];
+            
+            // Show toast with appropriate icon based on notification type
+            console.log('🔔 Showing toast notification:', latestNotification.title);
+            
             this.notificationService.info(
-              latestNotification.title,
+              `🔔 ${latestNotification.title}`,
               latestNotification.message,
               5000
             );
           }
+        } else if (isFirstLoad) {
+          console.log(`📊 First load: initializing unread count to ${count}`);
         }
+        
+        // Update previousUnreadCount
         this.previousUnreadCount = count;
         this.unreadCount = count;
       }
@@ -186,7 +198,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     }
     this.notifications = [];
     this.unreadCount = 0;
-    this.previousUnreadCount = 0;
+    this.previousUnreadCount = -1; // Reset to uninitialized state
   }
 
   navigationItems: NavigationItem[] = [

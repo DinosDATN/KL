@@ -62,12 +62,21 @@ const handleConnection = (io) => {
     );
 
     // Join user to their personal notification room
-    socket.join(`user_${socket.userId}`);
-    console.log(`✅ User ${socket.user.name} (Socket ID: ${socket.id}) joined personal notification room: user_${socket.userId}`);
+    const personalRoom = `user_${socket.userId}`;
+    socket.join(personalRoom);
+    console.log(`✅ User ${socket.user.name} (Socket ID: ${socket.id}) joined personal notification room: ${personalRoom}`);
     
     // Log how many sockets are in this room
-    const roomSockets = io.sockets.adapter.rooms.get(`user_${socket.userId}`);
-    console.log(`📊 Total sockets in room user_${socket.userId}: ${roomSockets ? roomSockets.size : 0}`);
+    const roomSockets = io.sockets.adapter.rooms.get(personalRoom);
+    const socketCount = roomSockets ? roomSockets.size : 0;
+    console.log(`📊 Total sockets in room ${personalRoom}: ${socketCount}`);
+    
+    // Verify the socket is actually in the room
+    if (socket.rooms.has(personalRoom)) {
+      console.log(`✅ Verified: Socket ${socket.id} is in room ${personalRoom}`);
+    } else {
+      console.log(`❌ ERROR: Socket ${socket.id} failed to join room ${personalRoom}`);
+    }
 
     // Join user to their group chat rooms
     joinUserRooms(socket);

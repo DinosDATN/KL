@@ -22,6 +22,8 @@ export class AppComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    console.log('🚀 App component initialized');
+    
     // Initialize socket connection and notifications if user is authenticated
     this.initializeApp();
 
@@ -36,39 +38,63 @@ export class AppComponent implements OnInit {
         this.appNotificationService.clearData();
       }
     });
+
+    // Log socket connection status
+    this.socketService.isConnected$.subscribe((connected) => {
+      console.log(`🔌 Socket connection status: ${connected ? 'CONNECTED' : 'DISCONNECTED'}`);
+    });
   }
 
   private initializeApp(): void {
     const user = this.authService.getCurrentUser();
     const token = this.authService.getToken();
 
+    console.log('🔧 Initializing app...', { 
+      hasUser: !!user, 
+      hasToken: !!token,
+      userName: user?.name 
+    });
+
     if (user && token) {
       // Initialize socket connection
       if (!this.socketService.isConnected()) {
         console.log('🚀 Initializing socket connection from app component');
+        console.log(`👤 User: ${user.name} (ID: ${user.id})`);
         this.socketService.connect(token, user);
+        
+        // Wait a bit for socket to connect before loading notifications
+        setTimeout(() => {
+          this.loadNotifications();
+        }, 500);
+      } else {
+        console.log('✅ Socket already connected, loading notifications');
+        this.loadNotifications();
       }
-
-      // Load notifications
-      console.log('📬 Loading notifications');
-      this.appNotificationService.loadNotifications().subscribe({
-        next: (notifications) => {
-          console.log(`✅ Loaded ${notifications.length} notifications`);
-        },
-        error: (error) => {
-          console.error('❌ Error loading notifications:', error);
-        }
-      });
-
-      // Load unread count
-      this.appNotificationService.loadUnreadCount().subscribe({
-        next: (count) => {
-          console.log(`📊 Unread notifications: ${count}`);
-        },
-        error: (error) => {
-          console.error('❌ Error loading unread count:', error);
-        }
-      });
+    } else {
+      console.log('⚠️ Cannot initialize app: missing user or token');
     }
+  }
+
+  private loadNotifications(): void {
+    // Load notifications
+    console.log('📬 Loading notifications');
+    this.appNotificationService.loadNotifications().subscribe({
+      next: (notifications) => {
+        console.log(`✅ Loaded ${notifications.length} notifications`);
+      },
+      error: (error) => {
+        console.error('❌ Error loading notifications:', error);
+      }
+    });
+
+    // Load unread count
+    this.appNotificationService.loadUnreadCount().subscribe({
+      next: (count) => {
+        console.log(`📊 Unread notifications: ${count}`);
+      },
+      error: (error) => {
+        console.error('❌ Error loading unread count:', error);
+      }
+    });
   }
 }

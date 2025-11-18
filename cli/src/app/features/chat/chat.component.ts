@@ -143,7 +143,11 @@ export class ChatComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-    this.chatService.disconnect();
+    
+    // DO NOT disconnect socket here!
+    // Socket connection should persist across pages to receive notifications
+    // Only disconnect when user logs out (handled in app.component.ts)
+    
     if (isPlatformBrowser(this.platformId)) {
       window.removeEventListener('resize', this.onResize.bind(this));
     }
@@ -193,8 +197,8 @@ export class ChatComponent implements OnInit, OnDestroy {
     this.roomMembers = [];
     this.reactions = [];
 
-    // Disconnect from chat service
-    this.chatService.disconnect();
+    // DO NOT disconnect socket here!
+    // Socket disconnection is handled in app.component.ts when user logs out
   }
 
   private loadUsersFromRooms(rooms: ChatRoom[]): void {

@@ -50,8 +50,21 @@ export class AppNotificationService implements OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe((data) => {
         console.log('📬 AppNotificationService: Friend request received', data);
-        this.loadUnreadCount().subscribe();
-        this.loadNotifications().subscribe();
+        console.log('🔄 Reloading notifications and unread count...');
+        
+        // Reload notifications first, then unread count
+        // This ensures the notifications list is updated before the count changes
+        this.loadNotifications().subscribe({
+          next: (notifications) => {
+            console.log(`✅ Reloaded ${notifications.length} notifications`);
+            // Then reload unread count to trigger toast notification
+            this.loadUnreadCount().subscribe({
+              next: (count) => console.log(`✅ Updated unread count: ${count}`),
+              error: (err) => console.error('❌ Error loading unread count:', err)
+            });
+          },
+          error: (err) => console.error('❌ Error loading notifications:', err)
+        });
       });
 
     // Listen for friend request accepted
@@ -59,8 +72,19 @@ export class AppNotificationService implements OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe((data) => {
         console.log('✅ AppNotificationService: Friend request accepted', data);
-        this.loadUnreadCount().subscribe();
-        this.loadNotifications().subscribe();
+        console.log('🔄 Reloading notifications and unread count...');
+        
+        // Reload notifications first, then unread count
+        this.loadNotifications().subscribe({
+          next: (notifications) => {
+            console.log(`✅ Reloaded ${notifications.length} notifications`);
+            this.loadUnreadCount().subscribe({
+              next: (count) => console.log(`✅ Updated unread count: ${count}`),
+              error: (err) => console.error('❌ Error loading unread count:', err)
+            });
+          },
+          error: (err) => console.error('❌ Error loading notifications:', err)
+        });
       });
 
     // Listen for friend request declined
@@ -68,8 +92,19 @@ export class AppNotificationService implements OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe((data) => {
         console.log('❌ AppNotificationService: Friend request declined', data);
-        this.loadUnreadCount().subscribe();
-        this.loadNotifications().subscribe();
+        console.log('🔄 Reloading notifications and unread count...');
+        
+        // Reload notifications first, then unread count
+        this.loadNotifications().subscribe({
+          next: (notifications) => {
+            console.log(`✅ Reloaded ${notifications.length} notifications`);
+            this.loadUnreadCount().subscribe({
+              next: (count) => console.log(`✅ Updated unread count: ${count}`),
+              error: (err) => console.error('❌ Error loading unread count:', err)
+            });
+          },
+          error: (err) => console.error('❌ Error loading notifications:', err)
+        });
       });
 
     // Listen for room invites
@@ -78,10 +113,23 @@ export class AppNotificationService implements OnDestroy {
       .subscribe((notification) => {
         if (notification && notification.type === 'room_invite') {
           console.log('🏠 AppNotificationService: Room invite received', notification);
-          this.loadUnreadCount().subscribe();
-          this.loadNotifications().subscribe();
+          console.log('🔄 Reloading notifications and unread count...');
+          
+          // Reload notifications first, then unread count
+          this.loadNotifications().subscribe({
+            next: (notifications) => {
+              console.log(`✅ Reloaded ${notifications.length} notifications`);
+              this.loadUnreadCount().subscribe({
+                next: (count) => console.log(`✅ Updated unread count: ${count}`),
+                error: (err) => console.error('❌ Error loading unread count:', err)
+              });
+            },
+            error: (err) => console.error('❌ Error loading notifications:', err)
+          });
         }
       });
+
+    console.log('✅ AppNotificationService: Socket listeners initialized successfully');
   }
 
   // Load notifications

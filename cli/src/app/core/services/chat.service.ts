@@ -170,8 +170,14 @@ export class ChatService {
     console.log('🔐 User authenticated:', this.authService.isAuthenticated());
 
     if (user && token) {
-      console.log('✅ Starting Socket.IO connection...');
-      this.socketService.connect(token, user);
+      // Only connect socket if not already connected
+      if (!this.socketService.isConnected()) {
+        console.log('✅ Starting Socket.IO connection from chat service...');
+        this.socketService.connect(token, user);
+      } else {
+        console.log('✅ Socket already connected, skipping connection');
+      }
+      
       this.loadUserRooms().subscribe({
         next: (rooms) => {
           console.log(`✅ Loaded ${rooms.length} chat rooms`);
@@ -185,9 +191,15 @@ export class ChatService {
     }
   }
 
-  // Disconnect from chat
+  // DEPRECATED: Do not use this method!
+  // Socket connection should persist across pages to receive notifications
+  // Only disconnect when user logs out (handled in app.component.ts)
   disconnect(): void {
-    this.socketService.disconnect();
+    console.warn('⚠️ ChatService.disconnect() is deprecated and should not be used!');
+    console.warn('⚠️ Socket connection must persist to receive notifications across all pages.');
+    console.warn('⚠️ Socket will only disconnect when user logs out.');
+    // Do NOT disconnect socket here
+    // this.socketService.disconnect();
   }
 
   // API Methods

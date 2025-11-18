@@ -103,14 +103,27 @@ const sendFriendRequest = async (req, res) => {
 
     // Emit socket notification to addressee (receiver of friend request)
     if (req.io) {
-      console.log(`📬 Emitting friend_request_received to room: user_${addressee_id}`);
+      const roomName = `user_${addressee_id}`;
+      console.log(`📬 Emitting friend_request_received to room: ${roomName}`);
       console.log(`📊 Friendship ID: ${completeFriendship.id}, Requester: ${completeFriendship.Requester.name}`);
-      req.io.to(`user_${addressee_id}`).emit('friend_request_received', {
+      
+      // Check how many sockets are in the room
+      const roomSockets = req.io.sockets.adapter.rooms.get(roomName);
+      const socketCount = roomSockets ? roomSockets.size : 0;
+      console.log(`📊 Sockets in room ${roomName}: ${socketCount}`);
+      
+      if (socketCount === 0) {
+        console.log(`⚠️ WARNING: No sockets in room ${roomName}. User ${addressee_id} may not be connected.`);
+      }
+      
+      req.io.to(roomName).emit('friend_request_received', {
         friendship: completeFriendship,
         requester: completeFriendship.Requester,
         timestamp: new Date().toISOString()
       });
       console.log(`✅ Friend request notification sent to user ${addressee_id}`);
+    } else {
+      console.log(`⚠️ WARNING: req.io is not available. Socket notification not sent.`);
     }
 
     res.status(201).json({
