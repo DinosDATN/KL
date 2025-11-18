@@ -1,1 +1,194 @@
-<p>contest-leaderboard works!</p>
+<!-- Contest Leaderboard Page -->
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+  
+  <!-- Loading State -->
+  <div *ngIf="loading" class="flex items-center justify-center min-h-screen">
+    <div class="text-center">
+      <div class="animate-spin inline-block w-8 h-8 border-4 border-current border-t-transparent text-purple-600 rounded-full mb-4"></div>
+      <p class="text-gray-600 dark:text-gray-400">Đang tải bảng xếp hạng...</p>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="flex items-center justify-center min-h-screen">
+    <div class="text-center bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 max-w-md mx-auto">
+      <div class="text-red-500 mb-4">
+        <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+        </svg>
+      </div>
+      <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Lỗi</h3>
+      <p class="text-gray-600 dark:text-gray-400 mb-4">{{ error }}</p>
+      <button (click)="goBack()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors">
+        Quay lại
+      </button>
+    </div>
+  </div>
+
+  <!-- Leaderboard Content -->
+  <div *ngIf="!loading && !error" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- Header -->
+    <div class="mb-8">
+      <!-- Back Button -->
+      <button (click)="goBack()" class="mb-6 inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+        Quay lại cuộc thi
+      </button>
+
+      <!-- Title Section -->
+      <div class="bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl shadow-lg p-8 text-white">
+        <div class="flex items-center gap-4 mb-4">
+          <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+          </svg>
+          <div>
+            <h1 class="text-3xl md:text-4xl font-bold">Bảng Xếp Hạng</h1>
+            <p *ngIf="contest" class="text-lg opacity-90 mt-2">{{ contest.title }}</p>
+          </div>
+        </div>
+        
+        <div *ngIf="contest" class="flex items-center gap-4 mt-4">
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-white/20">
+            <span *ngIf="contest.status === 'active'" class="w-2 h-2 bg-green-400 rounded-full animate-pulse mr-2"></span>
+            <span *ngIf="contest.status === 'upcoming'" class="w-2 h-2 bg-blue-400 rounded-full mr-2"></span>
+            <span *ngIf="contest.status === 'completed'" class="w-2 h-2 bg-gray-400 rounded-full mr-2"></span>
+            {{ contest.status === 'active' ? 'Đang diễn ra' : 
+               contest.status === 'upcoming' ? 'Sắp tới' : 
+               contest.status === 'completed' ? 'Đã kết thúc' : contest.status }}
+          </span>
+          <span class="text-sm opacity-90">
+            {{ leaderboard.length }} người tham gia
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leaderboard Table -->
+    <div *ngIf="leaderboard.length > 0" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <!-- Table Header -->
+      <div class="bg-gray-50 dark:bg-gray-700 px-6 py-4 border-b border-gray-200 dark:border-gray-600">
+        <div class="grid grid-cols-12 gap-4 font-semibold text-gray-700 dark:text-gray-300 text-sm">
+          <div class="col-span-1 text-center">Hạng</div>
+          <div class="col-span-5">Người tham gia</div>
+          <div class="col-span-2 text-center">Điểm số</div>
+          <div class="col-span-2 text-center">Bài nộp</div>
+          <div class="col-span-2 text-center">Lần nộp cuối</div>
+        </div>
+      </div>
+
+      <!-- Table Body -->
+      <div class="divide-y divide-gray-200 dark:divide-gray-700">
+        <div *ngFor="let entry of leaderboard" 
+             class="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+          <div class="grid grid-cols-12 gap-4 items-center">
+            <!-- Rank -->
+            <div class="col-span-1 text-center">
+              <div class="flex items-center justify-center">
+                <span *ngIf="entry.rank <= 3" class="text-2xl">{{ getRankIcon(entry.rank) }}</span>
+                <span *ngIf="entry.rank > 3" class="text-lg font-bold" [ngClass]="getRankColor(entry.rank)">
+                  #{{ entry.rank }}
+                </span>
+              </div>
+            </div>
+
+            <!-- User Info -->
+            <div class="col-span-5">
+              <div class="flex items-center gap-3">
+                <img 
+                  [src]="entry.User.avatar_url || 'https://ui-avatars.com/api/?name=' + (entry.User.name | slice:0:2) + '&background=random&color=ffffff'"
+                  [alt]="entry.User.name"
+                  class="w-10 h-10 rounded-full border-2"
+                  [ngClass]="{
+                    'border-yellow-400': entry.rank === 1,
+                    'border-gray-400': entry.rank === 2,
+                    'border-orange-600': entry.rank === 3,
+                    'border-gray-300 dark:border-gray-600': entry.rank > 3
+                  }">
+                <div>
+                  <div class="font-semibold text-gray-900 dark:text-white">
+                    {{ entry.User.name }}
+                  </div>
+                  <div class="text-sm text-gray-500 dark:text-gray-400">
+                    {{ entry.User.email }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Total Score -->
+            <div class="col-span-2 text-center">
+              <div class="text-2xl font-bold"
+                   [ngClass]="{
+                     'text-yellow-500': entry.rank === 1,
+                     'text-gray-400': entry.rank === 2,
+                     'text-orange-600': entry.rank === 3,
+                     'text-blue-600 dark:text-blue-400': entry.rank > 3
+                   }">
+                {{ entry.total_score }}
+              </div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">điểm</div>
+            </div>
+
+            <!-- Submission Count -->
+            <div class="col-span-2 text-center">
+              <div class="text-lg font-semibold text-gray-700 dark:text-gray-300">
+                {{ entry.submission_count }}
+              </div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">bài nộp</div>
+            </div>
+
+            <!-- Last Submission -->
+            <div class="col-span-2 text-center">
+              <div class="text-sm text-gray-600 dark:text-gray-400">
+                {{ entry.last_submission | date:'dd/MM/yyyy' }}
+              </div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">
+                {{ entry.last_submission | date:'HH:mm' }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="leaderboard.length === 0" 
+         class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
+      <div class="text-gray-400 mb-4">
+        <svg class="w-20 h-20 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+        </svg>
+      </div>
+      <h3 class="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
+        Chưa có dữ liệu
+      </h3>
+      <p class="text-gray-600 dark:text-gray-400 mb-6">
+        Chưa có người tham gia nào nộp bài cho cuộc thi này.
+      </p>
+      <button (click)="goBack()" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg transition-colors font-medium">
+        Quay lại cuộc thi
+      </button>
+    </div>
+
+    <!-- Info Box -->
+    <div *ngIf="leaderboard.length > 0" class="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+      <div class="flex items-start gap-3">
+        <svg class="w-6 h-6 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <div>
+          <h4 class="font-semibold text-blue-900 dark:text-blue-100 mb-2">Cách tính điểm</h4>
+          <ul class="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+            <li>• Điểm số = Tổng điểm các bài đã AC (Accepted)</li>
+            <li>• Xếp hạng theo: Điểm số (cao → thấp), Thời gian nộp cuối (sớm → muộn)</li>
+            <li>• Chỉ tính bài nộp có trạng thái "Accepted"</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

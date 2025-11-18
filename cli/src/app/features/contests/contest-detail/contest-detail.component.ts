@@ -127,4 +127,13 @@ export class ContestDetailComponent implements OnInit {
     // Navigate to problem detail page (read-only)
     this.router.navigate(['/problems', contestProblem.Problem.id]);
   }
+
+  onViewLeaderboard(): void {
+    if (!this.contest) {
+      return;
+    }
+
+    // Navigate to contest leaderboard page
+    this.router.navigate(['/contests', this.contest.id, 'leaderboard']);
+  }
 }

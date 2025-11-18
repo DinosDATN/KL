@@ -857,9 +857,9 @@ class ContestController {
       const leaderboard = await ContestSubmission.findAll({
         attributes: [
           'user_id',
-          [Contest.sequelize.fn('SUM', Contest.sequelize.col('score')), 'total_score'],
+          [Contest.sequelize.fn('SUM', Contest.sequelize.col('ContestSubmission.score')), 'total_score'],
           [Contest.sequelize.fn('COUNT', Contest.sequelize.col('ContestSubmission.id')), 'submission_count'],
-          [Contest.sequelize.fn('MAX', Contest.sequelize.col('submitted_at')), 'last_submission']
+          [Contest.sequelize.fn('MAX', Contest.sequelize.col('ContestSubmission.submitted_at')), 'last_submission']
         ],
         include: [
           {
@@ -879,8 +879,8 @@ class ContestController {
         },
         group: ['user_id', 'User.id'],
         order: [
-          [Contest.sequelize.fn('SUM', Contest.sequelize.col('score')), 'DESC'],
-          [Contest.sequelize.fn('MAX', Contest.sequelize.col('submitted_at')), 'ASC']
+          [Contest.sequelize.fn('SUM', Contest.sequelize.col('ContestSubmission.score')), 'DESC'],
+          [Contest.sequelize.fn('MAX', Contest.sequelize.col('ContestSubmission.submitted_at')), 'ASC']
         ],
         limit,
         offset

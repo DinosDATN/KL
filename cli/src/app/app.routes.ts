@@ -268,6 +268,13 @@ export const routes: Routes = [
           ).then((m) => m.ContestDetailComponent),
       },
       {
+        path: 'contests/:id/leaderboard',
+        loadComponent: () =>
+          import(
+            './features/contests/components/contest-leaderboard/contest-leaderboard.component'
+          ).then((m) => m.ContestLeaderboardComponent),
+      },
+      {
         path: 'profile',
         loadComponent: () =>
           import('./features/profile/profile.component').then(
