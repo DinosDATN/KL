@@ -56,7 +56,17 @@ const { handleConnection } = require("./socket/chatHandler");
 handleConnection(io);
 
 // Middleware
-app.use(cors());
+const cookieParser = require('cookie-parser');
+
+// ✅ CORS with credentials support for HttpOnly cookies
+app.use(cors({
+  origin: process.env.CLIENT_URL || "http://localhost:4200",
+  credentials: true, // ✅ Important: Allow cookies to be sent
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
+app.use(cookieParser()); // ✅ Parse cookies
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 

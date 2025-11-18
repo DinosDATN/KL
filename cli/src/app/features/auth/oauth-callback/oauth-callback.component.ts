@@ -61,11 +61,10 @@ export class OAuthCallbackComponent implements OnInit {
         return;
       }
 
-      // Check for token and user data
-      const token = queryParams['token'];
+      // ✅ Check for user data only (token is in HttpOnly cookie)
       const userDataStr = queryParams['user'];
 
-      if (!token || !userDataStr) {
+      if (!userDataStr) {
         this.handleError('missing_data');
         return;
       }
@@ -73,15 +72,22 @@ export class OAuthCallbackComponent implements OnInit {
       try {
         const userData = JSON.parse(decodeURIComponent(userDataStr));
         
-        // Store authentication data
+        console.log('✅ OAuth callback: Processing user data', { 
+          userName: userData.name
+        });
+        
+        // ✅ Store user data only (token is already in HttpOnly cookie)
+        this.authService.setUserData(userData);
+        
+        console.log('✅ OAuth callback: User data stored successfully');
+        
+        // Verify storage
         if (isPlatformBrowser(this.platformId)) {
-          localStorage.setItem('auth_token', token);
-          localStorage.setItem('auth_user', JSON.stringify(userData));
+          console.log('📊 Verify storage:', {
+            user: localStorage.getItem('auth_user') ? 'exists' : 'missing',
+            cookie: 'Token is in HttpOnly cookie (not accessible from JS)'
+          });
         }
-
-        // Update auth service state
-        this.authService['currentUserSubject'].next(userData);
-        this.authService['isAuthenticatedSubject'].next(true);
 
         this.isProcessing = false;
         this.statusMessage = 'Đăng nhập thành công! Đang chuyển hướng...';

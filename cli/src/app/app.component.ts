@@ -24,8 +24,13 @@ export class AppComponent implements OnInit {
   ngOnInit(): void {
     console.log('🚀 App component initialized');
     
-    // Initialize socket connection and notifications if user is authenticated
-    this.initializeApp();
+    // Đợi auth initialized trước khi init app
+    this.authService.authInitialized$.subscribe((initialized) => {
+      if (initialized) {
+        console.log('✅ Auth initialized, initializing app');
+        this.initializeApp();
+      }
+    });
 
     // Listen for auth state changes
     this.authService.currentUser$.subscribe((user) => {
@@ -47,20 +52,22 @@ export class AppComponent implements OnInit {
 
   private initializeApp(): void {
     const user = this.authService.getCurrentUser();
-    const token = this.authService.getToken();
 
     console.log('🔧 Initializing app...', { 
-      hasUser: !!user, 
-      hasToken: !!token,
+      hasUser: !!user,
       userName: user?.name 
     });
 
-    if (user && token) {
+    if (user) {
+      // ✅ Token is in HttpOnly cookie, we just need user data
       // Initialize socket connection
       if (!this.socketService.isConnected()) {
         console.log('🚀 Initializing socket connection from app component');
         console.log(`👤 User: ${user.name} (ID: ${user.id})`);
-        this.socketService.connect(token, user);
+        
+        // ⚠️ Socket.IO needs token - we'll need to update socket connection
+        // For now, pass empty string as token (socket will use cookie)
+        this.socketService.connect('', user);
         
         // Wait a bit for socket to connect before loading notifications
         setTimeout(() => {
@@ -71,7 +78,7 @@ export class AppComponent implements OnInit {
         this.loadNotifications();
       }
     } else {
-      console.log('⚠️ Cannot initialize app: missing user or token');
+      console.log('⚠️ Cannot initialize app: missing user');
     }
   }
 

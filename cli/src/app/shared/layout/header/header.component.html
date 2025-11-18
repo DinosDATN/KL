@@ -253,6 +253,13 @@
 
         <!-- User Menu -->
         <div class="relative">
+          <!-- Loading state khi chưa initialized -->
+          <div *ngIf="!authLoaded" class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
+            <div class="hidden md:block w-20 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          </div>
+
+          <!-- Authenticated User -->
           <button
             *ngIf="authLoaded && isAuthenticated"
             (click)="toggleUserMenu()"

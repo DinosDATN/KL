@@ -13,18 +13,11 @@ export class AuthInterceptor implements HttpInterceptor {
   ) {}
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    // Get the auth token from the service
-    const authToken = this.authService.getToken();
-    
-    // Clone the request and add the authorization header if token exists
-    let authReq = req;
-    if (authToken && this.shouldAddToken(req.url)) {
-      authReq = req.clone({
-        setHeaders: {
-          Authorization: `Bearer ${authToken}`
-        }
-      });
-    }
+    // ✅ Clone request with credentials to send cookies
+    // No need to add Authorization header - cookie is sent automatically
+    const authReq = req.clone({
+      withCredentials: true // ✅ Important: Send HttpOnly cookies
+    });
 
     // Handle the request and catch any errors
     return next.handle(authReq).pipe(
@@ -32,6 +25,7 @@ export class AuthInterceptor implements HttpInterceptor {
         // Handle 401 Unauthorized errors
         if (error.status === 401 && this.authService.isAuthenticated()) {
           // Token might be expired or invalid, logout user
+          console.log('🔒 401 Unauthorized - logging out user');
           this.authService.logout().subscribe({
             complete: () => {
               this.router.navigate(['/auth/login']);
@@ -47,19 +41,5 @@ export class AuthInterceptor implements HttpInterceptor {
         return throwError(() => error);
       })
     );
-  }
-
-  /**
-   * Determine if we should add the auth token to this request
-   * Only add token to API requests, not to external URLs
-   */
-  private shouldAddToken(url: string): boolean {
-    // Don't add token to auth endpoints (login/register)
-    if (url.includes('/auth/login') || url.includes('/auth/register')) {
-      return false;
-    }
-    
-    // Add token to all other API requests
-    return url.includes('/api/');
   }
 }

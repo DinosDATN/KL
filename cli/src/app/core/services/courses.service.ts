@@ -312,56 +312,18 @@ export class CoursesService {
   }
 
   /**
-   * Get auth headers with JWT token
+   * ❌ DEPRECATED: No longer need auth headers
+   * Token is sent automatically via HttpOnly cookie
+   * Kept for backward compatibility
    */
   private getAuthHeaders(): any {
-    const token = this.getToken();
-    
     if (environment.enableLogging) {
-      console.log('[CoursesService] Getting auth headers');
-      console.log('[CoursesService] Token exists:', !!token);
-      if (token) {
-        console.log('[CoursesService] Token preview:', token.substring(0, 20) + '...');
-      }
+      console.log('[CoursesService] Auth headers not needed - using HttpOnly cookies');
     }
     
-    if (token) {
-      return {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      };
-    }
-    
-    console.warn('[CoursesService] No token found! User may not be logged in.');
     return {
       'Content-Type': 'application/json'
     };
-  }
-
-  /**
-   * Get JWT token from localStorage
-   */
-  private getToken(): string | null {
-    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
-      // Try 'auth_token' first (used by AuthService)
-      let token = localStorage.getItem('auth_token');
-      
-      // Fallback to 'token' for backward compatibility
-      if (!token) {
-        token = localStorage.getItem('token');
-      }
-      
-      if (!token && environment.enableLogging) {
-        console.warn('[CoursesService] Token not found in localStorage');
-        console.log('[CoursesService] Available localStorage keys:', Object.keys(localStorage));
-        console.log('[CoursesService] Tried keys: auth_token, token');
-      }
-      
-      return token;
-    }
-    
-    console.warn('[CoursesService] localStorage not available (SSR?)');
-    return null;
   }
 
   // Private helper methods

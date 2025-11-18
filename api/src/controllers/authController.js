@@ -80,12 +80,24 @@ const authController = {
       // Generate token
       const token = generateToken(user.id);
 
+      // ✅ Set HttpOnly cookie
+      res.cookie('auth_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: '/'
+      });
+
+      console.log('✅ Registration successful, cookie set for user:', user.email);
+
+      // ✅ Return user data only (no token)
       res.status(201).json({
         success: true,
         message: 'User registered successfully',
         data: {
-          token,
           user: user.toAuthJSON()
+          // ❌ No token in response
         }
       });
 
@@ -176,12 +188,24 @@ const authController = {
       // Generate token
       const token = generateToken(user.id);
 
+      // ✅ Set HttpOnly cookie instead of returning token
+      res.cookie('auth_token', token, {
+        httpOnly: true,        // Cannot be accessed by JavaScript
+        secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+        sameSite: 'lax',       // CSRF protection (changed from 'strict' for OAuth compatibility)
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: '/'
+      });
+
+      console.log('✅ Login successful, cookie set for user:', user.email);
+
+      // ✅ Return user data only (no token in response body)
       res.status(200).json({
         success: true,
         message: 'Login successful',
         data: {
-          token,
           user: user.toAuthJSON()
+          // ❌ No token in response
         }
       });
 
@@ -239,6 +263,16 @@ const authController = {
         { where: { id: userId } }
       );
 
+      // ✅ Clear HttpOnly cookie
+      res.clearCookie('auth_token', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/'
+      });
+
+      console.log('✅ Logout successful, cookie cleared for user:', userId);
+
       res.status(200).json({
         success: true,
         message: 'Logout successful'
@@ -274,9 +308,20 @@ const authController = {
       // Generate JWT token
       const token = generateToken(user.id);
 
-      // Redirect to frontend with token
+      // ✅ Set HttpOnly cookie
+      res.cookie('auth_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: '/'
+      });
+
+      console.log('✅ Google OAuth successful, cookie set for user:', user.email);
+
+      // ✅ Redirect to frontend with user data only (no token in URL)
       const clientUrl = process.env.CLIENT_URL || 'http://localhost:4200';
-      const redirectUrl = `${clientUrl}/auth/callback?token=${token}&user=${encodeURIComponent(JSON.stringify(user.toAuthJSON()))}`;
+      const redirectUrl = `${clientUrl}/auth/callback?user=${encodeURIComponent(JSON.stringify(user.toAuthJSON()))}`;
       
       console.log('Google OAuth successful, redirecting to:', redirectUrl);
       res.redirect(redirectUrl);
@@ -314,9 +359,20 @@ const authController = {
       // Generate JWT token
       const token = generateToken(user.id);
 
-      // Redirect to frontend with token
+      // ✅ Set HttpOnly cookie
+      res.cookie('auth_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: '/'
+      });
+
+      console.log('✅ GitHub OAuth successful, cookie set for user:', user.email);
+
+      // ✅ Redirect to frontend with user data only (no token in URL)
       const clientUrl = process.env.CLIENT_URL || 'http://localhost:4200';
-      const redirectUrl = `${clientUrl}/auth/callback?token=${token}&user=${encodeURIComponent(JSON.stringify(user.toAuthJSON()))}`;
+      const redirectUrl = `${clientUrl}/auth/callback?user=${encodeURIComponent(JSON.stringify(user.toAuthJSON()))}`;
       
       console.log('GitHub OAuth successful, redirecting to:', redirectUrl);
       res.redirect(redirectUrl);
