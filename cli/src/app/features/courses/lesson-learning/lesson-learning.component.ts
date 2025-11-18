@@ -89,7 +89,7 @@ export class LessonLearningComponent implements OnInit, OnDestroy {
           console.error('Failed to check enrollment:', error);
           // If not authenticated, redirect to login
           if (error.status === 401) {
-            this.router.navigate(['/login'], {
+            this.router.navigate(['/auth/login'], {
               queryParams: { returnUrl: `/courses/${courseId}/lessons/${lessonId}` }
             });
           } else {
@@ -124,6 +124,24 @@ export class LessonLearningComponent implements OnInit, OnDestroy {
           // Find current lesson
           this.currentLesson = this.courseLessons.find((l) => l.id === lessonId) || null;
           this.currentLessonIndex = this.courseLessons.findIndex((l) => l.id === lessonId);
+
+          console.log('🔍 Lesson search:', {
+            requestedLessonId: lessonId,
+            foundLesson: this.currentLesson,
+            lessonIndex: this.currentLessonIndex,
+            totalLessons: this.courseLessons.length,
+            allLessonIds: this.courseLessons.map(l => l.id)
+          });
+
+          // Check if lesson was found
+          if (!this.currentLesson) {
+            this.error = `Không tìm thấy bài học với ID ${lessonId} trong khóa học này`;
+            console.error('❌ Lesson not found:', {
+              lessonId,
+              availableLessons: this.courseLessons
+            });
+            return;
+          }
 
           // Load progress from server
           this.loadProgressFromServer(courseId);

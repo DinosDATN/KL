@@ -680,21 +680,54 @@
 
   <!-- Error State -->
   <div
-    *ngIf="!loading && (!course || !currentLesson)"
-    class="text-center py-16"
+    *ngIf="!loading && error"
+    class="min-h-screen flex items-center justify-center p-6"
   >
-    <div class="text-gray-400 dark:text-gray-500 text-6xl mb-4">❌</div>
-    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-      Không tìm thấy bài học
-    </h2>
-    <p class="text-gray-600 dark:text-gray-400 mb-6">
-      Bài học bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.
-    </p>
-    <a
-      href="/courses"
-      class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 font-medium"
-    >
-      Quay về danh sách khóa học
-    </a>
+    <div class="text-center max-w-md">
+      <div class="text-gray-400 dark:text-gray-500 text-6xl mb-4">⚠️</div>
+      <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+        Có lỗi xảy ra
+      </h2>
+      <p class="text-gray-600 dark:text-gray-400 mb-6">
+        {{ error }}
+      </p>
+      <div class="flex gap-4 justify-center">
+        <button
+          (click)="backToCourse()"
+          *ngIf="course"
+          class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 font-medium"
+        >
+          Quay về khóa học
+        </button>
+        <a
+          href="/courses"
+          class="inline-block bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 font-medium"
+        >
+          Danh sách khóa học
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Not Found State -->
+  <div
+    *ngIf="!loading && !error && (!course || !currentLesson)"
+    class="min-h-screen flex items-center justify-center p-6"
+  >
+    <div class="text-center max-w-md">
+      <div class="text-gray-400 dark:text-gray-500 text-6xl mb-4">❌</div>
+      <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+        Không tìm thấy bài học
+      </h2>
+      <p class="text-gray-600 dark:text-gray-400 mb-6">
+        Bài học bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.
+      </p>
+      <a
+        href="/courses"
+        class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 font-medium"
+      >
+        Quay về danh sách khóa học
+      </a>
+    </div>
   </div>
 </div>
