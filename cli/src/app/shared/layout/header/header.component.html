@@ -107,8 +107,8 @@
           <span class="sr-only">Toggle theme</span>
         </button>
 
-        <!-- Notifications -->
-        <div class="relative" *ngIf="isAuthenticated">
+        <!-- Notifications - Only render in browser -->
+        <div class="relative" *ngIf="isBrowser && (isAuthenticated$ | async)">
           <button
             (click)="toggleNotification()"
             class="p-2 text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors relative"
@@ -251,35 +251,29 @@
           </ng-container>
         </div>
 
-        <!-- User Menu -->
-        <div class="relative">
-          <!-- Loading state khi chưa initialized -->
-          <div *ngIf="!authLoaded" class="flex items-center gap-2">
-            <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
-            <div class="hidden md:block w-20 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-          </div>
-
-          <!-- User Menu Section -->
-          <ng-container *ngIf="authLoaded; else userSkeleton">
+        <!-- User Menu - Only render in browser -->
+        <div class="relative" *ngIf="isBrowser">
+          <!-- Wait for auth initialization -->
+          <ng-container *ngIf="authInitialized$ | async; else userSkeleton">
             <!-- Authenticated User -->
             <button
-              *ngIf="isAuthenticated"
+              *ngIf="isAuthenticated$ | async"
               (click)="toggleUserMenu()"
               class="flex items-center gap-2 p-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             >
               <img
                 [src]="
-                  currentUser?.avatar_url ||
+                  (currentUser$ | async)?.avatar_url ||
                   'https://ui-avatars.com/api/?name=' +
-                    (currentUser?.name | slice : 0 : 2) +
+                    ((currentUser$ | async)?.name | slice : 0 : 2) +
                     '&background=3b82f6&color=ffffff'
                 "
-                [alt]="currentUser?.name || 'User'"
+                [alt]="(currentUser$ | async)?.name || 'User'"
                 class="w-8 h-8 rounded-full"
               />
               <span
                 class="hidden md:block text-gray-700 dark:text-gray-300 font-medium"
-                >{{ currentUser?.name }}</span
+                >{{ (currentUser$ | async)?.name }}</span
               >
               <i
                 class="icon-chevron-down text-gray-400 dark:text-gray-500 ml-1"
@@ -288,7 +282,7 @@
 
             <!-- Login/Register buttons when not authenticated -->
             <div
-              *ngIf="!isAuthenticated"
+              *ngIf="!(isAuthenticated$ | async)"
               class="flex items-center gap-2"
             >
               <a
@@ -304,91 +298,171 @@
                 Đăng ký
               </a>
             </div>
+            
           </ng-container>
 
           <!-- Skeleton Loading State -->
           <ng-template #userSkeleton>
             <div class="flex items-center gap-2 p-2">
-              <div class="skeleton skeleton-avatar"></div>
-              <div class="hidden md:block skeleton skeleton-text"></div>
+              <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
+              <div class="hidden md:block w-20 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
             </div>
           </ng-template>
-
-          <!-- User Dropdown + Overlay -->
-          <ng-container *ngIf="isUserMenuOpen && isAuthenticated">
-            <!-- Overlay to close menu when clicking outside -->
-            <div class="fixed inset-0 z-40" (click)="closeMenus()"></div>
+                  <ng-container *ngIf="isBrowser && isUserMenuOpen && (isAuthenticated$ | async)">
+          <!-- Overlay to close menu when clicking outside -->
+          <div class="fixed inset-0 z-40" (click)="closeMenus()"></div>
+          <div
+            class="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50"
+          >
+            <!-- User Info -->
             <div
-              class="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50"
+              class="px-4 py-2 border-b border-gray-200 dark:border-gray-700"
             >
-              <!-- User Info -->
-              <div
-                class="px-4 py-2 border-b border-gray-200 dark:border-gray-700"
+              <p
+                class="text-sm font-medium text-gray-900 dark:text-white truncate"
               >
-                <p
-                  class="text-sm font-medium text-gray-900 dark:text-white truncate"
-                >
-                  {{ currentUser?.name }}
-                </p>
-                <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-                  {{ currentUser?.email }}
-                </p>
+                {{ (currentUser$ | async)?.name }}
+              </p>
+              <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
+                {{ (currentUser$ | async)?.email }}
+              </p>
+            </div>
+
+            <!-- User Stats (Mobile) -->
+            <div *ngIf="userStats" class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 space-y-2">
+              <!-- Reward Points -->
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i class="icon-award text-yellow-500 text-sm"></i>
+                  <span class="text-sm text-gray-600 dark:text-gray-400">Điểm thưởng</span>
+                </div>
+                <span class="text-sm font-semibold text-yellow-600 dark:text-yellow-400">
+                  {{ userStats.reward_points | number }}
+                </span>
               </div>
 
-              <!-- User Stats (Mobile) -->
-              <div *ngIf="userStats" class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 space-y-2">
-                <!-- Reward Points -->
+              <!-- Level & XP -->
+              <div class="space-y-1">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2">
-                    <i class="icon-award text-yellow-500 text-sm"></i>
-                    <span class="text-sm text-gray-600 dark:text-gray-400">Điểm thưởng</span>
+                    <i class="icon-zap text-blue-500 text-sm"></i>
+                    <span class="text-sm text-gray-600 dark:text-gray-400">Level {{ userStats.level }}</span>
                   </div>
-                  <span class="text-sm font-semibold text-yellow-600 dark:text-yellow-400">
-                    {{ userStats.reward_points | number }}
+                  <span class="text-xs text-gray-500 dark:text-gray-500">
+                    {{ userStats.xp | number }} / {{ levelProgress?.xpForNextLevel | number }} XP
                   </span>
                 </div>
-
-                <!-- Level & XP -->
-                <div class="space-y-1">
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                      <i class="icon-zap text-blue-500 text-sm"></i>
-                      <span class="text-sm text-gray-600 dark:text-gray-400">Level {{ userStats.level }}</span>
-                    </div>
-                    <span class="text-xs text-gray-500 dark:text-gray-500">
-                      {{ userStats.xp | number }} / {{ levelProgress?.xpForNextLevel | number }} XP
-                    </span>
-                  </div>
-                  <div class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                    <div 
-                      class="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-300"
-                      [style.width.%]="levelProgress?.progressPercentage || 0"
-                    ></div>
-                  </div>
-                </div>
-
-                <!-- Rank -->
-                <div *ngIf="userStats.rank > 0" class="flex items-center justify-between">
-                  <div class="flex items-center gap-2">
-                    <i class="icon-trophy text-purple-500 text-sm"></i>
-                    <span class="text-sm text-gray-600 dark:text-gray-400">Xếp hạng</span>
-                  </div>
-                  <span class="text-sm font-semibold text-purple-600 dark:text-purple-400">
-                    #{{ userStats.rank }}
-                  </span>
+                <div class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div 
+                    class="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-300"
+                    [style.width.%]="levelProgress?.progressPercentage || 0"
+                  ></div>
                 </div>
               </div>
-              <button
-                *ngFor="let item of userMenuItems"
-                (click)="onUserMenuItemClick(item)"
-                class="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              >
-                <i class="mr-3" [class]="'icon-' + item.icon"></i>
-                {{ item.label }}
-              </button>
+
+              <!-- Rank -->
+              <div *ngIf="userStats.rank > 0" class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i class="icon-trophy text-purple-500 text-sm"></i>
+                  <span class="text-sm text-gray-600 dark:text-gray-400">Xếp hạng</span>
+                </div>
+                <span class="text-sm font-semibold text-purple-600 dark:text-purple-400">
+                  #{{ userStats.rank }}
+                </span>
+              </div>
             </div>
-          </ng-container>
+
+            <!-- Menu Items -->
+            <button
+              *ngFor="let item of userMenuItems"
+              (click)="onUserMenuItemClick(item)"
+              class="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              <i class="mr-3" [class]="'icon-' + item.icon"></i>
+              {{ item.label }}
+            </button>
+          </div>
+        </ng-container>
         </div>
+
+        <!-- SSR Fallback - Simple skeleton
+        <div class="relative" *ngIf="!isBrowser">
+          <div class="flex items-center gap-2 p-2">
+            <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700"></div>
+            <div class="hidden md:block w-20 h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
+          </div>
+        </div> -->
+
+        <!-- User Dropdown + Overlay - Only render in browser -->
+         
+        <!-- <ng-container *ngIf="isBrowser && isUserMenuOpen && (isAuthenticated$ | async)">
+          <div class="fixed inset-0 z-40" (click)="closeMenus()"></div>
+          <div
+            class="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50"
+          >
+            <div
+              class="px-4 py-2 border-b border-gray-200 dark:border-gray-700"
+            >
+              <p
+                class="text-sm font-medium text-gray-900 dark:text-white truncate"
+              >
+                {{ (currentUser$ | async)?.name }}
+              </p>
+              <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
+                {{ (currentUser$ | async)?.email }}
+              </p>
+            </div>
+
+            <div *ngIf="userStats" class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 space-y-2">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i class="icon-award text-yellow-500 text-sm"></i>
+                  <span class="text-sm text-gray-600 dark:text-gray-400">Điểm thưởng</span>
+                </div>
+                <span class="text-sm font-semibold text-yellow-600 dark:text-yellow-400">
+                  {{ userStats.reward_points | number }}
+                </span>
+              </div>
+
+              <div class="space-y-1">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <i class="icon-zap text-blue-500 text-sm"></i>
+                    <span class="text-sm text-gray-600 dark:text-gray-400">Level {{ userStats.level }}</span>
+                  </div>
+                  <span class="text-xs text-gray-500 dark:text-gray-500">
+                    {{ userStats.xp | number }} / {{ levelProgress?.xpForNextLevel | number }} XP
+                  </span>
+                </div>
+                <div class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div 
+                    class="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-300"
+                    [style.width.%]="levelProgress?.progressPercentage || 0"
+                  ></div>
+                </div>
+              </div>
+
+              <div *ngIf="userStats.rank > 0" class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i class="icon-trophy text-purple-500 text-sm"></i>
+                  <span class="text-sm text-gray-600 dark:text-gray-400">Xếp hạng</span>
+                </div>
+                <span class="text-sm font-semibold text-purple-600 dark:text-purple-400">
+                  #{{ userStats.rank }}
+                </span>
+              </div>
+            </div>
+
+            <button
+              *ngFor="let item of userMenuItems"
+              (click)="onUserMenuItemClick(item)"
+              class="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              <i class="mr-3" [class]="'icon-' + item.icon"></i>
+              {{ item.label }}
+            </button>
+          </div>
+        </ng-container> -->
 
         <!-- Mobile menu button -->
         <button

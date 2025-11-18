@@ -5,14 +5,16 @@ import {
   AfterViewInit,
   OnDestroy,
   HostListener,
+  PLATFORM_ID,
+  Inject,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { ThemeService } from '../../../core/services/theme.service';
 import { UserStatsBadgeComponent } from '../../components/user-stats-badge/user-stats-badge.component';
 import { AuthService } from '../../../core/services/auth.service';
 import { User } from '../../../core/models/user.model';
-import { Subscription } from 'rxjs';
+import { filter, Subject, Subscription, switchMap, take, takeUntil, Observable } from 'rxjs';
 import { AppNotificationService, AppNotification } from '../../../core/services/app-notification.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { UserStatsService } from '../../../core/services/user-stats.service';
@@ -44,12 +46,17 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
   private observer?: IntersectionObserver;
   @ViewChild('sentinel', { static: true }) sentinelRef!: ElementRef;
 
-  // Authentication state
+  // Platform detection
+  isBrowser: boolean;
+
+  // Authentication state - use observables for async pipe
+  currentUser$: Observable<User | null>;
+  isAuthenticated$: Observable<boolean>;
+  authInitialized$: Observable<boolean>;
+  
+  // Legacy properties for backward compatibility (minimal usage)
   currentUser: User | null = null;
-  isAuthenticated = false;
-  authLoaded = false; // Flag to track if auth state has been loaded
-  private authSubscription?: Subscription;
-  private authInitSubscription?: Subscription;
+  private destroy$ = new Subject<void>();
 
   ngAfterViewInit(): void {
     if (typeof window !== 'undefined' && this.sentinelRef) {
@@ -64,9 +71,10 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    
     if (this.observer) this.observer.disconnect();
-    if (this.authSubscription) this.authSubscription.unsubscribe();
-    if (this.authInitSubscription) this.authInitSubscription.unsubscribe();
     if (this.notificationSubscription) this.notificationSubscription.unsubscribe();
     if (this.unreadCountSubscription) this.unreadCountSubscription.unsubscribe();
     if (this.statsSubscription) this.statsSubscription.unsubscribe();
@@ -95,31 +103,40 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     private router: Router,
     private appNotificationService: AppNotificationService,
     private notificationService: NotificationService,
-    private userStatsService: UserStatsService
+    private userStatsService: UserStatsService,
+    @Inject(PLATFORM_ID) platformId: Object
   ) {
-    // Wait for auth initialization before subscribing to user changes
-    this.authInitSubscription = this.authService.authInitialized$.subscribe((initialized) => {
-      if (initialized) {
-        this.authLoaded = true;
-        
-        // Now subscribe to user changes after auth is initialized
-        if (!this.authSubscription) {
-          this.authSubscription = this.authService.currentUser$.subscribe((user) => {
-            this.currentUser = user;
-            this.isAuthenticated = !!user;
-            this.updateUserMenuItems();
+    this.isBrowser = isPlatformBrowser(platformId);
+    
+    // ✅ Setup observables for async pipe
+    this.currentUser$ = this.authService.currentUser$;
+    this.isAuthenticated$ = this.authService.isAuthenticated$;
+    this.authInitialized$ = this.authService.authInitialized$;
 
-            if (user) {
-              this.subscribeToNotifications();
-              this.loadUserStats();
-            } else {
-              this.unsubscribeFromNotifications();
-              this.clearUserStats();
-            }
-          });
-        }
-      }
-    });
+    // ✅ Only setup subscriptions in browser
+    if (this.isBrowser) {
+      // Wait for auth initialization, then subscribe to user changes
+      this.authService.authInitialized$
+        .pipe(
+          filter(initialized => initialized === true),
+          take(1),
+          switchMap(() => this.authService.currentUser$),
+          takeUntil(this.destroy$)
+        )
+        .subscribe((user) => {
+          this.currentUser = user; // Keep for legacy compatibility
+          this.updateUserMenuItems();
+
+          if (user) {
+            this.subscribeToNotifications();
+            this.loadUserStats();
+          } else {
+            this.unsubscribeFromNotifications();
+            this.clearUserStats();
+          }
+        });
+    }
+
   }
 
   private loadUserStats(): void {
@@ -432,7 +449,8 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
   }
 
   updateUserMenuItems(): void {
-    if (this.isAuthenticated) {
+    console.log("updateUserMenuItems user : ", this.currentUser);
+    if (this.currentUser) {
       const baseItems = [
         { label: 'Hồ sơ', link: '/profile', icon: 'user' },
         { label: 'Cài đặt', link: '/settings', icon: 'settings' },
