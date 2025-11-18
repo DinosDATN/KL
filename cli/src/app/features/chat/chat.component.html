@@ -254,6 +254,3 @@
 <!-- Create Group Modal -->
 <app-create-group-modal *ngIf="showCreateGroupModal && currentUser" [currentUser]="currentUser"
   (groupCreated)="onGroupCreated($event)" (modalClosed)="onCloseModal()"></app-create-group-modal>
-
-<!-- Notification Toasts -->
-<app-notification-toast></app-notification-toast>

@@ -11,6 +11,7 @@ import { RouterOutlet, Router } from '@angular/router';
 import { HeaderComponent } from '../header/header.component';
 import { FooterComponent } from '../footer/footer.component';
 import { BackToTopComponent } from '../../components/back-to-top/back-to-top.component';
+import { NotificationToastComponent } from '../../components/notification-toast/notification-toast.component';
 import { ThemeService } from '../../../core/services/theme.service';
 
 @Component({
@@ -22,6 +23,7 @@ import { ThemeService } from '../../../core/services/theme.service';
     HeaderComponent,
     FooterComponent,
     BackToTopComponent,
+    NotificationToastComponent,
   ],
   templateUrl: './main-layout.component.html',
   styleUrl: './main-layout.component.css',

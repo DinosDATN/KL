@@ -77,13 +77,9 @@ export class FriendshipService implements OnDestroy {
         this.unreadFriendRequestsCountSubject.next(currentCount + 1);
         console.log('📊 Updated unread count:', currentCount + 1);
         
-        // Show notification ONLY ONCE
-        console.log('🔔 Showing notification for friend request received');
-        this.notificationService.info(
-          'Lời mời kết bạn mới',
-          `${data.requester?.name || 'Ai đó'} đã gửi lời mời kết bạn cho bạn`,
-          5000
-        );
+        // NOTE: Toast notification is handled by header.component.ts
+        // via app-notification.service.ts to avoid duplicate toasts
+        console.log('ℹ️ Toast notification will be shown by header component');
       });
 
     // Listen for friend request accepted
@@ -103,13 +99,9 @@ export class FriendshipService implements OnDestroy {
         this.loadFriends().subscribe();
         console.log('🔄 Reloading friends list');
         
-        // Show notification ONLY ONCE
-        console.log('🔔 Showing notification for friend request accepted');
-        this.notificationService.success(
-          'Chấp nhận kết bạn',
-          `${data.addressee?.name || 'Người dùng'} đã chấp nhận lời mời kết bạn của bạn`,
-          5000
-        );
+        // NOTE: Toast notification is handled by header.component.ts
+        // via app-notification.service.ts to avoid duplicate toasts
+        console.log('ℹ️ Toast notification will be shown by header component');
       });
 
     // Listen for friend request declined
@@ -125,13 +117,9 @@ export class FriendshipService implements OnDestroy {
         this.sentRequestsSubject.next(updatedSent);
         console.log('✅ Removed from sent requests, new count:', updatedSent.length);
         
-        // Show notification ONLY ONCE
-        console.log('🔔 Showing notification for friend request declined');
-        this.notificationService.info(
-          'Từ chối kết bạn',
-          `${data.addressee?.name || 'Người dùng'} đã từ chối lời mời kết bạn của bạn`,
-          5000
-        );
+        // NOTE: Toast notification is handled by header.component.ts
+        // via app-notification.service.ts to avoid duplicate toasts
+        console.log('ℹ️ Toast notification will be shown by header component');
       });
   }
   

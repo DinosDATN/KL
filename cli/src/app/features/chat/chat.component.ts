@@ -35,7 +35,6 @@ import {
   ChatSettings,
   MemberAction,
 } from './components/chat-settings-modal/chat-settings-modal.component';
-import { NotificationToastComponent } from '../../shared/components/notification-toast/notification-toast.component';
 import { FriendsListComponent } from './components/friends-list/friends-list.component';
 import { FriendRequestsComponent } from './components/friend-requests/friend-requests.component';
 import { UserSearchComponent } from './components/user-search/user-search.component';
@@ -53,7 +52,6 @@ import { FriendRequest } from '../../core/models/friendship.model';
     ChatMainComponent,
     CreateGroupModalComponent,
     ChatSettingsModalComponent,
-    NotificationToastComponent,
     FriendsListComponent,
     FriendRequestsComponent,
     UserSearchComponent,

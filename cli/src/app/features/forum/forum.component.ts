@@ -22,7 +22,6 @@ import { AuthService } from '../../core/services/auth.service';
 import { ForumLayoutComponent } from './components/forum-layout/forum-layout.component';
 import { PostCreatorComponent } from './components/post-creator/post-creator.component';
 import { PostDetailComponent } from './components/post-detail/post-detail.component';
-import { NotificationToastComponent } from '../../shared/components/notification-toast/notification-toast.component';
 
 interface CreatePostRequest {
   title: string;
@@ -42,7 +41,6 @@ interface CreatePostRequest {
     ForumLayoutComponent,
     PostCreatorComponent,
     PostDetailComponent,
-    NotificationToastComponent,
   ],
   templateUrl: './forum.component.html',
   styleUrl: './forum.component.css',
