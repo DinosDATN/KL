@@ -90,7 +90,20 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.loadProfile();
+    // Wait for auth to initialize before loading profile
+    this.authService.authInitialized$.pipe(takeUntil(this.destroy$)).subscribe({
+      next: (initialized) => {
+        if (initialized) {
+          // Only load profile if user is authenticated
+          if (this.authService.isAuthenticated()) {
+            this.loadProfile();
+          } else {
+            // User not authenticated, redirect to login
+            this.errorMessage = 'Please login to view your profile';
+          }
+        }
+      },
+    });
   }
 
   ngOnDestroy(): void {
