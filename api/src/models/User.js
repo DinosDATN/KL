@@ -32,9 +32,9 @@ const User = sequelize.define(
       validate: {
         len: {
           args: [6, 255],
-          msg: "Password must be between 6 and 255 characters long"
-        }
-      }
+          msg: "Password must be between 6 and 255 characters long",
+        },
+      },
     },
     avatar_url: {
       type: DataTypes.TEXT,
@@ -96,12 +96,12 @@ const User = sequelize.define(
         }
       },
       beforeUpdate: async (user) => {
-        if (user.changed('password') && user.password) {
+        if (user.changed("password") && user.password) {
           const saltRounds = 12;
           user.password = await bcrypt.hash(user.password, saltRounds);
         }
-      }
-    }
+      },
+    },
   }
 );
 
@@ -113,7 +113,7 @@ User.prototype.getDisplayName = function () {
 // Password validation method
 User.prototype.validatePassword = async function (candidatePassword) {
   if (!this.password) {
-    throw new Error('User has no password set');
+    throw new Error("User has no password set");
   }
   return await bcrypt.compare(candidatePassword, this.password);
 };
@@ -134,7 +134,9 @@ User.prototype.toAuthJSON = function () {
     avatar_url: this.avatar_url,
     role: this.role,
     subscription_status: this.subscription_status,
-    is_active: this.is_active
+    is_active: this.is_active,
+    is_online: this.is_online,
+    last_seen_at: this.last_seen_at,
   };
 };
 

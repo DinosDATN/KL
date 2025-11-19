@@ -309,6 +309,24 @@ const userController = {
         });
       }
 
+      // Update user's last seen and online status when accessing profile
+      // This ensures the user is marked as online if they're actively using the app
+      try {
+        await user.update(
+          {
+            last_seen_at: new Date(),
+            is_online: true,
+          },
+          { silent: true }
+        ); // Silent update to avoid triggering hooks
+      } catch (updateError) {
+        // Non-critical error - log but don't fail the request
+        console.warn(
+          "Failed to update user online status in getProfile:",
+          updateError.message
+        );
+      }
+
       // Create profile if it doesn't exist
       if (!user.Profile) {
         const newProfile = await UserProfile.create({
