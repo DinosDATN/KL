@@ -79,11 +79,19 @@ export interface Submission {
   problem_id: number;
   code_id: number;
   language: string;
-  status: 'pending' | 'accepted' | 'wrong' | 'error' | 'timeout';
+  status:
+    | 'pending'
+    | 'accepted'
+    | 'wrong'
+    | 'error'
+    | 'timeout'
+    | 'wrong-answer'
+    | 'time-limit-exceeded';
   score: number;
   exec_time?: number | null;
   memory_used?: number | null;
   submitted_at: string;
+  problem?: Problem; // Nested problem from API
 }
 
 export interface ProblemComment {

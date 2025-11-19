@@ -9,6 +9,11 @@ export interface ProfileData {
   user: User;
   profile: UserProfile;
   stats: UserStat;
+  goals?: any[];
+  achievements?: any[];
+  activity_logs?: any[];
+  enrollments?: any[];
+  recent_submissions?: any[];
 }
 
 export interface ApiResponse<T> {
@@ -52,11 +57,11 @@ export interface ChangePasswordRequest {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ProfileService {
   private readonly apiUrl = `${environment.apiUrl}/users/profile`;
-  
+
   // Subject to track profile state
   private profileDataSubject = new BehaviorSubject<ProfileData | null>(null);
   public profileData$ = this.profileDataSubject.asObservable();
@@ -67,32 +72,34 @@ export class ProfileService {
    * Get current user's profile data
    */
   getProfile(): Observable<ProfileData> {
-    return this.http.get<ApiResponse<ProfileData>>(`${this.apiUrl}/me`)
-      .pipe(
-        map(response => {
-          if (response.success && response.data) {
-            this.profileDataSubject.next(response.data);
-            return response.data;
-          }
-          throw new Error(response.message || 'Failed to fetch profile');
-        })
-      );
+    return this.http.get<ApiResponse<ProfileData>>(`${this.apiUrl}/me`).pipe(
+      map((response) => {
+        if (response.success && response.data) {
+          this.profileDataSubject.next(response.data);
+          return response.data;
+        }
+        throw new Error(response.message || 'Failed to fetch profile');
+      })
+    );
   }
 
   /**
    * Update basic profile information (name, email)
    */
-  updateProfile(data: UpdateProfileRequest): Observable<ApiResponse<{ user: User }>> {
-    return this.http.put<ApiResponse<{ user: User }>>(`${this.apiUrl}/basic`, data)
+  updateProfile(
+    data: UpdateProfileRequest
+  ): Observable<ApiResponse<{ user: User }>> {
+    return this.http
+      .put<ApiResponse<{ user: User }>>(`${this.apiUrl}/basic`, data)
       .pipe(
-        tap(response => {
+        tap((response) => {
           if (response.success && response.data) {
             // Update the current profile data with new user info
             const currentProfile = this.profileDataSubject.value;
             if (currentProfile) {
               this.profileDataSubject.next({
                 ...currentProfile,
-                user: response.data.user
+                user: response.data.user,
               });
             }
           }
@@ -103,17 +110,23 @@ export class ProfileService {
   /**
    * Update extended profile details
    */
-  updateProfileDetails(data: UpdateProfileDetailsRequest): Observable<ApiResponse<{ profile: UserProfile }>> {
-    return this.http.put<ApiResponse<{ profile: UserProfile }>>(`${this.apiUrl}/details`, data)
+  updateProfileDetails(
+    data: UpdateProfileDetailsRequest
+  ): Observable<ApiResponse<{ profile: UserProfile }>> {
+    return this.http
+      .put<ApiResponse<{ profile: UserProfile }>>(
+        `${this.apiUrl}/details`,
+        data
+      )
       .pipe(
-        tap(response => {
+        tap((response) => {
           if (response.success && response.data) {
             // Update the current profile data
             const currentProfile = this.profileDataSubject.value;
             if (currentProfile) {
               this.profileDataSubject.next({
                 ...currentProfile,
-                profile: response.data.profile
+                profile: response.data.profile,
               });
             }
           }
@@ -124,17 +137,23 @@ export class ProfileService {
   /**
    * Update user settings
    */
-  updateSettings(data: UpdateSettingsRequest): Observable<ApiResponse<{ profile: UserProfile }>> {
-    return this.http.put<ApiResponse<{ profile: UserProfile }>>(`${this.apiUrl}/settings`, data)
+  updateSettings(
+    data: UpdateSettingsRequest
+  ): Observable<ApiResponse<{ profile: UserProfile }>> {
+    return this.http
+      .put<ApiResponse<{ profile: UserProfile }>>(
+        `${this.apiUrl}/settings`,
+        data
+      )
       .pipe(
-        tap(response => {
+        tap((response) => {
           if (response.success && response.data) {
             // Update the current profile data
             const currentProfile = this.profileDataSubject.value;
             if (currentProfile) {
               this.profileDataSubject.next({
                 ...currentProfile,
-                profile: response.data.profile
+                profile: response.data.profile,
               });
             }
           }
@@ -145,20 +164,26 @@ export class ProfileService {
   /**
    * Upload user avatar
    */
-  uploadAvatar(file: File): Observable<ApiResponse<{ avatar_url: string; user: User }>> {
+  uploadAvatar(
+    file: File
+  ): Observable<ApiResponse<{ avatar_url: string; user: User }>> {
     const formData = new FormData();
     formData.append('avatar', file);
 
-    return this.http.post<ApiResponse<{ avatar_url: string; user: User }>>(`${this.apiUrl}/avatar`, formData)
+    return this.http
+      .post<ApiResponse<{ avatar_url: string; user: User }>>(
+        `${this.apiUrl}/avatar`,
+        formData
+      )
       .pipe(
-        tap(response => {
+        tap((response) => {
           if (response.success && response.data) {
             // Update the current profile data with new avatar
             const currentProfile = this.profileDataSubject.value;
             if (currentProfile) {
               this.profileDataSubject.next({
                 ...currentProfile,
-                user: response.data.user
+                user: response.data.user,
               });
             }
           }
@@ -229,7 +254,9 @@ export class ProfileService {
     // Basic formatting - can be enhanced based on country codes
     const cleaned = phone.replace(/\D/g, '');
     if (cleaned.length === 10) {
-      return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+      return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(
+        6
+      )}`;
     }
     return phone;
   }
@@ -239,15 +266,21 @@ export class ProfileService {
    */
   getProfileCompletionPercentage(profile: UserProfile): number {
     const fields = [
-      'bio', 'birthday', 'gender', 'phone', 'address', 
-      'website_url', 'github_url', 'linkedin_url'
+      'bio',
+      'birthday',
+      'gender',
+      'phone',
+      'address',
+      'website_url',
+      'github_url',
+      'linkedin_url',
     ];
-    
-    const filledFields = fields.filter(field => {
+
+    const filledFields = fields.filter((field) => {
       const value = (profile as any)[field];
       return value && value.toString().trim().length > 0;
     });
-    
+
     return Math.round((filledFields.length / fields.length) * 100);
   }
 
@@ -262,8 +295,10 @@ export class ProfileService {
       }
       return user.avatar_url;
     }
-    
+
     // Fallback to a default avatar service
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&size=150&background=random`;
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      user.name
+    )}&size=150&background=random`;
   }
 }

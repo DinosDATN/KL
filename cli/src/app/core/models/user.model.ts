@@ -85,6 +85,7 @@ export interface UserAchievement {
   date_earned: string;
   created_at: string;
   updated_at?: string | null;
+  achievement?: Achievement; // Nested achievement from API
 }
 
 export interface UserActivityLog {

@@ -40,6 +40,7 @@ export interface CourseEnrollment {
   rating?: number | null;
   created_at: string;
   updated_at?: string | null;
+  course?: Course; // Nested course from API
 }
 
 export interface InstructorQualification {

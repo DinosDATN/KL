@@ -12,6 +12,10 @@ const ProblemComment = require("./ProblemComment");
 const User = require("./User");
 const UserProfile = require("./UserProfile");
 const UserStats = require("./UserStats");
+const UserGoal = require("./UserGoal");
+const Achievement = require("./Achievement");
+const UserAchievement = require("./UserAchievement");
+const UserActivityLog = require("./UserActivityLog");
 const ChatRoom = require("./ChatRoom");
 const ChatMessage = require("./ChatMessage");
 const ChatRoomMember = require("./ChatRoomMember");
@@ -1017,6 +1021,63 @@ User.hasMany(RewardTransaction, {
   as: "RewardTransactions",
 });
 
+// User Goal associations
+User.hasMany(UserGoal, {
+  foreignKey: "user_id",
+  as: "Goals",
+});
+
+UserGoal.belongsTo(User, {
+  foreignKey: "user_id",
+  as: "User",
+});
+
+// Achievement associations
+User.belongsToMany(Achievement, {
+  through: UserAchievement,
+  foreignKey: "user_id",
+  otherKey: "achievement_id",
+  as: "Achievements",
+});
+
+Achievement.belongsToMany(User, {
+  through: UserAchievement,
+  foreignKey: "achievement_id",
+  otherKey: "user_id",
+  as: "Users",
+});
+
+UserAchievement.belongsTo(User, {
+  foreignKey: "user_id",
+  as: "User",
+});
+
+UserAchievement.belongsTo(Achievement, {
+  foreignKey: "achievement_id",
+  as: "Achievement",
+});
+
+User.hasMany(UserAchievement, {
+  foreignKey: "user_id",
+  as: "UserAchievements",
+});
+
+Achievement.hasMany(UserAchievement, {
+  foreignKey: "achievement_id",
+  as: "UserAchievements",
+});
+
+// User Activity Log associations
+User.hasMany(UserActivityLog, {
+  foreignKey: "user_id",
+  as: "ActivityLogs",
+});
+
+UserActivityLog.belongsTo(User, {
+  foreignKey: "user_id",
+  as: "User",
+});
+
 module.exports = {
   Problem,
   ProblemCategory,
@@ -1032,6 +1093,10 @@ module.exports = {
   User,
   UserProfile,
   UserStats,
+  UserGoal,
+  Achievement,
+  UserAchievement,
+  UserActivityLog,
   Level,
   BadgeCategory,
   Badge,

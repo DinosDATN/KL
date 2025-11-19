@@ -1,7 +1,18 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  ViewChild,
+  ElementRef,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import {
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+  Validators,
+} from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil, finalize } from 'rxjs/operators';
 import { ThemeService } from '../../core/services/theme.service';
@@ -11,7 +22,7 @@ import {
   UpdateProfileRequest,
   UpdateProfileDetailsRequest,
   UpdateSettingsRequest,
-  ChangePasswordRequest
+  ChangePasswordRequest,
 } from '../../core/services/profile.service';
 import { AuthService } from '../../core/services/auth.service';
 import {
@@ -24,64 +35,42 @@ import {
   UserActivityLog,
 } from '../../core/models/user.model';
 import { Course, CourseEnrollment } from '../../core/models/course.model';
-import { Badge, UserBadge } from '../../core/models/gamification.model';
-import { Quiz, UserQuizResult } from '../../core/models/quiz.model';
 import { Problem, Submission } from '../../core/models/problem.model';
-// Import mock data as fallback for features not yet implemented
-import {
-  mockUserGoals,
-  mockAchievements,
-  mockUserAchievements,
-  mockUserActivityLogs,
-  mockCourses,
-  mockCourseEnrollments,
-  mockBadges,
-  mockUserBadges,
-  mockQuizzes,
-  mockUserQuizResults,
-  mockProblems,
-  mockSubmissions,
-} from '../../core/services/profile-mock-data';
+// Removed mock data imports - using real data from API
 
 @Component({
   selector: 'app-profile',
   standalone: true,
   imports: [CommonModule, RouterModule, ReactiveFormsModule],
   templateUrl: './profile.component.html',
-  styleUrls: ['./profile.component.css']
+  styleUrls: ['./profile.component.css'],
 })
 export class ProfileComponent implements OnInit, OnDestroy {
   @ViewChild('avatarFileInput') avatarFileInput!: ElementRef<HTMLInputElement>;
-  
+
   private destroy$ = new Subject<void>();
-  
+
   // Data properties
   user: User | null = null;
   userProfile: UserProfile | null = null;
   userStat: UserStat | null = null;
-  
-  // Mock data for features not yet implemented
-  userGoals: UserGoal[] = mockUserGoals;
-  achievements: Achievement[] = mockAchievements;
-  userAchievements: UserAchievement[] = mockUserAchievements;
-  userActivityLogs: UserActivityLog[] = mockUserActivityLogs;
-  courses: Course[] = mockCourses;
-  courseEnrollments: CourseEnrollment[] = mockCourseEnrollments;
-  badges: Badge[] = mockBadges;
-  userBadges: UserBadge[] = mockUserBadges;
-  quizzes: Quiz[] = mockQuizzes;
-  userQuizResults: UserQuizResult[] = mockUserQuizResults;
-  problems: Problem[] = mockProblems;
-  submissions: Submission[] = mockSubmissions;
+
+  // Data from API
+  userGoals: UserGoal[] = [];
+  userAchievements: UserAchievement[] = [];
+  userActivityLogs: UserActivityLog[] = [];
+  courseEnrollments: CourseEnrollment[] = [];
+  submissions: Submission[] = [];
 
   // UI state
-  activeTab: 'overview' | 'activity' | 'achievements' | 'courses' | 'settings' = 'overview';
+  activeTab: 'overview' | 'activity' | 'achievements' | 'courses' | 'settings' =
+    'overview';
   editMode: 'none' | 'basic' | 'details' | 'settings' | 'password' = 'none';
   isLoading = false;
   isUploading = false;
   errorMessage = '';
   successMessage = '';
-  
+
   // Forms
   basicProfileForm: FormGroup;
   detailsForm: FormGroup;
@@ -103,7 +92,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadProfile();
   }
-  
+
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
@@ -113,7 +102,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   private createBasicProfileForm(): FormGroup {
     return this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2)]],
-      email: ['', [Validators.required, Validators.email]]
+      email: ['', [Validators.required, Validators.email]],
     });
   }
 
@@ -126,7 +115,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
       address: ['', [Validators.maxLength(200)]],
       website_url: [''],
       github_url: [''],
-      linkedin_url: ['']
+      linkedin_url: [''],
     });
   }
 
@@ -139,16 +128,19 @@ export class ProfileComponent implements OnInit, OnDestroy {
       visibility_profile: [true],
       visibility_achievements: [true],
       visibility_progress: [true],
-      visibility_activity: [true]
+      visibility_activity: [true],
     });
   }
 
   private createPasswordForm(): FormGroup {
-    return this.fb.group({
-      current_password: ['', [Validators.required]],
-      new_password: ['', [Validators.required, Validators.minLength(6)]],
-      confirm_password: ['', [Validators.required]]
-    }, { validators: this.passwordMatchValidator });
+    return this.fb.group(
+      {
+        current_password: ['', [Validators.required]],
+        new_password: ['', [Validators.required, Validators.minLength(6)]],
+        confirm_password: ['', [Validators.required]],
+      },
+      { validators: this.passwordMatchValidator }
+    );
   }
 
   private passwordMatchValidator(group: FormGroup) {
@@ -161,23 +153,32 @@ export class ProfileComponent implements OnInit, OnDestroy {
   loadProfile(): void {
     this.isLoading = true;
     this.clearMessages();
-    
-    this.profileService.getProfile()
+
+    this.profileService
+      .getProfile()
       .pipe(
         takeUntil(this.destroy$),
-        finalize(() => this.isLoading = false)
+        finalize(() => (this.isLoading = false))
       )
       .subscribe({
         next: (profileData: ProfileData) => {
           this.user = profileData.user;
           this.userProfile = profileData.profile;
           this.userStat = profileData.stats;
+
+          // Load additional data from API response
+          this.userGoals = profileData.goals || [];
+          this.userAchievements = profileData.achievements || [];
+          this.userActivityLogs = profileData.activity_logs || [];
+          this.courseEnrollments = profileData.enrollments || [];
+          this.submissions = profileData.recent_submissions || [];
+
           this.updateForms();
         },
         error: (error) => {
           this.errorMessage = error.message || 'Failed to load profile';
           console.error('Error loading profile:', error);
-        }
+        },
       });
   }
 
@@ -185,7 +186,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     if (this.user) {
       this.basicProfileForm.patchValue({
         name: this.user.name,
-        email: this.user.email
+        email: this.user.email,
       });
     }
 
@@ -198,7 +199,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
         address: this.userProfile.address,
         website_url: this.userProfile.website_url,
         github_url: this.userProfile.github_url,
-        linkedin_url: this.userProfile.linkedin_url
+        linkedin_url: this.userProfile.linkedin_url,
       });
 
       this.settingsForm.patchValue({
@@ -209,7 +210,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
         visibility_profile: this.userProfile.visibility_profile,
         visibility_achievements: this.userProfile.visibility_achievements,
         visibility_progress: this.userProfile.visibility_progress,
-        visibility_activity: this.userProfile.visibility_activity
+        visibility_activity: this.userProfile.visibility_activity,
       });
     }
   }
@@ -234,10 +235,11 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.clearMessages();
 
-    this.profileService.updateProfile(formData)
+    this.profileService
+      .updateProfile(formData)
       .pipe(
         takeUntil(this.destroy$),
-        finalize(() => this.isLoading = false)
+        finalize(() => (this.isLoading = false))
       )
       .subscribe({
         next: (response) => {
@@ -252,7 +254,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
           if (error.errors) {
             this.setFormErrors(this.basicProfileForm, error.errors);
           }
-        }
+        },
       });
   }
 
@@ -263,10 +265,11 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.clearMessages();
 
-    this.profileService.updateProfileDetails(formData)
+    this.profileService
+      .updateProfileDetails(formData)
       .pipe(
         takeUntil(this.destroy$),
-        finalize(() => this.isLoading = false)
+        finalize(() => (this.isLoading = false))
       )
       .subscribe({
         next: (response) => {
@@ -277,11 +280,12 @@ export class ProfileComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          this.errorMessage = error.message || 'Failed to update profile details';
+          this.errorMessage =
+            error.message || 'Failed to update profile details';
           if (error.errors) {
             this.setFormErrors(this.detailsForm, error.errors);
           }
-        }
+        },
       });
   }
 
@@ -292,10 +296,11 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.clearMessages();
 
-    this.profileService.updateSettings(formData)
+    this.profileService
+      .updateSettings(formData)
       .pipe(
         takeUntil(this.destroy$),
-        finalize(() => this.isLoading = false)
+        finalize(() => (this.isLoading = false))
       )
       .subscribe({
         next: (response) => {
@@ -304,7 +309,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
           if (response.data) {
             this.userProfile = response.data.profile;
           }
-          
+
           // Apply theme changes immediately
           if (formData.theme_mode && formData.theme_mode !== 'system') {
             this.themeService.setTheme(formData.theme_mode as 'light' | 'dark');
@@ -315,7 +320,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
           if (error.errors) {
             this.setFormErrors(this.settingsForm, error.errors);
           }
-        }
+        },
       });
   }
 
@@ -326,10 +331,11 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.clearMessages();
 
-    this.profileService.changePassword(formData)
+    this.profileService
+      .changePassword(formData)
       .pipe(
         takeUntil(this.destroy$),
-        finalize(() => this.isLoading = false)
+        finalize(() => (this.isLoading = false))
       )
       .subscribe({
         next: (response) => {
@@ -342,7 +348,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
           if (error.errors) {
             this.setFormErrors(this.passwordForm, error.errors);
           }
-        }
+        },
       });
   }
 
@@ -357,7 +363,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
     // Validate file
     if (!this.isValidImageFile(file)) {
-      this.errorMessage = 'Please select a valid image file (JPEG, PNG, GIF, WebP) under 5MB';
+      this.errorMessage =
+        'Please select a valid image file (JPEG, PNG, GIF, WebP) under 5MB';
       return;
     }
 
@@ -365,9 +372,15 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   private isValidImageFile(file: File): boolean {
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    const allowedTypes = [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+    ];
     const maxSize = 5 * 1024 * 1024; // 5MB
-    
+
     return allowedTypes.includes(file.type) && file.size <= maxSize;
   }
 
@@ -375,10 +388,11 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.isUploading = true;
     this.clearMessages();
 
-    this.profileService.uploadAvatar(file)
+    this.profileService
+      .uploadAvatar(file)
       .pipe(
         takeUntil(this.destroy$),
-        finalize(() => this.isUploading = false)
+        finalize(() => (this.isUploading = false))
       )
       .subscribe({
         next: (response) => {
@@ -389,13 +403,16 @@ export class ProfileComponent implements OnInit, OnDestroy {
         },
         error: (error) => {
           this.errorMessage = error.message || 'Failed to upload avatar';
-        }
+        },
       });
   }
 
   // Utility methods
-  private setFormErrors(form: FormGroup, errors: { [key: string]: string }): void {
-    Object.keys(errors).forEach(key => {
+  private setFormErrors(
+    form: FormGroup,
+    errors: { [key: string]: string }
+  ): void {
+    Object.keys(errors).forEach((key) => {
       const control = form.get(key);
       if (control) {
         control.setErrors({ server: errors[key] });
@@ -413,7 +430,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   getProfileCompletion(): number {
-    return this.userProfile ? this.profileService.getProfileCompletionPercentage(this.userProfile) : 0;
+    return this.userProfile
+      ? this.profileService.getProfileCompletionPercentage(this.userProfile)
+      : 0;
   }
 
   // Helper methods
@@ -497,42 +516,45 @@ export class ProfileComponent implements OnInit, OnDestroy {
     });
   }
 
-  setActiveTab(tab: 'overview' | 'activity' | 'achievements' | 'courses' | 'settings'): void {
+  setActiveTab(
+    tab: 'overview' | 'activity' | 'achievements' | 'courses' | 'settings'
+  ): void {
     this.activeTab = tab;
   }
 
   // Get user's completed achievements
   getUserAchievements(): { achievement: Achievement; dateEarned: string }[] {
-    return this.userAchievements.map(ua => {
-      const achievement = this.achievements.find(a => a.id === ua.achievement_id);
-      return {
-        achievement: achievement!,
-        dateEarned: ua.date_earned
-      };
-    }).filter(item => item.achievement);
+    return this.userAchievements
+      .filter((ua) => ua.achievement) // Only include achievements with achievement data
+      .map((ua) => ({
+        achievement: ua.achievement as Achievement,
+        dateEarned: ua.date_earned,
+      }));
   }
 
   // Get user's enrolled courses with progress
   getUserCourses(): { course: Course; enrollment: CourseEnrollment }[] {
-    return this.courseEnrollments.map(enrollment => {
-      const course = this.courses.find(c => c.id === enrollment.course_id);
-      return {
-        course: course!,
-        enrollment
-      };
-    }).filter(item => item.course);
+    return this.courseEnrollments
+      .filter((enrollment) => enrollment.course) // Only include enrollments with course data
+      .map((enrollment) => ({
+        course: enrollment.course as Course,
+        enrollment,
+      }));
   }
 
   // Get recent submissions
   getRecentSubmissions(): { submission: Submission; problem: Problem }[] {
-    return this.submissions.map(submission => {
-      const problem = this.problems.find(p => p.id === submission.problem_id);
-      return {
+    return this.submissions
+      .filter((submission) => submission.problem) // Only include submissions with problem data
+      .map((submission) => ({
         submission,
-        problem: problem!
-      };
-    }).filter(item => item.problem)
-      .sort((a, b) => new Date(b.submission.submitted_at).getTime() - new Date(a.submission.submitted_at).getTime())
+        problem: submission.problem as Problem,
+      }))
+      .sort(
+        (a, b) =>
+          new Date(b.submission.submitted_at).getTime() -
+          new Date(a.submission.submitted_at).getTime()
+      )
       .slice(0, 5);
   }
 
