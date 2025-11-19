@@ -42,10 +42,30 @@ class CourseEnrollmentController {
         });
       }
 
-      // Create enrollment
+      // Kiểm tra khóa học có phí hay không
+      const coursePrice = course.price || course.original_price || 0;
+      
+      if (coursePrice > 0) {
+        // Khóa học có phí - yêu cầu thanh toán
+        return res.status(402).json({
+          success: false,
+          message: 'This is a paid course. Payment required.',
+          requiresPayment: true,
+          data: {
+            courseId: course.id,
+            courseTitle: course.title,
+            price: coursePrice,
+            originalPrice: course.original_price,
+            discount: course.discount
+          }
+        });
+      }
+
+      // Khóa học miễn phí - đăng ký trực tiếp
       const enrollment = await CourseEnrollment.create({
         user_id: userId,
         course_id: courseId,
+        enrollment_type: 'free',
         progress: 0,
         status: 'not-started',
         start_date: new Date()

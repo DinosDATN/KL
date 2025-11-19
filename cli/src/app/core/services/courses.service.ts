@@ -303,7 +303,7 @@ export class CoursesService {
   getLearningDashboard(): Observable<any> {
     return this.http.get<ApiResponse<any>>(
       `${this.apiUrl}/course-enrollments/dashboard`,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
+      { withCredentials: true }
     ).pipe(
       timeout(environment.apiTimeout),
       map(response => response),
@@ -311,7 +311,117 @@ export class CoursesService {
     );
   }
 
+  // ============ PAYMENT METHODS ============
 
+  /**
+   * Create payment intent
+   */
+  createPaymentIntent(courseId: number, couponCode?: string): Observable<any> {
+    return this.http.post<ApiResponse<any>>(
+      `${this.apiUrl}/payments/courses/${courseId}/payment-intent`,
+      { couponCode },
+      { withCredentials: true }
+    ).pipe(
+      timeout(environment.apiTimeout),
+      map(response => response),
+      catchError(error => this.handleError(error, 'Failed to create payment intent'))
+    );
+  }
+
+  /**
+   * Process payment
+   */
+  processPayment(courseId: number, paymentData: { paymentMethod: string; couponCode?: string }): Observable<any> {
+    return this.http.post<ApiResponse<any>>(
+      `${this.apiUrl}/payments/courses/${courseId}/process-payment`,
+      paymentData,
+      { withCredentials: true }
+    ).pipe(
+      timeout(environment.apiTimeout),
+      map(response => response),
+      catchError(error => this.handleError(error, 'Failed to process payment'))
+    );
+  }
+
+  /**
+   * Get my payments
+   */
+  getMyPayments(status?: string): Observable<any> {
+    let params = new HttpParams();
+    if (status) {
+      params = params.set('status', status);
+    }
+    
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/payments/my-payments`,
+      { params, withCredentials: true }
+    ).pipe(
+      timeout(environment.apiTimeout),
+      map(response => response),
+      catchError(error => this.handleError(error, 'Failed to get payments'))
+    );
+  }
+
+  /**
+   * Get payment detail
+   */
+  getPaymentDetail(paymentId: number): Observable<any> {
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/payments/payments/${paymentId}`,
+      { withCredentials: true }
+    ).pipe(
+      timeout(environment.apiTimeout),
+      map(response => response),
+      catchError(error => this.handleError(error, 'Failed to get payment detail'))
+    );
+  }
+
+  /**
+   * Validate coupon
+   */
+  validateCoupon(code: string, courseId: number, amount: number): Observable<any> {
+    const params = new HttpParams()
+      .set('courseId', courseId.toString())
+      .set('amount', amount.toString());
+    
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/payments/coupons/${code}/validate`,
+      { params, withCredentials: true }
+    ).pipe(
+      timeout(environment.apiTimeout),
+      map(response => response),
+      catchError(error => this.handleError(error, 'Failed to validate coupon'))
+    );
+  }
+
+  /**
+   * Get active coupons
+   */
+  getActiveCoupons(): Observable<any> {
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/payments/coupons/active`,
+      { withCredentials: true }
+    ).pipe(
+      timeout(environment.apiTimeout),
+      map(response => response),
+      catchError(error => this.handleError(error, 'Failed to get active coupons'))
+    );
+  }
+
+  /**
+   * Request refund
+   */
+  requestRefund(paymentId: number, reason: string): Observable<any> {
+    return this.http.post<ApiResponse<any>>(
+      `${this.apiUrl}/payments/payments/${paymentId}/refund`,
+      { reason },
+      { withCredentials: true }
+    ).pipe(
+      timeout(environment.apiTimeout),
+      map(response => response),
+      catchError(error => this.handleError(error, 'Failed to request refund'))
+    );
+  }
 
   // Private helper methods
   private handleSuccessResponse<T>(response: ApiResponse<T>): T {

@@ -22,10 +22,11 @@ CREATE TABLE courses (
     rating FLOAT DEFAULT 0 NOT NULL CHECK (rating >= 0 AND rating <= 5),
     description TEXT,
     level ENUM('Beginner', 'Intermediate', 'Advanced') DEFAULT 'Beginner' NOT NULL,
-    duration INT CHECK (duration >= 0), -- Thời gian khóa học tính bằng phút
+    duration INT CHECK (duration >= 0),
     category_id BIGINT NOT NULL,
-    is_premium BOOLEAN DEFAULT FALSE NOT NULL, -- Thêm cho premium content
-    is_deleted BOOLEAN DEFAULT FALSE NOT NULL, -- Soft delete
+    is_premium BOOLEAN DEFAULT FALSE NOT NULL,
+    is_deleted BOOLEAN DEFAULT FALSE NOT NULL,
+    is_free BOOLEAN DEFAULT TRUE NOT NULL,
     price INT CHECK (price >= 0),
     original_price INT CHECK (original_price >= 0),
     discount INT CHECK (discount >= 0 AND discount <= 100),
@@ -158,18 +159,4 @@ CREATE TABLE related_courses (
     UNIQUE(course_id, related_course_id)
 )CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
--- Bảng thanh toán (Payments)
-CREATE TABLE payments (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    user_id BIGINT NOT NULL,
-    course_id BIGINT,
-    amount DECIMAL(10,2) NOT NULL CHECK (amount >= 0),
-    payment_method ENUM('credit_card', 'paypal', 'bank_transfer') NOT NULL,
-    status ENUM('pending', 'completed', 'failed') NOT NULL,
-    type ENUM('course', 'hint', 'subscription') DEFAULT 'course' NOT NULL, -- Thêm cho subscription
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE SET NULL ON UPDATE CASCADE,
-    INDEX idx_user_id (user_id)
-)CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+

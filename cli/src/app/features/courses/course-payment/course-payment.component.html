@@ -1,0 +1,129 @@
+<div class="payment-container" *ngIf="!isLoading">
+  <div class="payment-header">
+    <button class="back-button" (click)="goBack()">
+      <i class="fas fa-arrow-left"></i> Quay lại
+    </button>
+    <h2>Thanh toán khóa học</h2>
+  </div>
+
+  <div class="payment-content" *ngIf="course">
+    <div class="course-info-card">
+      <img [src]="course.thumbnail" [alt]="course.title" class="course-thumbnail">
+      <div class="course-details">
+        <h3>{{ course.title }}</h3>
+        <p class="course-level">
+          <i class="fas fa-signal"></i> {{ course.level }}
+        </p>
+        <p class="course-duration" *ngIf="course.duration">
+          <i class="fas fa-clock"></i> {{ course.duration }} phút
+        </p>
+      </div>
+    </div>
+
+    <div class="payment-form-card">
+      <div class="price-summary">
+        <h4>Chi tiết thanh toán</h4>
+        
+        <div class="price-row">
+          <span>Giá gốc:</span>
+          <span class="price">{{ formatCurrency(originalAmount) }}</span>
+        </div>
+
+        <div class="price-row discount" *ngIf="discountAmount > 0">
+          <span>
+            <i class="fas fa-tag"></i> Giảm giá:
+          </span>
+          <span class="discount-amount">-{{ formatCurrency(discountAmount) }}</span>
+        </div>
+
+        <div class="price-row total">
+          <span>Tổng cộng:</span>
+          <span class="total-amount">{{ formatCurrency(finalAmount) }}</span>
+        </div>
+      </div>
+
+      <div class="coupon-section">
+        <h4>Mã giảm giá</h4>
+        
+        <div class="coupon-input-group" *ngIf="!appliedCoupon">
+          <input 
+            type="text" 
+            [(ngModel)]="couponCode" 
+            placeholder="Nhập mã giảm giá"
+            class="coupon-input"
+            [disabled]="isApplyingCoupon">
+          <button 
+            class="apply-button" 
+            (click)="applyCoupon()"
+            [disabled]="!couponCode.trim() || isApplyingCoupon">
+            <span *ngIf="!isApplyingCoupon">Áp dụng</span>
+            <span *ngIf="isApplyingCoupon">
+              <i class="fas fa-spinner fa-spin"></i>
+            </span>
+          </button>
+        </div>
+
+        <div class="applied-coupon" *ngIf="appliedCoupon">
+          <div class="coupon-info">
+            <i class="fas fa-check-circle"></i>
+            <div>
+              <strong>{{ appliedCoupon.code }}</strong>
+              <p>{{ appliedCoupon.description }}</p>
+            </div>
+          </div>
+          <button class="remove-button" (click)="removeCoupon()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="payment-methods-section">
+        <h4>Phương thức thanh toán</h4>
+        
+        <div class="payment-methods">
+          <label 
+            *ngFor="let method of paymentMethods" 
+            class="payment-method"
+            [class.selected]="paymentMethod === method.value">
+            <input 
+              type="radio" 
+              name="paymentMethod" 
+              [value]="method.value"
+              [(ngModel)]="paymentMethod">
+            <span class="method-icon">{{ method.icon }}</span>
+            <span class="method-label">{{ method.label }}</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="error-message" *ngIf="errorMessage">
+        <i class="fas fa-exclamation-circle"></i>
+        {{ errorMessage }}
+      </div>
+
+      <button 
+        class="pay-button"
+        (click)="processPayment()"
+        [disabled]="isProcessing || !paymentMethod">
+        <span *ngIf="!isProcessing">
+          <i class="fas fa-lock"></i>
+          Thanh toán {{ formatCurrency(finalAmount) }}
+        </span>
+        <span *ngIf="isProcessing">
+          <i class="fas fa-spinner fa-spin"></i>
+          Đang xử lý...
+        </span>
+      </button>
+
+      <p class="security-note">
+        <i class="fas fa-shield-alt"></i>
+        Giao dịch được bảo mật và mã hóa
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="loading-container" *ngIf="isLoading">
+  <div class="spinner"></div>
+  <p>Đang tải thông tin...</p>
+</div>

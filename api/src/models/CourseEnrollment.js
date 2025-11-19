@@ -52,6 +52,19 @@ const CourseEnrollment = sequelize.define('CourseEnrollment', {
       min: 0,
       max: 5
     }
+  },
+  payment_id: {
+    type: DataTypes.BIGINT,
+    allowNull: true,
+    references: {
+      model: 'course_payments',
+      key: 'id'
+    }
+  },
+  enrollment_type: {
+    type: DataTypes.ENUM('free', 'paid', 'gifted'),
+    allowNull: false,
+    defaultValue: 'free'
   }
 }, {
   tableName: 'course_enrollments',

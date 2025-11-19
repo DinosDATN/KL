@@ -94,15 +94,21 @@ const Course = sequelize.define('Course', {
     defaultValue: false,
     allowNull: false
   },
+  is_free: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+    allowNull: false
+  },
   price: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.DECIMAL(10, 2),
     allowNull: true,
+    defaultValue: 0,
     validate: {
       min: 0
     }
   },
   original_price: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.DECIMAL(10, 2),
     allowNull: true,
     validate: {
       min: 0

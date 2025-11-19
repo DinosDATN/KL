@@ -37,6 +37,11 @@ const CourseReview = require("./CourseReview");
 const InstructorQualification = require("./InstructorQualification");
 const CourseLessonCompletion = require("./CourseLessonCompletion");
 
+// Payment models
+const CoursePayment = require("./CoursePayment");
+const CourseCoupon = require("./CourseCoupon");
+const CouponUsage = require("./CouponUsage");
+
 // Document models
 const Document = require("./Document");
 const DocumentCategory = require("./DocumentCategory");
@@ -206,6 +211,70 @@ Course.hasMany(CourseLessonCompletion, {
 CourseLesson.hasMany(CourseLessonCompletion, {
   foreignKey: "lesson_id",
   as: "Completions",
+});
+
+// Payment associations
+CoursePayment.belongsTo(User, {
+  foreignKey: "user_id",
+  as: "User",
+});
+
+CoursePayment.belongsTo(Course, {
+  foreignKey: "course_id",
+  as: "Course",
+});
+
+User.hasMany(CoursePayment, {
+  foreignKey: "user_id",
+  as: "Payments",
+});
+
+Course.hasMany(CoursePayment, {
+  foreignKey: "course_id",
+  as: "Payments",
+});
+
+// Enrollment - Payment relationship
+CourseEnrollment.belongsTo(CoursePayment, {
+  foreignKey: "payment_id",
+  as: "Payment",
+});
+
+CoursePayment.hasOne(CourseEnrollment, {
+  foreignKey: "payment_id",
+  as: "Enrollment",
+});
+
+// Coupon associations
+CourseCoupon.belongsTo(User, {
+  foreignKey: "created_by",
+  as: "Creator",
+});
+
+User.hasMany(CourseCoupon, {
+  foreignKey: "created_by",
+  as: "CreatedCoupons",
+});
+
+// Coupon usage associations
+CouponUsage.belongsTo(CourseCoupon, {
+  foreignKey: "coupon_id",
+  as: "Coupon",
+});
+
+CouponUsage.belongsTo(User, {
+  foreignKey: "user_id",
+  as: "User",
+});
+
+CouponUsage.belongsTo(CoursePayment, {
+  foreignKey: "payment_id",
+  as: "Payment",
+});
+
+CourseCoupon.hasMany(CouponUsage, {
+  foreignKey: "coupon_id",
+  as: "Usages",
 });
 
 Problem.belongsTo(ProblemCategory, {
@@ -986,6 +1055,10 @@ module.exports = {
   CourseReview,
   InstructorQualification,
   CourseLessonCompletion,
+  // Payment models
+  CoursePayment,
+  CourseCoupon,
+  CouponUsage,
   // Document models
   Document,
   DocumentCategory,

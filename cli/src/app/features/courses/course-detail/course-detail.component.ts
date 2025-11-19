@@ -6,6 +6,7 @@ import { Course, CourseCategory } from '../../../core/models/course.model';
 import { CourseModule, CourseLesson, CourseReview } from '../../../core/models/course-module.model';
 import { User } from '../../../core/models/user.model';
 import { CoursesService } from '../../../core/services/courses.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { CourseCardComponent } from '../components/course-card/course-card.component';
 import { LessonViewerComponent } from '../components/lesson-viewer/lesson-viewer.component';
 
@@ -29,7 +30,10 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
   loading = true;
   error: string | null = null;
   
-  // Subscription management
+  isEnrolled: boolean = false;
+  isEnrolling: boolean = false;
+  isAuthenticated: boolean = false;
+  
   private destroy$ = new Subject<void>();
   
   Math = Math;
@@ -37,14 +41,20 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private coursesService: CoursesService
+    private coursesService: CoursesService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
+    this.isAuthenticated = this.authService.isAuthenticated();
+    
     this.route.paramMap.subscribe(params => {
       const courseId = Number(params.get('id'));
       if (courseId) {
         this.loadCourseDetail(courseId);
+        if (this.isAuthenticated) {
+          this.checkEnrollmentStatus(courseId);
+        }
       } else {
         this.router.navigate(['/courses']);
       }
@@ -85,11 +95,57 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
       });
   }
 
+  checkEnrollmentStatus(courseId: number): void {
+    this.coursesService.checkEnrollment(courseId).subscribe({
+      next: (response: any) => {
+        this.isEnrolled = response.data.isEnrolled;
+      },
+      error: (error) => {
+        console.error('Error checking enrollment:', error);
+      }
+    });
+  }
+
   onEnrollClick(): void {
-    if (this.course) {
-      console.log('Enrolling in course:', this.course.title);
-      // Add enrollment logic here
+    if (!this.isAuthenticated) {
+      this.router.navigate(['/auth/login'], {
+        queryParams: { returnUrl: `/courses/${this.course?.id}` }
+      });
+      return;
     }
+
+    if (!this.course) return;
+
+    this.isEnrolling = true;
+    this.coursesService.enrollCourse(this.course.id).subscribe({
+      next: (response: any) => {
+        this.isEnrolled = true;
+        this.isEnrolling = false;
+        alert('Đăng ký khóa học thành công!');
+        this.startLearning();
+      },
+      error: (error: any) => {
+        this.isEnrolling = false;
+        
+        if (error.status === 402) {
+          this.router.navigate(['/courses', this.course?.id, 'payment']);
+        } else if (error.message.includes('already enrolled')) {
+          this.isEnrolled = true;
+          this.startLearning();
+        } else {
+          alert('Đăng ký thất bại: ' + error.message);
+        }
+      }
+    });
+  }
+
+  startLearning(): void {
+    if (!this.isEnrolled) {
+      this.onEnrollClick();
+      return;
+    }
+    
+    this.router.navigate(['/courses', this.course?.id, 'learn']);
   }
 
   onRelatedCourseClick(course: Course): void {

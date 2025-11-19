@@ -240,12 +240,28 @@ export const routes: Routes = [
           ).then((m) => m.CourseDetailComponent),
       },
       {
+        path: 'courses/:id/payment',
+        loadComponent: () =>
+          import(
+            './features/courses/course-payment/course-payment.component'
+          ).then((m) => m.CoursePaymentComponent),
+        canActivate: [AuthGuard],
+      },
+      {
+        path: 'courses/:id/learn',
+        loadComponent: () =>
+          import(
+            './features/courses/lesson-learning/lesson-learning.component'
+          ).then((m) => m.LessonLearningComponent),
+        canActivate: [AuthGuard],
+      },
+      {
         path: 'courses/:courseId/lessons/:lessonId',
         loadComponent: () =>
           import(
             './features/courses/lesson-learning/lesson-learning.component'
           ).then((m) => m.LessonLearningComponent),
-        canActivate: [AuthGuard], // ✅ Require authentication
+        canActivate: [AuthGuard],
       },
       {
         path: 'about',
