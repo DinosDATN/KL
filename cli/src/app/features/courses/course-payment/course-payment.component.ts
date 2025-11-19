@@ -30,9 +30,9 @@ export class CoursePaymentComponent implements OnInit {
   errorMessage: string = '';
   
   paymentMethods = [
-    { value: 'vnpay', label: 'VNPay', icon: '💳' },
-    { value: 'momo', label: 'MoMo', icon: '📱' },
-    { value: 'zalopay', label: 'ZaloPay', icon: '💰' },
+    // { value: 'vnpay', label: 'VNPay', icon: '💳' },
+    // { value: 'momo', label: 'MoMo', icon: '📱' },
+    // { value: 'zalopay', label: 'ZaloPay', icon: '💰' },
     { value: 'bank_transfer', label: 'Chuyển khoản ngân hàng', icon: '🏦' }
   ];
 
@@ -52,6 +52,7 @@ export class CoursePaymentComponent implements OnInit {
     }
 
     this.courseId = +this.route.snapshot.params['id'];
+    this.paymentMethod = 'bank_transfer'; // Mặc định chọn chuyển khoản
     this.loadCourse();
   }
 

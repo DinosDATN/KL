@@ -373,9 +373,22 @@
                 
                 <!-- Enrollment Button -->
                 <button 
+                  *ngIf="!isEnrolled"
                   (click)="onEnrollClick()"
-                  class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 focus:ring-4 focus:ring-blue-500/25 focus:outline-none shadow-lg">
-                  {{ course.price === 0 ? 'Học ngay' : 'Đăng ký khóa học' }}
+                  [disabled]="isEnrolling"
+                  class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 focus:ring-4 focus:ring-blue-500/25 focus:outline-none shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+                  <span *ngIf="!isEnrolling">{{ course.price === 0 ? 'Học ngay' : 'Đăng ký khóa học' }}</span>
+                  <span *ngIf="isEnrolling">
+                    <i class="fas fa-spinner fa-spin"></i> Đang xử lý...
+                  </span>
+                </button>
+
+                <!-- Already Enrolled Button -->
+                <button 
+                  *ngIf="isEnrolled"
+                  (click)="startLearning()"
+                  class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 focus:ring-4 focus:ring-green-500/25 focus:outline-none shadow-lg">
+                  <i class="fas fa-check-circle"></i> Bạn đã đăng ký khóa học
                 </button>
                 
                 <!-- Additional Info -->
