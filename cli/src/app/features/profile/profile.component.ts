@@ -365,6 +365,50 @@ export class ProfileComponent implements OnInit, OnDestroy {
       });
   }
 
+  // Become creator
+  becomeCreator(): void {
+    if (
+      !confirm(
+        'Bạn có chắc chắn muốn đăng ký trở thành người sáng tạo nội dung? Bạn sẽ có thể tạo và quản lý khóa học.'
+      )
+    ) {
+      return;
+    }
+
+    this.isLoading = true;
+    this.clearMessages();
+
+    this.profileService
+      .becomeCreator()
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => (this.isLoading = false))
+      )
+      .subscribe({
+        next: (response) => {
+          this.successMessage =
+            response.message ||
+            'Đăng ký thành công! Bạn đã trở thành người sáng tạo nội dung.';
+          if (response.data && response.data.user) {
+            this.user = response.data.user;
+            // Update auth service to reflect new role
+            this.authService.getProfile().subscribe();
+          }
+        },
+        error: (error) => {
+          this.errorMessage =
+            error.error?.message ||
+            error.message ||
+            'Không thể đăng ký làm người sáng tạo nội dung';
+        },
+      });
+  }
+
+  // Check if user is already a creator
+  isCreator(): boolean {
+    return this.user?.role === 'creator' || this.user?.role === 'admin';
+  }
+
   // Avatar upload methods
   onAvatarClick(): void {
     this.avatarFileInput.nativeElement.click();

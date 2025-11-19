@@ -979,6 +979,116 @@
             </form>
           </div>
 
+          <!-- Become Creator -->
+          <div
+            class="bg-white dark:bg-gray-800 rounded-xl shadow p-6"
+            *ngIf="!isCreator()"
+          >
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="text-lg font-semibold">
+                  Trở thành người sáng tạo nội dung
+                </h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Đăng ký để tạo và quản lý khóa học của riêng bạn
+                </p>
+              </div>
+            </div>
+            <div class="space-y-4">
+              <div
+                class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4"
+              >
+                <h4 class="font-medium text-blue-900 dark:text-blue-200 mb-2">
+                  Lợi ích khi trở thành Creator:
+                </h4>
+                <ul
+                  class="text-sm text-blue-800 dark:text-blue-300 space-y-1 list-disc list-inside"
+                >
+                  <li>Tạo và quản lý khóa học của riêng bạn</li>
+                  <li>Kiếm thu nhập từ các khóa học premium</li>
+                  <li>Xây dựng thương hiệu cá nhân trong lĩnh vực giáo dục</li>
+                  <li>Chia sẻ kiến thức với cộng đồng</li>
+                </ul>
+              </div>
+              <button
+                (click)="becomeCreator()"
+                [disabled]="isLoading"
+                class="w-full px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium transition-all"
+              >
+                <div
+                  *ngIf="isLoading"
+                  class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"
+                ></div>
+                <span *ngIf="!isLoading">🎓 Đăng ký trở thành Creator</span>
+                <span *ngIf="isLoading">Đang xử lý...</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Creator Status -->
+          <div
+            class="bg-white dark:bg-gray-800 rounded-xl shadow p-6"
+            *ngIf="isCreator()"
+          >
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="text-lg font-semibold">Trạng thái Creator</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Bạn đã là người sáng tạo nội dung
+                </p>
+              </div>
+              <span
+                class="px-3 py-1 text-sm font-semibold rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400"
+              >
+                Creator
+              </span>
+            </div>
+            <div class="space-y-3">
+              <div
+                class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300"
+              >
+                <svg
+                  class="w-5 h-5 text-green-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"
+                  ></path>
+                </svg>
+                <span>Bạn có thể tạo và quản lý khóa học</span>
+              </div>
+              <div
+                class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300"
+              >
+                <svg
+                  class="w-5 h-5 text-green-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"
+                  ></path>
+                </svg>
+                <span>Bạn có thể tạo các khóa học premium</span>
+              </div>
+              <a
+                routerLink="/courses"
+                class="inline-block mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+              >
+                Xem khóa học của tôi →
+              </a>
+            </div>
+          </div>
+
           <!-- Change Password -->
           <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
             <div class="flex items-center justify-between mb-4">

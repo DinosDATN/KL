@@ -928,6 +928,49 @@ const userController = {
     }
   },
 
+  // Request to become a creator
+  becomeCreator: async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await User.findByPk(userId);
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found",
+        });
+      }
+
+      // Check if user is already a creator or admin
+      if (user.role === "creator" || user.role === "admin") {
+        return res.status(400).json({
+          success: false,
+          message: "You are already a creator",
+        });
+      }
+
+      // Update user role to creator
+      await user.update({
+        role: "creator",
+      });
+
+      res.status(200).json({
+        success: true,
+        message: "Successfully registered as a content creator",
+        data: {
+          user: user.toAuthJSON(),
+        },
+      });
+    } catch (error) {
+      console.error("Error in becomeCreator:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to register as creator",
+        error: error.message,
+      });
+    }
+  },
+
   // Multer middleware for avatar upload
   uploadMiddleware: upload.single("avatar"),
 };

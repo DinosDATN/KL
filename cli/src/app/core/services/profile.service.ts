@@ -199,6 +199,28 @@ export class ProfileService {
   }
 
   /**
+   * Request to become a content creator
+   */
+  becomeCreator(): Observable<ApiResponse<{ user: User }>> {
+    return this.http
+      .post<ApiResponse<{ user: User }>>(`${this.apiUrl}/become-creator`, {})
+      .pipe(
+        tap((response) => {
+          if (response.success && response.data) {
+            // Update the current profile data with new user role
+            const currentProfile = this.profileDataSubject.value;
+            if (currentProfile) {
+              this.profileDataSubject.next({
+                ...currentProfile,
+                user: response.data.user,
+              });
+            }
+          }
+        })
+      );
+  }
+
+  /**
    * Get current profile data from subject
    */
   getCurrentProfile(): ProfileData | null {
