@@ -77,6 +77,20 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'instructors',
+        loadComponent: () =>
+          import(
+            './features/admin/instructor-management/instructor-management.component'
+          ).then((m) => m.InstructorManagementComponent),
+      },
+      {
+        path: 'admins',
+        loadComponent: () =>
+          import(
+            './features/admin/admin-management/admin-management.component'
+          ).then((m) => m.AdminManagementComponent),
+      },
+      {
         path: 'courses/analytics',
         loadComponent: () =>
           import(
@@ -89,6 +103,13 @@ export const routes: Routes = [
           import(
             './features/admin/course-reports/course-reports.component'
           ).then((m) => m.CourseReportsComponent),
+      },
+      {
+        path: 'lessons',
+        loadComponent: () =>
+          import(
+            './features/admin/lesson-management/lesson-management.component'
+          ).then((m) => m.LessonManagementComponent),
       },
       {
         path: 'documents',
@@ -117,6 +138,76 @@ export const routes: Routes = [
           import(
             './features/admin/contest-analytics/contest-analytics.component'
           ).then((m) => m.ContestAnalyticsComponent),
+      },
+      {
+        path: 'payments',
+        loadComponent: () =>
+          import(
+            './features/admin/payment-management/payment-management.component'
+          ).then((m) => m.PaymentManagementComponent),
+      },
+      {
+        path: 'payments/analytics',
+        loadComponent: () =>
+          import(
+            './features/admin/payment-analytics/payment-analytics.component'
+          ).then((m) => m.PaymentAnalyticsComponent),
+      },
+      {
+        path: 'payments/coupons',
+        loadComponent: () =>
+          import(
+            './features/admin/coupon-management/coupon-management.component'
+          ).then((m) => m.CouponManagementComponent),
+      },
+      {
+        path: 'reports',
+        loadComponent: () =>
+          import(
+            './features/admin/reports-management/reports-management.component'
+          ).then((m) => m.ReportsManagementComponent),
+      },
+      {
+        path: 'reports/bugs',
+        loadComponent: () =>
+          import('./features/admin/bug-reports/bug-reports.component').then(
+            (m) => m.BugReportsComponent
+          ),
+      },
+      {
+        path: 'reports/feedback',
+        loadComponent: () =>
+          import(
+            './features/admin/feedback-management/feedback-management.component'
+          ).then((m) => m.FeedbackManagementComponent),
+      },
+      {
+        path: 'reports/violations',
+        loadComponent: () =>
+          import(
+            './features/admin/violation-management/violation-management.component'
+          ).then((m) => m.ViolationManagementComponent),
+      },
+      {
+        path: 'notifications',
+        loadComponent: () =>
+          import(
+            './features/admin/notification-management/notification-management.component'
+          ).then((m) => m.NotificationManagementComponent),
+      },
+      {
+        path: 'notifications/send',
+        loadComponent: () =>
+          import(
+            './features/admin/send-notification/send-notification.component'
+          ).then((m) => m.SendNotificationComponent),
+      },
+      {
+        path: 'notifications/templates',
+        loadComponent: () =>
+          import(
+            './features/admin/notification-templates/notification-templates.component'
+          ).then((m) => m.NotificationTemplatesComponent),
       },
       {
         path: 'analytics/platform',
@@ -258,9 +349,9 @@ export const routes: Routes = [
       {
         path: 'payment/vnpay-return',
         loadComponent: () =>
-          import(
-            './features/courses/vnpay-return/vnpay-return.component'
-          ).then((m) => m.VnpayReturnComponent),
+          import('./features/courses/vnpay-return/vnpay-return.component').then(
+            (m) => m.VnpayReturnComponent
+          ),
       },
       {
         path: 'courses/:id/learn',
