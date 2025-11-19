@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
@@ -22,6 +22,7 @@ interface MenuItem {
 })
 export class AdminSidebarComponent implements OnInit {
   @Input() isCollapsed = false;
+  @Output() expandSidebar = new EventEmitter<void>();
 
   menuItems: MenuItem[] = [
     {
@@ -254,20 +255,57 @@ export class AdminSidebarComponent implements OnInit {
   }
 
   toggleSubmenu(item: MenuItem) {
+    // If sidebar is collapsed, expand it first
+    if (this.isCollapsed) {
+      this.expandSidebar.emit();
+      // Expand the submenu if item has children
+      if (item.children && item.children.length > 0) {
+        // Close other expanded items (accordion behavior)
+        this.closeOtherMenus(item);
+        item.isExpanded = true;
+      } else {
+        // Close all expanded menus when navigating to non-submenu item
+        this.closeAllMenus();
+        // Navigate to route for items without children after expanding
+        setTimeout(() => {
+          this.navigateToRoute(item.route);
+        }, 300); // Wait for sidebar animation to complete
+      }
+      return;
+    }
+
+    // Normal behavior when sidebar is expanded
     if (item.children && item.children.length > 0) {
       // Toggle the submenu
+      const wasExpanded = item.isExpanded;
       item.isExpanded = !item.isExpanded;
 
-      // Close other expanded items (optional - for accordion behavior)
-      // this.menuItems.forEach(menuItem => {
-      //   if (menuItem !== item && menuItem.children) {
-      //     menuItem.isExpanded = false;
-      //   }
-      // });
+      // If opening a menu, close all other menus (accordion behavior)
+      if (!wasExpanded && item.isExpanded) {
+        this.closeOtherMenus(item);
+      }
     } else {
+      // Close all expanded menus when navigating to non-submenu item
+      this.closeAllMenus();
       // Navigate to the route for items without children
       this.navigateToRoute(item.route);
     }
+  }
+
+  private closeOtherMenus(currentItem: MenuItem) {
+    this.menuItems.forEach((menuItem) => {
+      if (menuItem !== currentItem && menuItem.children) {
+        menuItem.isExpanded = false;
+      }
+    });
+  }
+
+  private closeAllMenus() {
+    this.menuItems.forEach((menuItem) => {
+      if (menuItem.children) {
+        menuItem.isExpanded = false;
+      }
+    });
   }
 
   navigateToRoute(route: string) {

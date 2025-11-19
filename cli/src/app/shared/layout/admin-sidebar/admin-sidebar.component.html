@@ -1,35 +1,67 @@
 <aside
-  class="bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 fixed left-0 top-16 h-[calc(100vh-4rem)] z-40 overflow-y-auto"
+  class="bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 fixed left-0 top-16 h-[calc(100vh-4rem)] z-40 overflow-y-auto shadow-sm"
   [class.w-64]="!isCollapsed"
   [class.w-16]="isCollapsed"
 >
-  <nav class="p-4 space-y-2">
-    <div *ngFor="let item of menuItems" class="sidebar-item">
+  <nav [class]="isCollapsed ? 'p-2 space-y-1' : 'p-4 space-y-2'">
+    <div
+      *ngFor="let item of menuItems; let i = index"
+      class="sidebar-item group/item"
+    >
       <!-- Main menu item -->
       <div
         (click)="toggleSubmenu(item)"
-        class="flex items-center justify-between p-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition-colors group"
-        [class.bg-blue-50]="!item.children && isActive(item.route)"
-        [class.dark:bg-blue-900]="!item.children && isActive(item.route)"
-        [class.text-blue-600]="!item.children && isActive(item.route)"
-        [class.dark:text-blue-400]="!item.children && isActive(item.route)"
-        [class.bg-gray-50]="item.children && hasActiveChild(item)"
-        [class.dark:bg-gray-700]="item.children && hasActiveChild(item)"
+        [class]="
+          isCollapsed
+            ? 'flex items-center justify-center p-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition-all duration-200'
+            : 'flex items-center justify-between p-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition-colors'
+        "
+        [class.bg-blue-50]="
+          !isCollapsed && !item.children && isActive(item.route)
+        "
+        [class.dark:bg-blue-900]="
+          !isCollapsed && !item.children && isActive(item.route)
+        "
+        [class.text-blue-600]="
+          !isCollapsed && !item.children && isActive(item.route)
+        "
+        [class.dark:text-blue-400]="
+          !isCollapsed && !item.children && isActive(item.route)
+        "
+        [class.bg-gray-50]="
+          !isCollapsed && item.children && hasActiveChild(item)
+        "
+        [class.dark:bg-gray-700]="
+          !isCollapsed && item.children && hasActiveChild(item)
+        "
+        [class.active-collapsed]="
+          isCollapsed && (isActive(item.route) || hasActiveChild(item))
+        "
         [title]="isCollapsed ? item.label : ''"
       >
-        <div class="flex items-center space-x-3 min-w-0 flex-1">
+        <div
+          [class]="
+            isCollapsed
+              ? 'flex items-center justify-center w-full'
+              : 'flex items-center space-x-3 min-w-0 flex-1'
+          "
+        >
           <svg
-            class="w-5 h-5 flex-shrink-0 transition-colors"
+            [class]="
+              isCollapsed
+                ? 'w-6 h-6 flex-shrink-0 transition-all duration-200'
+                : 'w-5 h-5 flex-shrink-0 transition-colors'
+            "
             [class.text-blue-600]="!item.children && isActive(item.route)"
             [class.dark:text-blue-400]="!item.children && isActive(item.route)"
             fill="none"
             stroke="currentColor"
+            stroke-width="2"
             viewBox="0 0 24 24"
           >
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
-              stroke-width="2"
               [attr.d]="item.icon"
             ></path>
           </svg>
@@ -61,7 +93,7 @@
           </svg>
         </div>
 
-        <!-- Badge if present -->
+        <!-- Badge if present (only show when not collapsed) -->
         <span
           *ngIf="item.badge && !isCollapsed"
           class="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full badge ml-auto"
@@ -104,20 +136,6 @@
             >{{ child.badge }}</span
           >
         </a>
-      </div>
-
-      <!-- Tooltip for collapsed sidebar -->
-      <div
-        *ngIf="isCollapsed"
-        id="sidebar-tooltip"
-        class="absolute left-16 top-1/2 transform -translate-y-1/2 bg-gray-900 text-white text-xs rounded py-1 px-2 opacity-0 transition-opacity duration-200 z-50 whitespace-nowrap pointer-events-none"
-      >
-        {{ item.label }}
-        <div *ngIf="item.children" class="mt-1 border-t border-gray-700 pt-1">
-          <div *ngFor="let child of item.children" class="py-1">
-            {{ child.label }}
-          </div>
-        </div>
       </div>
     </div>
   </nav>

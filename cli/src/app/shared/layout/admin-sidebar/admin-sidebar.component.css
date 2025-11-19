@@ -68,7 +68,8 @@ aside::-webkit-scrollbar-thumb:hover {
   transition: all 0.2s ease;
 }
 
-.sidebar-item > div:hover svg {
+/* Only apply scale on hover if not collapsed (collapsed has different style) */
+aside:not([class*="w-16"]) .sidebar-item > div:hover svg {
   transform: scale(1.1);
 }
 
@@ -98,14 +99,14 @@ aside::-webkit-scrollbar-thumb:hover {
 }
 
 .submenu-enter a::before {
-  content: '';
+  content: "";
   position: absolute;
   left: -8px;
   top: 50%;
   transform: translateY(-50%);
   width: 2px;
   height: 0;
-  background: linear-gradient(to bottom, #3B82F6, #1D4ED8);
+  background: linear-gradient(to bottom, #3b82f6, #1d4ed8);
   transition: height 0.2s ease;
 }
 
@@ -121,15 +122,23 @@ aside::-webkit-scrollbar-thumb:hover {
 
 /* Enhanced hover effects for main items */
 .sidebar-item > div:hover {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(16, 185, 129, 0.05) 100%);
-  border-left: 3px solid #3B82F6;
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.05) 0%,
+    rgba(16, 185, 129, 0.05) 100%
+  );
+  border-left: 3px solid #3b82f6;
   padding-left: 12px;
 }
 
 /* Submenu hover effects */
 .submenu-enter a:hover {
   transform: translateX(4px);
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.08) 0%,
+    rgba(16, 185, 129, 0.08) 100%
+  );
 }
 
 /* Badge pulse animation */
@@ -138,7 +147,8 @@ aside::-webkit-scrollbar-thumb:hover {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -146,49 +156,107 @@ aside::-webkit-scrollbar-thumb:hover {
   }
 }
 
-/* Collapsed sidebar tooltip */
+/* Sidebar item positioning */
 .sidebar-item {
   position: relative;
 }
 
-#sidebar-tooltip {
-  pointer-events: none;
-  transform: translateY(-50%);
-  background: linear-gradient(135deg, #1F2937 0%, #374151 100%);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(8px);
-  max-width: 200px;
-  font-size: 11px;
-  line-height: 1.3;
+/* Active state for collapsed sidebar */
+.active-collapsed {
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.15) 0%,
+    rgba(59, 130, 246, 0.1) 100%
+  ) !important;
+  border-left: 3px solid #3b82f6;
+  color: #3b82f6 !important;
 }
 
-.sidebar-item:hover #sidebar-tooltip {
-  opacity: 1;
-  pointer-events: auto;
-  animation: tooltipFadeIn 0.2s ease-out;
+.dark .active-collapsed {
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.2) 0%,
+    rgba(59, 130, 246, 0.15) 100%
+  ) !important;
+  border-left-color: #60a5fa;
+  color: #60a5fa !important;
 }
 
-@keyframes tooltipFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-50%) translateX(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(-50%) translateX(0);
-  }
+.active-collapsed svg {
+  color: #3b82f6 !important;
 }
 
-/* Tooltip arrow */
-#sidebar-tooltip::before {
-  content: '';
-  position: absolute;
-  left: -4px;
-  top: 50%;
-  transform: translateY(-50%);
-  border: 4px solid transparent;
-  border-right-color: #1F2937;
+.dark .active-collapsed svg {
+  color: #60a5fa !important;
+}
+
+/* Collapsed sidebar item hover effects */
+.sidebar-item:hover > div.active-collapsed {
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.2) 0%,
+    rgba(59, 130, 246, 0.15) 100%
+  ) !important;
+}
+
+/* Icon animations for collapsed mode */
+aside[class*="w-16"] .sidebar-item > div:hover svg {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
+}
+
+aside[class*="w-16"] .sidebar-item > div.active-collapsed:hover svg {
+  transform: scale(1.15);
+}
+
+/* Improved spacing and alignment for collapsed mode */
+aside[class*="w-16"] .sidebar-item > div {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Smooth transitions for collapsed sidebar */
+aside[class*="w-16"] nav {
+  transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+aside[class*="w-16"] .sidebar-item {
+  margin-bottom: 4px;
+}
+
+/* Prevent translateX on collapsed items */
+aside[class*="w-16"] .sidebar-item > div:hover {
+  transform: none;
+}
+
+/* Enhanced collapsed item styling */
+aside[class*="w-16"] .sidebar-item > div {
+  position: relative;
+  border-radius: 0.5rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+aside[class*="w-16"] .sidebar-item > div:hover {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+}
+
+.dark aside[class*="w-16"] .sidebar-item > div:hover {
+  background-color: rgba(59, 130, 246, 0.2) !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+}
+
+/* Add subtle border glow for active collapsed items */
+aside[class*="w-16"] .active-collapsed {
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2),
+    0 2px 4px rgba(59, 130, 246, 0.1);
+}
+
+.dark aside[class*="w-16"] .active-collapsed {
+  box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.3),
+    0 2px 4px rgba(96, 165, 250, 0.15);
 }
 
 /* Focus styles for accessibility */
@@ -202,11 +270,11 @@ aside::-webkit-scrollbar-thumb:hover {
   aside {
     @apply -translate-x-full;
   }
-  
+
   aside.mobile-open {
     @apply translate-x-0;
   }
-  
+
   /* Backdrop for mobile */
   .mobile-backdrop {
     @apply fixed inset-0 bg-black bg-opacity-50 z-30;
@@ -219,7 +287,7 @@ aside::-webkit-scrollbar-thumb:hover {
   .sidebar-item a {
     @apply border border-gray-300 dark:border-gray-600;
   }
-  
+
   .active-child {
     @apply border-blue-500;
   }
