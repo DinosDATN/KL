@@ -459,4 +459,18 @@ export class CoursesService {
 
     return throwError(() => new Error(errorMessage));
   }
+
+  /**
+   * VNPay return callback
+   */
+  vnpayReturn(params: any): Observable<any> {
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/payment/vnpay-return`,
+      { params, withCredentials: true }
+    ).pipe(
+      timeout(environment.apiTimeout),
+      map(response => response),
+      catchError(error => this.handleError(error, 'Failed to process VNPay return'))
+    );
+  }
 }

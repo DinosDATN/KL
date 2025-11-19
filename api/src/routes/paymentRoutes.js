@@ -27,4 +27,10 @@ router.get('/coupons/active', paymentController.getActiveCoupons);
 // Yêu cầu hoàn tiền
 router.post('/payments/:paymentId/refund', paymentController.requestRefund);
 
+// VNPay callback (không cần auth vì từ VNPay gọi về)
+router.get('/vnpay-return', paymentController.vnpayReturn);
+
+// Xác nhận thanh toán chuyển khoản (Admin only)
+router.post('/payments/:paymentId/confirm-bank-transfer', paymentController.confirmBankTransfer);
+
 module.exports = router;

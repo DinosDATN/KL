@@ -116,6 +116,17 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
 
     if (!this.course) return;
 
+    // Kiểm tra nếu khóa học có phí
+    const coursePrice = this.course.price || this.course.original_price || 0;
+    if (coursePrice > 0) {
+      // Hiển thị thông báo và chuyển đến trang thanh toán
+      if (confirm(`Khóa học này có phí ${this.formatPrice(coursePrice)}. Bạn có muốn tiếp tục thanh toán?`)) {
+        this.router.navigate(['/courses', this.course.id, 'payment']);
+      }
+      return;
+    }
+
+    // Khóa học miễn phí - đăng ký trực tiếp
     this.isEnrolling = true;
     this.coursesService.enrollCourse(this.course.id).subscribe({
       next: (response: any) => {

@@ -248,6 +248,21 @@ export const routes: Routes = [
         canActivate: [AuthGuard],
       },
       {
+        path: 'payment/bank-transfer/:id',
+        loadComponent: () =>
+          import(
+            './features/courses/bank-transfer-info/bank-transfer-info.component'
+          ).then((m) => m.BankTransferInfoComponent),
+        canActivate: [AuthGuard],
+      },
+      {
+        path: 'payment/vnpay-return',
+        loadComponent: () =>
+          import(
+            './features/courses/vnpay-return/vnpay-return.component'
+          ).then((m) => m.VnpayReturnComponent),
+      },
+      {
         path: 'courses/:id/learn',
         loadComponent: () =>
           import(

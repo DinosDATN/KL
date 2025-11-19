@@ -4,6 +4,7 @@ const CouponUsage = require('../models/CouponUsage');
 const Course = require('../models/Course');
 const CourseEnrollment = require('../models/CourseEnrollment');
 const { sequelize } = require('../config/sequelize');
+const vnpayService = require('../services/vnpayService');
 
 class PaymentController {
   /**
@@ -112,6 +113,7 @@ class PaymentController {
       const { courseId } = req.params;
       const { paymentMethod, couponCode, returnUrl } = req.body;
       const userId = req.user.id;
+      const ipAddr = req.headers['x-forwarded-for'] || req.connection.remoteAddress || '127.0.0.1';
 
       // Validate payment method
       const validMethods = ['credit_card', 'debit_card', 'bank_transfer', 'e_wallet', 'paypal', 'momo', 'vnpay', 'zalopay'];
@@ -190,67 +192,115 @@ class PaymentController {
         notes: `Payment for course: ${course.title}`
       }, { transaction });
 
-      // Trong môi trường thực tế, đây là nơi gọi API payment gateway
-      // Ví dụ: VNPay, MoMo, ZaloPay, etc.
-      // Hiện tại chúng ta sẽ simulate thành công ngay
-      
-      const transactionId = `TXN${Date.now()}${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-      
-      await payment.markAsCompleted(transactionId, paymentMethod, {
-        simulatedPayment: true,
-        timestamp: new Date().toISOString()
-      });
-
-      // Tạo enrollment sau khi thanh toán thành công
-      const enrollment = await CourseEnrollment.create({
-        user_id: userId,
-        course_id: courseId,
-        payment_id: payment.id,
-        enrollment_type: 'paid',
-        progress: 0,
-        status: 'not-started',
-        start_date: new Date()
-      }, { transaction });
-
-      // Cập nhật số lượng học viên
-      await Course.increment('students', { 
-        where: { id: courseId },
-        transaction 
-      });
-
-      // Lưu coupon usage nếu có
-      if (coupon && discountAmount > 0) {
-        await CouponUsage.create({
-          coupon_id: coupon.id,
-          user_id: userId,
-          payment_id: payment.id,
-          discount_amount: discountAmount
-        }, { transaction });
-
-        await coupon.incrementUsage();
-      }
-
       await transaction.commit();
 
-      res.status(201).json({
-        success: true,
-        message: 'Thanh toán thành công',
-        data: {
-          payment: {
-            id: payment.id,
-            transactionId: payment.transaction_id,
-            amount: payment.amount,
-            status: payment.payment_status,
-            paymentDate: payment.payment_date
-          },
-          enrollment: {
-            id: enrollment.id,
-            courseId: enrollment.course_id,
-            status: enrollment.status
-          },
-          redirectUrl: `/courses/${courseId}/learn`
+      // Xử lý theo phương thức thanh toán
+      if (paymentMethod === 'vnpay') {
+        // Tạo URL thanh toán VNPay
+        const orderId = `COURSE_${payment.id}_${Date.now()}`;
+        const orderInfo = `Thanh toan khoa hoc: ${course.title}`;
+        
+        const paymentUrl = vnpayService.createPaymentUrl(
+          orderId,
+          finalAmount,
+          orderInfo,
+          ipAddr
+        );
+
+        return res.status(200).json({
+          success: true,
+          message: 'Chuyển hướng đến VNPay',
+          data: {
+            paymentId: payment.id,
+            paymentUrl,
+            orderId
+          }
+        });
+      } else if (paymentMethod === 'bank_transfer') {
+        // Chuyển khoản ngân hàng - trả về thông tin tài khoản
+        return res.status(200).json({
+          success: true,
+          message: 'Vui lòng chuyển khoản theo thông tin bên dưới',
+          data: {
+            paymentId: payment.id,
+            paymentMethod: 'bank_transfer',
+            bankInfo: {
+              bankName: 'Ngân hàng TMCP Á Châu (ACB)',
+              accountNumber: '123456789',
+              accountName: 'CONG TY TNHH GIAO DUC TRUC TUYEN',
+              amount: finalAmount,
+              content: `THANHTOAN ${payment.id} ${userId}`,
+              qrCode: `https://img.vietqr.io/image/ACB-123456789-compact2.png?amount=${finalAmount}&addInfo=THANHTOAN%20${payment.id}%20${userId}`
+            },
+            note: 'Sau khi chuyển khoản, vui lòng chờ 5-10 phút để hệ thống xác nhận thanh toán.'
+          }
+        });
+      } else {
+        // Các phương thức khác - simulate thanh toán thành công
+        const transactionInner = await sequelize.transaction();
+        try {
+          const transactionId = `TXN${Date.now()}${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+          
+          await payment.markAsCompleted(transactionId, paymentMethod, {
+            simulatedPayment: true,
+            timestamp: new Date().toISOString()
+          });
+
+          // Tạo enrollment sau khi thanh toán thành công
+          const enrollment = await CourseEnrollment.create({
+            user_id: userId,
+            course_id: courseId,
+            payment_id: payment.id,
+            enrollment_type: 'paid',
+            progress: 0,
+            status: 'not-started',
+            start_date: new Date()
+          }, { transaction: transactionInner });
+
+          // Cập nhật số lượng học viên
+          await Course.increment('students', { 
+            where: { id: courseId },
+            transaction: transactionInner 
+          });
+
+          // Lưu coupon usage nếu có
+          if (coupon && discountAmount > 0) {
+            await CouponUsage.create({
+              coupon_id: coupon.id,
+              user_id: userId,
+              payment_id: payment.id,
+              discount_amount: discountAmount
+            }, { transaction: transactionInner });
+
+            await coupon.incrementUsage();
+          }
+
+          await transactionInner.commit();
+
+          return res.status(201).json({
+            success: true,
+            message: 'Thanh toán thành công',
+            data: {
+              payment: {
+                id: payment.id,
+                transactionId: payment.transaction_id,
+                amount: payment.amount,
+                status: payment.payment_status,
+                paymentDate: payment.payment_date
+              },
+              enrollment: {
+                id: enrollment.id,
+                courseId: enrollment.course_id,
+                status: enrollment.status
+              },
+              redirectUrl: `/courses/${courseId}/learn`
+            }
+          });
+        } catch (error) {
+          await transactionInner.rollback();
+          throw error;
         }
-      });
+      }
     } catch (error) {
       await transaction.rollback();
       console.error('Error in processPayment:', error);
@@ -406,6 +456,192 @@ class PaymentController {
       res.status(500).json({
         success: false,
         message: 'Lỗi khi lấy danh sách mã giảm giá',
+        error: error.message
+      });
+    }
+  }
+
+  /**
+   * Xử lý callback từ VNPay
+   */
+  async vnpayReturn(req, res) {
+    try {
+      const vnpParams = req.query;
+      
+      // Xác thực callback
+      const result = vnpayService.processReturn(vnpParams);
+      
+      if (!result.success) {
+        return res.status(400).json({
+          success: false,
+          message: result.message
+        });
+      }
+
+      // Lấy payment ID từ orderId
+      const orderId = result.data.orderId;
+      const paymentId = orderId.split('_')[1];
+
+      const payment = await CoursePayment.findByPk(paymentId);
+      
+      if (!payment) {
+        return res.status(404).json({
+          success: false,
+          message: 'Không tìm thấy thông tin thanh toán'
+        });
+      }
+
+      if (payment.payment_status === 'completed') {
+        return res.status(200).json({
+          success: true,
+          message: 'Giao dịch đã được xử lý trước đó',
+          data: {
+            paymentId: payment.id,
+            redirectUrl: `/courses/${payment.course_id}/learn`
+          }
+        });
+      }
+
+      const transaction = await sequelize.transaction();
+      
+      try {
+        // Cập nhật payment
+        await payment.markAsCompleted(
+          result.data.transactionNo,
+          'vnpay',
+          {
+            bankCode: result.data.bankCode,
+            payDate: result.data.payDate,
+            vnpayData: result.data
+          }
+        );
+
+        // Tạo enrollment
+        const enrollment = await CourseEnrollment.create({
+          user_id: payment.user_id,
+          course_id: payment.course_id,
+          payment_id: payment.id,
+          enrollment_type: 'paid',
+          progress: 0,
+          status: 'not-started',
+          start_date: new Date()
+        }, { transaction });
+
+        // Cập nhật số lượng học viên
+        await Course.increment('students', { 
+          where: { id: payment.course_id },
+          transaction 
+        });
+
+        await transaction.commit();
+
+        res.status(200).json({
+          success: true,
+          message: 'Thanh toán thành công',
+          data: {
+            payment: {
+              id: payment.id,
+              transactionId: payment.transaction_id,
+              amount: payment.amount,
+              status: payment.payment_status
+            },
+            enrollment: {
+              id: enrollment.id,
+              courseId: enrollment.course_id
+            },
+            redirectUrl: `/courses/${payment.course_id}/learn`
+          }
+        });
+      } catch (error) {
+        await transaction.rollback();
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in vnpayReturn:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Lỗi khi xử lý callback từ VNPay',
+        error: error.message
+      });
+    }
+  }
+
+  /**
+   * Xác nhận thanh toán chuyển khoản ngân hàng (Admin)
+   */
+  async confirmBankTransfer(req, res) {
+    const transaction = await sequelize.transaction();
+    
+    try {
+      const { paymentId } = req.params;
+      const { transactionId, notes } = req.body;
+
+      const payment = await CoursePayment.findByPk(paymentId, { transaction });
+      
+      if (!payment) {
+        await transaction.rollback();
+        return res.status(404).json({
+          success: false,
+          message: 'Không tìm thấy thông tin thanh toán'
+        });
+      }
+
+      if (payment.payment_status === 'completed') {
+        await transaction.rollback();
+        return res.status(400).json({
+          success: false,
+          message: 'Thanh toán đã được xác nhận trước đó'
+        });
+      }
+
+      // Cập nhật payment
+      await payment.markAsCompleted(
+        transactionId || `BANK_${Date.now()}`,
+        'bank_transfer',
+        { confirmedBy: req.user.id, notes }
+      );
+
+      // Kiểm tra enrollment đã tồn tại chưa
+      let enrollment = await CourseEnrollment.findOne({
+        where: { payment_id: paymentId },
+        transaction
+      });
+
+      if (!enrollment) {
+        // Tạo enrollment mới
+        enrollment = await CourseEnrollment.create({
+          user_id: payment.user_id,
+          course_id: payment.course_id,
+          payment_id: payment.id,
+          enrollment_type: 'paid',
+          progress: 0,
+          status: 'not-started',
+          start_date: new Date()
+        }, { transaction });
+
+        // Cập nhật số lượng học viên
+        await Course.increment('students', { 
+          where: { id: payment.course_id },
+          transaction 
+        });
+      }
+
+      await transaction.commit();
+
+      res.status(200).json({
+        success: true,
+        message: 'Xác nhận thanh toán thành công',
+        data: {
+          payment,
+          enrollment
+        }
+      });
+    } catch (error) {
+      await transaction.rollback();
+      console.error('Error in confirmBankTransfer:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Lỗi khi xác nhận thanh toán',
         error: error.message
       });
     }

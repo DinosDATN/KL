@@ -133,8 +133,18 @@ export class CoursePaymentComponent implements OnInit {
     this.coursesService.processPayment(this.courseId, paymentData).subscribe({
       next: (response: any) => {
         if (response.success) {
-          alert('Thanh toán thành công!');
-          this.router.navigate([response.data.redirectUrl || `/courses/${this.courseId}/learn`]);
+          // Xử lý theo phương thức thanh toán
+          if (this.paymentMethod === 'vnpay' && response.data.paymentUrl) {
+            // Chuyển hướng đến VNPay
+            window.location.href = response.data.paymentUrl;
+          } else if (this.paymentMethod === 'bank_transfer' && response.data.bankInfo) {
+            // Hiển thị thông tin chuyển khoản
+            this.showBankTransferInfo(response.data);
+          } else {
+            // Thanh toán thành công trực tiếp
+            alert('Thanh toán thành công!');
+            this.router.navigate([response.data.redirectUrl || `/courses/${this.courseId}/learn`]);
+          }
         }
       },
       error: (error) => {
@@ -142,6 +152,13 @@ export class CoursePaymentComponent implements OnInit {
         this.errorMessage = error.message || 'Thanh toán thất bại. Vui lòng thử lại.';
         this.isProcessing = false;
       }
+    });
+  }
+
+  showBankTransferInfo(data: any): void {
+    // Chuyển đến trang hiển thị thông tin chuyển khoản
+    this.router.navigate(['/payment/bank-transfer', data.paymentId], {
+      state: { bankInfo: data.bankInfo, note: data.note }
     });
   }
 

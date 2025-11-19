@@ -1,0 +1,45 @@
+<div class="vnpay-return-container">
+  <div class="result-card">
+    <!-- Processing State -->
+    <div *ngIf="isProcessing" class="processing-state">
+      <div class="spinner"></div>
+      <h2>Đang xử lý thanh toán...</h2>
+      <p>Vui lòng đợi trong giây lát</p>
+    </div>
+
+    <!-- Success State -->
+    <div *ngIf="!isProcessing && isSuccess" class="success-state">
+      <div class="icon-wrapper success">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <h2>Thanh toán thành công!</h2>
+      <p class="message">{{ message }}</p>
+      <p class="countdown">Tự động chuyển hướng sau {{ countdown }} giây...</p>
+      <div class="actions">
+        <button class="btn-primary" (click)="goToRedirectUrl()">
+          <i class="fas fa-play-circle"></i>
+          Bắt đầu học ngay
+        </button>
+      </div>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="!isProcessing && !isSuccess" class="error-state">
+      <div class="icon-wrapper error">
+        <i class="fas fa-times-circle"></i>
+      </div>
+      <h2>Thanh toán thất bại</h2>
+      <p class="message">{{ message }}</p>
+      <div class="actions">
+        <button class="btn-secondary" (click)="goToCourses()">
+          <i class="fas fa-arrow-left"></i>
+          Quay lại khóa học
+        </button>
+        <button class="btn-primary" (click)="goToCourses()">
+          <i class="fas fa-redo"></i>
+          Thử lại
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

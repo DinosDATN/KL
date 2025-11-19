@@ -1,0 +1,117 @@
+<div class="bank-transfer-container">
+  <div class="bank-transfer-card">
+    <div class="header">
+      <div class="icon-wrapper">
+        <i class="fas fa-university"></i>
+      </div>
+      <h2>Thông tin chuyển khoản</h2>
+      <p class="subtitle">Vui lòng chuyển khoản theo thông tin bên dưới</p>
+    </div>
+
+    <div class="bank-info-section" *ngIf="bankInfo">
+      <!-- QR Code -->
+      <div class="qr-code-wrapper">
+        <img [src]="bankInfo.qrCode" alt="QR Code" class="qr-code">
+        <p class="qr-hint">Quét mã QR để chuyển khoản nhanh</p>
+      </div>
+
+      <!-- Bank Details -->
+      <div class="bank-details">
+        <div class="detail-row">
+          <div class="detail-label">
+            <i class="fas fa-university"></i>
+            Ngân hàng
+          </div>
+          <div class="detail-value">
+            <span>{{ bankInfo.bankName }}</span>
+            <button class="copy-btn" (click)="copyToClipboard(bankInfo.bankName, 'bank')">
+              <i class="fas fa-copy"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="detail-row">
+          <div class="detail-label">
+            <i class="fas fa-credit-card"></i>
+            Số tài khoản
+          </div>
+          <div class="detail-value">
+            <span class="highlight">{{ bankInfo.accountNumber }}</span>
+            <button class="copy-btn" (click)="copyToClipboard(bankInfo.accountNumber, 'account')">
+              <i class="fas fa-copy"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="detail-row">
+          <div class="detail-label">
+            <i class="fas fa-user"></i>
+            Chủ tài khoản
+          </div>
+          <div class="detail-value">
+            <span>{{ bankInfo.accountName }}</span>
+            <button class="copy-btn" (click)="copyToClipboard(bankInfo.accountName, 'name')">
+              <i class="fas fa-copy"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="detail-row amount-row">
+          <div class="detail-label">
+            <i class="fas fa-money-bill-wave"></i>
+            Số tiền
+          </div>
+          <div class="detail-value">
+            <span class="amount">{{ formatCurrency(bankInfo.amount) }}</span>
+            <button class="copy-btn" (click)="copyToClipboard(bankInfo.amount.toString(), 'amount')">
+              <i class="fas fa-copy"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="detail-row content-row">
+          <div class="detail-label">
+            <i class="fas fa-comment-alt"></i>
+            Nội dung chuyển khoản
+          </div>
+          <div class="detail-value">
+            <span class="content-text">{{ bankInfo.content }}</span>
+            <button class="copy-btn" (click)="copyToClipboard(bankInfo.content, 'content')">
+              <i class="fas fa-copy"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Important Notes -->
+      <div class="important-notes">
+        <div class="note-header">
+          <i class="fas fa-exclamation-circle"></i>
+          <strong>Lưu ý quan trọng</strong>
+        </div>
+        <ul>
+          <li>Vui lòng chuyển khoản <strong>ĐÚNG số tiền</strong> và <strong>ĐÚNG nội dung</strong> để hệ thống tự động xác nhận</li>
+          <li>{{ note }}</li>
+          <li>Nếu có vấn đề, vui lòng liên hệ hỗ trợ: <a href="mailto:support&#64;example.com">support&#64;example.com</a></li>
+        </ul>
+      </div>
+
+      <!-- Copy Success Message -->
+      <div class="copy-success" *ngIf="copied">
+        <i class="fas fa-check-circle"></i>
+        Đã sao chép!
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-secondary" (click)="goBack()">
+        <i class="fas fa-arrow-left"></i>
+        Quay lại
+      </button>
+      <button class="btn-primary" (click)="goBack()">
+        <i class="fas fa-check"></i>
+        Đã chuyển khoản
+      </button>
+    </div>
+  </div>
+</div>
