@@ -82,32 +82,30 @@
           <!-- Category -->
           <div>
             <label
-              for="category"
+              for="category_id"
               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
             >
               Category *
             </label>
             <select
-              id="category"
-              formControlName="category"
+              id="category_id"
+              formControlName="category_id"
               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              [disabled]="loadingCategories"
             >
-              <option value="">Select a category</option>
-              <option value="programming">Programming</option>
-              <option value="design">Design</option>
-              <option value="business">Business</option>
-              <option value="marketing">Marketing</option>
-              <option value="data-science">Data Science</option>
-              <option value="other">Other</option>
+              <option [value]="null">Select a category</option>
+              <option *ngFor="let category of categories" [value]="category.id">
+                {{ category.name }}
+              </option>
             </select>
             <div
               *ngIf="
-                courseForm.get('category')?.touched &&
-                courseForm.get('category')?.errors
+                courseForm.get('category_id')?.touched &&
+                courseForm.get('category_id')?.errors
               "
               class="mt-1 text-sm text-red-600 dark:text-red-400"
             >
-              <div *ngIf="courseForm.get('category')?.errors?.['required']">
+              <div *ngIf="courseForm.get('category_id')?.errors?.['required']">
                 Category is required
               </div>
             </div>
@@ -156,9 +154,15 @@
               id="instructor_id"
               formControlName="instructor_id"
               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              [disabled]="loadingInstructors"
             >
-              <option value="">Select an instructor</option>
-              <!-- Instructor options would be loaded dynamically -->
+              <option [value]="null">Select an instructor</option>
+              <option
+                *ngFor="let instructor of instructors"
+                [value]="instructor.id"
+              >
+                {{ instructor.name }}
+              </option>
             </select>
             <div
               *ngIf="
@@ -225,15 +229,15 @@
           <!-- Discount Percentage -->
           <div>
             <label
-              for="discount_percentage"
+              for="discount"
               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
             >
               Discount (%)
             </label>
             <input
               type="number"
-              id="discount_percentage"
-              formControlName="discount_percentage"
+              id="discount"
+              formControlName="discount"
               min="0"
               max="100"
               step="1"
@@ -288,55 +292,246 @@
             />
           </div>
 
-          <!-- Course Image -->
+          <!-- Course Image Upload -->
           <div class="md:col-span-2">
             <label
-              for="image_url"
+              for="thumbnail"
               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
             >
-              Course Image URL
+              Course Thumbnail Image
             </label>
-            <input
-              type="url"
-              id="image_url"
-              formControlName="image_url"
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              placeholder="https://example.com/image.jpg"
-            />
+            <div class="space-y-2">
+              <input
+                type="file"
+                id="thumbnail"
+                accept="image/*"
+                (change)="onThumbnailSelected($event)"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              />
+              <div
+                *ngIf="uploadingThumbnail"
+                class="text-sm text-blue-600 dark:text-blue-400"
+              >
+                Uploading...
+              </div>
+              <div *ngIf="thumbnailPreview" class="mt-2">
+                <img
+                  [src]="thumbnailPreview"
+                  alt="Thumbnail preview"
+                  class="max-w-xs h-32 object-cover rounded-md"
+                />
+              </div>
+              <input type="hidden" formControlName="thumbnail" />
+            </div>
           </div>
 
-          <!-- Prerequisites -->
+          <!-- Is Free -->
           <div class="md:col-span-2">
-            <label
-              for="prerequisites"
-              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-            >
-              Prerequisites
+            <label class="flex items-center gap-2">
+              <input
+                type="checkbox"
+                formControlName="is_free"
+                class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <span
+                class="text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
+                Free Course
+              </span>
             </label>
-            <textarea
-              id="prerequisites"
-              formControlName="prerequisites"
-              rows="3"
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              placeholder="List any prerequisites for this course"
-            ></textarea>
+          </div>
+        </div>
+
+        <!-- Modules and Lessons Section (Only for new courses) -->
+        <div
+          *ngIf="!isEdit"
+          class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6"
+        >
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+              Course Content (Modules & Lessons)
+            </h3>
+            <button
+              type="button"
+              (click)="toggleModulesSection()"
+              class="px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+            >
+              {{ showModulesSection ? "Hide" : "Show" }} Content
+            </button>
           </div>
 
-          <!-- Learning Objectives -->
-          <div class="md:col-span-2">
-            <label
-              for="learning_objectives"
-              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          <div *ngIf="showModulesSection" class="space-y-4">
+            <button
+              type="button"
+              (click)="addModule()"
+              class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors flex items-center gap-2"
             >
-              Learning Objectives
-            </label>
-            <textarea
-              id="learning_objectives"
-              formControlName="learning_objectives"
-              rows="3"
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              placeholder="What will students learn from this course?"
-            ></textarea>
+              <i class="icon-plus"></i>
+              Add Module
+            </button>
+
+            <div
+              *ngFor="let module of modulesFormArray.controls; let i = index"
+              class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-4"
+            >
+              <div class="flex items-start gap-4">
+                <div class="flex-1">
+                  <label
+                    [for]="'module-title-' + i"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                  >
+                    Module {{ i + 1 }} Title *
+                  </label>
+                  <input
+                    type="text"
+                    [id]="'module-title-' + i"
+                    [formControl]="$any(module).get('title')"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="Enter module title"
+                  />
+                </div>
+                <button
+                  type="button"
+                  (click)="removeModule(i)"
+                  class="mt-6 px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                >
+                  <i class="icon-trash"></i>
+                </button>
+              </div>
+
+              <!-- Lessons for this module -->
+              <div class="ml-4 space-y-3">
+                <button
+                  type="button"
+                  (click)="addLesson(i)"
+                  class="px-3 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                >
+                  <i class="icon-plus"></i> Add Lesson
+                </button>
+
+                <div
+                  *ngFor="
+                    let lesson of getModuleLessons(i).controls;
+                    let j = index
+                  "
+                  class="border border-gray-200 dark:border-gray-700 rounded p-3 space-y-2"
+                >
+                  <div class="flex items-start gap-2">
+                    <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <div>
+                        <label
+                          [for]="'lesson-title-' + i + '-' + j"
+                          class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
+                        >
+                          Lesson {{ j + 1 }} Title *
+                        </label>
+                        <input
+                          type="text"
+                          [id]="'lesson-title-' + i + '-' + j"
+                          [formControl]="$any(lesson).get('title')"
+                          class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          placeholder="Enter lesson title"
+                        />
+                      </div>
+                      <div>
+                        <label
+                          [for]="'lesson-type-' + i + '-' + j"
+                          class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
+                        >
+                          Type *
+                        </label>
+                        <select
+                          [id]="'lesson-type-' + i + '-' + j"
+                          [formControl]="$any(lesson).get('type')"
+                          class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        >
+                          <option
+                            *ngFor="let type of lessonTypes"
+                            [value]="type.value"
+                          >
+                            {{ type.label }}
+                          </option>
+                        </select>
+                      </div>
+                      <div>
+                        <label
+                          [for]="'lesson-duration-' + i + '-' + j"
+                          class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
+                        >
+                          Duration (minutes)
+                        </label>
+                        <input
+                          type="number"
+                          [id]="'lesson-duration-' + i + '-' + j"
+                          [formControl]="$any(lesson).get('duration')"
+                          min="0"
+                          class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          placeholder="0"
+                        />
+                      </div>
+                      <div class="flex items-end">
+                        <button
+                          type="button"
+                          (click)="removeLesson(i, j)"
+                          class="px-2 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                        >
+                          <i class="icon-trash"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div *ngIf="$any(lesson).get('type')?.value !== 'video'">
+                    <label
+                      [for]="'lesson-content-' + i + '-' + j"
+                      class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >
+                      Content
+                    </label>
+                    <textarea
+                      [id]="'lesson-content-' + i + '-' + j"
+                      [formControl]="$any(lesson).get('content')"
+                      rows="2"
+                      class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      placeholder="Enter lesson content (optional)"
+                    ></textarea>
+                  </div>
+                  <div *ngIf="$any(lesson).get('type')?.value === 'video'">
+                    <label
+                      [for]="'lesson-video-' + i + '-' + j"
+                      class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >
+                      Video File *
+                    </label>
+                    <input
+                      type="file"
+                      [id]="'lesson-video-' + i + '-' + j"
+                      accept="video/*"
+                      (change)="onVideoSelected($event, i, j)"
+                      class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                    <div
+                      *ngIf="$any(lesson).get('content')?.value"
+                      class="mt-1 text-xs text-green-600 dark:text-green-400"
+                    >
+                      ✓ Video uploaded: {{ $any(lesson).get("content")?.value }}
+                    </div>
+                    <div
+                      *ngIf="!$any(lesson).get('content')?.value"
+                      class="mt-1 text-xs text-gray-500 dark:text-gray-400"
+                    >
+                      Please upload a video file for this lesson
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div
+              *ngIf="modulesFormArray.length === 0"
+              class="text-sm text-gray-500 dark:text-gray-400 text-center py-4"
+            >
+              No modules added yet. Click "Add Module" to get started.
+            </div>
           </div>
         </div>
       </form>

@@ -11,6 +11,12 @@ const {
   validateBulkRestore,
   validateExport
 } = require('../middleware/courseAdminValidation');
+const {
+  courseThumbnailUpload,
+  lessonVideoUpload,
+  uploadCourseThumbnail,
+  uploadLessonVideo
+} = require('../controllers/uploadController');
 
 const router = express.Router();
 
@@ -38,6 +44,42 @@ router.get('/deleted', courseAdminController.getDeletedCourses);
 
 // GET /api/admin/courses/export - Export courses data
 router.get('/export', validateExport, courseAdminController.exportCourses);
+
+// POST /api/admin/courses/upload/thumbnail - Upload course thumbnail
+router.post(
+  '/upload/thumbnail',
+  (req, res, next) => {
+    courseThumbnailUpload.single('thumbnail')(req, res, (err) => {
+      if (err) {
+        console.error('Multer error:', err);
+        return res.status(400).json({
+          success: false,
+          message: err.message || 'File upload error',
+        });
+      }
+      next();
+    });
+  },
+  uploadCourseThumbnail
+);
+
+// POST /api/admin/courses/upload/video - Upload lesson video
+router.post(
+  '/upload/video',
+  (req, res, next) => {
+    lessonVideoUpload.single('video')(req, res, (err) => {
+      if (err) {
+        console.error('Multer error:', err);
+        return res.status(400).json({
+          success: false,
+          message: err.message || 'File upload error',
+        });
+      }
+      next();
+    });
+  },
+  uploadLessonVideo
+);
 
 /**
  * Bulk Operations (Admin Only)

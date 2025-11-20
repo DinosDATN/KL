@@ -291,4 +291,36 @@ export class AdminCourseService {
     link.click();
     window.URL.revokeObjectURL(url);
   }
+
+  /**
+   * Upload course thumbnail
+   */
+  uploadThumbnail(file: File): Observable<ApiResponse<{ file_url: string; file_name: string; file_size: number; type: string }>> {
+    const formData = new FormData();
+    formData.append('thumbnail', file);
+
+    return this.http.post<ApiResponse<{ file_url: string; file_name: string; file_size: number; type: string }>>(
+      `${this.apiUrl}/upload/thumbnail`,
+      formData,
+      {
+        withCredentials: true
+      }
+    );
+  }
+
+  /**
+   * Upload lesson video
+   */
+  uploadVideo(file: File): Observable<ApiResponse<{ file_url: string; file_name: string; file_size: number; type: string }>> {
+    const formData = new FormData();
+    formData.append('video', file);
+
+    return this.http.post<ApiResponse<{ file_url: string; file_name: string; file_size: number; type: string }>>(
+      `${this.apiUrl}/upload/video`,
+      formData,
+      {
+        withCredentials: true
+      }
+    );
+  }
 }

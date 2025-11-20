@@ -1,6 +1,6 @@
-const courseService = require('../services/courseService');
-const Course = require('../models/Course');
-const { Op } = require('sequelize');
+const courseService = require("../services/courseService");
+const Course = require("../models/Course");
+const { Op } = require("sequelize");
 
 class CourseAdminController {
   // Create a new course (Admin/Creator only)
@@ -16,23 +16,25 @@ class CourseAdminController {
         original_price,
         discount,
         is_premium,
+        is_free,
         thumbnail,
         instructor_id, // Admin can assign courses to other instructors
-        status = 'draft'
+        status = "draft",
+        modules = [], // Optional: array of modules with lessons
       } = req.body;
 
       // Validate required fields
       if (!title) {
         return res.status(400).json({
           success: false,
-          message: 'Course title is required'
+          message: "Course title is required",
         });
       }
 
       if (!category_id) {
         return res.status(400).json({
           success: false,
-          message: 'Course category is required'
+          message: "Course category is required",
         });
       }
 
@@ -49,22 +51,27 @@ class CourseAdminController {
         original_price,
         discount,
         is_premium: is_premium || false,
+        is_free: is_free !== undefined ? is_free : !is_premium,
         thumbnail,
-        status
+        status,
       };
 
-      const course = await courseService.createCourse(courseData, targetInstructorId);
+      const course = await courseService.createCourseWithContent(
+        courseData,
+        targetInstructorId,
+        modules
+      );
 
       res.status(201).json({
         success: true,
-        message: 'Course created successfully',
-        data: course
+        message: "Course created successfully",
+        data: course,
       });
     } catch (error) {
-      console.error('Error in createCourse:', error);
+      console.error("Error in createCourse:", error);
       res.status(400).json({
         success: false,
-        message: error.message || 'Failed to create course'
+        message: error.message || "Failed to create course",
       });
     }
   }
@@ -83,7 +90,7 @@ class CourseAdminController {
         is_deleted,
         search,
         sortBy,
-        priceRange
+        priceRange,
       } = req.query;
 
       const filters = {
@@ -95,24 +102,27 @@ class CourseAdminController {
         is_deleted,
         search,
         sortBy,
-        priceRange
+        priceRange,
       };
 
       const pagination = { page, limit };
 
-      const result = await courseService.getCoursesForAdmin(filters, pagination);
+      const result = await courseService.getCoursesForAdmin(
+        filters,
+        pagination
+      );
 
       res.status(200).json({
         success: true,
         data: result.courses,
-        pagination: result.pagination
+        pagination: result.pagination,
       });
     } catch (error) {
-      console.error('Error in getAllCoursesForAdmin:', error);
+      console.error("Error in getAllCoursesForAdmin:", error);
       res.status(500).json({
         success: false,
-        message: 'Failed to fetch courses',
-        error: error.message
+        message: "Failed to fetch courses",
+        error: error.message,
       });
     }
   }
@@ -121,26 +131,29 @@ class CourseAdminController {
   async getCourseByIdForAdmin(req, res) {
     try {
       const { id } = req.params;
-      const includeDeleted = req.query.include_deleted === 'true';
+      const includeDeleted = req.query.include_deleted === "true";
 
-      const course = await courseService.getCourseWithAssociations(parseInt(id), includeDeleted);
+      const course = await courseService.getCourseWithAssociations(
+        parseInt(id),
+        includeDeleted
+      );
 
       res.status(200).json({
         success: true,
-        data: course
+        data: course,
       });
     } catch (error) {
-      console.error('Error in getCourseByIdForAdmin:', error);
-      if (error.message === 'Course not found') {
+      console.error("Error in getCourseByIdForAdmin:", error);
+      if (error.message === "Course not found") {
         res.status(404).json({
           success: false,
-          message: 'Course not found'
+          message: "Course not found",
         });
       } else {
         res.status(500).json({
           success: false,
-          message: 'Failed to fetch course',
-          error: error.message
+          message: "Failed to fetch course",
+          error: error.message,
         });
       }
     }
@@ -158,29 +171,36 @@ class CourseAdminController {
       delete updateData.updated_at;
       delete updateData.id;
 
-      const course = await courseService.updateCourse(parseInt(id), updateData, userId);
+      const course = await courseService.updateCourse(
+        parseInt(id),
+        updateData,
+        userId
+      );
 
       res.status(200).json({
         success: true,
-        message: 'Course updated successfully',
-        data: course
+        message: "Course updated successfully",
+        data: course,
       });
     } catch (error) {
-      console.error('Error in updateCourse:', error);
-      if (error.message.includes('not found')) {
+      console.error("Error in updateCourse:", error);
+      if (error.message.includes("not found")) {
         res.status(404).json({
           success: false,
-          message: error.message
+          message: error.message,
         });
-      } else if (error.message.includes('only update your own') || error.message.includes('only admins')) {
+      } else if (
+        error.message.includes("only update your own") ||
+        error.message.includes("only admins")
+      ) {
         res.status(403).json({
           success: false,
-          message: error.message
+          message: error.message,
         });
       } else {
         res.status(400).json({
           success: false,
-          message: error.message || 'Failed to update course'
+          message: error.message || "Failed to update course",
         });
       }
     }
@@ -196,25 +216,28 @@ class CourseAdminController {
 
       res.status(200).json({
         success: true,
-        message: 'Course deleted successfully'
+        message: "Course deleted successfully",
       });
     } catch (error) {
-      console.error('Error in deleteCourse:', error);
-      if (error.message.includes('not found')) {
+      console.error("Error in deleteCourse:", error);
+      if (error.message.includes("not found")) {
         res.status(404).json({
           success: false,
-          message: error.message
+          message: error.message,
         });
-      } else if (error.message.includes('only delete your own') || error.message.includes('already deleted')) {
+      } else if (
+        error.message.includes("only delete your own") ||
+        error.message.includes("already deleted")
+      ) {
         res.status(403).json({
           success: false,
-          message: error.message
+          message: error.message,
         });
       } else {
         res.status(500).json({
           success: false,
-          message: 'Failed to delete course',
-          error: error.message
+          message: "Failed to delete course",
+          error: error.message,
         });
       }
     }
@@ -230,25 +253,25 @@ class CourseAdminController {
 
       res.status(200).json({
         success: true,
-        message: 'Course permanently deleted successfully'
+        message: "Course permanently deleted successfully",
       });
     } catch (error) {
-      console.error('Error in permanentlyDeleteCourse:', error);
-      if (error.message.includes('not found')) {
+      console.error("Error in permanentlyDeleteCourse:", error);
+      if (error.message.includes("not found")) {
         res.status(404).json({
           success: false,
-          message: error.message
+          message: error.message,
         });
-      } else if (error.message.includes('Only admins')) {
+      } else if (error.message.includes("Only admins")) {
         res.status(403).json({
           success: false,
-          message: error.message
+          message: error.message,
         });
       } else {
         res.status(500).json({
           success: false,
-          message: 'Failed to permanently delete course',
-          error: error.message
+          message: "Failed to permanently delete course",
+          error: error.message,
         });
       }
     }
@@ -260,36 +283,43 @@ class CourseAdminController {
       const { id } = req.params;
       const userId = req.user.id;
 
-      console.log(`[RestoreCourse] Attempting to restore course ${id} by user ${userId}`);
+      console.log(
+        `[RestoreCourse] Attempting to restore course ${id} by user ${userId}`
+      );
 
       const course = await courseService.restoreCourse(parseInt(id), userId);
 
-      console.log(`[RestoreCourse] Successfully restored course ${id}. is_deleted: ${course.is_deleted}`);
+      console.log(
+        `[RestoreCourse] Successfully restored course ${id}. is_deleted: ${course.is_deleted}`
+      );
 
       res.status(200).json({
         success: true,
-        message: 'Course restored successfully',
-        data: course
+        message: "Course restored successfully",
+        data: course,
       });
     } catch (error) {
-      console.error('[RestoreCourse] Error:', error);
-      console.error('[RestoreCourse] Error stack:', error.stack);
-      
-      if (error.message.includes('not found') || error.message.includes('No rows updated')) {
+      console.error("[RestoreCourse] Error:", error);
+      console.error("[RestoreCourse] Error stack:", error.stack);
+
+      if (
+        error.message.includes("not found") ||
+        error.message.includes("No rows updated")
+      ) {
         res.status(404).json({
           success: false,
-          message: error.message
+          message: error.message,
         });
-      } else if (error.message.includes('Only admins')) {
+      } else if (error.message.includes("Only admins")) {
         res.status(403).json({
           success: false,
-          message: error.message
+          message: error.message,
         });
       } else {
         res.status(500).json({
           success: false,
-          message: 'Failed to restore course',
-          error: error.message
+          message: "Failed to restore course",
+          error: error.message,
         });
       }
     }
@@ -305,33 +335,37 @@ class CourseAdminController {
       if (!status) {
         return res.status(400).json({
           success: false,
-          message: 'Status is required'
+          message: "Status is required",
         });
       }
 
-      const course = await courseService.updateCourseStatus(parseInt(id), status, userId);
+      const course = await courseService.updateCourseStatus(
+        parseInt(id),
+        status,
+        userId
+      );
 
       res.status(200).json({
         success: true,
         message: `Course status updated to ${status}`,
-        data: course
+        data: course,
       });
     } catch (error) {
-      console.error('Error in updateCourseStatus:', error);
-      if (error.message.includes('not found')) {
+      console.error("Error in updateCourseStatus:", error);
+      if (error.message.includes("not found")) {
         res.status(404).json({
           success: false,
-          message: error.message
+          message: error.message,
         });
-      } else if (error.message.includes('Only admins')) {
+      } else if (error.message.includes("Only admins")) {
         res.status(403).json({
           success: false,
-          message: error.message
+          message: error.message,
         });
       } else {
         res.status(400).json({
           success: false,
-          message: error.message || 'Failed to update course status'
+          message: error.message || "Failed to update course status",
         });
       }
     }
@@ -341,46 +375,49 @@ class CourseAdminController {
   async getCourseStatistics(req, res) {
     try {
       const stats = await courseService.getCourseStatistics();
-      
+
       // Calculate growth rate based on monthly data
       const now = new Date();
       const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      
+
       const lastMonthCourses = await Course.count({
         where: {
           created_at: {
             [Op.gte]: lastMonth,
-            [Op.lt]: thisMonth
+            [Op.lt]: thisMonth,
           },
-          is_deleted: false
-        }
+          is_deleted: false,
+        },
       });
-      
+
       const currentMonthCourses = await Course.count({
         where: {
           created_at: { [Op.gte]: thisMonth },
-          is_deleted: false
-        }
+          is_deleted: false,
+        },
       });
-      
-      const growthRate = lastMonthCourses > 0 
-        ? ((currentMonthCourses - lastMonthCourses) / lastMonthCourses) * 100 
-        : currentMonthCourses > 0 ? 100 : 0;
+
+      const growthRate =
+        lastMonthCourses > 0
+          ? ((currentMonthCourses - lastMonthCourses) / lastMonthCourses) * 100
+          : currentMonthCourses > 0
+          ? 100
+          : 0;
 
       res.status(200).json({
         success: true,
         data: {
           ...stats,
-          growthRate: Math.round(growthRate * 100) / 100
-        }
+          growthRate: Math.round(growthRate * 100) / 100,
+        },
       });
     } catch (error) {
-      console.error('Error in getCourseStatistics:', error);
+      console.error("Error in getCourseStatistics:", error);
       res.status(500).json({
         success: false,
-        message: 'Failed to fetch course statistics',
-        error: error.message
+        message: "Failed to fetch course statistics",
+        error: error.message,
       });
     }
   }
@@ -391,17 +428,21 @@ class CourseAdminController {
       const { course_ids, update_data } = req.body;
       const userId = req.user.id;
 
-      if (!course_ids || !Array.isArray(course_ids) || course_ids.length === 0) {
+      if (
+        !course_ids ||
+        !Array.isArray(course_ids) ||
+        course_ids.length === 0
+      ) {
         return res.status(400).json({
           success: false,
-          message: 'course_ids array is required'
+          message: "course_ids array is required",
         });
       }
 
       if (!update_data || Object.keys(update_data).length === 0) {
         return res.status(400).json({
           success: false,
-          message: 'update_data is required'
+          message: "update_data is required",
         });
       }
 
@@ -411,27 +452,31 @@ class CourseAdminController {
       delete update_data.updated_at;
       delete update_data.instructor_id; // Prevent changing instructors via bulk update
 
-      const result = await courseService.bulkUpdateCourses(course_ids, update_data, userId);
+      const result = await courseService.bulkUpdateCourses(
+        course_ids,
+        update_data,
+        userId
+      );
 
       res.status(200).json({
         success: true,
         message: result.message,
         data: {
           updatedCount: result.updatedCount,
-          totalRequested: course_ids.length
-        }
+          totalRequested: course_ids.length,
+        },
       });
     } catch (error) {
-      console.error('Error in bulkUpdateCourses:', error);
-      if (error.message.includes('Only admins')) {
+      console.error("Error in bulkUpdateCourses:", error);
+      if (error.message.includes("Only admins")) {
         res.status(403).json({
           success: false,
-          message: error.message
+          message: error.message,
         });
       } else {
         res.status(400).json({
           success: false,
-          message: error.message || 'Failed to bulk update courses'
+          message: error.message || "Failed to bulk update courses",
         });
       }
     }
@@ -443,10 +488,14 @@ class CourseAdminController {
       const { course_ids, permanent = false } = req.body;
       const userId = req.user.id;
 
-      if (!course_ids || !Array.isArray(course_ids) || course_ids.length === 0) {
+      if (
+        !course_ids ||
+        !Array.isArray(course_ids) ||
+        course_ids.length === 0
+      ) {
         return res.status(400).json({
           success: false,
-          message: 'course_ids array is required'
+          message: "course_ids array is required",
         });
       }
 
@@ -456,7 +505,10 @@ class CourseAdminController {
       for (const courseId of course_ids) {
         try {
           if (permanent) {
-            await courseService.permanentlyDeleteCourse(parseInt(courseId), userId);
+            await courseService.permanentlyDeleteCourse(
+              parseInt(courseId),
+              userId
+            );
           } else {
             await courseService.deleteCourse(parseInt(courseId), userId);
           }
@@ -464,26 +516,28 @@ class CourseAdminController {
         } catch (error) {
           errors.push({
             courseId,
-            error: error.message
+            error: error.message,
           });
         }
       }
 
       res.status(200).json({
         success: true,
-        message: `${deletedCount} courses ${permanent ? 'permanently ' : ''}deleted successfully`,
+        message: `${deletedCount} courses ${
+          permanent ? "permanently " : ""
+        }deleted successfully`,
         data: {
           deletedCount,
           totalRequested: course_ids.length,
-          errors: errors.length > 0 ? errors : undefined
-        }
+          errors: errors.length > 0 ? errors : undefined,
+        },
       });
     } catch (error) {
-      console.error('Error in bulkDeleteCourses:', error);
+      console.error("Error in bulkDeleteCourses:", error);
       res.status(500).json({
         success: false,
-        message: 'Failed to bulk delete courses',
-        error: error.message
+        message: "Failed to bulk delete courses",
+        error: error.message,
       });
     }
   }
@@ -496,27 +550,30 @@ class CourseAdminController {
       const { search, sortBy, instructor_id } = req.query;
 
       const filters = {
-        is_deleted: 'true',
+        is_deleted: "true",
         search,
         sortBy,
-        instructor_id
+        instructor_id,
       };
 
       const pagination = { page, limit };
 
-      const result = await courseService.getCoursesForAdmin(filters, pagination);
+      const result = await courseService.getCoursesForAdmin(
+        filters,
+        pagination
+      );
 
       res.status(200).json({
         success: true,
         data: result.courses,
-        pagination: result.pagination
+        pagination: result.pagination,
       });
     } catch (error) {
-      console.error('Error in getDeletedCourses:', error);
+      console.error("Error in getDeletedCourses:", error);
       res.status(500).json({
         success: false,
-        message: 'Failed to fetch deleted courses',
-        error: error.message
+        message: "Failed to fetch deleted courses",
+        error: error.message,
       });
     }
   }
@@ -524,20 +581,36 @@ class CourseAdminController {
   // Bulk restore courses (Admin only)
   async bulkRestoreCourses(req, res) {
     try {
-      console.log('[BulkRestoreCourses] Request body:', JSON.stringify(req.body, null, 2));
-      console.log('[BulkRestoreCourses] Request body type:', typeof req.body);
-      console.log('[BulkRestoreCourses] course_ids:', req.body.course_ids);
-      console.log('[BulkRestoreCourses] course_ids type:', typeof req.body.course_ids);
-      console.log('[BulkRestoreCourses] course_ids isArray:', Array.isArray(req.body.course_ids));
-      
+      console.log(
+        "[BulkRestoreCourses] Request body:",
+        JSON.stringify(req.body, null, 2)
+      );
+      console.log("[BulkRestoreCourses] Request body type:", typeof req.body);
+      console.log("[BulkRestoreCourses] course_ids:", req.body.course_ids);
+      console.log(
+        "[BulkRestoreCourses] course_ids type:",
+        typeof req.body.course_ids
+      );
+      console.log(
+        "[BulkRestoreCourses] course_ids isArray:",
+        Array.isArray(req.body.course_ids)
+      );
+
       const { course_ids } = req.body;
       const userId = req.user.id;
 
-      if (!course_ids || !Array.isArray(course_ids) || course_ids.length === 0) {
-        console.error('[BulkRestoreCourses] Validation failed - course_ids:', course_ids);
+      if (
+        !course_ids ||
+        !Array.isArray(course_ids) ||
+        course_ids.length === 0
+      ) {
+        console.error(
+          "[BulkRestoreCourses] Validation failed - course_ids:",
+          course_ids
+        );
         return res.status(400).json({
           success: false,
-          message: 'course_ids array is required'
+          message: "course_ids array is required",
         });
       }
 
@@ -551,7 +624,7 @@ class CourseAdminController {
         } catch (error) {
           errors.push({
             courseId,
-            error: error.message
+            error: error.message,
           });
         }
       }
@@ -562,15 +635,15 @@ class CourseAdminController {
         data: {
           restoredCount,
           totalRequested: course_ids.length,
-          errors: errors.length > 0 ? errors : undefined
-        }
+          errors: errors.length > 0 ? errors : undefined,
+        },
       });
     } catch (error) {
-      console.error('Error in bulkRestoreCourses:', error);
+      console.error("Error in bulkRestoreCourses:", error);
       res.status(500).json({
         success: false,
-        message: 'Failed to bulk restore courses',
-        error: error.message
+        message: "Failed to bulk restore courses",
+        error: error.message,
       });
     }
   }
@@ -578,36 +651,45 @@ class CourseAdminController {
   // Export courses data (Admin only)
   async exportCourses(req, res) {
     try {
-      const { format = 'json', include_deleted = false } = req.query;
+      const { format = "json", include_deleted = false } = req.query;
 
-      const filters = include_deleted === 'true' ? {} : { is_deleted: 'false' };
+      const filters = include_deleted === "true" ? {} : { is_deleted: "false" };
       const pagination = { page: 1, limit: 10000 }; // Large limit to get all courses
 
-      const result = await courseService.getCoursesForAdmin(filters, pagination);
+      const result = await courseService.getCoursesForAdmin(
+        filters,
+        pagination
+      );
 
-      if (format === 'csv') {
+      if (format === "csv") {
         // Convert to CSV format
         const csv = this.convertToCSV(result.courses);
-        res.setHeader('Content-Type', 'text/csv');
-        res.setHeader('Content-Disposition', 'attachment; filename=courses.csv');
+        res.setHeader("Content-Type", "text/csv");
+        res.setHeader(
+          "Content-Disposition",
+          "attachment; filename=courses.csv"
+        );
         res.status(200).send(csv);
       } else {
         // JSON format
-        res.setHeader('Content-Type', 'application/json');
-        res.setHeader('Content-Disposition', 'attachment; filename=courses.json');
+        res.setHeader("Content-Type", "application/json");
+        res.setHeader(
+          "Content-Disposition",
+          "attachment; filename=courses.json"
+        );
         res.status(200).json({
           success: true,
           exportDate: new Date().toISOString(),
           totalCourses: result.courses.length,
-          data: result.courses
+          data: result.courses,
         });
       }
     } catch (error) {
-      console.error('Error in exportCourses:', error);
+      console.error("Error in exportCourses:", error);
       res.status(500).json({
         success: false,
-        message: 'Failed to export courses',
-        error: error.message
+        message: "Failed to export courses",
+        error: error.message,
       });
     }
   }
@@ -615,35 +697,45 @@ class CourseAdminController {
   // Helper method to convert courses to CSV
   convertToCSV(courses) {
     if (!courses || courses.length === 0) {
-      return 'No courses to export';
+      return "No courses to export";
     }
 
     const headers = [
-      'ID', 'Title', 'Status', 'Level', 'Category', 'Instructor', 
-      'Price', 'Students', 'Rating', 'Created At', 'Is Premium', 'Is Deleted'
+      "ID",
+      "Title",
+      "Status",
+      "Level",
+      "Category",
+      "Instructor",
+      "Price",
+      "Students",
+      "Rating",
+      "Created At",
+      "Is Premium",
+      "Is Deleted",
     ];
 
-    const csvRows = [headers.join(',')];
+    const csvRows = [headers.join(",")];
 
-    courses.forEach(course => {
+    courses.forEach((course) => {
       const row = [
         course.id,
-        `"${course.title?.replace(/"/g, '""') || ''}"`,
+        `"${course.title?.replace(/"/g, '""') || ""}"`,
         course.status,
         course.level,
-        `"${course.Category?.name?.replace(/"/g, '""') || ''}"`,
-        `"${course.Instructor?.name?.replace(/"/g, '""') || ''}"`,
+        `"${course.Category?.name?.replace(/"/g, '""') || ""}"`,
+        `"${course.Instructor?.name?.replace(/"/g, '""') || ""}"`,
         course.price || 0,
         course.students || 0,
         course.rating || 0,
         course.created_at,
         course.is_premium,
-        course.is_deleted
+        course.is_deleted,
       ];
-      csvRows.push(row.join(','));
+      csvRows.push(row.join(","));
     });
 
-    return csvRows.join('\n');
+    return csvRows.join("\n");
   }
 }
 

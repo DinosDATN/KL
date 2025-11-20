@@ -1,7 +1,10 @@
 const Course = require('../models/Course');
 const CourseCategory = require('../models/CourseCategory');
+const CourseModule = require('../models/CourseModule');
+const CourseLesson = require('../models/CourseLesson');
 const User = require('../models/User');
 const { Op } = require('sequelize');
+const { sequelize } = require('../config/sequelize');
 
 class CourseService {
   /**
@@ -53,6 +56,148 @@ class CourseService {
 
     // Return course with instructor and category information
     return this.getCourseWithAssociations(course.id);
+  }
+
+  /**
+   * Create a new course with modules and lessons in one transaction
+   * @param {Object} courseData - Course data
+   * @param {number} instructorId - ID of the instructor creating the course
+   * @param {Array} modules - Array of modules with lessons
+   * @returns {Object} Created course with associations and content
+   */
+  async createCourseWithContent(courseData, instructorId, modules = []) {
+    const transaction = await sequelize.transaction();
+    
+    try {
+      // Validate instructor exists and has appropriate role
+      const instructor = await User.findByPk(instructorId, { transaction });
+      if (!instructor) {
+        throw new Error('Instructor not found');
+      }
+
+      if (!['creator', 'admin'].includes(instructor.role)) {
+        throw new Error('Only creators and admins can create courses');
+      }
+
+      // Validate category exists if provided
+      if (courseData.category_id) {
+        const category = await CourseCategory.findByPk(courseData.category_id, { transaction });
+        if (!category || !category.is_active) {
+          throw new Error('Invalid or inactive course category');
+        }
+      }
+
+      // Validate price logic
+      if (courseData.is_premium && !courseData.price && !courseData.original_price) {
+        throw new Error('Premium courses must have a price set');
+      }
+
+      if (courseData.discount && !courseData.original_price) {
+        throw new Error('Discount requires original price to be set');
+      }
+
+      if (courseData.discount && courseData.original_price) {
+        const discountedPrice = courseData.original_price * (1 - courseData.discount / 100);
+        if (!courseData.price) {
+          courseData.price = Math.round(discountedPrice);
+        }
+      }
+
+      // Set instructor_id
+      courseData.instructor_id = instructorId;
+
+      // Create the course
+      const course = await Course.create(courseData, { transaction });
+      
+      // If modules are provided, create them along with lessons
+      if (modules && modules.length > 0) {
+        for (let moduleIndex = 0; moduleIndex < modules.length; moduleIndex++) {
+          const moduleData = modules[moduleIndex];
+          
+          // Validate module data
+          if (!moduleData.title || !moduleData.title.trim()) {
+            throw new Error(`Module ${moduleIndex + 1} must have a title`);
+          }
+          
+          // Create module
+          const module = await CourseModule.create({
+            course_id: course.id,
+            title: moduleData.title.trim(),
+            position: moduleData.position || (moduleIndex + 1)
+          }, { transaction });
+          
+          // Create lessons for this module if provided
+          if (moduleData.lessons && Array.isArray(moduleData.lessons) && moduleData.lessons.length > 0) {
+            for (let lessonIndex = 0; lessonIndex < moduleData.lessons.length; lessonIndex++) {
+              const lessonData = moduleData.lessons[lessonIndex];
+              
+              // Validate lesson data
+              if (!lessonData.title || !lessonData.title.trim()) {
+                throw new Error(`Lesson ${lessonIndex + 1} in module "${moduleData.title}" must have a title`);
+              }
+              
+              // Create lesson
+              await CourseLesson.create({
+                module_id: module.id,
+                title: lessonData.title.trim(),
+                content: lessonData.content || null,
+                duration: lessonData.duration || null,
+                position: lessonData.position || (lessonIndex + 1),
+                type: lessonData.type || 'document'
+              }, { transaction });
+            }
+          }
+        }
+      }
+      
+      await transaction.commit();
+      
+      // Return course with all associations including modules and lessons
+      return this.getCourseWithFullContent(course.id);
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
+  }
+
+  /**
+   * Get course with full content (modules and lessons)
+   * @param {number} courseId - Course ID
+   * @returns {Object} Course with modules and lessons
+   */
+  async getCourseWithFullContent(courseId) {
+    const course = await Course.findOne({
+      where: { id: courseId, is_deleted: false },
+      include: [
+        {
+          model: User,
+          as: 'Instructor',
+          attributes: ['id', 'name', 'email', 'avatar_url'],
+          foreignKey: 'instructor_id'
+        },
+        {
+          model: CourseCategory,
+          as: 'Category',
+          foreignKey: 'category_id'
+        },
+        {
+          model: CourseModule,
+          as: 'Modules',
+          include: [{
+            model: CourseLesson,
+            as: 'Lessons',
+            order: [['position', 'ASC']]
+          }],
+          order: [['position', 'ASC']]
+        }
+      ]
+    });
+
+    if (!course) {
+      throw new Error('Course not found');
+    }
+
+    return course;
   }
 
   /**
