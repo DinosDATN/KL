@@ -226,8 +226,9 @@ export class UserReportsComponent implements OnInit, OnDestroy {
     });
   }
 
-  formatNumber(num: number): string {
-    if (num === null || num === undefined) return '0';
+  formatNumber(value: unknown): string {
+    const num = Number(value);
+    if (isNaN(num) || num === null || num === undefined) return '0';
     if (num >= 1000000) {
       return (num / 1000000).toFixed(1) + 'M';
     }
