@@ -66,6 +66,9 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   showBulkUpdateModal = false;
   selectedUserForDelete: AdminUser | null = null;
   selectedUserForDetails: AdminUser | null = null;
+  deletionInfo: any = null;
+  isDeleting = false;
+  isLoadingDeletionInfo = false;
   
   // Forms
   createUserForm: FormGroup;
@@ -260,23 +263,47 @@ export class UserManagementComponent implements OnInit, OnDestroy {
       });
   }
 
-  deleteUser(userId: number) {
-    this.adminService.deleteUser(userId)
+  deleteUser(userId: number, force: boolean = false) {
+    // Determine if force is needed based on deletion info
+    if (this.deletionInfo && !this.deletionInfo.canDelete && !force) {
+      // User has created content, need to confirm force delete
+      if (confirm('User này đã tạo nội dung. Bạn có chắc chắn muốn xóa bắt buộc? Tất cả dữ liệu liên quan sẽ bị xóa.')) {
+        force = true;
+      } else {
+        return; // User cancelled
+      }
+    }
+
+    this.isDeleting = true;
+    
+    this.adminService.deleteUser(userId, force)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: () => {
+        next: (result) => {
           this.users = this.users.filter(u => u.id !== userId);
           this.selectedUsers = this.selectedUsers.filter(id => id !== userId);
           this.showBulkActions = this.selectedUsers.length > 0;
           this.showDeleteModal = false;
           this.selectedUserForDelete = null;
+          this.deletionInfo = null;
+          this.isDeleting = false;
           this.notificationService.success('Thành công', 'Đã xóa user thành công');
           // Reload to update pagination
           this.loadUsers();
         },
         error: (error) => {
           console.error('Error deleting user:', error);
-          this.notificationService.error('Lỗi', error.message || 'Không thể xóa user');
+          this.isDeleting = false;
+          
+          // Check if force is required
+          if (error.requiresForce) {
+            this.notificationService.error(
+              'Không thể xóa', 
+              error.message || 'User có dữ liệu liên quan. Vui lòng sử dụng xóa bắt buộc.'
+            );
+          } else {
+            this.notificationService.error('Lỗi', error.message || 'Không thể xóa user');
+          }
         }
       });
   }
@@ -284,6 +311,23 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   confirmDeleteUser(user: AdminUser) {
     this.selectedUserForDelete = user;
     this.showDeleteModal = true;
+    this.deletionInfo = null;
+    this.isLoadingDeletionInfo = true;
+    
+    // Load deletion info
+    this.adminService.getUserDeletionInfo(user.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (info) => {
+          this.deletionInfo = info;
+          this.isLoadingDeletionInfo = false;
+        },
+        error: (error) => {
+          console.error('Error loading deletion info:', error);
+          this.isLoadingDeletionInfo = false;
+          // Still show modal but without detailed info
+        }
+      });
   }
 
   createUser() {

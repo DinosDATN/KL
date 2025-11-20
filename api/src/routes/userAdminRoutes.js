@@ -29,6 +29,9 @@ router.get('/export', userAdminController.exportUsers);
 // GET /api/admin/users/:id - Get single user by ID (admin view)
 router.get('/:id', userAdminController.getUserByIdForAdmin);
 
+// GET /api/admin/users/:id/deletion-info - Get user deletion info
+router.get('/:id/deletion-info', userAdminController.getUserDeletionInfo);
+
 // PUT /api/admin/users/:id - Update a user
 router.put('/:id', userAdminController.updateUser);
 

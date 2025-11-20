@@ -486,10 +486,101 @@ class UserAdminController {
     }
   }
 
+  // Get user deletion info (Admin only) - Check what data will be affected
+  async getUserDeletionInfo(req, res) {
+    try {
+      const { id } = req.params;
+      const userRole = req.user.role;
+
+      if (userRole !== "admin") {
+        return res.status(403).json({
+          success: false,
+          message: "Only admins can view user deletion info",
+        });
+      }
+
+      const user = await User.findByPk(id);
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found",
+        });
+      }
+
+      // Count all related data
+      const courseCount = await Course.count({ where: { instructor_id: id } });
+      const problemCount = await Problem.count({ where: { created_by: id } });
+      const enrollmentCount = await CourseEnrollment.count({ where: { user_id: id } });
+      const submissionCount = await Submission.count({ where: { user_id: id } });
+      
+      // Check for other related data
+      const contestSubmissionCount = await ContestSubmission.count({ 
+        where: { user_id: id } 
+      });
+      
+      // Check for reviews, comments, etc. if models exist
+      let reviewCount = 0;
+      let commentCount = 0;
+      try {
+        const CourseReview = require("../models/CourseReview");
+        reviewCount = await CourseReview.count({ where: { user_id: id } });
+      } catch (e) {
+        // Model might not exist
+      }
+      
+      try {
+        const ProblemComment = require("../models/ProblemComment");
+        commentCount = await ProblemComment.count({ where: { user_id: id } });
+      } catch (e) {
+        // Model might not exist
+      }
+
+      const canDelete = courseCount === 0 && problemCount === 0;
+      const hasRelatedData = courseCount > 0 || problemCount > 0 || enrollmentCount > 0 || 
+                            submissionCount > 0 || contestSubmissionCount > 0 || 
+                            reviewCount > 0 || commentCount > 0;
+
+      res.status(200).json({
+        success: true,
+        data: {
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+          },
+          relatedData: {
+            courses: courseCount,
+            problems: problemCount,
+            enrollments: enrollmentCount,
+            submissions: submissionCount,
+            contestSubmissions: contestSubmissionCount,
+            reviews: reviewCount,
+            comments: commentCount,
+          },
+          canDelete,
+          hasRelatedData,
+          warning: hasRelatedData 
+            ? `User has ${courseCount} courses, ${problemCount} problems, ${enrollmentCount} enrollments, ${submissionCount} submissions, and other related data. Deleting will remove all of this.`
+            : null,
+        },
+      });
+    } catch (error) {
+      console.error("Error in getUserDeletionInfo:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to get user deletion info",
+        error: error.message,
+      });
+    }
+  }
+
   // Delete user (Admin only)
   async deleteUser(req, res) {
     try {
       const { id } = req.params;
+      const { force } = req.query; // Optional force parameter
       const userRole = req.user.role;
 
       if (userRole !== "admin") {
@@ -512,24 +603,80 @@ class UserAdminController {
       const courseCount = await Course.count({ where: { instructor_id: id } });
       const problemCount = await Problem.count({ where: { created_by: id } });
 
-      if (courseCount > 0 || problemCount > 0) {
+      // If user has created content and force is not set, prevent deletion
+      if ((courseCount > 0 || problemCount > 0) && force !== "true") {
         return res.status(400).json({
           success: false,
-          message: `Cannot delete user. They have created ${courseCount} courses and ${problemCount} problems. Consider deactivating instead.`,
+          message: `Cannot delete user. They have created ${courseCount} courses and ${problemCount} problems. Use force=true to delete anyway, or consider deactivating instead.`,
+          requiresForce: true,
+          courseCount,
+          problemCount,
         });
       }
 
       // Delete related data
+      // Note: If force=true, we still delete user data but courses/problems remain
+      // (they might be reassigned or handled separately)
+      
+      // Delete user's personal data
       await UserProfile.destroy({ where: { user_id: id } });
       await UserStats.destroy({ where: { user_id: id } });
       await CourseEnrollment.destroy({ where: { user_id: id } });
       await Submission.destroy({ where: { user_id: id } });
+      
+      // Delete contest submissions
+      try {
+        await ContestSubmission.destroy({ where: { user_id: id } });
+      } catch (e) {
+        // Ignore if model doesn't exist
+      }
+      
+      // Delete reviews and comments
+      try {
+        const CourseReview = require("../models/CourseReview");
+        await CourseReview.destroy({ where: { user_id: id } });
+      } catch (e) {
+        // Ignore if model doesn't exist
+      }
+      
+      try {
+        const ProblemComment = require("../models/ProblemComment");
+        await ProblemComment.destroy({ where: { user_id: id } });
+      } catch (e) {
+        // Ignore if model doesn't exist
+      }
+
+      // Delete chat messages and related data
+      try {
+        const ChatMessage = require("../models/ChatMessage");
+        await ChatMessage.destroy({ where: { user_id: id } });
+      } catch (e) {
+        // Ignore if model doesn't exist
+      }
+      
+      try {
+        const PrivateMessage = require("../models/PrivateMessage");
+        await PrivateMessage.destroy({ 
+          where: { 
+            [Op.or]: [
+              { sender_id: id },
+              { receiver_id: id }
+            ]
+          } 
+        });
+      } catch (e) {
+        // Ignore if model doesn't exist
+      }
 
       await user.destroy();
 
       res.status(200).json({
         success: true,
         message: "User deleted successfully",
+        data: {
+          deletedUserId: id,
+          deletedAt: new Date().toISOString(),
+        },
       });
     } catch (error) {
       console.error("Error in deleteUser:", error);

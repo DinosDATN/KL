@@ -185,12 +185,58 @@ export class AdminService {
     );
   }
 
-  deleteUser(userId: number): Observable<void> {
-    return this.http.delete<ApiResponse<void>>(
-      `${this.apiUrl}/users/${userId}`,
+  getUserDeletionInfo(userId: number): Observable<{
+    user: { id: number; name: string; email: string; role: string };
+    relatedData: {
+      courses: number;
+      problems: number;
+      enrollments: number;
+      submissions: number;
+      contestSubmissions: number;
+      reviews: number;
+      comments: number;
+    };
+    canDelete: boolean;
+    hasRelatedData: boolean;
+    warning: string | null;
+  }> {
+    return this.http.get<ApiResponse<{
+      user: { id: number; name: string; email: string; role: string };
+      relatedData: {
+        courses: number;
+        problems: number;
+        enrollments: number;
+        submissions: number;
+        contestSubmissions: number;
+        reviews: number;
+        comments: number;
+      };
+      canDelete: boolean;
+      hasRelatedData: boolean;
+      warning: string | null;
+    }>>(
+      `${this.apiUrl}/users/${userId}/deletion-info`,
       { withCredentials: true } // ✅ Send HttpOnly cookie
     ).pipe(
-      map(() => void 0),
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  deleteUser(userId: number, force: boolean = false): Observable<{ deletedUserId: number; deletedAt: string }> {
+    let httpParams = new HttpParams();
+    if (force) {
+      httpParams = httpParams.set('force', 'true');
+    }
+    
+    return this.http.delete<ApiResponse<{ deletedUserId: number; deletedAt: string }>>(
+      `${this.apiUrl}/users/${userId}`,
+      { 
+        params: httpParams,
+        withCredentials: true // ✅ Send HttpOnly cookie
+      }
+    ).pipe(
+      map(response => response.data!),
       catchError(this.handleError)
     );
   }
