@@ -260,7 +260,11 @@ class CourseAdminController {
       const { id } = req.params;
       const userId = req.user.id;
 
+      console.log(`[RestoreCourse] Attempting to restore course ${id} by user ${userId}`);
+
       const course = await courseService.restoreCourse(parseInt(id), userId);
+
+      console.log(`[RestoreCourse] Successfully restored course ${id}. is_deleted: ${course.is_deleted}`);
 
       res.status(200).json({
         success: true,
@@ -268,8 +272,10 @@ class CourseAdminController {
         data: course
       });
     } catch (error) {
-      console.error('Error in restoreCourse:', error);
-      if (error.message.includes('not found')) {
+      console.error('[RestoreCourse] Error:', error);
+      console.error('[RestoreCourse] Error stack:', error.stack);
+      
+      if (error.message.includes('not found') || error.message.includes('No rows updated')) {
         res.status(404).json({
           success: false,
           message: error.message
@@ -518,10 +524,17 @@ class CourseAdminController {
   // Bulk restore courses (Admin only)
   async bulkRestoreCourses(req, res) {
     try {
+      console.log('[BulkRestoreCourses] Request body:', JSON.stringify(req.body, null, 2));
+      console.log('[BulkRestoreCourses] Request body type:', typeof req.body);
+      console.log('[BulkRestoreCourses] course_ids:', req.body.course_ids);
+      console.log('[BulkRestoreCourses] course_ids type:', typeof req.body.course_ids);
+      console.log('[BulkRestoreCourses] course_ids isArray:', Array.isArray(req.body.course_ids));
+      
       const { course_ids } = req.body;
       const userId = req.user.id;
 
       if (!course_ids || !Array.isArray(course_ids) || course_ids.length === 0) {
+        console.error('[BulkRestoreCourses] Validation failed - course_ids:', course_ids);
         return res.status(400).json({
           success: false,
           message: 'course_ids array is required'

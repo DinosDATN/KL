@@ -8,6 +8,7 @@ const {
   validateStatusUpdate,
   validateBulkUpdate,
   validateBulkDelete,
+  validateBulkRestore,
   validateExport
 } = require('../middleware/courseAdminValidation');
 
@@ -38,6 +39,26 @@ router.get('/deleted', courseAdminController.getDeletedCourses);
 // GET /api/admin/courses/export - Export courses data
 router.get('/export', validateExport, courseAdminController.exportCourses);
 
+/**
+ * Bulk Operations (Admin Only)
+ * IMPORTANT: These routes must be defined BEFORE routes with :id parameter
+ * to avoid route matching conflicts (e.g., /bulk/restore vs /:id/restore)
+ */
+
+// PATCH /api/admin/courses/bulk/update - Bulk update courses
+router.patch('/bulk/update', validateBulkUpdate, courseAdminController.bulkUpdateCourses);
+
+// POST /api/admin/courses/bulk/delete - Bulk delete courses
+router.post('/bulk/delete', validateBulkDelete, courseAdminController.bulkDeleteCourses);
+
+// POST /api/admin/courses/bulk/restore - Bulk restore courses
+router.post('/bulk/restore', validateBulkRestore, courseAdminController.bulkRestoreCourses);
+
+/**
+ * Course CRUD Operations with ID (Admin Only)
+ * These routes must be defined AFTER specific routes like /bulk/*
+ */
+
 // GET /api/admin/courses/:id - Get single course by ID (admin view)
 router.get('/:id', validateCourseId, courseAdminController.getCourseByIdForAdmin);
 
@@ -59,18 +80,5 @@ router.post('/:id/restore', validateCourseId, courseAdminController.restoreCours
 
 // DELETE /api/admin/courses/:id/permanent - Permanently delete a course
 router.delete('/:id/permanent', validateCourseId, courseAdminController.permanentlyDeleteCourse);
-
-/**
- * Bulk Operations (Admin Only)
- */
-
-// PATCH /api/admin/courses/bulk/update - Bulk update courses
-router.patch('/bulk/update', validateBulkUpdate, courseAdminController.bulkUpdateCourses);
-
-// POST /api/admin/courses/bulk/delete - Bulk delete courses
-router.post('/bulk/delete', validateBulkDelete, courseAdminController.bulkDeleteCourses);
-
-// POST /api/admin/courses/bulk/restore - Bulk restore courses
-router.post('/bulk/restore', validateBulkDelete, courseAdminController.bulkRestoreCourses);
 
 module.exports = router;

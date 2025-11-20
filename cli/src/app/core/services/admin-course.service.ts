@@ -243,9 +243,16 @@ export class AdminCourseService {
    * Bulk restore courses
    */
   bulkRestoreCourses(courseIds: number[]): Observable<ApiResponse<any>> {
-    return this.http.post<ApiResponse<any>>(`${this.apiUrl}/bulk/restore`, {
-      course_ids: courseIds
-    }, {
+    const requestBody = { course_ids: courseIds };
+    console.log('📤 [AdminCourseService] Bulk restore request:', {
+      url: `${this.apiUrl}/bulk/restore`,
+      body: requestBody,
+      courseIds: courseIds,
+      courseIdsType: typeof courseIds,
+      isArray: Array.isArray(courseIds)
+    });
+    
+    return this.http.post<ApiResponse<any>>(`${this.apiUrl}/bulk/restore`, requestBody, {
       withCredentials: true // ✅ Send HttpOnly cookie
     });
   }

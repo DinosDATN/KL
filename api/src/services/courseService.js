@@ -355,10 +355,15 @@ class CourseService {
   async restoreCourse(courseId, userId) {
     const user = await User.findByPk(userId);
     
+    if (!user) {
+      throw new Error('User not found');
+    }
+    
     if (user.role !== 'admin') {
       throw new Error('Only admins can restore courses');
     }
 
+    // Find the deleted course
     const course = await Course.findOne({
       where: { id: courseId, is_deleted: true }
     });
@@ -367,9 +372,26 @@ class CourseService {
       throw new Error('Deleted course not found');
     }
 
-    await course.update({ is_deleted: false });
+    // Use direct update to ensure it's committed to database
+    const [updatedRows] = await Course.update(
+      { is_deleted: false },
+      { 
+        where: { id: courseId, is_deleted: true }
+      }
+    );
 
-    return this.getCourseWithAssociations(courseId);
+    if (updatedRows === 0) {
+      throw new Error('Failed to restore course - no rows updated');
+    }
+
+    // Verify the update was successful by fetching the course again
+    const restoredCourse = await this.getCourseWithAssociations(courseId);
+    
+    if (restoredCourse.is_deleted) {
+      throw new Error('Course restore failed - course still marked as deleted');
+    }
+    
+    return restoredCourse;
   }
 
   /**

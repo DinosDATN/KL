@@ -15,7 +15,15 @@ export class CourseListComponent {
   @Input() loading = false;
   @Input() error: string | null = null;
   @Input() selectedCourseIds: number[] = [];
-  @Input() showDeletedActions = false;
+  @Input() set showDeletedActions(value: boolean) {
+    console.log('🔵 [CourseList] showDeletedActions set to:', value);
+    this._showDeletedActions = value;
+  }
+  get showDeletedActions(): boolean {
+    return this._showDeletedActions;
+  }
+  private _showDeletedActions = false;
+  
   @Input() sortBy: string = '';
   @Input() sortOrder: 'asc' | 'desc' = 'asc';
   @Input() currentPage = 1;
@@ -78,7 +86,10 @@ export class CourseListComponent {
   }
 
   onRestore(courseId: number): void {
+    console.log('🔵 [CourseList] onRestore called with courseId:', courseId);
+    console.log('🔵 [CourseList] Emitting restoreCourse event...');
     this.restoreCourse.emit(courseId);
+    console.log('🔵 [CourseList] Event emitted');
   }
 
   onDelete(courseId: number): void {

@@ -4,6 +4,8 @@ const { body, param, query, validationResult } = require('express-validator');
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.log('[Validation] Validation errors:', errors.array());
+    console.log('[Validation] Request body:', JSON.stringify(req.body, null, 2));
     return res.status(400).json({
       success: false,
       message: 'Validation errors',
@@ -215,6 +217,33 @@ const validateBulkDelete = [
   handleValidationErrors
 ];
 
+// Validate bulk restore (similar to bulk delete but without permanent field)
+const validateBulkRestore = [
+  body('course_ids')
+    .isArray({ min: 1 })
+    .withMessage('course_ids must be a non-empty array')
+    .custom((value) => {
+      console.log('[validateBulkRestore] Validating course_ids:', value);
+      console.log('[validateBulkRestore] course_ids type:', typeof value);
+      console.log('[validateBulkRestore] course_ids isArray:', Array.isArray(value));
+      
+      if (!Array.isArray(value)) {
+        throw new Error('course_ids must be an array');
+      }
+      
+      if (value.length === 0) {
+        throw new Error('course_ids array cannot be empty');
+      }
+      
+      if (value.some(id => !Number.isInteger(Number(id)) || Number(id) < 1)) {
+        throw new Error('All course IDs must be valid positive integers');
+      }
+      return true;
+    }),
+  
+  handleValidationErrors
+];
+
 // Validate export parameters
 const validateExport = [
   query('format')
@@ -237,6 +266,7 @@ module.exports = {
   validateStatusUpdate,
   validateBulkUpdate,
   validateBulkDelete,
+  validateBulkRestore,
   validateExport,
   handleValidationErrors
 };

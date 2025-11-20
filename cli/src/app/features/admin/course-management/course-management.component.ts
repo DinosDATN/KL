@@ -96,10 +96,17 @@ export class CourseManagementComponent extends BaseAdminComponent implements OnI
     this.loading = true;
     this.error = null;
 
-    const service =
-      this.activeTab === 'deleted'
-        ? this.adminCourseService.getDeletedCourses(this.filters)
-        : this.adminCourseService.getCourses(this.filters);
+    // Ensure is_deleted filter is set based on active tab
+    const filtersWithDeletedFlag = {
+      ...this.filters,
+      is_deleted: this.activeTab === 'deleted' ? true : false
+    };
+
+    // Use the same endpoint but with different is_deleted filter
+    // Backend should filter based on is_deleted parameter
+    const service = this.activeTab === 'deleted'
+      ? this.adminCourseService.getDeletedCourses(filtersWithDeletedFlag)
+      : this.adminCourseService.getCourses(filtersWithDeletedFlag);
 
     service.subscribe({
       next: (response) => {
@@ -163,18 +170,38 @@ export class CourseManagementComponent extends BaseAdminComponent implements OnI
     this.selectedCourses = [];
     this.showBulkActions = false;
     this.currentPage = 1;
-    this.filters = { ...this.filters, page: 1 };
+    
+    // Reset filters and set is_deleted based on tab
+    this.filters = {
+      page: 1,
+      limit: this.itemsPerPage,
+      sortBy: this.filters.sortBy || 'created_at_desc',
+      is_deleted: tab === 'deleted' ? true : false,
+    };
+    
     this.loadCourses();
   }
 
   onFiltersChange(newFilters: CourseFilters): void {
-    this.filters = { ...this.filters, ...newFilters, page: 1 };
+    // Preserve is_deleted filter based on active tab
+    this.filters = { 
+      ...this.filters, 
+      ...newFilters, 
+      page: 1,
+      is_deleted: this.activeTab === 'deleted' ? true : false
+    };
     this.currentPage = 1;
     this.loadCourses();
   }
 
   onSearch(): void {
-    this.filters = { ...this.filters, search: this.searchTerm, page: 1 };
+    // Preserve is_deleted filter based on active tab
+    this.filters = { 
+      ...this.filters, 
+      search: this.searchTerm, 
+      page: 1,
+      is_deleted: this.activeTab === 'deleted' ? true : false
+    };
     this.currentPage = 1;
     this.loadCourses();
   }
@@ -200,10 +227,12 @@ export class CourseManagementComponent extends BaseAdminComponent implements OnI
     this.sortBy = event.sortBy;
     this.sortOrder = event.order;
 
+    // Preserve is_deleted filter based on active tab
     this.filters = {
       ...this.filters,
       sortBy: `${event.sortBy}_${event.order}`,
       page: 1,
+      is_deleted: this.activeTab === 'deleted' ? true : false
     };
     this.currentPage = 1;
     this.loadCourses();
@@ -215,20 +244,63 @@ export class CourseManagementComponent extends BaseAdminComponent implements OnI
   }
 
   onRestoreCourse(courseId: number): void {
+    console.log('🔄 [CourseManagement] Attempting to restore course:', courseId);
+    
     if (!confirm('Are you sure you want to restore this course?')) {
+      console.log('❌ [CourseManagement] Restore cancelled by user');
       return;
     }
 
+    console.log('📤 [CourseManagement] Sending restore request to API...');
     this.adminCourseService.restoreCourse(courseId).subscribe({
       next: (response) => {
-        if (response.success) {
+        console.log('✅ [CourseManagement] Restore response:', response);
+        if (response.success && response.data) {
+          console.log('✅ [CourseManagement] Course restored. is_deleted:', response.data.is_deleted);
+          
           this.notificationService.success('Success', 'Course restored successfully');
+          
+          // If we're on the deleted tab, switch to 'all' tab to show the restored course
+          if (this.activeTab === 'deleted') {
+            console.log('🔄 [CourseManagement] Switching to "all" tab');
+            this.activeTab = 'all';
+            this.filters = {
+              ...this.filters,
+              is_deleted: false,
+              page: 1
+            };
+            this.currentPage = 1;
+          }
+          
+          // Reload courses and stats
+          console.log('🔄 [CourseManagement] Reloading courses and stats...');
           this.loadCourses();
           this.loadStats();
+        } else {
+          console.error('❌ [CourseManagement] Restore failed - response not successful:', response);
+          const errorMsg = response?.message || 'Failed to restore course';
+          this.notificationService.error('Error', errorMsg);
         }
       },
       error: (error) => {
-        this.notificationService.error('Error', error.message || 'Failed to restore course');
+        console.error('❌ [CourseManagement] Restore error:', error);
+        console.error('❌ [CourseManagement] Error details:', {
+          status: error?.status,
+          statusText: error?.statusText,
+          error: error?.error,
+          message: error?.message
+        });
+        
+        let errorMessage = 'Failed to restore course';
+        if (error?.error?.message) {
+          errorMessage = error.error.message;
+        } else if (error?.error?.error) {
+          errorMessage = error.error.error;
+        } else if (error?.message) {
+          errorMessage = error.message;
+        }
+        
+        this.notificationService.error('Error', errorMessage);
       },
     });
   }
@@ -262,7 +334,12 @@ export class CourseManagementComponent extends BaseAdminComponent implements OnI
 
   onPageChange(page: number): void {
     this.currentPage = page;
-    this.filters = { ...this.filters, page };
+    // Preserve is_deleted filter based on active tab
+    this.filters = { 
+      ...this.filters, 
+      page,
+      is_deleted: this.activeTab === 'deleted' ? true : false
+    };
     this.loadCourses();
   }
 
@@ -321,19 +398,22 @@ export class CourseManagementComponent extends BaseAdminComponent implements OnI
   }
 
   bulkDeleteCourses(): void {
-    if (
-      !confirm(
-        `Are you sure you want to delete ${this.selectedCourses.length} courses?`
-      )
-    ) {
+    const isPermanent = this.activeTab === 'deleted';
+    const message = isPermanent
+      ? `Are you sure you want to PERMANENTLY delete ${this.selectedCourses.length} courses? This action cannot be undone.`
+      : `Are you sure you want to delete ${this.selectedCourses.length} courses?`;
+
+    if (!confirm(message)) {
       return;
     }
 
-    this.adminCourseService.bulkDeleteCourses(this.selectedCourses).subscribe({
+    this.adminCourseService.bulkDeleteCourses(this.selectedCourses, isPermanent).subscribe({
       next: (response) => {
         if (response.success) {
-          console.log(
-            `Successfully deleted ${this.selectedCourses.length} courses`
+          const action = isPermanent ? 'permanently deleted' : 'deleted';
+          this.notificationService.success(
+            'Success',
+            `Successfully ${action} ${this.selectedCourses.length} courses`
           );
           this.selectedCourses = [];
           this.showBulkActions = false;
@@ -342,37 +422,108 @@ export class CourseManagementComponent extends BaseAdminComponent implements OnI
         }
       },
       error: (error) => {
-        console.error(error.message || 'Failed to delete courses');
+        this.notificationService.error(
+          'Error',
+          error.message || 'Failed to delete courses'
+        );
       },
     });
   }
 
   bulkRestoreCourses(): void {
+    if (!confirm(`Are you sure you want to restore ${this.selectedCourses.length} courses?`)) {
+      return;
+    }
+
+    console.log('🔄 [CourseManagement] Bulk restore courses:', this.selectedCourses);
     this.adminCourseService.bulkRestoreCourses(this.selectedCourses).subscribe({
       next: (response) => {
+        console.log('✅ [CourseManagement] Bulk restore response:', response);
         if (response.success) {
-          console.log(
-            `Successfully restored ${this.selectedCourses.length} courses`
-          );
+          const restoredCount = response.data?.restoredCount || this.selectedCourses.length;
+          const totalRequested = response.data?.totalRequested || this.selectedCourses.length;
+          
+          if (restoredCount === totalRequested) {
+            this.notificationService.success(
+              'Success',
+              `Successfully restored ${restoredCount} courses`
+            );
+          } else {
+            this.notificationService.warning(
+              'Partial Success',
+              `Restored ${restoredCount} of ${totalRequested} courses. Some courses may not have been found or already restored.`
+            );
+          }
+          
+          // If we're on the deleted tab, switch to 'all' tab to show the restored courses
+          if (this.activeTab === 'deleted') {
+            this.activeTab = 'all';
+            this.filters = {
+              ...this.filters,
+              is_deleted: false,
+              page: 1
+            };
+            this.currentPage = 1;
+          }
+          
           this.selectedCourses = [];
           this.showBulkActions = false;
           this.loadCourses();
           this.loadStats();
+        } else {
+          console.error('❌ [CourseManagement] Bulk restore failed:', response);
+          this.notificationService.error(
+            'Error',
+            response.message || 'Failed to restore courses'
+          );
         }
       },
       error: (error) => {
-        console.error(error.message || 'Failed to restore courses');
+        console.error('❌ [CourseManagement] Bulk restore error:', error);
+        console.error('❌ [CourseManagement] Full error object:', JSON.stringify(error, null, 2));
+        console.error('❌ [CourseManagement] Error details:', {
+          status: error?.status,
+          statusText: error?.statusText,
+          error: error?.error,
+          message: error?.message
+        });
+        console.error('❌ [CourseManagement] error.error:', error?.error);
+        console.error('❌ [CourseManagement] error.error.errors:', error?.error?.errors);
+        
+        let errorMessage = 'Failed to restore courses';
+        if (error?.error?.message) {
+          errorMessage = error.error.message;
+        } else if (error?.error?.errors && Array.isArray(error.error.errors)) {
+          // Handle validation errors
+          const validationErrors = error.error.errors.map((e: any) => {
+            const msg = e.msg || e.message || JSON.stringify(e);
+            const field = e.param || e.path || '';
+            return field ? `${field}: ${msg}` : msg;
+          }).join(', ');
+          errorMessage = `Validation errors: ${validationErrors}`;
+        } else if (error?.error?.error) {
+          errorMessage = error.error.error;
+        } else if (error?.message) {
+          errorMessage = error.message;
+        }
+        
+        this.notificationService.error('Error', errorMessage);
       },
     });
   }
 
   bulkUpdateStatus(status: string): void {
+    if (!confirm(`Are you sure you want to set ${this.selectedCourses.length} courses to ${status}?`)) {
+      return;
+    }
+
     this.adminCourseService
       .bulkUpdateCourses(this.selectedCourses, { status })
       .subscribe({
         next: (response) => {
           if (response.success) {
-            console.log(
+            this.notificationService.success(
+              'Success',
               `Successfully updated ${this.selectedCourses.length} courses to ${status}`
             );
             this.selectedCourses = [];
@@ -382,7 +533,10 @@ export class CourseManagementComponent extends BaseAdminComponent implements OnI
           }
         },
         error: (error) => {
-          console.error(error.message || 'Failed to update courses');
+          this.notificationService.error(
+            'Error',
+            error.message || 'Failed to update courses'
+          );
         },
       });
   }
