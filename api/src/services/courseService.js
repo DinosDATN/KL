@@ -27,8 +27,8 @@ class CourseService {
     // Validate category exists if provided
     if (courseData.category_id) {
       const category = await CourseCategory.findByPk(courseData.category_id);
-      if (!category || !category.is_active) {
-        throw new Error('Invalid or inactive course category');
+      if (!category) {
+        throw new Error('Invalid course category');
       }
     }
 
@@ -82,8 +82,8 @@ class CourseService {
       // Validate category exists if provided
       if (courseData.category_id) {
         const category = await CourseCategory.findByPk(courseData.category_id, { transaction });
-        if (!category || !category.is_active) {
-          throw new Error('Invalid or inactive course category');
+        if (!category) {
+          throw new Error('Invalid course category');
         }
       }
 
@@ -229,8 +229,8 @@ class CourseService {
     // Validate category if being updated
     if (updateData.category_id && updateData.category_id !== course.category_id) {
       const category = await CourseCategory.findByPk(updateData.category_id);
-      if (!category || !category.is_active) {
-        throw new Error('Invalid or inactive course category');
+      if (!category) {
+        throw new Error('Invalid course category');
       }
     }
 
