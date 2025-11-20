@@ -1,9 +1,10 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
 import { AdminService, AdminUser, UserFilters, PaginationInfo } from '../../../core/services/admin.service';
+import { NotificationService } from '../../../core/services/notification.service';
 
 @Component({
   selector: 'app-user-management',
@@ -58,12 +59,25 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   selectedUsers: number[] = [];
   showBulkActions = false;
   
+  // Modal states
+  showCreateModal = false;
+  showDeleteModal = false;
+  showDetailsModal = false;
+  showBulkUpdateModal = false;
+  selectedUserForDelete: AdminUser | null = null;
+  selectedUserForDetails: AdminUser | null = null;
+  
+  // Forms
+  createUserForm: FormGroup;
+  bulkUpdateForm: FormGroup;
+  
   // Expose Math for template
   Math = Math;
 
   constructor(
     private adminService: AdminService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private notificationService: NotificationService
   ) {
     this.filterForm = this.fb.group({
       search: [''],
@@ -73,6 +87,21 @@ export class UserManagementComponent implements OnInit, OnDestroy {
       sortBy: ['created_at'],
       registration_date: [''],
       last_activity: ['']
+    });
+
+    this.createUserForm = this.fb.group({
+      name: ['', [Validators.required, Validators.minLength(2)]],
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
+      role: ['user', Validators.required],
+      is_active: [true],
+      subscription_status: ['free']
+    });
+
+    this.bulkUpdateForm = this.fb.group({
+      role: [''],
+      is_active: [''],
+      subscription_status: ['']
     });
   }
 
@@ -183,15 +212,21 @@ export class UserManagementComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (updatedUser) => {
-          // Update the user in the list
+          // Update the user in the list - merge to preserve all fields
           const index = this.users.findIndex(u => u.id === userId);
           if (index > -1) {
-            this.users[index] = updatedUser;
+            // Merge updated fields with existing user data to preserve all properties
+            this.users[index] = {
+              ...this.users[index],
+              ...updatedUser,
+              role: updatedUser.role
+            };
           }
+          this.notificationService.success('Thành công', `Đã cập nhật vai trò của user thành ${newRole}`);
         },
         error: (error) => {
           console.error('Error updating user role:', error);
-          // You might want to show a notification here
+          this.notificationService.error('Lỗi', error.message || 'Không thể cập nhật vai trò user');
         }
       });
   }
@@ -206,15 +241,147 @@ export class UserManagementComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (updatedUser) => {
-          // Update the user in the list
+          // Update the user in the list - merge to preserve all fields
           const index = this.users.findIndex(u => u.id === userId);
           if (index > -1) {
-            this.users[index] = updatedUser;
+            // Merge updated fields with existing user data to preserve all properties
+            this.users[index] = {
+              ...this.users[index],
+              ...updatedUser,
+              is_active: updatedUser.is_active
+            };
           }
+          this.notificationService.success('Thành công', `Đã ${newStatus ? 'kích hoạt' : 'vô hiệu hóa'} user`);
         },
         error: (error) => {
           console.error('Error updating user status:', error);
+          this.notificationService.error('Lỗi', error.message || 'Không thể cập nhật trạng thái user');
         }
+      });
+  }
+
+  deleteUser(userId: number) {
+    this.adminService.deleteUser(userId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.users = this.users.filter(u => u.id !== userId);
+          this.selectedUsers = this.selectedUsers.filter(id => id !== userId);
+          this.showBulkActions = this.selectedUsers.length > 0;
+          this.showDeleteModal = false;
+          this.selectedUserForDelete = null;
+          this.notificationService.success('Thành công', 'Đã xóa user thành công');
+          // Reload to update pagination
+          this.loadUsers();
+        },
+        error: (error) => {
+          console.error('Error deleting user:', error);
+          this.notificationService.error('Lỗi', error.message || 'Không thể xóa user');
+        }
+      });
+  }
+
+  confirmDeleteUser(user: AdminUser) {
+    this.selectedUserForDelete = user;
+    this.showDeleteModal = true;
+  }
+
+  createUser() {
+    if (this.createUserForm.invalid) {
+      this.createUserForm.markAllAsTouched();
+      return;
+    }
+
+    const userData = this.createUserForm.value;
+    this.adminService.createUser(userData)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (newUser) => {
+          this.notificationService.success('Thành công', 'Đã tạo user mới thành công');
+          this.showCreateModal = false;
+          this.createUserForm.reset({
+            role: 'user',
+            is_active: true,
+            subscription_status: 'free'
+          });
+          // Reload users
+          this.loadUsers();
+        },
+        error: (error) => {
+          console.error('Error creating user:', error);
+          this.notificationService.error('Lỗi', error.message || 'Không thể tạo user');
+        }
+      });
+  }
+
+  viewUserDetails(user: AdminUser) {
+    this.selectedUserForDetails = user;
+    this.showDetailsModal = true;
+  }
+
+  bulkUpdateUsers() {
+    if (this.selectedUsers.length === 0) {
+      this.notificationService.error('Lỗi', 'Vui lòng chọn ít nhất một user');
+      return;
+    }
+
+    const updateData: any = {};
+    const formValue = this.bulkUpdateForm.value;
+    
+    if (formValue.role) updateData.role = formValue.role;
+    if (formValue.is_active !== '') updateData.is_active = formValue.is_active === 'true';
+    if (formValue.subscription_status) updateData.subscription_status = formValue.subscription_status;
+
+    if (Object.keys(updateData).length === 0) {
+      this.notificationService.error('Lỗi', 'Vui lòng chọn ít nhất một trường để cập nhật');
+      return;
+    }
+
+    this.adminService.bulkUpdateUsers(this.selectedUsers, updateData)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (result) => {
+          this.notificationService.success('Thành công', `Đã cập nhật ${result.updatedCount} user(s)`);
+          this.showBulkUpdateModal = false;
+          this.selectedUsers = [];
+          this.showBulkActions = false;
+          this.bulkUpdateForm.reset();
+          // Reload users
+          this.loadUsers();
+        },
+        error: (error) => {
+          console.error('Error bulk updating users:', error);
+          this.notificationService.error('Lỗi', error.message || 'Không thể cập nhật users');
+        }
+      });
+  }
+
+  bulkDeleteUsers() {
+    if (this.selectedUsers.length === 0) {
+      this.notificationService.error('Lỗi', 'Vui lòng chọn ít nhất một user');
+      return;
+    }
+
+    if (!confirm(`Bạn có chắc chắn muốn xóa ${this.selectedUsers.length} user(s) đã chọn?`)) {
+      return;
+    }
+
+    // Delete users one by one (API doesn't have bulk delete)
+    const deletePromises = this.selectedUsers.map(userId => 
+      this.adminService.deleteUser(userId).toPromise()
+    );
+
+    Promise.all(deletePromises)
+      .then(() => {
+        this.notificationService.success('Thành công', `Đã xóa ${this.selectedUsers.length} user(s)`);
+        this.selectedUsers = [];
+        this.showBulkActions = false;
+        this.loadUsers();
+      })
+      .catch((error) => {
+        console.error('Error bulk deleting users:', error);
+        this.notificationService.error('Lỗi', 'Có lỗi xảy ra khi xóa users');
+        this.loadUsers();
       });
   }
 
@@ -263,20 +430,24 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   }
 
   exportUsers() {
-    this.adminService.exportUsers('csv').subscribe({
-      next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `users-export-${new Date().toISOString().split('T')[0]}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-      },
-      error: (error) => {
-        console.error('Error exporting users:', error);
-      }
-    });
+    this.adminService.exportUsers('csv')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (blob) => {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `users-export-${new Date().toISOString().split('T')[0]}.csv`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+          this.notificationService.success('Thành công', 'Đã xuất danh sách users thành công');
+        },
+        error: (error) => {
+          console.error('Error exporting users:', error);
+          this.notificationService.error('Lỗi', error.message || 'Không thể xuất danh sách users');
+        }
+      });
   }
 }

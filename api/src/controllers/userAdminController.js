@@ -157,12 +157,14 @@ class UserAdminController {
 
       res.status(200).json({
         success: true,
-        data: usersWithStats,
-        pagination: {
-          current_page: page,
-          total_pages: Math.ceil(count / limit),
-          total_items: count,
-          items_per_page: limit,
+        data: {
+          users: usersWithStats,
+          pagination: {
+            current_page: page,
+            total_pages: Math.ceil(count / limit),
+            total_items: count,
+            items_per_page: limit,
+          },
         },
       });
     } catch (error) {
@@ -363,10 +365,44 @@ class UserAdminController {
 
       await user.update({ role });
 
+      // Reload user with associations to return complete data
+      const updatedUser = await User.findByPk(id, {
+        include: [
+          {
+            model: UserProfile,
+            as: "Profile",
+            required: false,
+          },
+          {
+            model: UserStats,
+            as: "Stats",
+            required: false,
+          },
+        ],
+      });
+
+      // Add additional statistics like getAllUsersForAdmin does
+      const courseCount = await Course.count({
+        where: { instructor_id: id },
+      });
+      const enrollmentCount = await CourseEnrollment.count({
+        where: { user_id: id },
+      });
+      const submissionCount = await Submission.count({
+        where: { user_id: id },
+      });
+
+      const userData = {
+        ...updatedUser.toJSON(),
+        courseCount,
+        enrollmentCount,
+        submissionCount,
+      };
+
       res.status(200).json({
         success: true,
         message: `User role updated to ${role}`,
-        data: { id, role },
+        data: userData,
       });
     } catch (error) {
       console.error("Error in updateUserRole:", error);
@@ -402,10 +438,44 @@ class UserAdminController {
 
       await user.update({ is_active });
 
+      // Reload user with associations to return complete data
+      const updatedUser = await User.findByPk(id, {
+        include: [
+          {
+            model: UserProfile,
+            as: "Profile",
+            required: false,
+          },
+          {
+            model: UserStats,
+            as: "Stats",
+            required: false,
+          },
+        ],
+      });
+
+      // Add additional statistics like getAllUsersForAdmin does
+      const courseCount = await Course.count({
+        where: { instructor_id: id },
+      });
+      const enrollmentCount = await CourseEnrollment.count({
+        where: { user_id: id },
+      });
+      const submissionCount = await Submission.count({
+        where: { user_id: id },
+      });
+
+      const userData = {
+        ...updatedUser.toJSON(),
+        courseCount,
+        enrollmentCount,
+        submissionCount,
+      };
+
       res.status(200).json({
         success: true,
         message: `User ${is_active ? "activated" : "deactivated"} successfully`,
-        data: { id, is_active },
+        data: userData,
       });
     } catch (error) {
       console.error("Error in toggleUserStatus:", error);
@@ -536,30 +606,30 @@ class UserAdminController {
       // Top creators - simplified approach using separate queries
       const allCreators = await User.findAll({
         where: { role: "creator" },
-        attributes: ["id", "name", "email"]
+        attributes: ["id", "name", "email"],
       });
-      
+
       // Get course counts for each creator
       const creatorsWithCounts = await Promise.all(
         allCreators.map(async (creator) => {
           const courseCount = await Course.count({
-            where: { 
+            where: {
               instructor_id: creator.id,
-              is_deleted: false 
-            }
+              is_deleted: false,
+            },
           });
           return {
             id: creator.id,
             name: creator.name,
             email: creator.email,
-            courseCount
+            courseCount,
           };
         })
       );
-      
+
       // Filter and sort creators by course count
       const topCreators = creatorsWithCounts
-        .filter(creator => creator.courseCount > 0)
+        .filter((creator) => creator.courseCount > 0)
         .sort((a, b) => b.courseCount - a.courseCount)
         .slice(0, 10);
 
@@ -938,12 +1008,14 @@ class UserAdminController {
 
       res.status(200).json({
         success: true,
-        data: paginatedActivities,
-        pagination: {
-          current_page: page,
-          total_pages: Math.ceil(activities.length / limit),
-          total_items: activities.length,
-          items_per_page: limit,
+        data: {
+          activities: paginatedActivities,
+          pagination: {
+            current_page: page,
+            total_pages: Math.ceil(activities.length / limit),
+            total_items: activities.length,
+            items_per_page: limit,
+          },
         },
       });
     } catch (error) {

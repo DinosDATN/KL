@@ -185,6 +185,70 @@ export class AdminService {
     );
   }
 
+  deleteUser(userId: number): Observable<void> {
+    return this.http.delete<ApiResponse<void>>(
+      `${this.apiUrl}/users/${userId}`,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(() => void 0),
+      catchError(this.handleError)
+    );
+  }
+
+  createUser(userData: {
+    name: string;
+    email: string;
+    password: string;
+    role?: 'user' | 'creator' | 'admin';
+    is_active?: boolean;
+    subscription_status?: 'free' | 'premium';
+  }): Observable<AdminUser> {
+    return this.http.post<ApiResponse<AdminUser>>(
+      `${this.apiUrl}/users`,
+      userData,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  updateUser(userId: number, userData: Partial<AdminUser>): Observable<AdminUser> {
+    return this.http.put<ApiResponse<AdminUser>>(
+      `${this.apiUrl}/users/${userId}`,
+      userData,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  bulkUpdateUsers(userIds: number[], updateData: Partial<AdminUser>): Observable<{ updatedCount: number; totalRequested: number }> {
+    return this.http.patch<ApiResponse<{ updatedCount: number; totalRequested: number }>>(
+      `${this.apiUrl}/users/bulk/update`,
+      { user_ids: userIds, update_data: updateData },
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  getUserActivityLog(userId: number, page: number = 1, limit: number = 20): Observable<{ activities: any[], pagination: PaginationInfo }> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('limit', limit.toString());
+
+    return this.http.get<ApiResponse<{ activities: any[], pagination: PaginationInfo }>>(
+      `${this.apiUrl}/users/${userId}/activity`,
+      { params, withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
   getUserStatistics(): Observable<any> {
     return this.http.get<ApiResponse<any>>(
       `${this.apiUrl}/users/statistics`,
