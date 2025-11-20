@@ -101,7 +101,16 @@ const uploadCourseThumbnail = async (req, res) => {
       });
     }
 
-    const fileUrl = `/uploads/courses/thumbnails/${req.file.filename}`;
+    // Get base URL from request or environment
+    const protocol = req.protocol || 'http';
+    const host = req.get('host') || process.env.API_HOST || 'localhost:3000';
+    const baseUrl = process.env.API_BASE_URL || `${protocol}://${host}`;
+    
+    // Return full URL for production, relative URL for development (with proxy)
+    const fileUrl = process.env.NODE_ENV === 'production' 
+      ? `${baseUrl}/uploads/courses/thumbnails/${req.file.filename}`
+      : `/uploads/courses/thumbnails/${req.file.filename}`;
+    
     const fileSize = req.file.size;
     const fileName = req.file.originalname;
 
@@ -142,7 +151,16 @@ const uploadLessonVideo = async (req, res) => {
       });
     }
 
-    const fileUrl = `/uploads/courses/videos/${req.file.filename}`;
+    // Get base URL from request or environment
+    const protocol = req.protocol || 'http';
+    const host = req.get('host') || process.env.API_HOST || 'localhost:3000';
+    const baseUrl = process.env.API_BASE_URL || `${protocol}://${host}`;
+    
+    // Return full URL for production, relative URL for development (with proxy)
+    const fileUrl = process.env.NODE_ENV === 'production' 
+      ? `${baseUrl}/uploads/courses/videos/${req.file.filename}`
+      : `/uploads/courses/videos/${req.file.filename}`;
+    
     const fileSize = req.file.size;
     const fileName = req.file.originalname;
 

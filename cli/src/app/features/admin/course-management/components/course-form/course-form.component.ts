@@ -25,6 +25,7 @@ import {
   CourseModule,
   CourseLesson,
 } from '../../../../../core/models/course-module.model';
+import { NotificationService } from '../../../../../core/services/notification.service';
 
 @Component({
   selector: 'app-course-form',
@@ -73,7 +74,8 @@ export class CourseFormComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private adminCourseService: AdminCourseService,
-    private coursesService: CoursesService
+    private coursesService: CoursesService,
+    private notificationService: NotificationService
   ) {
     this.courseForm = this.createForm();
   }
@@ -84,6 +86,10 @@ export class CourseFormComponent implements OnInit {
 
     if (this.course && this.isEdit) {
       this.courseForm.patchValue(this.course);
+      // Hiển thị ảnh hiện tại nếu có
+      if (this.course.thumbnail) {
+        this.thumbnailPreview = this.course.thumbnail;
+      }
     }
   }
 
@@ -177,7 +183,27 @@ export class CourseFormComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       const file = input.files[0];
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        this.notificationService.error('Lỗi', 'Vui lòng chọn file ảnh hợp lệ');
+        input.value = ''; // Reset input
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        this.notificationService.error(
+          'Lỗi',
+          'Kích thước file không được vượt quá 5MB'
+        );
+        input.value = ''; // Reset input
+        return;
+      }
+
       this.uploadingThumbnail = true;
+      this.error = null;
 
       this.adminCourseService.uploadThumbnail(file).subscribe({
         next: (response) => {
@@ -185,14 +211,37 @@ export class CourseFormComponent implements OnInit {
             this.courseForm.patchValue({ thumbnail: response.data.file_url });
             this.thumbnailPreview = response.data.file_url;
             this.uploadingThumbnail = false;
+            this.notificationService.success(
+              'Thành công',
+              'Ảnh đã được tải lên thành công'
+            );
+          } else {
+            this.uploadingThumbnail = false;
+            this.error = 'Failed to upload thumbnail';
+            this.notificationService.error('Lỗi', 'Không thể tải lên ảnh');
           }
         },
         error: (error) => {
           console.error('Error uploading thumbnail:', error);
           this.error = error.error?.message || 'Failed to upload thumbnail';
           this.uploadingThumbnail = false;
+          this.notificationService.error(
+            'Lỗi',
+            error.error?.message || 'Không thể tải lên ảnh'
+          );
+          input.value = ''; // Reset input on error
         },
       });
+    }
+  }
+
+  removeThumbnail(): void {
+    this.thumbnailPreview = null;
+    this.courseForm.patchValue({ thumbnail: '' });
+    // Reset file input
+    const input = document.getElementById('thumbnail') as HTMLInputElement;
+    if (input) {
+      input.value = '';
     }
   }
 
@@ -294,16 +343,29 @@ export class CourseFormComponent implements OnInit {
         if (response.success && response.data) {
           this.loading = false;
           if (this.isEdit) {
+            this.notificationService.success(
+              'Thành công',
+              'Khóa học đã được cập nhật thành công'
+            );
             this.courseUpdated.emit(response.data);
           } else {
+            this.notificationService.success(
+              'Thành công',
+              'Khóa học đã được tạo thành công'
+            );
             this.courseCreated.emit(response.data);
           }
+        } else {
+          this.loading = false;
+          this.error = response.message || 'Failed to save course';
+          this.notificationService.error('Lỗi', this.error || undefined);
         }
       },
       error: (error) => {
         this.error =
           error.error?.message || error.message || 'Failed to save course';
         this.loading = false;
+        this.notificationService.error('Lỗi', this.error || undefined);
       },
     });
   }

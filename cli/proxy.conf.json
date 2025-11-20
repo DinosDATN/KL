@@ -8,5 +8,11 @@
     "headers": {
       "Connection": "keep-alive"
     }
+  },
+  "/uploads": {
+    "target": "http://localhost:3000",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
   }
 }
