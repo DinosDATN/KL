@@ -1,0 +1,132 @@
+/* User Reports Component Styles */
+
+/* Smooth transitions for theme switching */
+* {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Report type cards */
+.report-type-card {
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.report-type-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.dark .report-type-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Loading spinner */
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Stat cards */
+.stat-card {
+  transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dark .stat-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Buttons */
+.action-button {
+  transition: all 0.2s ease;
+}
+
+.action-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.action-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Range buttons */
+.range-button {
+  transition: all 0.2s ease;
+}
+
+.range-button:hover:not(.active) {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Report results */
+.report-results {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.report-results pre {
+  max-height: 400px;
+  overflow: auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .report-type-card {
+    padding: 1rem;
+  }
+
+  .stat-card {
+    padding: 1rem;
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  .report-type-card,
+  .stat-card,
+  .action-button,
+  .range-button {
+    transition: none;
+  }
+
+  .loading-spinner {
+    animation: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .report-type-card,
+  .stat-card {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Focus styles for accessibility */
+button:focus,
+input:focus,
+.report-type-card:focus {
+  outline: 2px solid theme('colors.blue.500');
+  outline-offset: 2px;
+}
+
+/* Dark mode specific adjustments */
+.dark .report-results pre {
+  background-color: rgba(17, 24, 39, 0.8);
+  color: #f3f4f6;
+}
+

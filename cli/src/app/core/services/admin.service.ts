@@ -543,6 +543,51 @@ export class AdminService {
     });
   }
 
+  // User Report APIs
+  getReportTypes(): Observable<any[]> {
+    return this.http.get<ApiResponse<any[]>>(
+      `${this.apiUrl}/users/reports/types`,
+      { withCredentials: true }
+    ).pipe(
+      map(response => response.data || []),
+      catchError(this.handleError)
+    );
+  }
+
+  generateUserReport(params: {
+    type?: 'comprehensive' | 'activity' | 'registration' | 'engagement' | 'performance';
+    range?: '7d' | '30d' | '90d' | '1y';
+    format?: 'json' | 'csv';
+    startDate?: string;
+    endDate?: string;
+    filters?: any;
+  }): Observable<any> {
+    let httpParams = new HttpParams();
+    
+    if (params.type) httpParams = httpParams.set('type', params.type);
+    if (params.range) httpParams = httpParams.set('range', params.range);
+    if (params.format) httpParams = httpParams.set('format', params.format);
+    if (params.startDate) httpParams = httpParams.set('startDate', params.startDate);
+    if (params.endDate) httpParams = httpParams.set('endDate', params.endDate);
+    if (params.filters) {
+      Object.keys(params.filters).forEach(key => {
+        httpParams = httpParams.set(`filters[${key}]`, params.filters[key]);
+      });
+    }
+
+    const options = params.format === 'csv' 
+      ? { params: httpParams, responseType: 'blob' as 'json', withCredentials: true }
+      : { params: httpParams, withCredentials: true };
+
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/users/reports/generate`,
+      options
+    ).pipe(
+      map(response => params.format === 'csv' ? response : response.data),
+      catchError(this.handleError)
+    );
+  }
+
   // Error handling
   private handleError = (error: HttpErrorResponse) => {
     console.error('Admin API error:', error);
