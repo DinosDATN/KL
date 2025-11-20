@@ -1,0 +1,141 @@
+/* Course Management Component Styles */
+
+/* Smooth page transitions */
+.min-h-screen {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Enhanced button hover effects */
+button {
+  transition: all 0.2s ease-in-out;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+/* Tab navigation enhancements */
+nav button {
+  position: relative;
+  transition: all 0.2s ease-in-out;
+}
+
+nav button::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: currentColor;
+  transform: scaleX(0);
+  transition: transform 0.2s ease-in-out;
+}
+
+nav button:hover::after {
+  transform: scaleX(1);
+}
+
+/* Search bar enhancements */
+input[type="text"] {
+  transition: all 0.2s ease-in-out;
+}
+
+input[type="text"]:focus {
+  box-shadow: 0 0 0 3px rgb(59 130 246 / 0.1);
+}
+
+/* Card hover effects */
+.bg-white,
+.dark\:bg-gray-800 {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Statistics cards animation */
+app-course-stats {
+  animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Badge animations */
+.rounded-full {
+  transition: all 0.2s ease-in-out;
+}
+
+.rounded-full:hover {
+  transform: scale(1.05);
+}
+
+/* Loading state */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.loading {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Responsive improvements */
+@media (max-width: 640px) {
+  .flex-wrap {
+    gap: 0.5rem !important;
+  }
+  
+  button {
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+  }
+}
+
+/* Dark mode transitions */
+.dark .transition-colors {
+  transition-property: background-color, border-color, color;
+  transition-duration: 200ms;
+  transition-timing-function: ease-in-out;
+}
+
+/* Icon spacing */
+i[class^="icon-"] {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Enhanced focus states for accessibility */
+*:focus-visible {
+  outline: 2px solid rgb(59 130 246);
+  outline-offset: 2px;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}

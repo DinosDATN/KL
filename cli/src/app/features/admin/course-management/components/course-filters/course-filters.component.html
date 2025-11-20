@@ -1,28 +1,31 @@
 <!-- Filters Panel -->
 <div
   class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 transition-colors duration-200"
+  style="min-height: 100px;"
 >
   <div class="p-6">
     <!-- Header -->
-    <div class="flex items-center justify-between mb-6">
-      <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+        <i class="icon-filter mr-2"></i>
         Filters
       </h3>
       <button
         *ngIf="hasActiveFilters()"
         (click)="onReset()"
-        class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
+        class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors flex items-center"
       >
+        <i class="icon-x mr-1"></i>
         Clear All
       </button>
     </div>
 
     <!-- Filters Form -->
-    <form class="space-y-6">
+    <form class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
       <!-- Status Filter -->
       <div *ngIf="!showDeletedOptions">
         <label
-          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
         >
           Status
         </label>
@@ -41,7 +44,7 @@
       <!-- Level Filter -->
       <div>
         <label
-          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
         >
           Level
         </label>
@@ -60,7 +63,7 @@
       <!-- Premium Filter -->
       <div>
         <label
-          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
         >
           Course Type
         </label>
@@ -70,16 +73,16 @@
           name="is_premium"
           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
         >
-          <option *ngFor="let option of premiumOptions" [value]="option.value">
-            {{ option.label }}
-          </option>
+          <option [ngValue]="undefined">All Types</option>
+          <option [ngValue]="true">Premium Only</option>
+          <option [ngValue]="false">Free Only</option>
         </select>
       </div>
 
       <!-- Price Range Filter -->
       <div *ngIf="!showDeletedOptions">
         <label
-          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
         >
           Price Range
         </label>
@@ -98,10 +101,10 @@
         </select>
       </div>
 
-      <!-- Category Filter (Placeholder - would need category service) -->
+      <!-- Category Filter -->
       <div>
         <label
-          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
         >
           Category
         </label>
@@ -111,18 +114,18 @@
           name="category_id"
           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
         >
-          <option value="">All Categories</option>
-          <option value="1">Programming</option>
-          <option value="2">Design</option>
-          <option value="3">Marketing</option>
-          <option value="4">Business</option>
+          <option [value]="undefined">All Categories</option>
+          <option [value]="1">Programming</option>
+          <option [value]="2">Design</option>
+          <option [value]="3">Marketing</option>
+          <option [value]="4">Business</option>
         </select>
       </div>
 
-      <!-- Instructor Filter (Placeholder - would need instructor service) -->
-      <div>
+      <!-- Instructor Filter -->
+      <!-- <div>
         <label
-          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
         >
           Instructor
         </label>
@@ -132,17 +135,17 @@
           name="instructor_id"
           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
         >
-          <option value="">All Instructors</option>
-          <option value="1">John Smith</option>
-          <option value="2">Jane Doe</option>
-          <option value="3">Mike Johnson</option>
+          <option [value]="undefined">All Instructors</option>
+          <option [value]="1">John Smith</option>
+          <option [value]="2">Jane Doe</option>
+          <option [value]="3">Mike Johnson</option>
         </select>
-      </div>
+      </div> -->
 
       <!-- Sort By -->
       <div>
         <label
-          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
         >
           Sort By
         </label>
@@ -161,9 +164,9 @@
       <!-- Items Per Page -->
       <div>
         <label
-          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
         >
-          Items Per Page
+          Per Page
         </label>
         <select
           [(ngModel)]="localFilters.limit"
@@ -171,11 +174,11 @@
           name="limit"
           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
         >
-          <option value="5">5</option>
-          <option value="10">10</option>
-          <option value="25">25</option>
-          <option value="50">50</option>
-          <option value="100">100</option>
+          <option [value]="5">5</option>
+          <option [value]="10">10</option>
+          <option [value]="25">25</option>
+          <option [value]="50">50</option>
+          <option [value]="100">100</option>
         </select>
       </div>
     </form>
@@ -184,39 +187,56 @@
   <!-- Active Filters Summary -->
   <div
     *ngIf="hasActiveFilters()"
-    class="border-t border-gray-200 dark:border-gray-700 p-4"
+    class="border-t border-gray-200 dark:border-gray-700 px-6 py-3 bg-gray-50 dark:bg-gray-900/50"
   >
-    <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">
-      Active Filters:
-    </div>
-    <div class="flex flex-wrap gap-2">
-      <span
-        *ngIf="localFilters.status"
-        class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"
-      >
-        Status: {{ localFilters.status }}
+    <div class="flex items-center gap-3">
+      <span class="text-xs font-medium text-gray-600 dark:text-gray-400">
+        Active:
       </span>
-      <span
-        *ngIf="localFilters.level"
-        class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
-      >
-        Level: {{ localFilters.level }}
-      </span>
-      <span
-        *ngIf="
-          localFilters.is_premium !== undefined &&
-          localFilters.is_premium !== null
-        "
-        class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200"
-      >
-        Type: {{ getTypeLabel(localFilters.is_premium) }}
-      </span>
-      <span
-        *ngIf="localFilters.priceRange"
-        class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200"
-      >
-        Price: {{ localFilters.priceRange }}
-      </span>
+      <div class="flex flex-wrap gap-2">
+        <span
+          *ngIf="localFilters.status"
+          class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"
+        >
+          <i class="icon-check-circle mr-1 text-xs"></i>
+          {{ localFilters.status }}
+        </span>
+        <span
+          *ngIf="localFilters.level"
+          class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
+        >
+          <i class="icon-check-circle mr-1 text-xs"></i>
+          {{ localFilters.level }}
+        </span>
+        <span
+          *ngIf="localFilters.is_premium !== undefined && localFilters.is_premium !== null"
+          class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200"
+        >
+          <i class="icon-check-circle mr-1 text-xs"></i>
+          {{ getTypeLabel(localFilters.is_premium) }}
+        </span>
+        <span
+          *ngIf="localFilters.priceRange"
+          class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200"
+        >
+          <i class="icon-check-circle mr-1 text-xs"></i>
+          {{ localFilters.priceRange }}
+        </span>
+        <span
+          *ngIf="localFilters.category_id"
+          class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-pink-100 dark:bg-pink-900 text-pink-800 dark:text-pink-200"
+        >
+          <i class="icon-check-circle mr-1 text-xs"></i>
+          Category
+        </span>
+        <span
+          *ngIf="localFilters.instructor_id"
+          class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200"
+        >
+          <i class="icon-check-circle mr-1 text-xs"></i>
+          Instructor
+        </span>
+      </div>
     </div>
   </div>
 </div>

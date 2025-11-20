@@ -106,77 +106,73 @@
       </nav>
     </div>
 
-    <!-- Search and Filters -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      <!-- Filters Sidebar -->
-      <div class="lg:col-span-3">
-        <app-course-filters
-          [filters]="filters"
-          [showDeletedOptions]="activeTab === 'deleted'"
-          (filtersChange)="onFiltersChange($event)"
-        ></app-course-filters>
-      </div>
-
-      <!-- Main Content -->
-      <div class="lg:col-span-9">
-        <!-- Search Bar -->
-        <div class="mb-6">
-          <div class="relative">
-            <div
-              class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-            >
-              <i class="icon-search text-gray-400 text-lg"></i>
-            </div>
-            <input
-              type="text"
-              [(ngModel)]="searchTerm"
-              (keyup.enter)="onSearch()"
-              (input)="onSearch()"
-              placeholder="Search courses by title, description, instructor..."
-              class="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-            />
-            <button
-              *ngIf="searchTerm"
-              (click)="searchTerm = ''; onSearch()"
-              class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors duration-200"
-            >
-              <i class="icon-x text-lg"></i>
-            </button>
-          </div>
+    <!-- Search Bar -->
+    <div class="mb-6">
+      <div class="relative">
+        <div
+          class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+        >
+          <i class="icon-search text-gray-400 text-lg"></i>
         </div>
-
-        <!-- Bulk Actions Bar -->
-        <app-bulk-actions
-          *ngIf="showBulkActions"
-          [selectedCount]="selectedCourses.length"
-          [showRestoreAction]="activeTab === 'deleted'"
-          (bulkAction)="onBulkAction($event)"
-          (clearSelection)="onCourseSelect([])"
-          class="mb-6"
-        ></app-bulk-actions>
-
-        <!-- Course List -->
-        <app-course-list
-          [courses]="courses"
-          [loading]="loading"
-          [error]="error"
-          [selectedCourseIds]="selectedCourses"
-          [currentPage]="currentPage"
-          [totalPages]="totalPages"
-          [totalItems]="totalItems"
-          [itemsPerPage]="itemsPerPage"
-          [sortBy]="sortBy"
-          [sortOrder]="sortOrder"
-          [showDeletedActions]="activeTab === 'deleted'"
-          (courseToggle)="onCourseToggle($event)"
-          (selectAll)="onSelectAll($event)"
-          (editCourse)="openEditModal($event)"
-          (deleteCourse)="onDeleteCourse($event)"
-          (sortChange)="onSortChange($event)"
-          (pageChange)="onPageChange($event)"
-        ></app-course-list>
+        <input
+          type="text"
+          [(ngModel)]="searchTerm"
+          (keyup.enter)="onSearch()"
+          (input)="onSearch()"
+          placeholder="Search courses by title, description, instructor..."
+          class="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+        />
+        <button
+          *ngIf="searchTerm"
+          (click)="searchTerm = ''; onSearch()"
+          class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors duration-200"
+        >
+          <i class="icon-x text-lg"></i>
+        </button>
       </div>
     </div>
+
+    <!-- Filters Section -->
+    <div class="mb-6">
+      <app-course-filters
+        [filters]="filters"
+        [showDeletedOptions]="activeTab === 'deleted'"
+        (filtersChange)="onFiltersChange($event)"
+      ></app-course-filters>
+    </div>
+
+    <!-- Bulk Actions Bar -->
+    <app-bulk-actions
+      *ngIf="showBulkActions"
+      [selectedCount]="selectedCourses.length"
+      [showRestoreAction]="activeTab === 'deleted'"
+      (bulkAction)="onBulkAction($event)"
+      (clearSelection)="onCourseSelect([])"
+      class="mb-6"
+    ></app-bulk-actions>
+
+    <!-- Course List -->
+    <app-course-list
+      [courses]="courses"
+      [loading]="loading"
+      [error]="error"
+      [selectedCourseIds]="selectedCourses"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      [totalItems]="totalItems"
+      [itemsPerPage]="itemsPerPage"
+      [sortBy]="sortBy"
+      [sortOrder]="sortOrder"
+      [showDeletedActions]="activeTab === 'deleted'"
+      (courseToggle)="onCourseToggle($event)"
+      (selectAll)="onSelectAll($event)"
+      (viewCourse)="onViewCourse($event)"
+      (editCourse)="openEditModal($event)"
+      (restoreCourse)="onRestoreCourse($event)"
+      (deleteCourse)="onDeleteCourse($event)"
+      (sortChange)="onSortChange($event)"
+      (pageChange)="onPageChange($event)"
+    ></app-course-list>
   </div>
 
   <!-- Course Form Modal -->

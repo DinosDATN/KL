@@ -28,8 +28,10 @@ export class CourseListComponent {
     selected: boolean;
   }>();
   @Output() selectAll = new EventEmitter<boolean>();
+  @Output() viewCourse = new EventEmitter<AdminCourse>();
   @Output() editCourse = new EventEmitter<AdminCourse>();
   @Output() deleteCourse = new EventEmitter<number>();
+  @Output() restoreCourse = new EventEmitter<number>();
   @Output() sortChange = new EventEmitter<{
     sortBy: string;
     order: 'asc' | 'desc';
@@ -67,8 +69,16 @@ export class CourseListComponent {
     this.sortChange.emit({ sortBy: field, order: newOrder });
   }
 
+  onView(course: AdminCourse): void {
+    this.viewCourse.emit(course);
+  }
+
   onEdit(course: AdminCourse): void {
     this.editCourse.emit(course);
+  }
+
+  onRestore(courseId: number): void {
+    this.restoreCourse.emit(courseId);
   }
 
   onDelete(courseId: number): void {

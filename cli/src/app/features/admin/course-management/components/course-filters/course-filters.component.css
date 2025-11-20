@@ -1,0 +1,77 @@
+/* Filter Component Styles */
+
+/* Smooth transitions for all interactive elements */
+select {
+  transition: all 0.2s ease-in-out;
+}
+
+select:hover {
+  border-color: rgb(59 130 246 / 0.5);
+}
+
+select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(59 130 246 / 0.1);
+}
+
+/* Custom scrollbar for select dropdowns */
+select::-webkit-scrollbar {
+  width: 8px;
+}
+
+select::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+select::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+select::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Dark mode scrollbar */
+:host-context(.dark) select::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+:host-context(.dark) select::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Animation for active filters */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.inline-flex {
+  animation: slideIn 0.2s ease-out;
+}
+
+/* Responsive grid adjustments */
+@media (max-width: 768px) {
+  form {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  form {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1280px) {
+  form {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}

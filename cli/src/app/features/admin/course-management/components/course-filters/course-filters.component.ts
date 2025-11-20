@@ -15,7 +15,17 @@ export class CourseFiltersComponent implements OnInit {
   @Input() showDeletedOptions = false;
   @Output() filtersChange = new EventEmitter<CourseFilters>();
 
-  localFilters: CourseFilters = {};
+  localFilters: CourseFilters = {
+    page: 1,
+    limit: 10,
+    sortBy: 'created_at',
+    status: '',
+    level: '',
+    is_premium: undefined,
+    priceRange: '',
+    category_id: undefined,
+    instructor_id: undefined,
+  };
 
   statusOptions = [
     { value: '', label: 'All Status' },
@@ -32,9 +42,9 @@ export class CourseFiltersComponent implements OnInit {
   ];
 
   premiumOptions = [
-    { value: '', label: 'All Types' },
-    { value: 'true', label: 'Premium Only' },
-    { value: 'false', label: 'Free Only' },
+    { value: undefined, label: 'All Types' },
+    { value: true, label: 'Premium Only' },
+    { value: false, label: 'Free Only' },
   ];
 
   priceRangeOptions = [
@@ -57,7 +67,19 @@ export class CourseFiltersComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.localFilters = { ...this.filters };
+    // Initialize with default values and merge with input filters
+    this.localFilters = {
+      page: 1,
+      limit: 10,
+      sortBy: 'created_at',
+      status: '',
+      level: '',
+      is_premium: undefined,
+      priceRange: '',
+      category_id: undefined,
+      instructor_id: undefined,
+      ...this.filters
+    };
   }
 
   onFilterChange(): void {
@@ -65,15 +87,23 @@ export class CourseFiltersComponent implements OnInit {
   }
 
   onReset(): void {
+    // Reset all filters to default values
     this.localFilters = {
       page: 1,
       limit: this.localFilters.limit || 10,
+      sortBy: 'created_at',
+      status: '',
+      level: '',
+      is_premium: undefined,
+      priceRange: '',
+      category_id: undefined,
+      instructor_id: undefined,
     };
     this.filtersChange.emit(this.localFilters);
   }
 
   hasActiveFilters(): boolean {
-    const { page, limit, ...otherFilters } = this.localFilters;
+    const { page, limit, sortBy, ...otherFilters } = this.localFilters;
     return Object.values(otherFilters).some(
       (value) => value !== '' && value !== null && value !== undefined
     );

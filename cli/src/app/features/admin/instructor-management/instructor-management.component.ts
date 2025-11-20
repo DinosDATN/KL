@@ -1,7 +1,10 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Router } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
+import { BaseAdminComponent } from '../base-admin.component';
 import { 
   AdminInstructorService, 
   AdminInstructor, 
@@ -23,7 +26,7 @@ import { NotificationService } from '../../../core/services/notification.service
   templateUrl: './instructor-management.component.html',
   styleUrls: ['./instructor-management.component.css']
 })
-export class InstructorManagementComponent implements OnInit, OnDestroy {
+export class InstructorManagementComponent extends BaseAdminComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   
   // Data properties
@@ -82,8 +85,12 @@ export class InstructorManagementComponent implements OnInit, OnDestroy {
     public themeService: ThemeService,
     private instructorService: AdminInstructorService,
     private fb: FormBuilder,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    authService: AuthService,
+    router: Router,
+    @Inject(PLATFORM_ID) platformId: Object
   ) {
+    super(platformId, authService, router);
     this.filterForm = this.fb.group({
       search: [''],
       is_active: [''],
@@ -111,9 +118,14 @@ export class InstructorManagementComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.setupFilterSubscription();
-    this.loadStatistics();
-    this.loadInstructors();
+    // ✅ Only run in browser, not during SSR
+    this.runInBrowser(() => {
+      if (this.checkAdminAccess()) {
+        this.setupFilterSubscription();
+        this.loadStatistics();
+        this.loadInstructors();
+      }
+    });
   }
 
   ngOnDestroy() {
@@ -136,6 +148,11 @@ export class InstructorManagementComponent implements OnInit, OnDestroy {
   }
 
   loadStatistics() {
+    // ✅ Skip during SSR
+    if (!this.isBrowser) {
+      return;
+    }
+
     this.isLoadingStats = true;
     this.instructorService.getStatistics()
       .pipe(takeUntil(this.destroy$))
@@ -154,6 +171,11 @@ export class InstructorManagementComponent implements OnInit, OnDestroy {
   }
 
   loadInstructors() {
+    // ✅ Skip during SSR
+    if (!this.isBrowser) {
+      return;
+    }
+
     this.isLoading = true;
     this.error = null;
     

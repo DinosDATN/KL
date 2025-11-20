@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import {
@@ -15,6 +15,7 @@ import { CourseFormComponent } from './components/course-form/course-form.compon
 import { NotificationService } from '../../../core/services/notification.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Router } from '@angular/router';
+import { BaseAdminComponent } from '../base-admin.component';
 
 @Component({
   selector: 'app-course-management',
@@ -32,7 +33,7 @@ import { Router } from '@angular/router';
   templateUrl: './course-management.component.html',
   styleUrl: './course-management.component.css',
 })
-export class CourseManagementComponent implements OnInit {
+export class CourseManagementComponent extends BaseAdminComponent implements OnInit {
   courses: AdminCourse[] = [];
   stats: CourseStats | null = null;
   selectedCourses: number[] = [];
@@ -55,6 +56,7 @@ export class CourseManagementComponent implements OnInit {
   filters: CourseFilters = {
     page: 1,
     limit: 10,
+    sortBy: 'created_at_desc',
   };
 
   searchTerm = '';
@@ -64,23 +66,20 @@ export class CourseManagementComponent implements OnInit {
   constructor(
     private adminCourseService: AdminCourseService,
     private notificationService: NotificationService,
-    private authService: AuthService,
-    private router: Router
+    authService: AuthService,
+    router: Router,
+    @Inject(PLATFORM_ID) platformId: Object
   ) {
-    // Check if user is admin
-    this.checkAdminAccess();
+    super(platformId, authService, router);
   }
 
   ngOnInit(): void {
-    this.loadInitialData();
-  }
-
-  private checkAdminAccess(): void {
-    const user = this.authService.getCurrentUser();
-    if (!user || user.role !== 'admin') {
-      this.router.navigate(['/']);
-      return;
-    }
+    // ✅ Only run in browser, not during SSR
+    this.runInBrowser(() => {
+      if (this.checkAdminAccess()) {
+        this.loadInitialData();
+      }
+    });
   }
 
   private loadInitialData(): void {
@@ -89,6 +88,11 @@ export class CourseManagementComponent implements OnInit {
   }
 
   loadCourses(): void {
+    // ✅ Skip during SSR
+    if (!this.isBrowser) {
+      return;
+    }
+
     this.loading = true;
     this.error = null;
 
@@ -118,14 +122,33 @@ export class CourseManagementComponent implements OnInit {
   }
 
   loadStats(): void {
+    // ✅ Skip during SSR
+    if (!this.isBrowser) {
+      return;
+    }
+
+    console.log('📊 Loading course statistics...');
     this.adminCourseService.getCourseStatistics().subscribe({
       next: (response) => {
+        console.log('✅ Statistics loaded:', response);
         if (response.success && response.data) {
           this.stats = response.data;
         }
       },
       error: (error) => {
-        console.error('Failed to load statistics:', error);
+        console.error('❌ Failed to load statistics:', {
+          status: error.status,
+          message: error.message,
+          error: error.error
+        });
+        
+        // Show user-friendly error
+        if (error.status === 401) {
+          this.notificationService.error('Session expired', 'Please login again.');
+          this.router.navigate(['/auth/login']);
+        } else {
+          this.notificationService.error('Error', 'Failed to load statistics');
+        }
       },
     });
   }
@@ -186,20 +209,53 @@ export class CourseManagementComponent implements OnInit {
     this.loadCourses();
   }
 
-  onDeleteCourse(courseId: number): void {
-    if (!confirm('Are you sure you want to delete this course?')) {
+  onViewCourse(course: AdminCourse): void {
+    // Navigate to course detail page or open modal
+    this.router.navigate(['/courses', course.id]);
+  }
+
+  onRestoreCourse(courseId: number): void {
+    if (!confirm('Are you sure you want to restore this course?')) {
       return;
     }
 
-    this.adminCourseService.deleteCourse(courseId).subscribe({
+    this.adminCourseService.restoreCourse(courseId).subscribe({
       next: (response) => {
         if (response.success) {
+          this.notificationService.success('Success', 'Course restored successfully');
           this.loadCourses();
           this.loadStats();
         }
       },
       error: (error) => {
-        console.error('Failed to delete course:', error);
+        this.notificationService.error('Error', error.message || 'Failed to restore course');
+      },
+    });
+  }
+
+  onDeleteCourse(courseId: number): void {
+    const message = this.activeTab === 'deleted' 
+      ? 'Are you sure you want to permanently delete this course? This action cannot be undone.'
+      : 'Are you sure you want to delete this course?';
+    
+    if (!confirm(message)) {
+      return;
+    }
+
+    const deleteService = this.activeTab === 'deleted'
+      ? this.adminCourseService.permanentlyDeleteCourse(courseId)
+      : this.adminCourseService.deleteCourse(courseId);
+
+    deleteService.subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.notificationService.success('Success', 'Course deleted successfully');
+          this.loadCourses();
+          this.loadStats();
+        }
+      },
+      error: (error) => {
+        this.notificationService.error('Error', error.message || 'Failed to delete course');
       },
     });
   }
