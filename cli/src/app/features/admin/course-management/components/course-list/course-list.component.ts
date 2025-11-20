@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminCourse } from '../../../../../core/services/admin-course.service';
@@ -10,7 +10,7 @@ import { AdminCourse } from '../../../../../core/services/admin-course.service';
   templateUrl: './course-list.component.html',
   styleUrl: './course-list.component.scss',
 })
-export class CourseListComponent {
+export class CourseListComponent implements OnChanges {
   @Input() courses: AdminCourse[] = [];
   @Input() loading = false;
   @Input() error: string | null = null;
@@ -40,6 +40,10 @@ export class CourseListComponent {
   @Output() editCourse = new EventEmitter<AdminCourse>();
   @Output() deleteCourse = new EventEmitter<number>();
   @Output() restoreCourse = new EventEmitter<number>();
+  @Output() statusChange = new EventEmitter<{
+    courseId: number;
+    status: string;
+  }>();
   @Output() sortChange = new EventEmitter<{
     sortBy: string;
     order: 'asc' | 'desc';
@@ -50,6 +54,7 @@ export class CourseListComponent {
   Math = Math;
 
   selectAllChecked = false;
+  updatingStatus: { [courseId: number]: boolean } = {};
 
   onSelectAll(): void {
     this.selectAllChecked = !this.selectAllChecked;
@@ -120,5 +125,72 @@ export class CourseListComponent {
       colors[status as keyof typeof colors] ||
       'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
     );
+  }
+
+  onStatusChange(courseId: number, event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    const newStatus = select.value;
+    const oldStatus = this.courses.find(c => c.id === courseId)?.status;
+    
+    // Prevent unnecessary updates
+    if (oldStatus === newStatus) {
+      return;
+    }
+    
+    // Set loading state
+    this.updatingStatus[courseId] = true;
+    
+    // Emit event
+    this.statusChange.emit({ courseId, status: newStatus });
+  }
+
+  isUpdatingStatus(courseId: number): boolean {
+    return this.updatingStatus[courseId] || false;
+  }
+
+  getStatusOptions(): Array<{ value: string; label: string }> {
+    return [
+      { value: 'draft', label: 'Draft' },
+      { value: 'published', label: 'Published' },
+      { value: 'archived', label: 'Archived' },
+    ];
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    // Reset updating status when courses change (after successful update)
+    if (changes['courses'] && !changes['courses'].firstChange) {
+      const previousCourses = changes['courses'].previousValue as AdminCourse[] || [];
+      const currentCourses = changes['courses'].currentValue as AdminCourse[] || [];
+      
+      // Clear updating status for all courses that are in updating state
+      // Check if their status has been updated or if they still exist
+      Object.keys(this.updatingStatus).forEach(courseIdStr => {
+        const courseId = parseInt(courseIdStr);
+        const currentCourse = currentCourses.find(c => c.id === courseId);
+        const prevCourse = previousCourses.find(c => c.id === courseId);
+        
+        if (currentCourse) {
+          // Course exists, check if status changed
+          if (!prevCourse || prevCourse.status !== currentCourse.status) {
+            // Status was updated, clear loading state
+            delete this.updatingStatus[courseId];
+          }
+        } else {
+          // Course no longer exists (might have been deleted), clear anyway
+          delete this.updatingStatus[courseId];
+        }
+      });
+    }
+    
+    // Also clear updating status when loading changes from true to false
+    if (changes['loading']) {
+      const wasLoading = changes['loading'].previousValue;
+      const isLoading = changes['loading'].currentValue;
+      
+      // If loading finished, clear all updating statuses
+      if (wasLoading && !isLoading) {
+        this.updatingStatus = {};
+      }
+    }
   }
 }

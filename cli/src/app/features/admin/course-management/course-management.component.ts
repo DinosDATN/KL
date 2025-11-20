@@ -570,6 +570,65 @@ export class CourseManagementComponent extends BaseAdminComponent implements OnI
     this.loadStats();
   }
 
+  onStatusChange(event: { courseId: number; status: string }): void {
+    const { courseId, status } = event;
+    
+    // Get status label for notification
+    const statusLabels: { [key: string]: string } = {
+      draft: 'Bản nháp',
+      published: 'Đã xuất bản',
+      archived: 'Đã lưu trữ',
+    };
+    const statusLabel = statusLabels[status] || status;
+    
+    // Optimistically update UI first
+    const courseIndex = this.courses.findIndex(c => c.id === courseId);
+    if (courseIndex !== -1) {
+      // Create a new array to trigger change detection
+      this.courses = [
+        ...this.courses.slice(0, courseIndex),
+        { ...this.courses[courseIndex], status: status as 'draft' | 'published' | 'archived' },
+        ...this.courses.slice(courseIndex + 1)
+      ];
+    }
+    
+    this.adminCourseService.updateCourseStatus(courseId, status).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.notificationService.success(
+            'Thành công',
+            `Trạng thái khóa học đã được cập nhật thành "${statusLabel}"`
+          );
+          // Update with actual response data - create new array to trigger change detection
+          const updatedCourseIndex = this.courses.findIndex(c => c.id === courseId);
+          if (updatedCourseIndex !== -1) {
+            // Create new array reference to trigger Angular change detection
+            const updatedCourses = [...this.courses];
+            updatedCourses[updatedCourseIndex] = response.data;
+            this.courses = updatedCourses;
+          }
+          this.loadStats();
+        } else {
+          this.notificationService.error(
+            'Lỗi',
+            response.message || 'Không thể cập nhật trạng thái'
+          );
+          // Reload courses to revert UI change
+          this.loadCourses();
+        }
+      },
+      error: (error) => {
+        console.error('Error updating course status:', error);
+        this.notificationService.error(
+          'Lỗi',
+          error.error?.message || 'Không thể cập nhật trạng thái'
+        );
+        // Reload courses to revert UI change
+        this.loadCourses();
+      },
+    });
+  }
+
   onExport(format: 'json' | 'csv'): void {
     this.adminCourseService
       .exportCourses(format, this.activeTab === 'deleted')

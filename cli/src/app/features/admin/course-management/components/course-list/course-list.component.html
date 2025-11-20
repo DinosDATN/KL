@@ -220,12 +220,38 @@
             </div>
           </td>
           <td class="px-6 py-4">
-            <span
-              class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
-              [ngClass]="getStatusColor(course.status)"
-            >
-              {{ course.status | titlecase }}
-            </span>
+            <div class="relative inline-block">
+              <select
+                [value]="course.status"
+                (change)="onStatusChange(course.id, $event)"
+                [disabled]="isUpdatingStatus(course.id)"
+                class="text-xs font-semibold rounded-full px-3 py-1.5 pr-8 border-0 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 appearance-none"
+                [ngClass]="getStatusColor(course.status)"
+                [class.opacity-50]="isUpdatingStatus(course.id)"
+                [class.cursor-wait]="isUpdatingStatus(course.id)"
+                [class.cursor-pointer]="!isUpdatingStatus(course.id)"
+              >
+                <option
+                  *ngFor="let option of getStatusOptions()"
+                  [value]="option.value"
+                  [selected]="course.status === option.value"
+                >
+                  {{ option.label }}
+                </option>
+              </select>
+              <div
+                *ngIf="isUpdatingStatus(course.id)"
+                class="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
+              >
+                <i class="icon-loader animate-spin text-xs"></i>
+              </div>
+              <div
+                *ngIf="!isUpdatingStatus(course.id)"
+                class="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
+              >
+                <i class="icon-chevron-down text-xs opacity-50"></i>
+              </div>
+            </div>
           </td>
           <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
             <div class="flex items-center">
