@@ -1,0 +1,100 @@
+/* User Analytics Component Styles */
+
+/* Smooth transitions for theme switching */
+* {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Chart containers */
+.chart-container {
+  position: relative;
+  height: 256px;
+}
+
+.chart-bar {
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.chart-bar:hover {
+  opacity: 1 !important;
+  transform: scaleY(1.05);
+}
+
+/* Tab navigation */
+.tab-button {
+  transition: all 0.2s ease;
+}
+
+.tab-button:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Loading spinner */
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Stat cards */
+.stat-card {
+  transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.dark .stat-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .chart-container {
+    height: 200px;
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  .chart-bar,
+  .stat-card,
+  .tab-button {
+    transition: none;
+  }
+
+  .loading-spinner {
+    animation: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .chart-bar {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Focus styles for accessibility */
+button:focus,
+.tab-button:focus {
+  outline: 2px solid theme('colors.blue.500');
+  outline-offset: 2px;
+}
+
+/* Dark mode specific adjustments */
+.dark .chart-container {
+  background: rgba(255, 255, 255, 0.02);
+}
+

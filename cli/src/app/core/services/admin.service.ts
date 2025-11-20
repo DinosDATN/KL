@@ -305,6 +305,62 @@ export class AdminService {
     );
   }
 
+  // User Analytics APIs
+  getUserAnalyticsOverview(range: '7d' | '30d' | '90d' | '1y' = '30d'): Observable<any> {
+    const params = new HttpParams().set('range', range);
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/users/analytics/overview`,
+      { params, withCredentials: true }
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  getUserEngagementMetrics(range: '7d' | '30d' | '90d' = '30d'): Observable<any> {
+    const params = new HttpParams().set('range', range);
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/users/analytics/engagement`,
+      { params, withCredentials: true }
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  getUserRetentionAnalysis(cohort: 'weekly' | 'monthly' = 'monthly'): Observable<any> {
+    const params = new HttpParams().set('cohort', cohort);
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/users/analytics/retention`,
+      { params, withCredentials: true }
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  getUserBehaviorInsights(range: '7d' | '30d' | '90d' = '30d'): Observable<any> {
+    const params = new HttpParams().set('range', range);
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/users/analytics/behavior`,
+      { params, withCredentials: true }
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  getTimeBasedAnalytics(range: '7d' | '30d' | '90d' = '30d'): Observable<any> {
+    const params = new HttpParams().set('range', range);
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/users/analytics/time-based`,
+      { params, withCredentials: true }
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
   // Course Management APIs
   getCourses(filters: CourseFilters = {}): Observable<{ courses: AdminCourse[], pagination: PaginationInfo }> {
     let params = new HttpParams();
