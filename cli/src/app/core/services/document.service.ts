@@ -266,6 +266,58 @@ export class DocumentService {
       );
   }
 
+  // Update document module
+  updateDocumentModule(moduleId: number, moduleData: { title?: string; position?: number }): Observable<DocumentModule> {
+    return this.http
+      .put<ApiResponse<DocumentModule>>(
+        `${this.apiUrl}/modules/${moduleId}`,
+        moduleData
+      )
+      .pipe(
+        map((response) => response.data),
+        catchError(this.handleError)
+      );
+  }
+
+  // Update document lesson
+  updateDocumentLesson(lessonId: number, lessonData: { title?: string; content?: string; code_example?: string; position?: number }): Observable<DocumentLesson> {
+    return this.http
+      .put<ApiResponse<DocumentLesson>>(
+        `${this.apiUrl}/lessons/${lessonId}`,
+        lessonData
+      )
+      .pipe(
+        map((response) => response.data),
+        catchError(this.handleError)
+      );
+  }
+
+  // Duplicate document lesson
+  duplicateDocumentLesson(lessonId: number, data?: { title?: string; target_module_id?: number }): Observable<DocumentLesson> {
+    return this.http
+      .post<ApiResponse<DocumentLesson>>(
+        `${this.apiUrl}/lessons/${lessonId}/duplicate`,
+        data || {}
+      )
+      .pipe(
+        map((response) => response.data),
+        catchError(this.handleError)
+      );
+  }
+
+  // Reorder lessons
+  reorderLessons(moduleId: number, lessons: Array<{ id: number; position: number }>): Observable<DocumentLesson[]> {
+    return this.http
+      .post<ApiResponse<DocumentLesson[]>>(
+        `${this.apiUrl}/modules/${moduleId}/lessons/reorder`,
+        { lessons }
+      )
+      .pipe(
+        map((response) => response.data),
+        catchError(this.handleError)
+      );
+  }
+
   // Delete document lesson
   deleteDocumentLesson(lessonId: number): Observable<void> {
     return this.http

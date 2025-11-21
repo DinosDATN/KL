@@ -1,7 +1,11 @@
 <!-- Document Lesson Management Page -->
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+<div
+  class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200"
+>
   <!-- Header -->
-  <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-200">
+  <div
+    class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-200"
+  >
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <div class="flex items-center justify-between">
         <div>
@@ -24,19 +28,31 @@
   </div>
 
   <!-- Loading State -->
-  <div *ngIf="loadingDocument" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+  <div
+    *ngIf="loadingDocument"
+    class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
+  >
     <div class="flex items-center justify-center">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div
+        class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
+      ></div>
     </div>
   </div>
 
   <!-- Error State -->
-  <div *ngIf="error && !loadingDocument" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-    <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+  <div
+    *ngIf="error && !loadingDocument"
+    class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
+  >
+    <div
+      class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4"
+    >
       <div class="flex">
         <i class="icon-alert-circle text-red-400 mr-3"></i>
         <div>
-          <h3 class="text-sm font-medium text-red-800 dark:text-red-200">Error</h3>
+          <h3 class="text-sm font-medium text-red-800 dark:text-red-200">
+            Error
+          </h3>
           <p class="mt-1 text-sm text-red-700 dark:text-red-300">{{ error }}</p>
         </div>
       </div>
@@ -44,14 +60,21 @@
   </div>
 
   <!-- Main Content -->
-  <div *ngIf="!loadingDocument && document" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div
+    *ngIf="!loadingDocument && document"
+    class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+  >
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- Modules Sidebar -->
       <div class="lg:col-span-1">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+        <div
+          class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"
+        >
           <div class="p-4 border-b border-gray-200 dark:border-gray-700">
             <div class="flex items-center justify-between mb-4">
-              <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Modules</h2>
+              <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                Modules
+              </h2>
               <button
                 (click)="showModuleForm = !showModuleForm"
                 class="px-3 py-1 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
@@ -62,7 +85,10 @@
             </div>
 
             <!-- New Module Form -->
-            <div *ngIf="showModuleForm" class="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <div
+              *ngIf="showModuleForm"
+              class="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+            >
               <input
                 type="text"
                 [(ngModel)]="newModuleTitle"
@@ -91,28 +117,78 @@
           <div class="p-4 space-y-2 max-h-[600px] overflow-y-auto">
             <div
               *ngFor="let module of modules"
-              (click)="onModuleSelect(module.id)"
+              (click)="
+                editingModuleId !== module.id && onModuleSelect(module.id)
+              "
               [ngClass]="{
-                'bg-blue-50 dark:bg-blue-900/20 border-blue-500': selectedModuleId === module.id,
+                'bg-blue-50 dark:bg-blue-900/20 border-blue-500':
+                  selectedModuleId === module.id,
                 'border-gray-200': selectedModuleId !== module.id
               }"
-              class="p-3 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border">
-              <div class="flex items-center justify-between">
-                <div class="flex-1">
-                  <h3 class="font-medium text-gray-900 dark:text-white">{{ module.title }}</h3>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">Position: {{ module.position }}</p>
+              class="p-3 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border"
+            >
+              <!-- Edit Module Form -->
+              <div *ngIf="editingModuleId === module.id" class="space-y-2">
+                <input
+                  type="text"
+                  [(ngModel)]="editingModuleTitle"
+                  (keyup.enter)="saveModule()"
+                  (keyup.escape)="cancelEditModule()"
+                  class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  placeholder="Tên module"
+                />
+                <div class="flex gap-2">
+                  <button
+                    (click)="saveModule(); $event.stopPropagation()"
+                    [disabled]="loading"
+                    class="flex-1 px-2 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded disabled:opacity-50"
+                  >
+                    Lưu
+                  </button>
+                  <button
+                    (click)="cancelEditModule(); $event.stopPropagation()"
+                    class="px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded"
+                  >
+                    Hủy
+                  </button>
                 </div>
-                <button
-                  (click)="deleteModule(module.id); $event.stopPropagation()"
-                  class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
-                  title="Xóa module"
-                >
-                  <i class="icon-trash"></i>
-                </button>
+              </div>
+              <!-- Module Display -->
+              <div
+                *ngIf="editingModuleId !== module.id"
+                class="flex items-center justify-between"
+              >
+                <div class="flex-1">
+                  <h3 class="font-medium text-gray-900 dark:text-white">
+                    {{ module.title }}
+                  </h3>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    Position: {{ module.position }}
+                  </p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button
+                    (click)="startEditModule(module); $event.stopPropagation()"
+                    class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                    title="Chỉnh sửa module"
+                  >
+                    <i class="icon-edit"></i>
+                  </button>
+                  <button
+                    (click)="deleteModule(module.id); $event.stopPropagation()"
+                    class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                    title="Xóa module"
+                  >
+                    <i class="icon-trash"></i>
+                  </button>
+                </div>
               </div>
             </div>
 
-            <div *ngIf="modules.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
+            <div
+              *ngIf="modules.length === 0"
+              class="text-center py-8 text-gray-500 dark:text-gray-400"
+            >
               <i class="icon-folder text-4xl mb-2"></i>
               <p>Chưa có module nào</p>
             </div>
@@ -122,12 +198,17 @@
 
       <!-- Lessons Content -->
       <div class="lg:col-span-2">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+        <div
+          class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"
+        >
           <div class="p-4 border-b border-gray-200 dark:border-gray-700">
             <div class="flex items-center justify-between">
               <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
                 Lessons
-                <span *ngIf="selectedModuleId" class="text-sm font-normal text-gray-500 dark:text-gray-400">
+                <span
+                  *ngIf="selectedModuleId"
+                  class="text-sm font-normal text-gray-500 dark:text-gray-400"
+                >
                   ({{ lessons.length }})
                 </span>
               </h2>
@@ -144,11 +225,21 @@
 
           <div class="p-4">
             <!-- New Lesson Form -->
-            <div *ngIf="showLessonForm && selectedModuleId" class="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <h3 class="text-md font-medium text-gray-900 dark:text-white mb-4">Tạo Lesson mới</h3>
+            <div
+              *ngIf="showLessonForm && selectedModuleId"
+              class="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
+            >
+              <h3
+                class="text-md font-medium text-gray-900 dark:text-white mb-4"
+              >
+                Tạo Lesson mới
+              </h3>
               <div class="space-y-3">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title *</label>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >Title *</label
+                  >
                   <input
                     type="text"
                     [(ngModel)]="newLessonTitle"
@@ -157,7 +248,10 @@
                   />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Content</label>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >Content</label
+                  >
                   <textarea
                     [(ngModel)]="newLessonContent"
                     rows="4"
@@ -166,7 +260,10 @@
                   ></textarea>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Code Example</label>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >Code Example</label
+                  >
                   <textarea
                     [(ngModel)]="newLessonCodeExample"
                     rows="3"
@@ -195,31 +292,160 @@
             <!-- Lessons List -->
             <div *ngIf="selectedModuleId" class="space-y-4">
               <div
-                *ngFor="let lesson of lessons"
+                *ngFor="let lesson of lessons; let i = index"
                 class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
-                <div class="flex items-start justify-between">
-                  <div class="flex-1">
-                    <h3 class="font-medium text-gray-900 dark:text-white mb-2">{{ lesson.title }}</h3>
-                    <p *ngIf="lesson.content" class="text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">
-                      {{ lesson.content }}
-                    </p>
-                    <div *ngIf="lesson.code_example" class="mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded text-xs font-mono text-gray-700 dark:text-gray-300">
-                      <pre class="whitespace-pre-wrap">{{ lesson.code_example }}</pre>
-                    </div>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Position: {{ lesson.position }}</p>
+                <!-- Edit Lesson Form -->
+                <div *ngIf="editingLessonId === lesson.id" class="space-y-4">
+                  <div>
+                    <label
+                      class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                      >Title *</label
+                    >
+                    <input
+                      type="text"
+                      [(ngModel)]="editingLessonTitle"
+                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      placeholder="Tên lesson"
+                    />
                   </div>
-                  <button
-                    (click)="deleteLesson(lesson.id)"
-                    class="ml-4 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
-                    title="Xóa lesson"
+                  <div>
+                    <label
+                      class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                      >Content</label
+                    >
+                    <textarea
+                      [(ngModel)]="editingLessonContent"
+                      rows="6"
+                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      placeholder="Nội dung lesson"
+                    ></textarea>
+                  </div>
+                  <div>
+                    <label
+                      class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                      >Code Example</label
+                    >
+                    <textarea
+                      [(ngModel)]="editingLessonCodeExample"
+                      rows="4"
+                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-mono text-sm"
+                      placeholder="Ví dụ code (nếu có)"
+                    ></textarea>
+                  </div>
+                  <div class="flex gap-2">
+                    <button
+                      (click)="saveLesson()"
+                      [disabled]="loading"
+                      class="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50"
+                    >
+                      Lưu
+                    </button>
+                    <button
+                      (click)="cancelEditLesson()"
+                      class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-md"
+                    >
+                      Hủy
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Lesson Display -->
+                <div *ngIf="editingLessonId !== lesson.id">
+                  <div class="flex items-start justify-between mb-2">
+                    <div class="flex-1">
+                      <h3
+                        class="font-medium text-gray-900 dark:text-white mb-1"
+                      >
+                        {{ lesson.title }}
+                      </h3>
+                      <p class="text-xs text-gray-500 dark:text-gray-400">
+                        Position: {{ lesson.position }}
+                      </p>
+                    </div>
+                    <div class="flex items-center gap-2 ml-4">
+                      <button
+                        (click)="moveLessonUp(lesson, i)"
+                        [disabled]="i === 0 || loading"
+                        class="text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 disabled:opacity-50"
+                        title="Di chuyển lên"
+                      >
+                        <i class="icon-arrow-up"></i>
+                      </button>
+                      <button
+                        (click)="moveLessonDown(lesson, i)"
+                        [disabled]="i === lessons.length - 1 || loading"
+                        class="text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 disabled:opacity-50"
+                        title="Di chuyển xuống"
+                      >
+                        <i class="icon-arrow-down"></i>
+                      </button>
+                      <button
+                        (click)="openPreview(lesson)"
+                        class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                        title="Xem trước"
+                      >
+                        <i class="icon-eye"></i>
+                      </button>
+                      <button
+                        (click)="startEditLesson(lesson)"
+                        class="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
+                        title="Chỉnh sửa"
+                      >
+                        <i class="icon-edit"></i>
+                      </button>
+                      <button
+                        (click)="duplicateLesson(lesson.id)"
+                        class="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
+                        title="Nhân đôi"
+                      >
+                        <i class="icon-copy"></i>
+                      </button>
+                      <button
+                        (click)="deleteLesson(lesson.id)"
+                        class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                        title="Xóa"
+                      >
+                        <i class="icon-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Expandable Content -->
+                  <div *ngIf="isLessonExpanded(lesson.id) || !lesson.content">
+                    <div
+                      *ngIf="lesson.content"
+                      class="text-sm text-gray-600 dark:text-gray-400 mb-3 whitespace-pre-wrap"
+                    >
+                      {{ lesson.content }}
+                    </div>
+                    <div
+                      *ngIf="lesson.code_example"
+                      class="mt-2 p-3 bg-gray-100 dark:bg-gray-800 rounded text-xs font-mono text-gray-700 dark:text-gray-300 overflow-x-auto"
+                    >
+                      <pre class="whitespace-pre-wrap">{{
+                        lesson.code_example
+                      }}</pre>
+                    </div>
+                  </div>
+                  <div
+                    *ngIf="lesson.content && !isLessonExpanded(lesson.id)"
+                    class="mt-2"
                   >
-                    <i class="icon-trash"></i>
-                  </button>
+                    <button
+                      (click)="toggleLessonExpansion(lesson.id)"
+                      class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                    >
+                      Xem thêm...
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div *ngIf="lessons.length === 0" class="text-center py-12 text-gray-500 dark:text-gray-400">
+              <div
+                *ngIf="lessons.length === 0"
+                class="text-center py-12 text-gray-500 dark:text-gray-400"
+              >
                 <i class="icon-file-text text-4xl mb-2"></i>
                 <p>Chưa có lesson nào trong module này</p>
                 <button
@@ -231,7 +457,10 @@
               </div>
             </div>
 
-            <div *ngIf="!selectedModuleId" class="text-center py-12 text-gray-500 dark:text-gray-400">
+            <div
+              *ngIf="!selectedModuleId"
+              class="text-center py-12 text-gray-500 dark:text-gray-400"
+            >
               <i class="icon-folder text-4xl mb-2"></i>
               <p>Vui lòng chọn một module để xem lessons</p>
             </div>
@@ -242,3 +471,86 @@
   </div>
 </div>
 
+<!-- Preview Modal -->
+<div
+  *ngIf="previewLessonId"
+  class="fixed inset-0 z-50 overflow-y-auto"
+  aria-labelledby="modal-title"
+  role="dialog"
+  aria-modal="true"
+>
+  <div
+    class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0"
+  >
+    <div
+      class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+      (click)="closePreview()"
+    ></div>
+    <span class="hidden sm:inline-block sm:align-middle sm:h-screen"
+      >&#8203;</span
+    >
+    <div
+      class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full"
+    >
+      <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+        <div class="flex items-center justify-between mb-4">
+          <h3
+            class="text-lg font-medium text-gray-900 dark:text-white"
+            id="modal-title"
+          >
+            Xem trước Lesson
+          </h3>
+          <button
+            (click)="closePreview()"
+            class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+          >
+            <i class="icon-x text-xl"></i>
+          </button>
+        </div>
+        <div *ngIf="previewLesson" class="space-y-4">
+          <div>
+            <h4
+              class="text-xl font-semibold text-gray-900 dark:text-white mb-2"
+            >
+              {{ previewLesson.title }}
+            </h4>
+          </div>
+          <div
+            *ngIf="previewLesson.content"
+            class="prose dark:prose-invert max-w-none"
+          >
+            <div class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+              {{ previewLesson.content }}
+            </div>
+          </div>
+          <div *ngIf="previewLesson.code_example" class="mt-4">
+            <h5
+              class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              Code Example:
+            </h5>
+            <div
+              class="p-4 bg-gray-100 dark:bg-gray-900 rounded-lg overflow-x-auto"
+            >
+              <pre
+                class="text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre-wrap"
+                >{{ previewLesson.code_example }}</pre
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse"
+      >
+        <button
+          type="button"
+          (click)="closePreview()"
+          class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm"
+        >
+          Đóng
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

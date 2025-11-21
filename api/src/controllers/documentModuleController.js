@@ -7,10 +7,19 @@ class DocumentModuleController {
   // Create a new document module
   async createModule(req, res) {
     try {
-      const { document_id } = req.params;
+      // Route uses :id, not :document_id
+      const document_id = req.params.id || req.params.document_id;
       const { title, position } = req.body;
       const userId = req.user.id;
       const userRole = req.user.role;
+
+      // Validate document_id
+      if (!document_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Document ID is required'
+        });
+      }
 
       // Find the document and check permissions
       const document = await Document.findOne({
@@ -91,9 +100,18 @@ class DocumentModuleController {
   // Get all modules for a document
   async getDocumentModules(req, res) {
     try {
-      const { document_id } = req.params;
+      // Route uses :document_id or :id
+      const document_id = req.params.document_id || req.params.id;
       const includeStats = req.query.include_stats === 'true';
       const includeLessons = req.query.include_lessons === 'true';
+
+      // Validate document_id
+      if (!document_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Document ID is required'
+        });
+      }
 
       // Verify document exists
       const document = await Document.findOne({
@@ -368,10 +386,19 @@ class DocumentModuleController {
   // Reorder modules within a document
   async reorderModules(req, res) {
     try {
-      const { document_id } = req.params;
+      // Route uses :document_id or :id
+      const document_id = req.params.document_id || req.params.id;
       const { modules } = req.body;
       const userId = req.user.id;
       const userRole = req.user.role;
+
+      // Validate document_id
+      if (!document_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Document ID is required'
+        });
+      }
 
       if (!modules || !Array.isArray(modules)) {
         return res.status(400).json({
