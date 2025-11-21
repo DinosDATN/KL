@@ -1,79 +1,356 @@
-<div class="p-6">
-  <div class="mb-6">
-    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Course Analytics</h1>
-    <p class="text-gray-600 dark:text-gray-400 mt-2">Analyze course performance and engagement metrics</p>
-  </div>
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+  <!-- Header -->
+  <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        <!-- Title -->
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Course Analytics
+          </h1>
+          <p class="text-gray-600 dark:text-gray-400">
+            Analyze course performance, engagement metrics, and revenue insights
+          </p>
+        </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-      <div class="flex items-center">
-        <div class="flex-shrink-0">
-          <div class="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-            </svg>
-          </div>
-        </div>
-        <div class="ml-4">
-          <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Courses</p>
-          <p class="text-2xl font-semibold text-gray-900 dark:text-white">0</p>
-        </div>
-      </div>
-    </div>
+        <!-- Actions -->
+        <div class="flex flex-wrap items-center gap-3">
+          <!-- Time Filter -->
+          <select
+            [(ngModel)]="timeFilter"
+            (change)="onTimeFilterChange()"
+            class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+          >
+            <option value="7d">Last 7 days</option>
+            <option value="30d">Last 30 days</option>
+            <option value="90d">Last 90 days</option>
+            <option value="1y">Last year</option>
+            <option value="all">All time</option>
+          </select>
 
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-      <div class="flex items-center">
-        <div class="flex-shrink-0">
-          <div class="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-            </svg>
-          </div>
-        </div>
-        <div class="ml-4">
-          <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Enrollments</p>
-          <p class="text-2xl font-semibold text-gray-900 dark:text-white">0</p>
-        </div>
-      </div>
-    </div>
+          <!-- Refresh Button -->
+          <button
+            (click)="refreshData()"
+            [disabled]="loading"
+            class="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Refresh data"
+          >
+            <i class="icon-loader" [class.animate-spin]="loading"></i>
+            Refresh
+          </button>
 
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-      <div class="flex items-center">
-        <div class="flex-shrink-0">
-          <div class="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
-            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
+          <!-- Export Button -->
+          <div class="relative">
+            <button
+              (click)="onExport('json')"
+              class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200"
+            >
+              <i class="icon-file-text mr-2"></i>
+              Export
+            </button>
           </div>
-        </div>
-        <div class="ml-4">
-          <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Revenue</p>
-          <p class="text-2xl font-semibold text-gray-900 dark:text-white">$0</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-      <div class="flex items-center">
-        <div class="flex-shrink-0">
-          <div class="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
-            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-            </svg>
-          </div>
-        </div>
-        <div class="ml-4">
-          <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Completion Rate</p>
-          <p class="text-2xl font-semibold text-gray-900 dark:text-white">0%</p>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
-    <div class="p-6">
-      <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Course Performance Overview</h2>
-      <p class="text-gray-600 dark:text-gray-400">Analytics data will be displayed here...</p>
+  <!-- Loading State -->
+  <div *ngIf="loading" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="text-center">
+      <i class="icon-loader animate-spin text-4xl text-gray-400 mb-4"></i>
+      <p class="text-gray-600 dark:text-gray-400">Loading analytics data...</p>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
+      <i class="icon-alert-circle text-4xl text-red-400 mb-4"></i>
+      <p class="text-red-600 dark:text-red-400 font-medium mb-4">{{ error }}</p>
+      <button
+        (click)="loadAnalytics()"
+        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors duration-200"
+      >
+        Retry
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div *ngIf="!loading && !error" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Metric Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div
+        *ngFor="let card of metricCards"
+        class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-all duration-200 hover:shadow-md"
+      >
+        <div class="flex items-start justify-between">
+          <div class="flex-1">
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+              {{ card.title }}
+            </p>
+            <p class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              {{ card.value }}
+            </p>
+            <p *ngIf="card.subtitle" class="text-xs text-gray-500 dark:text-gray-400">
+              {{ card.subtitle }}
+            </p>
+            <div *ngIf="card.change !== undefined" class="flex items-center mt-2">
+              <span
+                [ngClass]="{
+                  'text-green-600 dark:text-green-400': card.changeType === 'increase',
+                  'text-red-600 dark:text-red-400': card.changeType === 'decrease'
+                }"
+                class="text-sm font-medium"
+              >
+                <i
+                  [class]="card.changeType === 'increase' ? 'icon-trending-up' : 'icon-trending-down'"
+                  class="mr-1"
+                ></i>
+                {{ Math.abs(card.change) }}%
+              </span>
+              <span class="text-xs text-gray-500 dark:text-gray-400 ml-2">vs last period</span>
+            </div>
+          </div>
+          <div
+            [ngClass]="{
+              'bg-blue-100 dark:bg-blue-900/20': card.color === 'blue',
+              'bg-green-100 dark:bg-green-900/20': card.color === 'green',
+              'bg-yellow-100 dark:bg-yellow-900/20': card.color === 'yellow',
+              'bg-purple-100 dark:bg-purple-900/20': card.color === 'purple',
+              'bg-gray-100 dark:bg-gray-700': card.color === 'gray'
+            }"
+            class="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
+          >
+            <i
+              [class]="card.icon"
+              [ngClass]="{
+                'text-blue-600 dark:text-blue-400': card.color === 'blue',
+                'text-green-600 dark:text-green-400': card.color === 'green',
+                'text-yellow-600 dark:text-yellow-400': card.color === 'yellow',
+                'text-purple-600 dark:text-purple-400': card.color === 'purple',
+                'text-gray-600 dark:text-gray-400': card.color === 'gray'
+              }"
+              class="text-xl"
+            ></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <!-- Courses by Status Chart -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+          Courses by Status
+        </h2>
+        <div class="space-y-3">
+          <div
+            *ngFor="let item of coursesByStatusData"
+            class="flex items-center justify-between"
+          >
+            <div class="flex items-center gap-3 flex-1">
+              <div class="w-3 h-3 rounded-full"
+                   [ngClass]="{
+                     'bg-green-500': item.label === 'Published',
+                     'bg-yellow-500': item.label === 'Draft',
+                     'bg-purple-500': item.label === 'Archived',
+                     'bg-red-500': item.label === 'Deleted'
+                   }"
+              ></div>
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ item.label }}
+              </span>
+            </div>
+            <div class="flex items-center gap-4 flex-1">
+              <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div
+                  class="h-2 rounded-full transition-all duration-500"
+                  [ngClass]="{
+                    'bg-green-500': item.label === 'Published',
+                    'bg-yellow-500': item.label === 'Draft',
+                    'bg-purple-500': item.label === 'Archived',
+                    'bg-red-500': item.label === 'Deleted'
+                  }"
+                  [style.width.%]="getBarHeight(item.value, getMaxValue(coursesByStatusData))"
+                ></div>
+              </div>
+              <span class="text-sm font-semibold text-gray-900 dark:text-white w-16 text-right">
+                {{ item.value }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Courses by Level Chart -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+          Courses by Level
+        </h2>
+        <div class="space-y-3">
+          <div
+            *ngFor="let item of coursesByLevelData"
+            class="flex items-center justify-between"
+          >
+            <div class="flex items-center gap-3 flex-1">
+              <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ item.label }}
+              </span>
+            </div>
+            <div class="flex items-center gap-4 flex-1">
+              <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div
+                  class="h-2 rounded-full bg-blue-500 transition-all duration-500"
+                  [style.width.%]="getBarHeight(item.value, getMaxValue(coursesByLevelData))"
+                ></div>
+              </div>
+              <span class="text-sm font-semibold text-gray-900 dark:text-white w-16 text-right">
+                {{ item.value }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Revenue and Enrollment Trends -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <!-- Revenue Trend -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+          Revenue Trend
+        </h2>
+        <div class="flex items-end justify-between gap-2 h-48">
+          <div
+            *ngFor="let item of revenueData"
+            class="flex-1 flex flex-col items-center"
+          >
+            <div class="w-full flex items-end justify-center mb-2" style="height: 180px;">
+              <div
+                class="w-full bg-blue-500 rounded-t transition-all duration-500 hover:bg-blue-600"
+                [style.height.%]="getBarHeight(item.value, getMaxValue(revenueData))"
+                [title]="formatCurrency(item.value)"
+              ></div>
+            </div>
+            <span class="text-xs text-gray-600 dark:text-gray-400 mt-2">
+              {{ item.label }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Enrollment Trend -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+          Enrollment Trend
+        </h2>
+        <div class="flex items-end justify-between gap-2 h-48">
+          <div
+            *ngFor="let item of enrollmentTrendData"
+            class="flex-1 flex flex-col items-center"
+          >
+            <div class="w-full flex items-end justify-center mb-2" style="height: 180px;">
+              <div
+                class="w-full bg-green-500 rounded-t transition-all duration-500 hover:bg-green-600"
+                [style.height.%]="getBarHeight(item.value, getMaxValue(enrollmentTrendData))"
+                [title]="item.value + ' enrollments'"
+              ></div>
+            </div>
+            <span class="text-xs text-gray-600 dark:text-gray-400 mt-2">
+              {{ item.label }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Courses and Categories -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Top Courses -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+          Top Performing Courses
+        </h2>
+        <div class="space-y-4">
+          <div
+            *ngFor="let course of topCourses; let i = index"
+            class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+          >
+            <div class="flex items-center gap-4 flex-1">
+              <div
+                class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm"
+                [ngClass]="{
+                  'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400': i === 0,
+                  'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300': i === 1,
+                  'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400': i === 2
+                }"
+              >
+                {{ i + 1 }}
+              </div>
+              <div class="flex-1">
+                <p class="font-medium text-gray-900 dark:text-white">
+                  {{ course.title }}
+                </p>
+                <div class="flex items-center gap-4 mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  <span>
+                    <i class="icon-users mr-1"></i>
+                    {{ formatNumber(course.students) }}
+                  </span>
+                  <span>
+                    <i class="icon-star mr-1"></i>
+                    {{ course.rating }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="text-right">
+              <p class="text-sm font-semibold text-gray-900 dark:text-white">
+                {{ formatCurrency(course.revenue) }}
+              </p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Revenue</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Categories -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+          Top Categories
+        </h2>
+        <div class="space-y-4">
+          <div
+            *ngFor="let category of topCategories"
+            class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+          >
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-semibold text-gray-900 dark:text-white">
+                {{ category.category }}
+              </h3>
+              <span class="text-sm text-gray-500 dark:text-gray-400">
+                {{ category.courses }} courses
+              </span>
+            </div>
+            <div class="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p class="text-gray-500 dark:text-gray-400 mb-1">Students</p>
+                <p class="font-semibold text-gray-900 dark:text-white">
+                  {{ formatNumber(category.students) }}
+                </p>
+              </div>
+              <div>
+                <p class="text-gray-500 dark:text-gray-400 mb-1">Revenue</p>
+                <p class="font-semibold text-gray-900 dark:text-white">
+                  {{ formatCurrency(category.revenue) }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>

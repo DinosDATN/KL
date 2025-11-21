@@ -65,6 +65,9 @@
 .icon-trending-up::before {
   content: "📈";
 }
+.icon-trending-down::before {
+  content: "📉";
+}
 .icon-facebook::before {
   content: "f";
 }
