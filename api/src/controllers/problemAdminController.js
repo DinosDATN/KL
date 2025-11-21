@@ -668,6 +668,27 @@ class ProblemAdminController {
     }
   }
 
+  // Get all problem categories (Admin only)
+  async getAllProblemCategories(req, res) {
+    try {
+      const categories = await ProblemCategory.findAll({
+        order: [['name', 'ASC']]
+      });
+
+      res.status(200).json({
+        success: true,
+        data: categories
+      });
+    } catch (error) {
+      console.error('Error in getAllProblemCategories:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch problem categories',
+        error: error.message
+      });
+    }
+  }
+
   // Create problem category (Admin only)
   async createProblemCategory(req, res) {
     try {
@@ -797,6 +818,27 @@ class ProblemAdminController {
       res.status(500).json({
         success: false,
         message: 'Failed to delete category',
+        error: error.message
+      });
+    }
+  }
+
+  // Get all tags (Admin only)
+  async getAllTags(req, res) {
+    try {
+      const tags = await Tag.findAll({
+        order: [['name', 'ASC']]
+      });
+
+      res.status(200).json({
+        success: true,
+        data: tags
+      });
+    } catch (error) {
+      console.error('Error in getAllTags:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch tags',
         error: error.message
       });
     }

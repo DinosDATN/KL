@@ -1,6 +1,491 @@
-<div class="p-6">
-  <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Problem Management</h1>
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-    <p class="text-gray-600 dark:text-gray-400">Problem management functionality coming soon...</p>
+<!-- Admin Problem Management Page -->
+<div
+  class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200"
+>
+  <!-- Header -->
+  <div
+    class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-200"
+  >
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div
+        class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6"
+      >
+        <!-- Title -->
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Problem Management
+          </h1>
+          <p class="text-gray-600 dark:text-gray-400">
+            Manage problems, track statistics, and perform bulk operations
+          </p>
+        </div>
+
+        <!-- Top Actions -->
+        <div class="flex flex-wrap items-center gap-3">
+          <!-- Create Problem Button -->
+          <button
+            (click)="openCreateModal()"
+            class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200"
+          >
+            <i class="icon-plus mr-2"></i>
+            Create Problem
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6" *ngIf="stats">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <!-- Total Problems -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">
+              Total Problems
+            </p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white mt-2">
+              {{ stats.totalProblems }}
+            </p>
+          </div>
+          <div class="p-3 bg-blue-100 dark:bg-blue-900 rounded-full">
+            <i class="icon-file-text text-blue-600 dark:text-blue-400 text-xl"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Published Problems -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">
+              Published
+            </p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white mt-2">
+              {{ stats.publishedProblems }}
+            </p>
+          </div>
+          <div class="p-3 bg-green-100 dark:bg-green-900 rounded-full">
+            <i class="icon-check-circle text-green-600 dark:text-green-400 text-xl"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Total Submissions -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">
+              Total Submissions
+            </p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white mt-2">
+              {{ formatNumber(stats.totalSubmissions) }}
+            </p>
+          </div>
+          <div class="p-3 bg-purple-100 dark:bg-purple-900 rounded-full">
+            <i class="icon-upload text-purple-600 dark:text-purple-400 text-xl"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Average Acceptance -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">
+              Avg Acceptance
+            </p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white mt-2">
+              {{ stats.averageAcceptance }}%
+            </p>
+          </div>
+          <div class="p-3 bg-yellow-100 dark:bg-yellow-900 rounded-full">
+            <i class="icon-trending-up text-yellow-600 dark:text-yellow-400 text-xl"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+    <!-- Tabs -->
+    <div class="mb-6">
+      <nav class="flex space-x-8" aria-label="Tabs">
+        <button
+          (click)="onTabChange('all')"
+          [ngClass]="{
+            'border-blue-500 text-blue-600 dark:text-blue-400':
+              activeTab === 'all',
+            'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600':
+              activeTab !== 'all'
+          }"
+          class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200"
+        >
+          All Problems
+          <span
+            *ngIf="stats"
+            class="ml-2 px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded-full"
+          >
+            {{ stats.publishedProblems }}
+          </span>
+        </button>
+
+        <button
+          (click)="onTabChange('deleted')"
+          [ngClass]="{
+            'border-red-500 text-red-600 dark:text-red-400':
+              activeTab === 'deleted',
+            'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600':
+              activeTab !== 'deleted'
+          }"
+          class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200"
+        >
+          Deleted Problems
+          <span
+            *ngIf="stats"
+            class="ml-2 px-2 py-1 text-xs bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-full"
+          >
+            {{ stats.deletedProblems }}
+          </span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="mb-6">
+      <div class="relative">
+        <div
+          class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+        >
+          <i class="icon-search text-gray-400 text-lg"></i>
+        </div>
+        <input
+          type="text"
+          [(ngModel)]="searchTerm"
+          (keyup.enter)="onSearch()"
+          (input)="onSearch()"
+          placeholder="Search problems by title, description..."
+          class="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+        />
+        <button
+          *ngIf="searchTerm"
+          (click)="searchTerm = ''; onSearch()"
+          class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors duration-200"
+        >
+          <i class="icon-x text-lg"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="mb-6">
+      <app-problem-filters
+        [filters]="filters"
+        [showDeletedOptions]="activeTab === 'deleted'"
+        (filtersChange)="onFiltersChange($event)"
+      ></app-problem-filters>
+    </div>
+
+    <!-- Bulk Actions Bar -->
+    <div
+      *ngIf="showBulkActions"
+      class="mb-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 flex items-center justify-between"
+    >
+      <div class="flex items-center gap-4">
+        <span class="text-sm font-medium text-blue-900 dark:text-blue-200">
+          {{ selectedProblems.length }} problem(s) selected
+        </span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button
+          *ngIf="activeTab === 'deleted'"
+          (click)="onBulkRestore()"
+          class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors duration-200"
+        >
+          Restore Selected
+        </button>
+        <button
+          (click)="onBulkDelete()"
+          class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors duration-200"
+        >
+          {{ activeTab === 'deleted' ? 'Permanently Delete' : 'Delete' }} Selected
+        </button>
+        <button
+          (click)="selectedProblems = []; showBulkActions = false"
+          class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-200"
+        >
+          Clear Selection
+        </button>
+      </div>
+    </div>
+
+    <!-- Problems Table -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+      <!-- Loading State -->
+      <div *ngIf="loading && problems.length === 0" class="p-12 text-center">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <p class="mt-4 text-gray-600 dark:text-gray-400">Loading problems...</p>
+      </div>
+
+      <!-- Error State -->
+      <div *ngIf="error && !loading" class="p-12 text-center">
+        <p class="text-red-600 dark:text-red-400">{{ error }}</p>
+      </div>
+
+      <!-- Problems List -->
+      <div *ngIf="!loading && !error && problems.length > 0" class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead class="bg-gray-50 dark:bg-gray-700">
+            <tr>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <input
+                  type="checkbox"
+                  [checked]="selectedProblems.length === problems.length && problems.length > 0"
+                  (change)="onSelectAll($any($event.target).checked)"
+                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <button
+                  (click)="onSort('title')"
+                  class="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
+                >
+                  Title
+                  <i *ngIf="sortBy === 'title'" class="icon-arrow-{{ sortOrder === 'asc' ? 'up' : 'down' }}"></i>
+                </button>
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Difficulty
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <button
+                  (click)="onSort('acceptance')"
+                  class="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
+                >
+                  Acceptance
+                  <i *ngIf="sortBy === 'acceptance'" class="icon-arrow-{{ sortOrder === 'asc' ? 'up' : 'down' }}"></i>
+                </button>
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Submissions
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Category
+              </th>
+              <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            <tr
+              *ngFor="let problem of problems"
+              class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150"
+            >
+              <td class="px-6 py-4 whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  [checked]="selectedProblems.includes(problem.id)"
+                  (change)="onSelectProblem(problem.id, $event)"
+                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex items-center">
+                  <div>
+                    <div class="text-sm font-medium text-gray-900 dark:text-white">
+                      {{ problem.title }}
+                    </div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">
+                      ID: {{ problem.id }}
+                    </div>
+                  </div>
+                  <div class="ml-2 flex gap-1">
+                    <span
+                      *ngIf="problem.is_premium"
+                      class="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 rounded"
+                    >
+                      Premium
+                    </span>
+                    <span
+                      *ngIf="problem.is_popular"
+                      class="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 rounded"
+                    >
+                      Popular
+                    </span>
+                    <span
+                      *ngIf="problem.is_new"
+                      class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded"
+                    >
+                      New
+                    </span>
+                  </div>
+                </div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <span
+                  class="px-2 py-1 text-xs font-medium rounded-full {{ getDifficultyColor(problem.difficulty) }}"
+                >
+                  {{ problem.difficulty }}
+                </span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                {{ problem.acceptance }}%
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                {{ formatNumber(problem.total_submissions) }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                {{ problem.Category?.name || 'N/A' }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <div class="flex items-center justify-end gap-2">
+                  <button
+                    (click)="onViewProblem(problem)"
+                    class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                    title="View"
+                  >
+                    <i class="icon-eye"></i>
+                  </button>
+                  <button
+                    (click)="openEditModal(problem)"
+                    class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+                    title="Edit"
+                  >
+                    <i class="icon-edit"></i>
+                  </button>
+                  <button
+                    *ngIf="activeTab === 'deleted'"
+                    (click)="restoreProblem(problem.id)"
+                    class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
+                    title="Restore"
+                  >
+                    <i class="icon-rotate-ccw"></i>
+                  </button>
+                  <button
+                    (click)="activeTab === 'deleted' ? permanentlyDeleteProblem(problem.id) : deleteProblem(problem.id)"
+                    class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                    [title]="activeTab === 'deleted' ? 'Permanently Delete' : 'Delete'"
+                  >
+                    <i class="icon-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="!loading && !error && problems.length === 0" class="p-12 text-center">
+        <i class="icon-file-text text-gray-400 text-4xl mb-4"></i>
+        <p class="text-gray-600 dark:text-gray-400">No problems found</p>
+      </div>
+
+      <!-- Pagination -->
+      <div
+        *ngIf="!loading && !error && problems.length > 0 && totalPages > 1"
+        class="bg-gray-50 dark:bg-gray-700 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-600 sm:px-6"
+      >
+        <div class="flex-1 flex justify-between sm:hidden">
+          <button
+            (click)="onPageChange(currentPage - 1)"
+            [disabled]="currentPage === 1"
+            class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Previous
+          </button>
+          <button
+            (click)="onPageChange(currentPage + 1)"
+            [disabled]="currentPage === totalPages"
+            class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
+        </div>
+        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+          <div>
+            <p class="text-sm text-gray-700 dark:text-gray-300">
+              Showing
+              <span class="font-medium">{{ (currentPage - 1) * itemsPerPage + 1 }}</span>
+              to
+              <span class="font-medium">{{ Math.min(currentPage * itemsPerPage, totalItems) }}</span>
+              of
+              <span class="font-medium">{{ totalItems }}</span>
+              results
+            </p>
+          </div>
+          <div>
+            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+              <button
+                (click)="onPageChange(currentPage - 1)"
+                [disabled]="currentPage === 1"
+                class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <i class="icon-chevron-left"></i>
+              </button>
+              <ng-container *ngFor="let page of getPageNumbers(); let i = index">
+                <span
+                  class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+                  [ngClass]="{
+                    'z-10 bg-blue-50 dark:bg-blue-900 border-blue-500 text-blue-600 dark:text-blue-400': page === currentPage
+                  }"
+                  (click)="onPageChange(page)"
+                >
+                  {{ page }}
+                </span>
+              </ng-container>
+              <button
+                (click)="onPageChange(currentPage + 1)"
+                [disabled]="currentPage === totalPages"
+                class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <i class="icon-chevron-right"></i>
+              </button>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Problem Form Modal (Placeholder - to be implemented) -->
+  <div
+    *ngIf="isFormModalOpen"
+    class="fixed inset-0 z-50 overflow-y-auto"
+    aria-labelledby="modal-title"
+    role="dialog"
+    aria-modal="true"
+  >
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+      <div
+        class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+        (click)="closeFormModal()"
+      ></div>
+      <div
+        class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full"
+      >
+        <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">
+              {{ editingProblem ? 'Edit Problem' : 'Create Problem' }}
+            </h3>
+            <button
+              (click)="closeFormModal()"
+              class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+            >
+              <i class="icon-x text-xl"></i>
+            </button>
+          </div>
+          <div class="text-center py-8">
+            <p class="text-gray-600 dark:text-gray-400">
+              Problem form will be implemented here
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>

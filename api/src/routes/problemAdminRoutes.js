@@ -23,7 +23,39 @@ router.get('/', problemAdminController.getAllProblemsForAdmin);
 // GET /api/admin/problems/statistics - Get problem statistics
 router.get('/statistics', requireRole(['admin']), problemAdminController.getProblemStatistics);
 
-// GET /api/admin/problems/:id - Get single problem by ID (admin view)
+/**
+ * Problem Category Management (Admin Only) - Must be before /:id route
+ */
+
+// GET /api/admin/problems/categories - Get all problem categories
+router.get('/categories', requireRole(['admin']), problemAdminController.getAllProblemCategories);
+
+// POST /api/admin/problems/categories - Create a new problem category
+router.post('/categories', requireRole(['admin']), problemAdminController.createProblemCategory);
+
+// PUT /api/admin/problems/categories/:id - Update a problem category
+router.put('/categories/:id', requireRole(['admin']), problemAdminController.updateProblemCategory);
+
+// DELETE /api/admin/problems/categories/:id - Delete a problem category
+router.delete('/categories/:id', requireRole(['admin']), problemAdminController.deleteProblemCategory);
+
+/**
+ * Tag Management (Admin Only) - Must be before /:id route
+ */
+
+// GET /api/admin/problems/tags - Get all tags
+router.get('/tags', requireRole(['admin']), problemAdminController.getAllTags);
+
+// POST /api/admin/problems/tags - Create a new tag
+router.post('/tags', requireRole(['admin']), problemAdminController.createTag);
+
+// PUT /api/admin/problems/tags/:id - Update a tag
+router.put('/tags/:id', requireRole(['admin']), problemAdminController.updateTag);
+
+// DELETE /api/admin/problems/tags/:id - Delete a tag
+router.delete('/tags/:id', requireRole(['admin']), problemAdminController.deleteTag);
+
+// GET /api/admin/problems/:id - Get single problem by ID (admin view) - Must be last
 router.get('/:id', problemAdminController.getProblemByIdForAdmin);
 
 // PUT /api/admin/problems/:id - Update a problem
@@ -49,30 +81,5 @@ router.delete('/:id/permanent', requireRole(['admin']), problemAdminController.p
 // PATCH /api/admin/problems/bulk/update - Bulk update problems
 router.patch('/bulk/update', requireRole(['admin']), problemAdminController.bulkUpdateProblems);
 
-/**
- * Problem Category Management (Admin Only)
- */
-
-// POST /api/admin/problems/categories - Create a new problem category
-router.post('/categories', requireRole(['admin']), problemAdminController.createProblemCategory);
-
-// PUT /api/admin/problems/categories/:id - Update a problem category
-router.put('/categories/:id', requireRole(['admin']), problemAdminController.updateProblemCategory);
-
-// DELETE /api/admin/problems/categories/:id - Delete a problem category
-router.delete('/categories/:id', requireRole(['admin']), problemAdminController.deleteProblemCategory);
-
-/**
- * Tag Management (Admin Only)
- */
-
-// POST /api/admin/problems/tags - Create a new tag
-router.post('/tags', requireRole(['admin']), problemAdminController.createTag);
-
-// PUT /api/admin/problems/tags/:id - Update a tag
-router.put('/tags/:id', requireRole(['admin']), problemAdminController.updateTag);
-
-// DELETE /api/admin/problems/tags/:id - Delete a tag
-router.delete('/tags/:id', requireRole(['admin']), problemAdminController.deleteTag);
 
 module.exports = router;

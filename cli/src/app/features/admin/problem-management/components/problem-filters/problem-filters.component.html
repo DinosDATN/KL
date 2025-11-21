@@ -1,0 +1,257 @@
+<!-- Filters Panel -->
+<div
+  class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 transition-colors duration-200"
+  style="min-height: 100px;"
+>
+  <div class="p-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+        <i class="icon-filter mr-2"></i>
+        Filters
+      </h3>
+      <button
+        *ngIf="hasActiveFilters()"
+        (click)="onReset()"
+        class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors flex items-center"
+      >
+        <i class="icon-x mr-1"></i>
+        Clear All
+      </button>
+    </div>
+
+    <!-- Filters Form -->
+    <form class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <!-- Difficulty Filter -->
+      <div>
+        <label
+          class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
+        >
+          Difficulty
+        </label>
+        <select
+          [(ngModel)]="localFilters.difficulty"
+          (ngModelChange)="onFilterChange()"
+          name="difficulty"
+          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+        >
+          <option
+            *ngFor="let option of difficultyOptions"
+            [ngValue]="option.value"
+          >
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Category Filter -->
+      <div>
+        <label
+          class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
+        >
+          Category
+        </label>
+        <select
+          [(ngModel)]="localFilters.category_id"
+          (ngModelChange)="onFilterChange()"
+          name="category_id"
+          [disabled]="loadingCategories"
+          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <option [ngValue]="undefined">All Categories</option>
+          <option
+            *ngFor="let category of categories"
+            [ngValue]="category.id"
+          >
+            {{ category.name }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Premium Filter -->
+      <div>
+        <label
+          class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
+        >
+          Premium Status
+        </label>
+        <select
+          [(ngModel)]="localFilters.is_premium"
+          (ngModelChange)="onFilterChange()"
+          name="is_premium"
+          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+        >
+          <option
+            *ngFor="let option of premiumOptions"
+            [ngValue]="option.value"
+          >
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Popular Filter -->
+      <div>
+        <label
+          class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
+        >
+          Popular
+        </label>
+        <select
+          [(ngModel)]="localFilters.is_popular"
+          (ngModelChange)="onFilterChange()"
+          name="is_popular"
+          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+        >
+          <option
+            *ngFor="let option of booleanOptions"
+            [ngValue]="option.value"
+          >
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+
+      <!-- New Filter -->
+      <div>
+        <label
+          class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
+        >
+          New
+        </label>
+        <select
+          [(ngModel)]="localFilters.is_new"
+          (ngModelChange)="onFilterChange()"
+          name="is_new"
+          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+        >
+          <option
+            *ngFor="let option of booleanOptions"
+            [ngValue]="option.value"
+          >
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Acceptance Range Filter -->
+      <div>
+        <label
+          class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
+        >
+          Acceptance Range
+        </label>
+        <select
+          [(ngModel)]="localFilters.acceptance_range"
+          (ngModelChange)="onFilterChange()"
+          name="acceptance_range"
+          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+        >
+          <option
+            *ngFor="let option of acceptanceRangeOptions"
+            [ngValue]="option.value"
+          >
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Sort By -->
+      <div>
+        <label
+          class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
+        >
+          Sort By
+        </label>
+        <select
+          [(ngModel)]="localFilters.sortBy"
+          (ngModelChange)="onFilterChange()"
+          name="sortBy"
+          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+        >
+          <option *ngFor="let option of sortOptions" [value]="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Items Per Page -->
+      <div>
+        <label
+          class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
+        >
+          Per Page
+        </label>
+        <select
+          [(ngModel)]="localFilters.limit"
+          (ngModelChange)="onFilterChange()"
+          name="limit"
+          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+        >
+          <option [value]="5">5</option>
+          <option [value]="10">10</option>
+          <option [value]="25">25</option>
+          <option [value]="50">50</option>
+          <option [value]="100">100</option>
+        </select>
+      </div>
+    </form>
+  </div>
+
+  <!-- Active Filters Summary -->
+  <div
+    *ngIf="hasActiveFilters()"
+    class="border-t border-gray-200 dark:border-gray-700 px-6 py-3 bg-gray-50 dark:bg-gray-900/50"
+  >
+    <div class="flex items-center gap-3">
+      <span class="text-xs font-medium text-gray-600 dark:text-gray-400">
+        Active:
+      </span>
+      <div class="flex flex-wrap gap-2">
+        <span
+          *ngIf="localFilters.difficulty"
+          class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
+        >
+          <i class="icon-check-circle mr-1 text-xs"></i>
+          {{ getDifficultyLabel(localFilters.difficulty) }}
+        </span>
+        <span
+          *ngIf="localFilters.category_id"
+          class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200"
+        >
+          <i class="icon-check-circle mr-1 text-xs"></i>
+          {{ getCategoryName(localFilters.category_id) }}
+        </span>
+        <span
+          *ngIf="localFilters.is_premium !== undefined"
+          class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200"
+        >
+          <i class="icon-check-circle mr-1 text-xs"></i>
+          {{ localFilters.is_premium ? 'Premium' : 'Free' }}
+        </span>
+        <span
+          *ngIf="localFilters.is_popular === true"
+          class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-pink-100 dark:bg-pink-900 text-pink-800 dark:text-pink-200"
+        >
+          <i class="icon-check-circle mr-1 text-xs"></i>
+          Popular
+        </span>
+        <span
+          *ngIf="localFilters.is_new === true"
+          class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"
+        >
+          <i class="icon-check-circle mr-1 text-xs"></i>
+          New
+        </span>
+        <span
+          *ngIf="localFilters.acceptance_range"
+          class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200"
+        >
+          <i class="icon-check-circle mr-1 text-xs"></i>
+          Acceptance: {{ localFilters.acceptance_range }}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+

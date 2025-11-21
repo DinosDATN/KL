@@ -163,6 +163,107 @@ export interface DocumentStats {
   averageRating: string;
 }
 
+// Problem Management Interfaces
+export interface AdminProblem {
+  id: number;
+  title: string;
+  description?: string | null;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  estimated_time?: string | null;
+  likes: number;
+  dislikes: number;
+  acceptance: number;
+  total_submissions: number;
+  solved_count: number;
+  is_new: boolean;
+  is_popular: boolean;
+  is_premium: boolean;
+  category_id: number;
+  created_by: number;
+  is_deleted: boolean;
+  created_at: string;
+  updated_at?: string | null;
+  Creator?: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  Category?: {
+    id: number;
+    name: string;
+  };
+  Examples?: Array<{
+    id: number;
+    input: string;
+    output: string;
+    explanation?: string;
+  }>;
+  Constraints?: Array<{
+    id: number;
+    constraint: string;
+  }>;
+  StarterCodes?: Array<{
+    id: number;
+    language: string;
+    code: string;
+  }>;
+  TestCases?: Array<{
+    id: number;
+    input: string;
+    output: string;
+    is_hidden: boolean;
+  }>;
+  Tags?: Array<{
+    id: number;
+    name: string;
+  }>;
+}
+
+export interface ProblemFilters {
+  page?: number;
+  limit?: number;
+  category_id?: number;
+  created_by?: number;
+  difficulty?: 'Easy' | 'Medium' | 'Hard';
+  is_deleted?: boolean;
+  is_premium?: boolean;
+  is_popular?: boolean;
+  is_new?: boolean;
+  search?: string;
+  sortBy?: string;
+  acceptance_range?: 'low' | 'medium' | 'high';
+}
+
+export interface ProblemStats {
+  totalProblems: number;
+  publishedProblems: number;
+  deletedProblems: number;
+  problemsByDifficulty: Array<{ difficulty: string; count: number }>;
+  problemsByCategory: Array<{ category: { id: number; name: string }; count: number }>;
+  totalSubmissions: number;
+  totalSolved: number;
+  averageAcceptance: string;
+  popularProblems: number;
+  newProblems: number;
+  premiumProblems: number;
+  growthRate: number;
+}
+
+export interface ProblemCategory {
+  id: number;
+  name: string;
+  description?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface ProblemTag {
+  id: number;
+  name: string;
+  created_at: string;
+  updated_at?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -639,18 +740,36 @@ export class AdminService {
   }
 
   // Problem Management APIs
-  getProblems(filters: any = {}): Observable<any> {
+  getProblems(filters: ProblemFilters = {}): Observable<{ problems: AdminProblem[], pagination: PaginationInfo }> {
     let params = new HttpParams();
     
     Object.keys(filters).forEach(key => {
-      const value = filters[key];
+      const value = filters[key as keyof ProblemFilters];
       if (value !== undefined && value !== null) {
         params = params.set(key, value.toString());
       }
     });
 
-    return this.http.get<ApiResponse<any>>(
+    return this.http.get<ApiResponse<AdminProblem[]>>(
       `${this.apiUrl}/problems`, 
+      { params, withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => ({
+        problems: response.data || [],
+        pagination: response.pagination!
+      })),
+      catchError(this.handleError)
+    );
+  }
+
+  getProblemById(id: number, includeDeleted: boolean = false): Observable<AdminProblem> {
+    let params = new HttpParams();
+    if (includeDeleted) {
+      params = params.set('include_deleted', 'true');
+    }
+
+    return this.http.get<ApiResponse<AdminProblem>>(
+      `${this.apiUrl}/problems/${id}`,
       { params, withCredentials: true } // ✅ Send HttpOnly cookie
     ).pipe(
       map(response => response.data!),
@@ -658,12 +777,193 @@ export class AdminService {
     );
   }
 
-  getProblemStatistics(): Observable<any> {
-    return this.http.get<ApiResponse<any>>(
+  createProblem(problemData: {
+    title: string;
+    description?: string;
+    difficulty: 'Easy' | 'Medium' | 'Hard';
+    estimated_time?: string;
+    category_id: number;
+    is_premium?: boolean;
+    created_by?: number;
+    examples?: Array<{ input: string; output: string; explanation?: string }>;
+    constraints?: Array<{ constraint: string }>;
+    starter_codes?: Array<{ language: string; code: string }>;
+    test_cases?: Array<{ input: string; output: string; is_hidden?: boolean }>;
+    tags?: number[];
+  }): Observable<AdminProblem> {
+    return this.http.post<ApiResponse<AdminProblem>>(
+      `${this.apiUrl}/problems`,
+      problemData,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  updateProblem(problemId: number, problemData: Partial<AdminProblem>): Observable<AdminProblem> {
+    return this.http.put<ApiResponse<AdminProblem>>(
+      `${this.apiUrl}/problems/${problemId}`,
+      problemData,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  deleteProblem(problemId: number): Observable<void> {
+    return this.http.delete<ApiResponse<void>>(
+      `${this.apiUrl}/problems/${problemId}`,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(() => void 0),
+      catchError(this.handleError)
+    );
+  }
+
+  restoreProblem(problemId: number): Observable<AdminProblem> {
+    return this.http.post<ApiResponse<AdminProblem>>(
+      `${this.apiUrl}/problems/${problemId}/restore`,
+      {},
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  permanentlyDeleteProblem(problemId: number): Observable<void> {
+    return this.http.delete<ApiResponse<void>>(
+      `${this.apiUrl}/problems/${problemId}/permanent`,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(() => void 0),
+      catchError(this.handleError)
+    );
+  }
+
+  getProblemStatistics(): Observable<ProblemStats> {
+    return this.http.get<ApiResponse<ProblemStats>>(
       `${this.apiUrl}/problems/statistics`,
       { withCredentials: true } // ✅ Send HttpOnly cookie
     ).pipe(
       map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  getDeletedProblems(filters: { page?: number; limit?: number } = {}): Observable<{ problems: AdminProblem[], pagination: PaginationInfo }> {
+    let params = new HttpParams();
+    if (filters.page) params = params.set('page', filters.page.toString());
+    if (filters.limit) params = params.set('limit', filters.limit.toString());
+    params = params.set('is_deleted', 'true');
+
+    return this.http.get<ApiResponse<AdminProblem[]>>(
+      `${this.apiUrl}/problems`,
+      { params, withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => ({
+        problems: response.data || [],
+        pagination: response.pagination!
+      })),
+      catchError(this.handleError)
+    );
+  }
+
+  bulkUpdateProblems(problemIds: number[], updateData: Partial<AdminProblem>): Observable<{ updatedCount: number; totalRequested: number }> {
+    return this.http.patch<ApiResponse<{ updatedCount: number; totalRequested: number }>>(
+      `${this.apiUrl}/problems/bulk/update`,
+      { problem_ids: problemIds, update_data: updateData },
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  // Problem Category Management APIs
+  getProblemCategories(): Observable<ProblemCategory[]> {
+    return this.http.get<ApiResponse<ProblemCategory[]>>(
+      `${this.apiUrl}/problems/categories`,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data || []),
+      catchError(this.handleError)
+    );
+  }
+
+  createProblemCategory(categoryData: { name: string; description?: string }): Observable<ProblemCategory> {
+    return this.http.post<ApiResponse<ProblemCategory>>(
+      `${this.apiUrl}/problems/categories`,
+      categoryData,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  updateProblemCategory(categoryId: number, categoryData: { name: string; description?: string }): Observable<ProblemCategory> {
+    return this.http.put<ApiResponse<ProblemCategory>>(
+      `${this.apiUrl}/problems/categories/${categoryId}`,
+      categoryData,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  deleteProblemCategory(categoryId: number): Observable<void> {
+    return this.http.delete<ApiResponse<void>>(
+      `${this.apiUrl}/problems/categories/${categoryId}`,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(() => void 0),
+      catchError(this.handleError)
+    );
+  }
+
+  // Problem Tag Management APIs
+  getProblemTags(): Observable<ProblemTag[]> {
+    return this.http.get<ApiResponse<ProblemTag[]>>(
+      `${this.apiUrl}/problems/tags`,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data || []),
+      catchError(this.handleError)
+    );
+  }
+
+  createProblemTag(tagData: { name: string }): Observable<ProblemTag> {
+    return this.http.post<ApiResponse<ProblemTag>>(
+      `${this.apiUrl}/problems/tags`,
+      tagData,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  updateProblemTag(tagId: number, tagData: { name: string }): Observable<ProblemTag> {
+    return this.http.put<ApiResponse<ProblemTag>>(
+      `${this.apiUrl}/problems/tags/${tagId}`,
+      tagData,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  deleteProblemTag(tagId: number): Observable<void> {
+    return this.http.delete<ApiResponse<void>>(
+      `${this.apiUrl}/problems/tags/${tagId}`,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(() => void 0),
       catchError(this.handleError)
     );
   }

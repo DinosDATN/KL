@@ -291,6 +291,17 @@ ProblemCategory.hasMany(Problem, {
   as: "Problems",
 });
 
+// Problem belongs to User (creator)
+Problem.belongsTo(User, {
+  foreignKey: "created_by",
+  as: "Creator",
+});
+
+User.hasMany(Problem, {
+  foreignKey: "created_by",
+  as: "CreatedProblems",
+});
+
 Problem.belongsToMany(Tag, {
   through: ProblemTag,
   foreignKey: "problem_id",
