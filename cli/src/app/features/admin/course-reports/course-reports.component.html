@@ -1,24 +1,419 @@
-<div class="p-6">
-  <div class="mb-6">
-    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Course Reports</h1>
-    <p class="text-gray-600 dark:text-gray-400 mt-2">Generate and view detailed course performance reports</p>
+<!-- Course Reports Page -->
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+  <!-- Header -->
+  <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        <!-- Title -->
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Course Reports
+          </h1>
+          <p class="text-gray-600 dark:text-gray-400">
+            Generate comprehensive reports about course performance, enrollments, revenue, and reviews.
+          </p>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
-    <div class="p-6">
-      <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Course Reports Dashboard</h2>
-      <p class="text-gray-600 dark:text-gray-400">Course reporting functionality will be implemented here...</p>
-      
-      <div class="mt-6 flex flex-wrap gap-4">
-        <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors">
-          Generate Report
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="flex items-center justify-center h-64">
+      <div class="flex flex-col items-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <p class="mt-4 text-gray-600 dark:text-gray-400">Loading report types...</p>
+      </div>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error" class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+      <div class="flex">
+        <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+        </svg>
+        <div class="ml-3">
+          <h3 class="text-sm font-medium text-red-800 dark:text-red-200">Error</h3>
+          <p class="mt-1 text-sm text-red-700 dark:text-red-300">{{ error }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Report Configuration -->
+    <div *ngIf="!isLoading" class="space-y-6">
+      <!-- Report Type Selection -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Report Type</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <ng-container *ngFor="let type of reportTypes">
+            <button
+              type="button"
+              (click)="onReportTypeChange(type.id)"
+              [ngClass]="{
+                'bg-blue-50': selectedReportType === type.id && !themeService.isDarkMode(),
+                'border-blue-500': selectedReportType === type.id,
+                'text-blue-600': selectedReportType === type.id && !themeService.isDarkMode(),
+                'bg-blue-900': selectedReportType === type.id && themeService.isDarkMode(),
+                'bg-opacity-20': selectedReportType === type.id && themeService.isDarkMode(),
+                'text-blue-400': selectedReportType === type.id && themeService.isDarkMode()
+              }"
+              class="p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg text-left hover:border-blue-300 dark:hover:border-blue-600 transition-colors">
+              <h3 class="font-semibold text-gray-900 dark:text-white mb-1">{{ type.name }}</h3>
+              <p class="text-sm text-gray-600 dark:text-gray-400">{{ type.description }}</p>
+            </button>
+          </ng-container>
+        </div>
+      </div>
+
+      <!-- Date Range Selection -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Date Range</h2>
+        
+        <!-- Preset Ranges -->
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Preset Range</label>
+          <div class="flex flex-wrap gap-2">
+            <button
+              (click)="onRangeChange('7d')"
+              [class.bg-blue-600]="selectedRange === '7d' && !customDateRange"
+              [class.text-white]="selectedRange === '7d' && !customDateRange"
+              [class.bg-gray-100]="selectedRange !== '7d' || customDateRange"
+              [class.dark:bg-gray-700]="selectedRange !== '7d' || customDateRange"
+              [class.text-gray-900]="selectedRange !== '7d' || customDateRange"
+              [class.dark:text-gray-300]="selectedRange !== '7d' || customDateRange"
+              class="px-4 py-2 rounded-lg font-medium transition-colors">
+              7 Days
+            </button>
+            <button
+              (click)="onRangeChange('30d')"
+              [class.bg-blue-600]="selectedRange === '30d' && !customDateRange"
+              [class.text-white]="selectedRange === '30d' && !customDateRange"
+              [class.bg-gray-100]="selectedRange !== '30d' || customDateRange"
+              [class.dark:bg-gray-700]="selectedRange !== '30d' || customDateRange"
+              [class.text-gray-900]="selectedRange !== '30d' || customDateRange"
+              [class.dark:text-gray-300]="selectedRange !== '30d' || customDateRange"
+              class="px-4 py-2 rounded-lg font-medium transition-colors">
+              30 Days
+            </button>
+            <button
+              (click)="onRangeChange('90d')"
+              [class.bg-blue-600]="selectedRange === '90d' && !customDateRange"
+              [class.text-white]="selectedRange === '90d' && !customDateRange"
+              [class.bg-gray-100]="selectedRange !== '90d' || customDateRange"
+              [class.dark:bg-gray-700]="selectedRange !== '90d' || customDateRange"
+              [class.text-gray-900]="selectedRange !== '90d' || customDateRange"
+              [class.dark:text-gray-300]="selectedRange !== '90d' || customDateRange"
+              class="px-4 py-2 rounded-lg font-medium transition-colors">
+              90 Days
+            </button>
+            <button
+              (click)="onRangeChange('1y')"
+              [class.bg-blue-600]="selectedRange === '1y' && !customDateRange"
+              [class.text-white]="selectedRange === '1y' && !customDateRange"
+              [class.bg-gray-100]="selectedRange !== '1y' || customDateRange"
+              [class.dark:bg-gray-700]="selectedRange !== '1y' || customDateRange"
+              [class.text-gray-900]="selectedRange !== '1y' || customDateRange"
+              [class.dark:text-gray-300]="selectedRange !== '1y' || customDateRange"
+              class="px-4 py-2 rounded-lg font-medium transition-colors">
+              1 Year
+            </button>
+          </div>
+        </div>
+
+        <!-- Custom Date Range -->
+        <div class="flex items-center gap-4 mb-4">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              [checked]="customDateRange"
+              (change)="onCustomDateRangeToggle()"
+              class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700">
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Custom Date Range</span>
+          </label>
+        </div>
+
+        <div *ngIf="customDateRange" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Start Date</label>
+            <input
+              type="date"
+              [(ngModel)]="startDate"
+              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">End Date</label>
+            <input
+              type="date"
+              [(ngModel)]="endDate"
+              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+        </div>
+      </div>
+
+      <!-- Export Format Selection -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Export Format</h2>
+        <div class="flex gap-4">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              name="format"
+              value="json"
+              [checked]="selectedFormat === 'json'"
+              (change)="onFormatChange('json')"
+              class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700">
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">JSON</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              name="format"
+              value="csv"
+              [checked]="selectedFormat === 'csv'"
+              (change)="onFormatChange('csv')"
+              class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700">
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">CSV</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex gap-4">
+        <button
+          (click)="generateReport()"
+          [disabled]="isGenerating"
+          class="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+          <svg [class.animate-spin]="isGenerating" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          {{ isGenerating ? 'Generating...' : 'Generate Report' }}
         </button>
-        <button class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md transition-colors">
-          Export Data
+        <button
+          (click)="exportReport()"
+          [disabled]="!reportData || isGenerating"
+          class="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+          </svg>
+          Export {{ selectedFormat.toUpperCase() }}
         </button>
-        <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors">
-          Schedule Report
-        </button>
+      </div>
+
+      <!-- Report Results -->
+      <div *ngIf="reportData && selectedFormat === 'json'" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Report Results</h2>
+          <span class="text-sm text-gray-600 dark:text-gray-400">
+            Generated: {{ formatDate(reportData.metadata?.generatedAt) }}
+          </span>
+        </div>
+
+        <!-- Summary Section -->
+        <div *ngIf="reportData.summary" class="mb-6">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Summary</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div
+              *ngFor="let item of Object.entries(reportData.summary)"
+              class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+              <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">{{ item[0] | titlecase }}</p>
+              <p class="text-2xl font-bold text-gray-900 dark:text-white">
+                <span *ngIf="item[0].includes('Revenue') || item[0].includes('revenue')">{{ formatCurrency(item[1]) }}</span>
+                <span *ngIf="!item[0].includes('Revenue') && !item[0].includes('revenue')">{{ formatNumber(item[1]) }}</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Comprehensive Report Sections -->
+        <div *ngIf="selectedReportType === 'comprehensive' && reportData.performance" class="space-y-6">
+          <!-- Performance Section -->
+          <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Performance</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Courses</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ formatNumber(reportData.performance.summary?.totalCourses || 0) }}</p>
+              </div>
+              <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Published Courses</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ formatNumber(reportData.performance.summary?.publishedCourses || 0) }}</p>
+              </div>
+              <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Draft Courses</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ formatNumber(reportData.performance.summary?.draftCourses || 0) }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Enrollment Section -->
+          <div *ngIf="reportData.enrollment" class="border-t border-gray-200 dark:border-gray-700 pt-6">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Enrollment</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Enrollments</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ formatNumber(reportData.enrollment.summary?.totalEnrollments || 0) }}</p>
+              </div>
+              <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Completed Enrollments</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ formatNumber(reportData.enrollment.summary?.completedEnrollments || 0) }}</p>
+              </div>
+              <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Completion Rate</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ reportData.enrollment.summary?.completionRate || 0 }}%</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Revenue Section -->
+          <div *ngIf="reportData.revenue" class="border-t border-gray-200 dark:border-gray-700 pt-6">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Revenue</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Revenue</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ formatCurrency(reportData.revenue.summary?.totalRevenue || 0) }}</p>
+              </div>
+              <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Paid Enrollments</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ formatNumber(reportData.revenue.summary?.totalPaidEnrollments || 0) }}</p>
+              </div>
+              <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Avg Revenue/Enrollment</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ formatCurrency(reportData.revenue.summary?.averageRevenuePerEnrollment || 0) }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reviews Section -->
+          <div *ngIf="reportData.reviews" class="border-t border-gray-200 dark:border-gray-700 pt-6">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Reviews</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Reviews</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ formatNumber(reportData.reviews.summary?.totalReviews || 0) }}</p>
+              </div>
+              <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Verified Reviews</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ formatNumber(reportData.reviews.summary?.verifiedReviews || 0) }}</p>
+              </div>
+              <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Average Rating</p>
+                <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ reportData.reviews.summary?.averageRating || 0 }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Performance Report -->
+        <div *ngIf="selectedReportType === 'performance' && reportData.topCoursesByEnrollments" class="border-t border-gray-200 dark:border-gray-700 pt-6">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Top Courses by Enrollments</h3>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Course</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Rating</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Students</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Enrollments</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Completion Rate</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tr *ngFor="let course of reportData.topCoursesByEnrollments.slice(0, 10)">
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{{ course.courseTitle }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ course.rating }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatNumber(course.students) }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatNumber(course.enrollmentCount) }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ course.completionRate }}%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Enrollment Report -->
+        <div *ngIf="selectedReportType === 'enrollment' && reportData.byCourse" class="border-t border-gray-200 dark:border-gray-700 pt-6">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Enrollments by Course</h3>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Course</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Level</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Enrollments</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Completed</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Completion Rate</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tr *ngFor="let course of reportData.byCourse.slice(0, 10)">
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{{ course.courseTitle }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ course.level }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatNumber(course.enrollmentCount) }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatNumber(course.completedCount) }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ course.completionRate }}%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Revenue Report -->
+        <div *ngIf="selectedReportType === 'revenue' && reportData.revenueByCourse" class="border-t border-gray-200 dark:border-gray-700 pt-6">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Revenue by Course</h3>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Course</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Price</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Enrollments</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Revenue</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tr *ngFor="let course of reportData.revenueByCourse.slice(0, 10)">
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{{ course.courseTitle }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatCurrency(course.price) }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatNumber(course.enrollmentCount) }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">{{ formatCurrency(course.revenue) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Reviews Report -->
+        <div *ngIf="selectedReportType === 'reviews' && reportData.byCourse" class="border-t border-gray-200 dark:border-gray-700 pt-6">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Reviews by Course</h3>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Course</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Course Rating</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Students</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Reviews</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Avg Rating</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tr *ngFor="let course of reportData.byCourse.slice(0, 10)">
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{{ course.courseTitle }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ course.courseRating }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatNumber(course.students) }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatNumber(course.reviewCount) }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ course.averageRating }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Other Report Types -->
+        <div *ngIf="selectedReportType !== 'comprehensive' && selectedReportType !== 'performance' && selectedReportType !== 'enrollment' && selectedReportType !== 'revenue' && selectedReportType !== 'reviews'">
+          <pre class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 overflow-x-auto text-sm text-gray-900 dark:text-gray-100">{{ reportData | json }}</pre>
+        </div>
       </div>
     </div>
   </div>

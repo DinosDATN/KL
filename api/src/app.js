@@ -36,6 +36,7 @@ const contestAdminRoutes = require("./routes/contestAdminRoutes");
 const userAdminRoutes = require("./routes/userAdminRoutes");
 const userAnalyticsRoutes = require("./routes/userAnalyticsRoutes");
 const userReportRoutes = require("./routes/userReportRoutes");
+const courseReportRoutes = require("./routes/courseReportRoutes");
 const dashboardAdminRoutes = require("./routes/dashboardAdminRoutes");
 const instructorAdminRoutes = require("./routes/instructorAdminRoutes");
 const adminLessonRoutes = require("./routes/adminLessonRoutes");
@@ -133,6 +134,7 @@ app.use(apiPrefix + "/admin/contests", contestAdminRoutes);
 app.use(apiPrefix + "/admin/users", userAdminRoutes);
 app.use(apiPrefix + "/admin/users/analytics", userAnalyticsRoutes);
 app.use(apiPrefix + "/admin/users/reports", userReportRoutes);
+app.use(apiPrefix + "/admin/courses/reports", courseReportRoutes);
 app.use(apiPrefix + "/admin/instructors", instructorAdminRoutes);
 app.use(apiPrefix + "/admin/lessons", adminLessonRoutes);
 
