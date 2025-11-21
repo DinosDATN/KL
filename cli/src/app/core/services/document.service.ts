@@ -216,6 +216,68 @@ export class DocumentService {
       );
   }
 
+  // Get module lessons
+  getModuleLessons(moduleId: number): Observable<DocumentLesson[]> {
+    return this.http
+      .get<ApiResponse<DocumentLesson[]>>(
+        `${this.apiUrl}/modules/${moduleId}/lessons`
+      )
+      .pipe(
+        map((response) => response.data),
+        catchError(this.handleError)
+      );
+  }
+
+  // Create document module
+  createDocumentModule(documentId: number, moduleData: { title: string; position: number }): Observable<DocumentModule> {
+    return this.http
+      .post<ApiResponse<DocumentModule>>(
+        `${this.apiUrl}/${documentId}/modules`,
+        moduleData
+      )
+      .pipe(
+        map((response) => response.data),
+        catchError(this.handleError)
+      );
+  }
+
+  // Create document lesson
+  createDocumentLesson(moduleId: number, lessonData: { title: string; content?: string; code_example?: string; position: number }): Observable<DocumentLesson> {
+    return this.http
+      .post<ApiResponse<DocumentLesson>>(
+        `${this.apiUrl}/modules/${moduleId}/lessons`,
+        lessonData
+      )
+      .pipe(
+        map((response) => response.data),
+        catchError(this.handleError)
+      );
+  }
+
+  // Delete document module
+  deleteDocumentModule(moduleId: number): Observable<void> {
+    return this.http
+      .delete<ApiResponse<void>>(
+        `${this.apiUrl}/modules/${moduleId}`
+      )
+      .pipe(
+        map(() => void 0),
+        catchError(this.handleError)
+      );
+  }
+
+  // Delete document lesson
+  deleteDocumentLesson(lessonId: number): Observable<void> {
+    return this.http
+      .delete<ApiResponse<void>>(
+        `${this.apiUrl}/lessons/${lessonId}`
+      )
+      .pipe(
+        map(() => void 0),
+        catchError(this.handleError)
+      );
+  }
+
   // Get document lessons
   getDocumentLessons(documentId: number): Observable<DocumentLesson[]> {
     return this.http

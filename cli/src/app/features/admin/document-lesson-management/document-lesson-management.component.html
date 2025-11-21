@@ -1,0 +1,244 @@
+<!-- Document Lesson Management Page -->
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+  <!-- Header -->
+  <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <button
+            (click)="goBack()"
+            class="mb-4 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-2"
+          >
+            <i class="icon-arrow-left"></i>
+            <span>Quay lại</span>
+          </button>
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Quản lý nội dung tài liệu
+          </h1>
+          <p *ngIf="document" class="text-gray-600 dark:text-gray-400">
+            {{ document.title }}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loadingDocument" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="flex items-center justify-center">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loadingDocument" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+      <div class="flex">
+        <i class="icon-alert-circle text-red-400 mr-3"></i>
+        <div>
+          <h3 class="text-sm font-medium text-red-800 dark:text-red-200">Error</h3>
+          <p class="mt-1 text-sm text-red-700 dark:text-red-300">{{ error }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div *ngIf="!loadingDocument && document" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Modules Sidebar -->
+      <div class="lg:col-span-1">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Modules</h2>
+              <button
+                (click)="showModuleForm = !showModuleForm"
+                class="px-3 py-1 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+              >
+                <i class="icon-plus mr-1"></i>
+                Thêm
+              </button>
+            </div>
+
+            <!-- New Module Form -->
+            <div *ngIf="showModuleForm" class="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <input
+                type="text"
+                [(ngModel)]="newModuleTitle"
+                placeholder="Tên module"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white mb-2"
+              />
+              <div class="flex gap-2">
+                <button
+                  (click)="createModule()"
+                  [disabled]="loading"
+                  class="flex-1 px-3 py-1 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50"
+                >
+                  Tạo
+                </button>
+                <button
+                  (click)="showModuleForm = false"
+                  class="px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-md"
+                >
+                  Hủy
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modules List -->
+          <div class="p-4 space-y-2 max-h-[600px] overflow-y-auto">
+            <div
+              *ngFor="let module of modules"
+              (click)="onModuleSelect(module.id)"
+              [ngClass]="{
+                'bg-blue-50 dark:bg-blue-900/20 border-blue-500': selectedModuleId === module.id,
+                'border-gray-200': selectedModuleId !== module.id
+              }"
+              class="p-3 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border">
+              <div class="flex items-center justify-between">
+                <div class="flex-1">
+                  <h3 class="font-medium text-gray-900 dark:text-white">{{ module.title }}</h3>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Position: {{ module.position }}</p>
+                </div>
+                <button
+                  (click)="deleteModule(module.id); $event.stopPropagation()"
+                  class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                  title="Xóa module"
+                >
+                  <i class="icon-trash"></i>
+                </button>
+              </div>
+            </div>
+
+            <div *ngIf="modules.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
+              <i class="icon-folder text-4xl mb-2"></i>
+              <p>Chưa có module nào</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lessons Content -->
+      <div class="lg:col-span-2">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between">
+              <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                Lessons
+                <span *ngIf="selectedModuleId" class="text-sm font-normal text-gray-500 dark:text-gray-400">
+                  ({{ lessons.length }})
+                </span>
+              </h2>
+              <button
+                *ngIf="selectedModuleId"
+                (click)="showLessonForm = !showLessonForm"
+                class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
+              >
+                <i class="icon-plus mr-1"></i>
+                Thêm Lesson
+              </button>
+            </div>
+          </div>
+
+          <div class="p-4">
+            <!-- New Lesson Form -->
+            <div *ngIf="showLessonForm && selectedModuleId" class="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <h3 class="text-md font-medium text-gray-900 dark:text-white mb-4">Tạo Lesson mới</h3>
+              <div class="space-y-3">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title *</label>
+                  <input
+                    type="text"
+                    [(ngModel)]="newLessonTitle"
+                    placeholder="Tên lesson"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Content</label>
+                  <textarea
+                    [(ngModel)]="newLessonContent"
+                    rows="4"
+                    placeholder="Nội dung lesson"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  ></textarea>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Code Example</label>
+                  <textarea
+                    [(ngModel)]="newLessonCodeExample"
+                    rows="3"
+                    placeholder="Ví dụ code (nếu có)"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-mono"
+                  ></textarea>
+                </div>
+                <div class="flex gap-2">
+                  <button
+                    (click)="createLesson()"
+                    [disabled]="loading"
+                    class="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50"
+                  >
+                    Tạo Lesson
+                  </button>
+                  <button
+                    (click)="showLessonForm = false"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-md"
+                  >
+                    Hủy
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Lessons List -->
+            <div *ngIf="selectedModuleId" class="space-y-4">
+              <div
+                *ngFor="let lesson of lessons"
+                class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                <div class="flex items-start justify-between">
+                  <div class="flex-1">
+                    <h3 class="font-medium text-gray-900 dark:text-white mb-2">{{ lesson.title }}</h3>
+                    <p *ngIf="lesson.content" class="text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">
+                      {{ lesson.content }}
+                    </p>
+                    <div *ngIf="lesson.code_example" class="mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded text-xs font-mono text-gray-700 dark:text-gray-300">
+                      <pre class="whitespace-pre-wrap">{{ lesson.code_example }}</pre>
+                    </div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Position: {{ lesson.position }}</p>
+                  </div>
+                  <button
+                    (click)="deleteLesson(lesson.id)"
+                    class="ml-4 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                    title="Xóa lesson"
+                  >
+                    <i class="icon-trash"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div *ngIf="lessons.length === 0" class="text-center py-12 text-gray-500 dark:text-gray-400">
+                <i class="icon-file-text text-4xl mb-2"></i>
+                <p>Chưa có lesson nào trong module này</p>
+                <button
+                  (click)="showLessonForm = true"
+                  class="mt-4 px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                >
+                  Tạo lesson đầu tiên
+                </button>
+              </div>
+            </div>
+
+            <div *ngIf="!selectedModuleId" class="text-center py-12 text-gray-500 dark:text-gray-400">
+              <i class="icon-folder text-4xl mb-2"></i>
+              <p>Vui lòng chọn một module để xem lessons</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

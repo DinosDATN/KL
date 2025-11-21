@@ -308,9 +308,52 @@ export class DocumentManagementComponent extends BaseAdminComponent implements O
 
   onEditContent(document: AdminDocument): void {
     // Navigate to document lesson management page with document filter
+    // Use the same pattern as course management - navigate with array
+    console.log('onEditContent - Document ID:', document.id);
+    
+    // First try: Use router.navigate with array (same as course management)
     this.router.navigate(['/admin/document-lessons'], {
       queryParams: { documentId: document.id }
-    });
+    }).then(
+      (success) => {
+        if (success) {
+          console.log('✅ Navigation successful using router.navigate');
+        } else {
+          console.warn('⚠️ Navigation returned false, trying navigateByUrl...');
+          this.tryNavigateByUrl(document.id);
+        }
+      },
+      (error) => {
+        console.error('❌ router.navigate failed:', error);
+        this.tryNavigateByUrl(document.id);
+      }
+    );
+  }
+
+  private tryNavigateByUrl(documentId: number): void {
+    const url = `/admin/document-lessons?documentId=${documentId}`;
+    console.log('Trying navigateByUrl to:', url);
+    
+    this.router.navigateByUrl(url).then(
+      (success) => {
+        if (success) {
+          console.log('✅ navigateByUrl successful');
+        } else {
+          console.error('❌ navigateByUrl returned false');
+          this.notificationService.error(
+            'Navigation Error',
+            'Cannot navigate to document lessons page. Please check the browser console for details.'
+          );
+        }
+      },
+      (error) => {
+        console.error('❌ navigateByUrl failed:', error);
+        this.notificationService.error(
+          'Navigation Error',
+          `Failed to navigate: ${error.message || 'Unknown error'}. Please check if the route '/admin/document-lessons' exists.`
+        );
+      }
+    );
   }
 
   onSortChange(event: { sortBy: string; order: 'asc' | 'desc' }): void {

@@ -112,6 +112,13 @@ export const routes: Routes = [
           ).then((m) => m.LessonManagementComponent),
       },
       {
+        path: 'document-lessons',
+        loadComponent: () =>
+          import(
+            './features/admin/document-lesson-management/document-lesson-management.component'
+          ).then((m) => m.DocumentLessonManagementComponent),
+      },
+      {
         path: 'documents',
         loadComponent: () =>
           import(
