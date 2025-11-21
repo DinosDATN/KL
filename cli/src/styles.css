@@ -3,6 +3,14 @@
 @tailwind utilities;
 
 /* Icon placeholders using emoji/symbols */
+[class^="icon-"]::before,
+[class*=" icon-"]::before {
+  display: inline-block;
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1;
+}
+
 .icon-home::before {
   content: "🏠";
 }
@@ -119,6 +127,39 @@
 }
 .icon-folder::before {
   content: "📁";
+}
+.icon-edit::before {
+  content: "✏️";
+}
+.icon-trash::before {
+  content: "🗑️";
+}
+.icon-plus::before {
+  content: "+";
+}
+.icon-loader::before {
+  content: "⟳";
+}
+.icon-alert-circle::before {
+  content: "⚠️";
+}
+.icon-chevron-up::before {
+  content: "▲";
+}
+.icon-video::before {
+  content: "🎥";
+}
+.icon-file::before {
+  content: "📄";
+}
+.icon-rotate-ccw::before {
+  content: "↶";
+}
+.icon-archive::before {
+  content: "📦";
+}
+.icon-check::before {
+  content: "✓";
 }
 
 /* SSR Hydration Fix - Prevent FOUC and flicker */
