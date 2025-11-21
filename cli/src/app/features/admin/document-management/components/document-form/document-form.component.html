@@ -1,0 +1,338 @@
+<!-- Document Form Modal -->
+<div
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+>
+  <div
+    class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-6xl mx-4 max-h-[90vh] overflow-hidden"
+    (click)="$event.stopPropagation()"
+  >
+    <!-- Form Header -->
+    <div
+      class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700"
+    >
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+        {{ isEdit ? "Edit Document" : "Create New Document" }}
+      </h2>
+      <button
+        type="button"
+        (click)="onCancel()"
+        class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+      >
+        <i class="icon-x text-xl"></i>
+      </button>
+    </div>
+
+    <!-- Form Content -->
+    <div class="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+      <form [formGroup]="documentForm" (ngSubmit)="onSubmit()">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Basic Information -->
+          <div class="md:col-span-2">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+              Basic Information
+            </h3>
+          </div>
+
+          <!-- Title -->
+          <div class="md:col-span-2">
+            <label
+              for="title"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              Document Title *
+            </label>
+            <input
+              type="text"
+              id="title"
+              formControlName="title"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              placeholder="Enter document title"
+            />
+            <div
+              *ngIf="
+                documentForm.get('title')?.touched &&
+                documentForm.get('title')?.errors
+              "
+              class="mt-1 text-sm text-red-600 dark:text-red-400"
+            >
+              <div *ngIf="documentForm.get('title')?.errors?.['required']">
+                Title is required
+              </div>
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div class="md:col-span-2">
+            <label
+              for="description"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              Description
+            </label>
+            <textarea
+              id="description"
+              formControlName="description"
+              rows="4"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              placeholder="Enter document description"
+            ></textarea>
+          </div>
+
+          <!-- Content -->
+          <div class="md:col-span-2">
+            <label
+              for="content"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              Content
+            </label>
+            <textarea
+              id="content"
+              formControlName="content"
+              rows="6"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              placeholder="Enter document content"
+            ></textarea>
+          </div>
+
+          <!-- Topic -->
+          <div>
+            <label
+              for="topic_id"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              Topic *
+            </label>
+            <select
+              id="topic_id"
+              formControlName="topic_id"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              [disabled]="loadingTopics"
+            >
+              <option [value]="null">Select a topic</option>
+              <option *ngFor="let topic of topics" [value]="topic.id">
+                {{ topic.name }}
+              </option>
+            </select>
+            <div
+              *ngIf="
+                documentForm.get('topic_id')?.touched &&
+                documentForm.get('topic_id')?.errors
+              "
+              class="mt-1 text-sm text-red-600 dark:text-red-400"
+            >
+              <div *ngIf="documentForm.get('topic_id')?.errors?.['required']">
+                Topic is required
+              </div>
+            </div>
+          </div>
+
+          <!-- Level -->
+          <div>
+            <label
+              for="level"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              Level *
+            </label>
+            <select
+              id="level"
+              formControlName="level"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            >
+              <option value="">Select a level</option>
+              <option value="Beginner">Beginner</option>
+              <option value="Intermediate">Intermediate</option>
+              <option value="Advanced">Advanced</option>
+            </select>
+            <div
+              *ngIf="
+                documentForm.get('level')?.touched &&
+                documentForm.get('level')?.errors
+              "
+              class="mt-1 text-sm text-red-600 dark:text-red-400"
+            >
+              <div *ngIf="documentForm.get('level')?.errors?.['required']">
+                Level is required
+              </div>
+            </div>
+          </div>
+
+          <!-- Duration -->
+          <div>
+            <label
+              for="duration"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              Duration (minutes)
+            </label>
+            <input
+              type="number"
+              id="duration"
+              formControlName="duration"
+              min="0"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              placeholder="0"
+            />
+          </div>
+
+          <!-- Thumbnail URL -->
+          <div>
+            <label
+              for="thumbnail_url"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              Thumbnail URL
+            </label>
+            <input
+              type="url"
+              id="thumbnail_url"
+              formControlName="thumbnail_url"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              placeholder="https://example.com/image.jpg"
+            />
+            <div *ngIf="thumbnailPreview" class="mt-2 relative inline-block">
+              <img
+                [src]="thumbnailPreview"
+                alt="Thumbnail preview"
+                class="max-w-xs h-32 object-cover rounded-md border border-gray-300 dark:border-gray-600"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Modules and Lessons Section (Only for new documents) -->
+        <div
+          *ngIf="!isEdit"
+          class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6"
+        >
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+              Document Content (Modules & Lessons)
+            </h3>
+            <button
+              type="button"
+              (click)="toggleModulesSection()"
+              class="px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+            >
+              {{ showModulesSection ? "Hide" : "Show" }} Content
+            </button>
+          </div>
+
+          <div *ngIf="showModulesSection" class="space-y-4">
+            <button
+              type="button"
+              (click)="addModule()"
+              class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors flex items-center gap-2"
+            >
+              <i class="icon-plus"></i>
+              Add Module
+            </button>
+
+            <div
+              *ngFor="let module of modulesFormArray.controls; let i = index"
+              class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-4"
+            >
+              <div class="flex items-start gap-4">
+                <div class="flex-1">
+                  <label
+                    [for]="'module-title-' + i"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                  >
+                    Module {{ i + 1 }} Title *
+                  </label>
+                  <input
+                    type="text"
+                    [id]="'module-title-' + i"
+                    [formControl]="$any(module).get('title')"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="Enter module title"
+                  />
+                </div>
+                <button
+                  type="button"
+                  (click)="removeModule(i)"
+                  class="mt-7 px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                >
+                  <i class="icon-trash"></i>
+                </button>
+              </div>
+
+              <!-- Lessons for this module -->
+              <div class="ml-4 space-y-3">
+                <div class="flex items-center justify-between">
+                  <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Lessons
+                  </h4>
+                  <button
+                    type="button"
+                    (click)="addLesson(i)"
+                    class="px-3 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                  >
+                    <i class="icon-plus mr-1"></i>
+                    Add Lesson
+                  </button>
+                </div>
+
+                <div
+                  *ngFor="let lesson of getModuleLessons(i).controls; let j = index"
+                  class="border border-gray-200 dark:border-gray-700 rounded p-3 space-y-2"
+                >
+                  <div class="flex items-start gap-2">
+                    <div class="flex-1 space-y-2">
+                      <input
+                        type="text"
+                        [formControl]="$any(lesson).get('title')"
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                        placeholder="Lesson title *"
+                      />
+                      <textarea
+                        [formControl]="$any(lesson).get('content')"
+                        rows="3"
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                        placeholder="Lesson content"
+                      ></textarea>
+                      <textarea
+                        [formControl]="$any(lesson).get('code_example')"
+                        rows="2"
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm font-mono"
+                        placeholder="Code example (optional)"
+                      ></textarea>
+                    </div>
+                    <button
+                      type="button"
+                      (click)="removeLesson(i, j)"
+                      class="mt-1 px-2 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                    >
+                      <i class="icon-trash"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="mt-6 flex items-center justify-end gap-3 border-t border-gray-200 dark:border-gray-700 pt-6">
+          <button
+            type="button"
+            (click)="onCancel()"
+            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            [disabled]="loading || documentForm.invalid"
+            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            <i *ngIf="loading" class="icon-loader animate-spin"></i>
+            {{ isEdit ? "Update" : "Create" }} Document
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+

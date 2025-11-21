@@ -1,0 +1,72 @@
+<div *ngIf="!loading && stats" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+  <!-- Total Documents -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Documents</p>
+        <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+          {{ formatNumber(stats.totalDocuments) }}
+        </p>
+      </div>
+      <div class="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
+        <i class="icon-file-text text-blue-600 dark:text-blue-400 text-2xl"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Published Documents -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Published</p>
+        <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+          {{ formatNumber(stats.publishedDocuments) }}
+        </p>
+      </div>
+      <div class="p-3 bg-green-100 dark:bg-green-900 rounded-lg">
+        <i class="icon-check-circle text-green-600 dark:text-green-400 text-2xl"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Total Students -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Students</p>
+        <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+          {{ formatNumber(stats.totalStudents) }}
+        </p>
+      </div>
+      <div class="p-3 bg-purple-100 dark:bg-purple-900 rounded-lg">
+        <i class="icon-users text-purple-600 dark:text-purple-400 text-2xl"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Average Rating -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Average Rating</p>
+        <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+          {{ stats.averageRating }}
+        </p>
+      </div>
+      <div class="p-3 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
+        <i class="icon-star text-yellow-600 dark:text-yellow-400 text-2xl"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading State -->
+<div *ngIf="loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+  <div *ngFor="let i of [1, 2, 3, 4]" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+    <div class="animate-pulse">
+      <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24 mb-4"></div>
+      <div class="h-8 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
+    </div>
+  </div>
+</div>
+

@@ -14,11 +14,25 @@ import { NotificationService } from '../../../core/services/notification.service
 import { AuthService } from '../../../core/services/auth.service';
 import { BaseAdminComponent } from '../base-admin.component';
 import { ThemeService } from '../../../core/services/theme.service';
+import { DocumentListComponent } from './components/document-list/document-list.component';
+import { DocumentFiltersComponent } from './components/document-filters/document-filters.component';
+import { DocumentStatsComponent } from './components/document-stats/document-stats.component';
+import { BulkActionsComponent } from '../course-management/components/bulk-actions/bulk-actions.component';
+import { DocumentFormComponent } from './components/document-form/document-form.component';
 
 @Component({
   selector: 'app-document-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [
+    CommonModule, 
+    FormsModule, 
+    ReactiveFormsModule,
+    DocumentListComponent,
+    DocumentFiltersComponent,
+    DocumentStatsComponent,
+    BulkActionsComponent,
+    DocumentFormComponent
+  ],
   templateUrl: './document-management.component.html',
   styleUrls: ['./document-management.component.css']
 })
@@ -249,14 +263,106 @@ export class DocumentManagementComponent extends BaseAdminComponent implements O
     this.showBulkActions = this.selectedDocuments.length > 0;
   }
 
-  onSelectAll(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    if (target.checked) {
-      this.selectedDocuments = this.documents.map(d => d.id);
+  onSelectAll(selectAll: boolean): void {
+    if (selectAll) {
+      this.selectedDocuments = this.documents.map((d) => d.id);
     } else {
       this.selectedDocuments = [];
     }
     this.showBulkActions = this.selectedDocuments.length > 0;
+  }
+
+  onDocumentToggle(event: { documentId: number; selected: boolean }): void {
+    if (event.selected) {
+      this.selectedDocuments = [...this.selectedDocuments, event.documentId];
+    } else {
+      this.selectedDocuments = this.selectedDocuments.filter(
+        (id) => id !== event.documentId
+      );
+    }
+    this.showBulkActions = this.selectedDocuments.length > 0;
+  }
+
+  onDocumentSelect(documentIds: number[]): void {
+    this.selectedDocuments = documentIds;
+    this.showBulkActions = documentIds.length > 0;
+  }
+
+  onBulkAction(action: string): void {
+    if (this.selectedDocuments.length === 0) return;
+
+    switch (action) {
+      case 'delete':
+        this.onBulkDelete();
+        break;
+      case 'restore':
+        this.onBulkRestore();
+        break;
+    }
+  }
+
+  onViewDocument(document: AdminDocument): void {
+    // Navigate to document detail page
+    this.router.navigate(['/documents', document.id]);
+  }
+
+  onEditContent(document: AdminDocument): void {
+    // Navigate to document lesson management page with document filter
+    this.router.navigate(['/admin/document-lessons'], {
+      queryParams: { documentId: document.id }
+    });
+  }
+
+  onSortChange(event: { sortBy: string; order: 'asc' | 'desc' }): void {
+    this.sortBy = event.sortBy;
+    this.sortOrder = event.order;
+
+    this.filters = {
+      ...this.filters,
+      sortBy: `${event.sortBy}_${event.order}`,
+      page: 1,
+      is_deleted: this.activeTab === 'deleted' ? true : false
+    };
+    this.currentPage = 1;
+    this.loadDocuments();
+  }
+
+  onDocumentCreated(document: AdminDocument): void {
+    console.log('Document created successfully!');
+    this.closeFormModal();
+    this.loadDocuments();
+    this.loadStats();
+  }
+
+  onDocumentUpdated(document: AdminDocument): void {
+    console.log('Document updated successfully!');
+    this.closeFormModal();
+    this.loadDocuments();
+    this.loadStats();
+  }
+
+  openEditModal(document: AdminDocument): void {
+    // Load full document details from API to ensure we have the latest data
+    this.loading = true;
+    this.adminService.getDocumentById(document.id).subscribe({
+      next: (response) => {
+        if (response) {
+          this.editingDocument = response;
+          this.isFormModalOpen = true;
+        } else {
+          this.notificationService.error('Error', 'Failed to load document details');
+        }
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading document:', error);
+        // Fallback to using the document data we already have
+        this.editingDocument = document;
+        this.isFormModalOpen = true;
+        this.loading = false;
+        this.notificationService.warning('Warning', 'Using cached document data. Some information may be outdated.');
+      },
+    });
   }
 
   openCreateModal(): void {
@@ -273,19 +379,6 @@ export class DocumentManagementComponent extends BaseAdminComponent implements O
     this.isFormModalOpen = true;
   }
 
-  openEditModal(document: AdminDocument): void {
-    this.editingDocument = document;
-    this.formData = {
-      title: document.title,
-      description: document.description || '',
-      content: document.content || '',
-      topic_id: document.topic_id,
-      level: document.level,
-      duration: document.duration || null,
-      thumbnail_url: document.thumbnail_url || ''
-    };
-    this.isFormModalOpen = true;
-  }
 
   closeFormModal(): void {
     this.isFormModalOpen = false;

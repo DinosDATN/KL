@@ -1,9 +1,15 @@
 <!-- Admin Document Management Page -->
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+<div
+  class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200"
+>
   <!-- Header -->
-  <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-200">
+  <div
+    class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-200"
+  >
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+      <div
+        class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6"
+      >
         <!-- Title -->
         <div>
           <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -48,60 +54,11 @@
   </div>
 
   <!-- Statistics Cards -->
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6" *ngIf="stats">
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <!-- Total Documents -->
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Documents</p>
-            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">{{ formatNumber(stats.totalDocuments) }}</p>
-          </div>
-          <div class="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
-            <i class="icon-file-text text-blue-600 dark:text-blue-400 text-2xl"></i>
-          </div>
-        </div>
-      </div>
-
-      <!-- Published Documents -->
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Published</p>
-            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">{{ formatNumber(stats.publishedDocuments) }}</p>
-          </div>
-          <div class="p-3 bg-green-100 dark:bg-green-900 rounded-lg">
-            <i class="icon-check text-green-600 dark:text-green-400 text-2xl"></i>
-          </div>
-        </div>
-      </div>
-
-      <!-- Total Students -->
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Students</p>
-            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">{{ formatNumber(stats.totalStudents) }}</p>
-          </div>
-          <div class="p-3 bg-purple-100 dark:bg-purple-900 rounded-lg">
-            <i class="icon-users text-purple-600 dark:text-purple-400 text-2xl"></i>
-          </div>
-        </div>
-      </div>
-
-      <!-- Average Rating -->
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Average Rating</p>
-            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">{{ stats.averageRating }}</p>
-          </div>
-          <div class="p-3 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
-            <i class="icon-star text-yellow-600 dark:text-yellow-400 text-2xl"></i>
-          </div>
-        </div>
-      </div>
-    </div>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <app-document-stats
+      [stats]="stats"
+      [loading]="loading && !stats"
+    ></app-document-stats>
   </div>
 
   <!-- Main Content -->
@@ -112,8 +69,10 @@
         <button
           (click)="onTabChange('all')"
           [ngClass]="{
-            'border-blue-500 text-blue-600 dark:text-blue-400': activeTab === 'all',
-            'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600': activeTab !== 'all'
+            'border-blue-500 text-blue-600 dark:text-blue-400':
+              activeTab === 'all',
+            'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600':
+              activeTab !== 'all'
           }"
           class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200"
         >
@@ -122,15 +81,17 @@
             *ngIf="stats"
             class="ml-2 px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded-full"
           >
-            {{ stats.publishedDocuments }}
+            {{ stats.totalDocuments }}
           </span>
         </button>
 
         <button
           (click)="onTabChange('deleted')"
           [ngClass]="{
-            'border-red-500 text-red-600 dark:text-red-400': activeTab === 'deleted',
-            'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600': activeTab !== 'deleted'
+            'border-red-500 text-red-600 dark:text-red-400':
+              activeTab === 'deleted',
+            'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600':
+              activeTab !== 'deleted'
           }"
           class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200"
         >
@@ -148,7 +109,9 @@
     <!-- Search Bar -->
     <div class="mb-6">
       <div class="relative">
-        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+        <div
+          class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+        >
           <i class="icon-search text-gray-400 text-lg"></i>
         </div>
         <input
@@ -169,356 +132,57 @@
       </div>
     </div>
 
+    <!-- Filters Section -->
+    <div class="mb-6">
+      <app-document-filters
+        [filters]="filters"
+        [showDeletedOptions]="activeTab === 'deleted'"
+        (filtersChange)="onFiltersChange($event)"
+      ></app-document-filters>
+    </div>
+
     <!-- Bulk Actions Bar -->
-    <div *ngIf="showBulkActions" class="mb-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-4">
-          <span class="text-sm font-medium text-blue-900 dark:text-blue-200">
-            {{ selectedDocuments.length }} document(s) selected
-          </span>
-        </div>
-        <div class="flex items-center gap-2">
-          <button
-            *ngIf="activeTab === 'deleted'"
-            (click)="onBulkRestore()"
-            class="px-4 py-2 text-sm font-medium text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900 hover:bg-green-200 dark:hover:bg-green-800 rounded-lg transition-colors"
-          >
-            Restore Selected
-          </button>
-          <button
-            (click)="onBulkDelete()"
-            class="px-4 py-2 text-sm font-medium text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900 hover:bg-red-200 dark:hover:bg-red-800 rounded-lg transition-colors"
-          >
-            Delete Selected
-          </button>
-          <button
-            (click)="selectedDocuments = []; showBulkActions = false"
-            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
-          >
-            Clear Selection
-          </button>
-        </div>
-      </div>
-    </div>
+    <app-bulk-actions
+      *ngIf="showBulkActions"
+      [selectedCount]="selectedDocuments.length"
+      [showRestoreAction]="activeTab === 'deleted'"
+      (bulkAction)="onBulkAction($event)"
+      (clearSelection)="onDocumentSelect([])"
+      class="mb-6"
+    ></app-bulk-actions>
 
-    <!-- Error State -->
-    <div *ngIf="error" class="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-      <div class="flex">
-        <i class="icon-alert-circle text-red-400 mr-3"></i>
-        <div>
-          <h3 class="text-sm font-medium text-red-800 dark:text-red-200">Error</h3>
-          <p class="mt-1 text-sm text-red-700 dark:text-red-300">{{ error }}</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Loading State -->
-    <div *ngIf="loading && documents.length === 0" class="flex items-center justify-center h-64">
-      <div class="flex flex-col items-center">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        <p class="mt-4 text-gray-600 dark:text-gray-400">Loading documents...</p>
-      </div>
-    </div>
-
-    <!-- Documents Table -->
-    <div *ngIf="!loading || documents.length > 0" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead class="bg-gray-50 dark:bg-gray-700">
-            <tr>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                <input
-                  type="checkbox"
-                  [checked]="selectedDocuments.length === documents.length && documents.length > 0"
-                  (change)="onSelectAll($event)"
-                  class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
-                />
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" (click)="onSort('title')">
-                Title
-                <i *ngIf="sortBy === 'title'" [class]="sortOrder === 'asc' ? 'icon-arrow-up' : 'icon-arrow-down'"></i>
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Topic
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Level
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" (click)="onSort('students')">
-                Students
-                <i *ngIf="sortBy === 'students'" [class]="sortOrder === 'asc' ? 'icon-arrow-up' : 'icon-arrow-down'"></i>
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer" (click)="onSort('rating')">
-                Rating
-                <i *ngIf="sortBy === 'rating'" [class]="sortOrder === 'asc' ? 'icon-arrow-up' : 'icon-arrow-down'"></i>
-              </th>
-              <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            <tr *ngFor="let document of documents" [class.opacity-50]="document.is_deleted">
-              <td class="px-6 py-4 whitespace-nowrap">
-                <input
-                  type="checkbox"
-                  [checked]="selectedDocuments.includes(document.id)"
-                  (change)="onSelectDocument(document.id, $event)"
-                  class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
-                />
-              </td>
-              <td class="px-6 py-4">
-                <div class="text-sm font-medium text-gray-900 dark:text-white">{{ document.title }}</div>
-                <div class="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">{{ document.description }}</div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-gray-900 dark:text-white">{{ document.Topic?.name || 'N/A' }}</div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span class="px-2 py-1 text-xs font-medium rounded-full"
-                  [ngClass]="{
-                    'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200': document.level === 'Beginner',
-                    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200': document.level === 'Intermediate',
-                    'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200': document.level === 'Advanced'
-                  }">
-                  {{ document.level }}
-                </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                {{ formatNumber(document.students) }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                <div class="flex items-center">
-                  <i class="icon-star text-yellow-400 mr-1"></i>
-                  {{ document.rating.toFixed(1) }}
-                </div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <div class="flex items-center justify-end gap-2">
-                  <button
-                    (click)="openEditModal(document)"
-                    class="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
-                    title="Edit"
-                  >
-                    <i class="icon-edit text-lg"></i>
-                  </button>
-                  <!-- Actions for deleted tab -->
-                  <ng-container *ngIf="activeTab === 'deleted'">
-                    <button
-                      (click)="restoreDocument(document.id)"
-                      class="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
-                      title="Restore"
-                    >
-                      <i class="icon-rotate-ccw text-lg"></i>
-                    </button>
-                    <button
-                      (click)="permanentlyDeleteDocument(document.id)"
-                      class="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                      title="Permanently Delete"
-                    >
-                      <i class="icon-trash text-lg"></i>
-                    </button>
-                  </ng-container>
-                  <!-- Actions for all tab -->
-                  <button
-                    *ngIf="activeTab !== 'deleted'"
-                    (click)="deleteDocument(document.id)"
-                    class="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                    title="Delete"
-                  >
-                    <i class="icon-trash text-lg"></i>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Empty State -->
-      <div *ngIf="!loading && documents.length === 0" class="text-center py-12">
-        <i class="icon-file-text text-gray-400 text-6xl mb-4"></i>
-        <p class="text-gray-600 dark:text-gray-400">No documents found</p>
-      </div>
-
-      <!-- Pagination -->
-      <div *ngIf="totalPages > 1" class="bg-white dark:bg-gray-800 px-4 py-3 border-t border-gray-200 dark:border-gray-700 sm:px-6">
-        <div class="flex items-center justify-between">
-          <div class="flex-1 flex justify-between sm:hidden">
-            <button
-              (click)="onPageChange(currentPage - 1)"
-              [disabled]="currentPage === 1"
-              class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            <button
-              (click)="onPageChange(currentPage + 1)"
-              [disabled]="currentPage === totalPages"
-              class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-          <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-            <div>
-              <p class="text-sm text-gray-700 dark:text-gray-300">
-                Showing <span class="font-medium">{{ (currentPage - 1) * itemsPerPage + 1 }}</span>
-                to <span class="font-medium">{{ Math.min(currentPage * itemsPerPage, totalItems) }}</span>
-                of <span class="font-medium">{{ totalItems }}</span> results
-              </p>
-            </div>
-            <div>
-              <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                <button
-                  (click)="onPageChange(currentPage - 1)"
-                  [disabled]="currentPage === 1"
-                  class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Previous
-                </button>
-                <button
-                  *ngFor="let page of [].constructor(totalPages); let i = index"
-                  (click)="onPageChange(i + 1)"
-                  [ngClass]="{
-                    'z-10 bg-blue-50 dark:bg-blue-900 border-blue-500 text-blue-600 dark:text-blue-400': currentPage === i + 1,
-                    'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600': currentPage !== i + 1
-                  }"
-                  class="relative inline-flex items-center px-4 py-2 border text-sm font-medium"
-                >
-                  {{ i + 1 }}
-                </button>
-                <button
-                  (click)="onPageChange(currentPage + 1)"
-                  [disabled]="currentPage === totalPages"
-                  class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-              </nav>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- Document List -->
+    <app-document-list
+      [documents]="documents"
+      [loading]="loading"
+      [error]="error"
+      [selectedDocumentIds]="selectedDocuments"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      [totalItems]="totalItems"
+      [itemsPerPage]="itemsPerPage"
+      [sortBy]="sortBy"
+      [sortOrder]="sortOrder"
+      [showDeletedActions]="activeTab === 'deleted'"
+      (documentToggle)="onDocumentToggle($event)"
+      (selectAll)="onSelectAll($event)"
+      (viewDocument)="onViewDocument($event)"
+      (editDocument)="openEditModal($event)"
+      (editContent)="onEditContent($event)"
+      (restoreDocument)="restoreDocument($event)"
+      (deleteDocument)="deleteDocument($event)"
+      (sortChange)="onSortChange($event)"
+      (pageChange)="onPageChange($event)"
+    ></app-document-list>
   </div>
 
   <!-- Document Form Modal -->
-  <div *ngIf="isFormModalOpen" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-      <!-- Background overlay -->
-      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" (click)="closeFormModal()"></div>
-
-      <!-- Modal panel -->
-      <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full">
-        <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
-              {{ editingDocument ? 'Edit Document' : 'Create Document' }}
-            </h3>
-            <button (click)="closeFormModal()" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
-              <i class="icon-x text-xl"></i>
-            </button>
-          </div>
-
-          <form (ngSubmit)="saveDocument()" class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title *</label>
-              <input
-                type="text"
-                [(ngModel)]="formData.title"
-                name="title"
-                required
-                class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-              <textarea
-                [(ngModel)]="formData.description"
-                name="description"
-                rows="3"
-                class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              ></textarea>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Content</label>
-              <textarea
-                [(ngModel)]="formData.content"
-                name="content"
-                rows="6"
-                class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              ></textarea>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Topic ID *</label>
-                <input
-                  type="number"
-                  [(ngModel)]="formData.topic_id"
-                  name="topic_id"
-                  required
-                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Level</label>
-                <select
-                  [(ngModel)]="formData.level"
-                  name="level"
-                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="Beginner">Beginner</option>
-                  <option value="Intermediate">Intermediate</option>
-                  <option value="Advanced">Advanced</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Duration (minutes)</label>
-                <input
-                  type="number"
-                  [(ngModel)]="formData.duration"
-                  name="duration"
-                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Thumbnail URL</label>
-                <input
-                  type="url"
-                  [(ngModel)]="formData.thumbnail_url"
-                  name="thumbnail_url"
-                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            <div class="flex justify-end gap-3 pt-4">
-              <button
-                type="button"
-                (click)="closeFormModal()"
-                class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-              >
-                {{ editingDocument ? 'Update' : 'Create' }}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
+  <app-document-form
+    *ngIf="isFormModalOpen"
+    [document]="editingDocument"
+    [isEdit]="!!editingDocument"
+    (documentCreated)="onDocumentCreated($event)"
+    (documentUpdated)="onDocumentUpdated($event)"
+    (close)="closeFormModal()"
+  ></app-document-form>
 </div>

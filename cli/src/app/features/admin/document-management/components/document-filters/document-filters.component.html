@@ -1,0 +1,161 @@
+<!-- Filters Panel -->
+<div
+  class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 transition-colors duration-200"
+  style="min-height: 100px;"
+>
+  <div class="p-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+        <i class="icon-filter mr-2"></i>
+        Filters
+      </h3>
+      <button
+        *ngIf="hasActiveFilters()"
+        (click)="onReset()"
+        class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors flex items-center"
+      >
+        <i class="icon-x mr-1"></i>
+        Clear All
+      </button>
+    </div>
+
+    <!-- Filters Form -->
+    <form class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+      <!-- Level Filter -->
+      <div>
+        <label
+          class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
+        >
+          Level
+        </label>
+        <select
+          [(ngModel)]="localFilters.level"
+          (ngModelChange)="onFilterChange()"
+          name="level"
+          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+        >
+          <option *ngFor="let option of levelOptions" [value]="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Topic Filter -->
+      <div>
+        <label
+          class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
+        >
+          Topic
+        </label>
+        <select
+          [(ngModel)]="localFilters.topic_id"
+          (ngModelChange)="onFilterChange()"
+          name="topic_id"
+          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+        >
+          <option [value]="undefined">All Topics</option>
+          <!-- Topics will be loaded dynamically -->
+        </select>
+      </div>
+
+      <!-- Students Range Filter -->
+      <div>
+        <label
+          class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
+        >
+          Students Range
+        </label>
+        <select
+          [(ngModel)]="localFilters.students_range"
+          (ngModelChange)="onFilterChange()"
+          name="students_range"
+          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+        >
+          <option
+            *ngFor="let option of studentsRangeOptions"
+            [ngValue]="option.value"
+          >
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Sort By -->
+      <div>
+        <label
+          class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
+        >
+          Sort By
+        </label>
+        <select
+          [(ngModel)]="localFilters.sortBy"
+          (ngModelChange)="onFilterChange()"
+          name="sortBy"
+          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+        >
+          <option *ngFor="let option of sortOptions" [value]="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Items Per Page -->
+      <div>
+        <label
+          class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
+        >
+          Per Page
+        </label>
+        <select
+          [(ngModel)]="localFilters.limit"
+          (ngModelChange)="onFilterChange()"
+          name="limit"
+          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+        >
+          <option [value]="5">5</option>
+          <option [value]="10">10</option>
+          <option [value]="25">25</option>
+          <option [value]="50">50</option>
+          <option [value]="100">100</option>
+        </select>
+      </div>
+    </form>
+  </div>
+
+  <!-- Active Filters Summary -->
+  <div
+    *ngIf="hasActiveFilters()"
+    class="border-t border-gray-200 dark:border-gray-700 px-6 py-3 bg-gray-50 dark:bg-gray-900/50"
+  >
+    <div class="flex items-center gap-3">
+      <span class="text-xs font-medium text-gray-600 dark:text-gray-400">
+        Active:
+      </span>
+      <div class="flex flex-wrap gap-2">
+        <span
+          *ngIf="localFilters.level"
+          class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
+        >
+          <i class="icon-check-circle mr-1 text-xs"></i>
+          {{ localFilters.level }}
+        </span>
+        <span
+          *ngIf="localFilters.topic_id"
+          class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200"
+        >
+          <i class="icon-check-circle mr-1 text-xs"></i>
+          Topic
+        </span>
+        <span
+          *ngIf="localFilters.students_range"
+          class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200"
+        >
+          <i class="icon-check-circle mr-1 text-xs"></i>
+          {{ localFilters.students_range }}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
