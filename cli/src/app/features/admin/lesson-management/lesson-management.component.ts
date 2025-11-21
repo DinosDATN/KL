@@ -1,7 +1,7 @@
 import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { BaseAdminComponent } from '../base-admin.component';
 import { AuthService } from '../../../core/services/auth.service';
 import { AdminLessonService, AdminLesson, LessonFilters, LessonStats } from '../../../core/services/admin-lesson.service';
@@ -64,6 +64,7 @@ export class LessonManagementComponent extends BaseAdminComponent implements OnI
     private notificationService: NotificationService,
     authService: AuthService,
     router: Router,
+    private route: ActivatedRoute,
     @Inject(PLATFORM_ID) platformId: Object
   ) {
     super(platformId, authService, router);
@@ -72,7 +73,18 @@ export class LessonManagementComponent extends BaseAdminComponent implements OnI
   ngOnInit(): void {
     this.runInBrowser(() => {
       if (this.checkAdminAccess()) {
-        this.loadInitialData();
+        // Check for courseId in query params
+        this.route.queryParams.subscribe(params => {
+          const courseId = params['courseId'];
+          if (courseId) {
+            this.selectedCourseId = Number(courseId);
+            // Load modules for the selected course
+            if (this.selectedCourseId) {
+              this.loadModules(this.selectedCourseId);
+            }
+          }
+          this.loadInitialData();
+        });
       }
     });
   }

@@ -38,6 +38,7 @@ export class CourseListComponent implements OnChanges {
   @Output() selectAll = new EventEmitter<boolean>();
   @Output() viewCourse = new EventEmitter<AdminCourse>();
   @Output() editCourse = new EventEmitter<AdminCourse>();
+  @Output() editContent = new EventEmitter<AdminCourse>();
   @Output() deleteCourse = new EventEmitter<number>();
   @Output() restoreCourse = new EventEmitter<number>();
   @Output() statusChange = new EventEmitter<{
@@ -88,6 +89,10 @@ export class CourseListComponent implements OnChanges {
 
   onEdit(course: AdminCourse): void {
     this.editCourse.emit(course);
+  }
+
+  onEditContent(course: AdminCourse): void {
+    this.editContent.emit(course);
   }
 
   onRestore(courseId: number): void {

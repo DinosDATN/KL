@@ -243,6 +243,13 @@ export class CourseManagementComponent extends BaseAdminComponent implements OnI
     this.router.navigate(['/courses', course.id]);
   }
 
+  onEditContent(course: AdminCourse): void {
+    // Navigate to lesson management page with course filter
+    this.router.navigate(['/admin/lessons'], {
+      queryParams: { courseId: course.id }
+    });
+  }
+
   onRestoreCourse(courseId: number): void {
     console.log('🔄 [CourseManagement] Attempting to restore course:', courseId);
     
