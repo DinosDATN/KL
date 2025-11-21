@@ -1,0 +1,218 @@
+<!-- Lesson Form Modal -->
+<div
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+>
+  <div
+    class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden"
+    (click)="$event.stopPropagation()"
+  >
+    <!-- Form Header -->
+    <div
+      class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700"
+    >
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+        {{ isEdit ? "Edit Lesson" : "Create New Lesson" }}
+      </h2>
+      <button
+        type="button"
+        (click)="onCancel()"
+        class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+      >
+        <i class="icon-x text-xl"></i>
+      </button>
+    </div>
+
+    <!-- Form Content -->
+    <div class="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+      <form [formGroup]="lessonForm" (ngSubmit)="onSubmit()">
+        <div class="space-y-6">
+          <!-- Module Selection -->
+          <div>
+            <label
+              for="module_id"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              Module * (Course: {{ selectedCourse?.title || 'Select course first' }})
+            </label>
+            <select
+              id="module_id"
+              formControlName="module_id"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              [disabled]="loadingModules"
+            >
+              <option [value]="null">Select a module</option>
+              <option *ngFor="let module of modules" [value]="module.id">
+                {{ module.title }}
+              </option>
+            </select>
+            <div
+              *ngIf="
+                lessonForm.get('module_id')?.touched &&
+                lessonForm.get('module_id')?.errors
+              "
+              class="mt-1 text-sm text-red-600 dark:text-red-400"
+            >
+              <div *ngIf="lessonForm.get('module_id')?.errors?.['required']">
+                Module is required
+              </div>
+            </div>
+          </div>
+
+          <!-- Course Selection (for new lessons) -->
+          <div *ngIf="!isEdit">
+            <label
+              for="course_id"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              Course (to load modules)
+            </label>
+            <select
+              id="course_id"
+              [(ngModel)]="selectedCourseId"
+              [ngModelOptions]="{standalone: true}"
+              (change)="onCourseChange()"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            >
+              <option [value]="null">Select a course</option>
+              <option *ngFor="let course of courses" [value]="course.id">
+                {{ course.title }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Title -->
+          <div>
+            <label
+              for="title"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              Lesson Title *
+            </label>
+            <input
+              type="text"
+              id="title"
+              formControlName="title"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              placeholder="Enter lesson title"
+            />
+            <div
+              *ngIf="
+                lessonForm.get('title')?.touched &&
+                lessonForm.get('title')?.errors
+              "
+              class="mt-1 text-sm text-red-600 dark:text-red-400"
+            >
+              <div *ngIf="lessonForm.get('title')?.errors?.['required']">
+                Title is required
+              </div>
+            </div>
+          </div>
+
+          <!-- Type -->
+          <div>
+            <label
+              for="type"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              Lesson Type *
+            </label>
+            <select
+              id="type"
+              formControlName="type"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            >
+              <option value="document">Document</option>
+              <option value="video">Video</option>
+              <option value="exercise">Exercise</option>
+              <option value="quiz">Quiz</option>
+            </select>
+          </div>
+
+          <!-- Content -->
+          <div>
+            <label
+              for="content"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              Content
+              <span class="text-xs text-gray-500 dark:text-gray-400">
+                (For video: URL or description; document: markdown/text; quiz: JSON or text)
+              </span>
+            </label>
+            <textarea
+              id="content"
+              formControlName="content"
+              rows="6"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              placeholder="Enter lesson content"
+            ></textarea>
+          </div>
+
+          <!-- Duration -->
+          <div>
+            <label
+              for="duration"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              Duration (minutes)
+            </label>
+            <input
+              type="number"
+              id="duration"
+              formControlName="duration"
+              min="0"
+              step="1"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              placeholder="0"
+            />
+          </div>
+
+          <!-- Position -->
+          <div>
+            <label
+              for="position"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              Position
+              <span class="text-xs text-gray-500 dark:text-gray-400">
+                (Leave empty to auto-assign)
+              </span>
+            </label>
+            <input
+              type="number"
+              id="position"
+              formControlName="position"
+              min="1"
+              step="1"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              placeholder="Auto"
+            />
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Form Footer -->
+    <div
+      class="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700"
+    >
+      <button
+        type="button"
+        (click)="onCancel()"
+        class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        (click)="onSubmit()"
+        [disabled]="lessonForm.invalid || loading"
+        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed rounded-md transition-colors flex items-center gap-2"
+      >
+        <i *ngIf="loading" class="icon-loader animate-spin"></i>
+        {{ isEdit ? "Update Lesson" : "Create Lesson" }}
+      </button>
+    </div>
+  </div>
+</div>
+

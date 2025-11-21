@@ -1,57 +1,374 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { BaseAdminComponent } from '../base-admin.component';
+import { AuthService } from '../../../core/services/auth.service';
+import { AdminLessonService, AdminLesson, LessonFilters, LessonStats } from '../../../core/services/admin-lesson.service';
+import { AdminCourseService } from '../../../core/services/admin-course.service';
+import { CoursesService } from '../../../core/services/courses.service';
+import { NotificationService } from '../../../core/services/notification.service';
+import { CourseModule } from '../../../core/models/course-module.model';
+import { AdminCourse } from '../../../core/services/admin-course.service';
+import { LessonFormComponent } from './components/lesson-form/lesson-form.component';
 
 @Component({
   selector: 'app-lesson-management',
   standalone: true,
-  imports: [CommonModule],
-  template: `
-    <div class="p-6">
-      <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
-          Lesson Management
-        </h1>
-        <p class="mt-2 text-gray-600 dark:text-gray-400">
-          Manage course lessons, content, and materials.
-        </p>
-      </div>
-
-      <div
-        class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center"
-      >
-        <div class="max-w-md mx-auto">
-          <div
-            class="w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-4"
-          >
-            <svg
-              class="w-8 h-8 text-blue-600 dark:text-blue-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-              ></path>
-            </svg>
-          </div>
-          <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-            Lesson Management
-          </h2>
-          <p class="text-gray-600 dark:text-gray-400 mb-6">
-            Manage course lessons, content, and materials.
-          </p>
-          <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-            <p class="text-sm text-blue-700 dark:text-blue-300">
-              🚧 This feature is currently under development and will be
-              available in the next update.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  `,
+  imports: [CommonModule, FormsModule, LessonFormComponent],
+  templateUrl: './lesson-management.component.html',
+  styleUrl: './lesson-management.component.css'
 })
-export class LessonManagementComponent {}
+export class LessonManagementComponent extends BaseAdminComponent implements OnInit {
+  lessons: AdminLesson[] = [];
+  stats: LessonStats | null = null;
+  selectedLessons: number[] = [];
+  loading = false;
+  loadingStats = false;
+  error: string | null = null;
+
+  // UI State
+  isFormModalOpen = false;
+  editingLesson: AdminLesson | null = null;
+
+  // Pagination
+  currentPage = 1;
+  totalPages = 1;
+  totalItems = 0;
+  itemsPerPage = 10;
+
+  // Filters
+  filters: LessonFilters = {
+    page: 1,
+    limit: 10,
+    sortBy: 'created_at_desc',
+  };
+
+  searchTerm = '';
+  sortBy = 'created_at_desc';
+
+  // Course and Module filters
+  courses: AdminCourse[] = [];
+  modules: CourseModule[] = [];
+  selectedCourseId: number | null = null;
+  selectedModuleId: number | null = null;
+  selectedType: 'document' | 'video' | 'exercise' | 'quiz' | null = null;
+
+  // Expose Math to template
+  Math = Math;
+
+  constructor(
+    private adminLessonService: AdminLessonService,
+    private adminCourseService: AdminCourseService,
+    private coursesService: CoursesService,
+    private notificationService: NotificationService,
+    authService: AuthService,
+    router: Router,
+    @Inject(PLATFORM_ID) platformId: Object
+  ) {
+    super(platformId, authService, router);
+  }
+
+  ngOnInit(): void {
+    this.runInBrowser(() => {
+      if (this.checkAdminAccess()) {
+        this.loadInitialData();
+      }
+    });
+  }
+
+  private loadInitialData(): void {
+    this.loadLessons();
+    this.loadStats();
+    this.loadCourses();
+  }
+
+  loadLessons(): void {
+    if (!this.isBrowser) {
+      return;
+    }
+
+    this.loading = true;
+    this.error = null;
+
+    // Build filters
+    const filters: LessonFilters = {
+      ...this.filters,
+      search: this.searchTerm || undefined,
+      course_id: this.selectedCourseId || undefined,
+      module_id: this.selectedModuleId || undefined,
+      type: this.selectedType || undefined,
+      sortBy: this.sortBy,
+    };
+
+    this.adminLessonService.getLessons(filters).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.lessons = response.data;
+          this.currentPage = response.pagination.current_page;
+          this.totalPages = response.pagination.total_pages;
+          this.totalItems = response.pagination.total_items;
+          this.itemsPerPage = response.pagination.items_per_page;
+        }
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading lessons:', error);
+        this.error = error.error?.message || 'Failed to load lessons';
+        this.loading = false;
+      },
+    });
+  }
+
+  loadStats(): void {
+    if (!this.isBrowser) {
+      return;
+    }
+
+    this.loadingStats = true;
+    this.adminLessonService.getLessonStatistics(
+      this.selectedCourseId || undefined,
+      this.selectedModuleId || undefined
+    ).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.stats = response.data;
+        }
+        this.loadingStats = false;
+      },
+      error: (error) => {
+        console.error('Error loading stats:', error);
+        this.loadingStats = false;
+      },
+    });
+  }
+
+  loadCourses(): void {
+    if (!this.isBrowser) {
+      return;
+    }
+
+    this.adminCourseService.getCourses({ limit: 1000, page: 1 }).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.courses = response.data;
+        }
+      },
+      error: (error) => {
+        console.error('Error loading courses:', error);
+      },
+    });
+  }
+
+  loadModules(courseId: number): void {
+    if (!this.isBrowser) {
+      return;
+    }
+
+    this.coursesService.getCourseModules(courseId).subscribe({
+      next: (modules) => {
+        this.modules = modules;
+      },
+      error: (error) => {
+        console.error('Error loading modules:', error);
+        this.modules = [];
+      },
+    });
+  }
+
+  onSearch(): void {
+    this.filters = {
+      ...this.filters,
+      search: this.searchTerm,
+      page: 1,
+    };
+    this.currentPage = 1;
+    this.loadLessons();
+  }
+
+  onCourseFilterChange(): void {
+    this.selectedModuleId = null;
+    this.modules = [];
+    
+    if (this.selectedCourseId) {
+      this.loadModules(this.selectedCourseId);
+    }
+
+    this.filters = {
+      ...this.filters,
+      course_id: this.selectedCourseId || undefined,
+      module_id: undefined,
+      page: 1,
+    };
+    this.currentPage = 1;
+    this.loadLessons();
+    this.loadStats();
+  }
+
+  onModuleFilterChange(): void {
+    this.filters = {
+      ...this.filters,
+      module_id: this.selectedModuleId || undefined,
+      page: 1,
+    };
+    this.currentPage = 1;
+    this.loadLessons();
+    this.loadStats();
+  }
+
+  onTypeFilterChange(): void {
+    this.filters = {
+      ...this.filters,
+      type: this.selectedType || undefined,
+      page: 1,
+    };
+    this.currentPage = 1;
+    this.loadLessons();
+  }
+
+  onSortChange(): void {
+    this.filters = {
+      ...this.filters,
+      sortBy: this.sortBy,
+      page: 1,
+    };
+    this.currentPage = 1;
+    this.loadLessons();
+  }
+
+  onPageChange(page: number): void {
+    if (page < 1 || page > this.totalPages) {
+      return;
+    }
+    this.currentPage = page;
+    this.filters = {
+      ...this.filters,
+      page,
+    };
+    this.loadLessons();
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPages = 5;
+    let startPage = Math.max(1, this.currentPage - Math.floor(maxPages / 2));
+    let endPage = Math.min(this.totalPages, startPage + maxPages - 1);
+    
+    if (endPage - startPage < maxPages - 1) {
+      startPage = Math.max(1, endPage - maxPages + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+
+  // Selection methods
+  isLessonSelected(lessonId: number): boolean {
+    return this.selectedLessons.includes(lessonId);
+  }
+
+  onLessonToggle(lessonId: number): void {
+    if (this.isLessonSelected(lessonId)) {
+      this.selectedLessons = this.selectedLessons.filter(id => id !== lessonId);
+    } else {
+      this.selectedLessons = [...this.selectedLessons, lessonId];
+    }
+  }
+
+  isAllSelected(): boolean {
+    return this.lessons.length > 0 && this.selectedLessons.length === this.lessons.length;
+  }
+
+  onSelectAll(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    if (target.checked) {
+      this.selectedLessons = this.lessons.map(l => l.id);
+    } else {
+      this.selectedLessons = [];
+    }
+  }
+
+  onBulkDelete(): void {
+    if (this.selectedLessons.length === 0) {
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to delete ${this.selectedLessons.length} lesson(s)? This action cannot be undone.`)) {
+      return;
+    }
+
+    this.adminLessonService.bulkDeleteLessons(this.selectedLessons).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.notificationService.success(
+            'Success',
+            `Successfully deleted ${response.data?.deletedCount || this.selectedLessons.length} lesson(s)`
+          );
+          this.selectedLessons = [];
+          this.loadLessons();
+          this.loadStats();
+        }
+      },
+      error: (error) => {
+        this.notificationService.error(
+          'Error',
+          error.error?.message || 'Failed to delete lessons'
+        );
+      },
+    });
+  }
+
+  onDeleteLesson(lessonId: number): void {
+    if (!confirm('Are you sure you want to delete this lesson? This action cannot be undone.')) {
+      return;
+    }
+
+    this.adminLessonService.deleteLesson(lessonId).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.notificationService.success('Success', 'Lesson deleted successfully');
+          this.loadLessons();
+          this.loadStats();
+        }
+      },
+      error: (error) => {
+        this.notificationService.error(
+          'Error',
+          error.error?.message || 'Failed to delete lesson'
+        );
+      },
+    });
+  }
+
+  // Modal methods
+  openCreateModal(): void {
+    this.editingLesson = null;
+    this.isFormModalOpen = true;
+  }
+
+  openEditModal(lesson: AdminLesson): void {
+    this.editingLesson = lesson;
+    this.isFormModalOpen = true;
+  }
+
+  closeFormModal(): void {
+    this.isFormModalOpen = false;
+    this.editingLesson = null;
+  }
+
+  onLessonCreated(lesson: AdminLesson): void {
+    this.notificationService.success('Success', 'Lesson created successfully');
+    this.closeFormModal();
+    this.loadLessons();
+    this.loadStats();
+  }
+
+  onLessonUpdated(lesson: AdminLesson): void {
+    this.notificationService.success('Success', 'Lesson updated successfully');
+    this.closeFormModal();
+    this.loadLessons();
+    this.loadStats();
+  }
+}
