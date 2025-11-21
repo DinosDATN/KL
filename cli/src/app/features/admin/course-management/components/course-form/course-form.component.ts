@@ -4,6 +4,8 @@ import {
   Output,
   EventEmitter,
   OnInit,
+  OnChanges,
+  SimpleChanges,
   inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -34,7 +36,7 @@ import { NotificationService } from '../../../../../core/services/notification.s
   templateUrl: './course-form.component.html',
   styleUrl: './course-form.component.scss',
 })
-export class CourseFormComponent implements OnInit {
+export class CourseFormComponent implements OnInit, OnChanges {
   @Input() course: AdminCourse | null = null;
   @Input() isEdit = false;
   @Output() courseCreated = new EventEmitter<AdminCourse>();
@@ -85,11 +87,38 @@ export class CourseFormComponent implements OnInit {
     this.loadInstructors();
 
     if (this.course && this.isEdit) {
-      this.courseForm.patchValue(this.course);
-      // Hiển thị ảnh hiện tại nếu có
-      if (this.course.thumbnail) {
-        this.thumbnailPreview = this.course.thumbnail;
-      }
+      this.populateForm(this.course);
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    // Handle course changes (e.g., when loading full details from API)
+    if (changes['course'] && this.course && this.isEdit && this.courseForm) {
+      this.populateForm(this.course);
+    }
+  }
+
+  private populateForm(course: AdminCourse): void {
+    // Patch form with course data
+    this.courseForm.patchValue({
+      title: course.title || '',
+      description: course.description || '',
+      category_id: course.category_id || null,
+      level: course.level || 'Beginner',
+      duration: course.duration || 0,
+      price: course.price || 0,
+      original_price: course.original_price || course.price || 0,
+      discount: course.discount || 0,
+      is_premium: course.is_premium || false,
+      is_free: course.is_free !== undefined ? course.is_free : !course.is_premium,
+      status: course.status || 'draft',
+      thumbnail: course.thumbnail || '',
+      instructor_id: course.instructor_id || null,
+    });
+
+    // Hiển thị ảnh hiện tại nếu có
+    if (course.thumbnail) {
+      this.thumbnailPreview = course.thumbnail;
     }
   }
 

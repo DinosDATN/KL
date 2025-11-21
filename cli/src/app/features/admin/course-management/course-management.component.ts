@@ -547,8 +547,27 @@ export class CourseManagementComponent extends BaseAdminComponent implements OnI
   }
 
   openEditModal(course: AdminCourse): void {
-    this.editingCourse = course;
-    this.isFormModalOpen = true;
+    // Load full course details from API to ensure we have the latest data
+    this.loading = true;
+    this.adminCourseService.getCourse(course.id).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.editingCourse = response.data;
+          this.isFormModalOpen = true;
+        } else {
+          this.notificationService.error('Error', 'Failed to load course details');
+        }
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading course:', error);
+        // Fallback to using the course data we already have
+        this.editingCourse = course;
+        this.isFormModalOpen = true;
+        this.loading = false;
+        this.notificationService.warning('Warning', 'Using cached course data. Some information may be outdated.');
+      },
+    });
   }
 
   closeFormModal(): void {

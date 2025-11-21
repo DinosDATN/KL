@@ -16,6 +16,7 @@ export interface AdminCourse {
   original_price?: number;
   discount?: number;
   is_premium: boolean;
+  is_free?: boolean;
   status: 'draft' | 'published' | 'archived';
   thumbnail?: string;
   is_deleted: boolean;

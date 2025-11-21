@@ -29,12 +29,12 @@
   </div>
 
   <!-- Course Table -->
-  <div *ngIf="!loading && !error" class="overflow-x-auto">
-    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+  <div *ngIf="!loading && !error">
+    <table class="w-full divide-y divide-gray-200 dark:divide-gray-700 table-auto">
       <!-- Table Header -->
       <thead class="bg-gray-50 dark:bg-gray-700">
         <tr>
-          <th scope="col" class="w-4 p-4">
+          <th scope="col" class="w-4 px-2 py-3">
             <input
               type="checkbox"
               [(ngModel)]="selectAllChecked"
@@ -44,7 +44,7 @@
           </th>
           <th
             scope="col"
-            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+            class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
             (click)="onSort('title')"
           >
             Title
@@ -59,19 +59,19 @@
           </th>
           <th
             scope="col"
-            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+            class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
           >
             Category
           </th>
           <th
             scope="col"
-            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+            class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
           >
             Instructor
           </th>
           <th
             scope="col"
-            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+            class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
             (click)="onSort('price')"
           >
             Price
@@ -86,13 +86,13 @@
           </th>
           <th
             scope="col"
-            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+            class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
           >
             Status
           </th>
           <th
             scope="col"
-            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+            class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
             (click)="onSort('students')"
           >
             Students
@@ -107,7 +107,7 @@
           </th>
           <th
             scope="col"
-            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+            class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
             (click)="onSort('rating')"
           >
             Rating
@@ -122,7 +122,7 @@
           </th>
           <th
             scope="col"
-            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+            class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
             (click)="onSort('created_at')"
           >
             Created
@@ -135,8 +135,8 @@
               *ngIf="sortBy === 'created_at' && sortOrder === 'desc'"
             ></i>
           </th>
-          <th scope="col" class="relative px-6 py-3">
-            <span class="sr-only">Actions</span>
+          <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-24">
+            Actions
           </th>
         </tr>
       </thead>
@@ -149,7 +149,7 @@
           *ngFor="let course of courses"
           class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
         >
-          <td class="w-4 p-4">
+          <td class="w-4 px-2 py-4">
             <input
               type="checkbox"
               [checked]="isCourseSelected(course.id)"
@@ -157,53 +157,47 @@
               class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600"
             />
           </td>
-          <td class="px-6 py-4">
-            <div class="text-sm font-medium text-gray-900 dark:text-white">
+          <td class="px-3 py-4">
+            <div class="text-sm font-medium text-gray-900 dark:text-white truncate max-w-xs">
               {{ course.title }}
-              <span
-                *ngIf="showDeletedActions"
-                class="ml-2 inline-flex items-center px-2 py-0.5 text-xs font-medium rounded bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
-              >
-                <i class="icon-trash mr-1 text-xs"></i>
-                Deleted
-              </span>
             </div>
-            <div
-              class="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs"
-            >
-              {{ course.description || "No description" }}
-            </div>
-            <div class="flex items-center gap-2 mt-1">
+            <div class="flex items-center gap-1.5 mt-1">
               <span
                 *ngIf="course.is_premium"
-                class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
+                class="inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
+                title="Premium"
               >
-                <i class="icon-star mr-1 text-xs"></i>
-                Premium
+                <i class="icon-star text-xs"></i>
               </span>
               <span
-                class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
+                class="inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
+                [title]="course.level"
               >
-                {{ course.level }}
+                {{ course.level.charAt(0) }}
+              </span>
+              <span
+                *ngIf="showDeletedActions"
+                class="inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+                title="Deleted"
+              >
+                <i class="icon-trash text-xs"></i>
               </span>
             </div>
           </td>
-          <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-            {{ course.Category?.name || "N/A" }}
+          <td class="px-3 py-4 text-sm text-gray-900 dark:text-gray-100">
+            <span class="truncate max-w-[120px] block" [title]="course.Category?.name || 'N/A'">
+              {{ course.Category?.name || "N/A" }}
+            </span>
           </td>
-          <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-            {{ course.Instructor?.name || "N/A" }}
+          <td class="px-3 py-4 text-sm text-gray-900 dark:text-gray-100">
+            <span class="truncate max-w-[120px] block" [title]="course.Instructor?.name || 'N/A'">
+              {{ course.Instructor?.name || "N/A" }}
+            </span>
           </td>
-          <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-            <div *ngIf="course.price && course.price > 0">
-              <div class="font-semibold text-green-600 dark:text-green-400">
-                {{ formatCurrency(course.price) }}
-              </div>
-              <div
-                *ngIf="course.original_price && course.original_price > course.price"
-                class="text-xs text-gray-500 dark:text-gray-400 line-through"
-              >
-                {{ formatCurrency(course.original_price) }}
+          <td class="px-3 py-4 text-sm text-gray-900 dark:text-gray-100">
+            <div *ngIf="course.price && course.price > 0" class="whitespace-nowrap">
+              <div class="font-semibold text-green-600 dark:text-green-400 text-xs">
+                {{ (course.price / 1000).toFixed(0) }}k
               </div>
               <div
                 *ngIf="course.discount && course.discount > 0"
@@ -214,12 +208,12 @@
             </div>
             <div
               *ngIf="!course.price || course.price === 0"
-              class="text-green-600 dark:text-green-400 font-semibold"
+              class="text-green-600 dark:text-green-400 font-semibold text-xs"
             >
               Free
             </div>
           </td>
-          <td class="px-6 py-4">
+          <td class="px-3 py-4">
             <div class="relative inline-block">
               <select
                 [value]="course.status"
@@ -253,54 +247,109 @@
               </div>
             </div>
           </td>
-          <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-            <div class="flex items-center">
-              <i class="icon-users mr-1 text-gray-400 text-xs"></i>
-              {{ course.students }}
-            </div>
+          <td class="px-3 py-4 text-sm text-gray-900 dark:text-gray-100 text-center">
+            {{ course.students }}
           </td>
-          <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-            <div class="flex items-center">
+          <td class="px-3 py-4 text-sm text-gray-900 dark:text-gray-100 text-center">
+            <div class="flex items-center justify-center">
               <span>{{ course.rating }}</span>
               <i class="icon-star text-yellow-500 ml-1 text-xs"></i>
             </div>
           </td>
-          <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+          <td class="px-3 py-4 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
             {{ formatDate(course.created_at) }}
           </td>
-          <td class="px-6 py-4 text-right text-sm font-medium">
-            <div class="flex items-center justify-end gap-2">
+          <td class="px-3 py-4 text-right text-sm font-medium">
+            <div class="flex items-center justify-end gap-1">
+              <!-- View Button -->
               <button
                 (click)="onView(course)"
-                class="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
                 title="View Details"
               >
-                <i class="icon-eye"></i>
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  ></path>
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                  ></path>
+                </svg>
               </button>
 
+              <!-- Edit Button - Always visible -->
               <button
                 (click)="onEdit(course)"
-                class="p-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
-                title="Edit"
+                class="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 transition-colors"
+                title="Edit Course"
               >
-                <i class="icon-edit"></i>
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                  ></path>
+                </svg>
               </button>
 
+              <!-- Restore Button - Only in deleted tab -->
               <button
                 *ngIf="showDeletedActions"
                 (click)="onRestore(course.id)"
-                class="p-2 text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
-                title="Restore"
+                class="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 transition-colors"
+                title="Restore Course"
               >
-                <i class="icon-rotate-ccw"></i>
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  ></path>
+                </svg>
               </button>
 
+              <!-- Delete Button -->
               <button
                 (click)="onDelete(course.id)"
-                class="p-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                [title]="showDeletedActions ? 'Permanently Delete' : 'Delete'"
+                class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors"
+                [title]="showDeletedActions ? 'Permanently Delete' : 'Delete Course'"
               >
-                <i class="icon-trash"></i>
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  ></path>
+                </svg>
               </button>
             </div>
           </td>
