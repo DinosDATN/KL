@@ -29,12 +29,12 @@
   </div>
 
   <!-- Course Table -->
-  <div *ngIf="!loading && !error">
-    <table class="w-full divide-y divide-gray-200 dark:divide-gray-700 table-auto">
+  <div *ngIf="!loading && !error" class="overflow-x-auto -mx-4 sm:mx-0">
+    <table class="w-full divide-y divide-gray-200 dark:divide-gray-700 min-w-max">
       <!-- Table Header -->
       <thead class="bg-gray-50 dark:bg-gray-700">
         <tr>
-          <th scope="col" class="w-4 px-2 py-3">
+          <th scope="col" class="w-4 px-2 sm:px-3 py-3 sticky left-0 bg-gray-50 dark:bg-gray-700 z-20">
             <input
               type="checkbox"
               [(ngModel)]="selectAllChecked"
@@ -44,98 +44,108 @@
           </th>
           <th
             scope="col"
-            class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+            class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer min-w-[200px] sm:min-w-[250px]"
             (click)="onSort('title')"
           >
-            Title
-            <i
-              class="icon-chevron-up ml-1 text-xs"
-              *ngIf="sortBy === 'title' && sortOrder === 'asc'"
-            ></i>
-            <i
-              class="icon-chevron-down ml-1 text-xs"
-              *ngIf="sortBy === 'title' && sortOrder === 'desc'"
-            ></i>
+            <span class="flex items-center">
+              Title
+              <i
+                class="icon-chevron-up ml-1 text-xs"
+                *ngIf="sortBy === 'title' && sortOrder === 'asc'"
+              ></i>
+              <i
+                class="icon-chevron-down ml-1 text-xs"
+                *ngIf="sortBy === 'title' && sortOrder === 'desc'"
+              ></i>
+            </span>
           </th>
           <th
             scope="col"
-            class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+            class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell min-w-[100px]"
           >
             Category
           </th>
           <th
             scope="col"
-            class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+            class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell min-w-[120px]"
           >
             Instructor
           </th>
           <th
             scope="col"
-            class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+            class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer min-w-[80px]"
             (click)="onSort('price')"
           >
-            Price
-            <i
-              class="icon-chevron-up ml-1 text-xs"
-              *ngIf="sortBy === 'price' && sortOrder === 'asc'"
-            ></i>
-            <i
-              class="icon-chevron-down ml-1 text-xs"
-              *ngIf="sortBy === 'price' && sortOrder === 'desc'"
-            ></i>
+            <span class="flex items-center">
+              Price
+              <i
+                class="icon-chevron-up ml-1 text-xs"
+                *ngIf="sortBy === 'price' && sortOrder === 'asc'"
+              ></i>
+              <i
+                class="icon-chevron-down ml-1 text-xs"
+                *ngIf="sortBy === 'price' && sortOrder === 'desc'"
+              ></i>
+            </span>
           </th>
           <th
             scope="col"
-            class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+            class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[100px]"
           >
             Status
           </th>
           <th
             scope="col"
-            class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+            class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hidden sm:table-cell min-w-[70px]"
             (click)="onSort('students')"
           >
-            Students
-            <i
-              class="icon-chevron-up ml-1 text-xs"
-              *ngIf="sortBy === 'students' && sortOrder === 'asc'"
-            ></i>
-            <i
-              class="icon-chevron-down ml-1 text-xs"
-              *ngIf="sortBy === 'students' && sortOrder === 'desc'"
-            ></i>
+            <span class="flex items-center">
+              Students
+              <i
+                class="icon-chevron-up ml-1 text-xs"
+                *ngIf="sortBy === 'students' && sortOrder === 'asc'"
+              ></i>
+              <i
+                class="icon-chevron-down ml-1 text-xs"
+                *ngIf="sortBy === 'students' && sortOrder === 'desc'"
+              ></i>
+            </span>
           </th>
           <th
             scope="col"
-            class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+            class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hidden lg:table-cell min-w-[70px]"
             (click)="onSort('rating')"
           >
-            Rating
-            <i
-              class="icon-chevron-up ml-1 text-xs"
-              *ngIf="sortBy === 'rating' && sortOrder === 'asc'"
-            ></i>
-            <i
-              class="icon-chevron-down ml-1 text-xs"
-              *ngIf="sortBy === 'rating' && sortOrder === 'desc'"
-            ></i>
+            <span class="flex items-center">
+              Rating
+              <i
+                class="icon-chevron-up ml-1 text-xs"
+                *ngIf="sortBy === 'rating' && sortOrder === 'asc'"
+              ></i>
+              <i
+                class="icon-chevron-down ml-1 text-xs"
+                *ngIf="sortBy === 'rating' && sortOrder === 'desc'"
+              ></i>
+            </span>
           </th>
           <th
             scope="col"
-            class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+            class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hidden xl:table-cell min-w-[90px]"
             (click)="onSort('created_at')"
           >
-            Created
-            <i
-              class="icon-chevron-up ml-1 text-xs"
-              *ngIf="sortBy === 'created_at' && sortOrder === 'asc'"
-            ></i>
-            <i
-              class="icon-chevron-down ml-1 text-xs"
-              *ngIf="sortBy === 'created_at' && sortOrder === 'desc'"
-            ></i>
+            <span class="flex items-center">
+              Created
+              <i
+                class="icon-chevron-up ml-1 text-xs"
+                *ngIf="sortBy === 'created_at' && sortOrder === 'asc'"
+              ></i>
+              <i
+                class="icon-chevron-down ml-1 text-xs"
+                *ngIf="sortBy === 'created_at' && sortOrder === 'desc'"
+              ></i>
+            </span>
           </th>
-          <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-24">
+          <th scope="col" class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider sticky right-0 bg-gray-50 dark:bg-gray-700 z-20 min-w-[140px]">
             Actions
           </th>
         </tr>
@@ -147,9 +157,9 @@
       >
         <tr
           *ngFor="let course of courses"
-          class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          class="group hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors bg-white dark:bg-gray-800"
         >
-          <td class="w-4 px-2 py-4">
+          <td class="w-4 px-2 sm:px-3 py-4 sticky left-0 bg-white dark:bg-gray-800 group-hover:bg-gray-50 dark:group-hover:bg-gray-700 z-20 transition-colors">
             <input
               type="checkbox"
               [checked]="isCourseSelected(course.id)"
@@ -157,17 +167,17 @@
               class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600"
             />
           </td>
-          <td class="px-3 py-4">
-            <div class="text-sm font-medium text-gray-900 dark:text-white truncate max-w-xs">
+          <td class="px-3 sm:px-4 py-4">
+            <div class="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[200px] sm:max-w-[250px]">
               {{ course.title }}
             </div>
-            <div class="flex items-center gap-1.5 mt-1">
+            <div class="flex items-center gap-1.5 mt-1 flex-wrap">
               <span
                 *ngIf="course.is_premium"
-                class="inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
+                class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-medium rounded bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 w-4 h-4"
                 title="Premium"
               >
-                <i class="icon-star text-xs"></i>
+                <i class="icon-star text-[10px] leading-none"></i>
               </span>
               <span
                 class="inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
@@ -182,21 +192,35 @@
               >
                 <i class="icon-trash text-xs"></i>
               </span>
+              <!-- Show category on mobile -->
+              <span
+                class="inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 md:hidden"
+                [title]="course.Category?.name || 'N/A'"
+              >
+                {{ course.Category?.name || "N/A" }}
+              </span>
+              <!-- Show students count on mobile -->
+              <span
+                class="inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300 sm:hidden"
+                title="Students"
+              >
+                👥 {{ course.students || 0 }}
+              </span>
             </div>
           </td>
-          <td class="px-3 py-4 text-sm text-gray-900 dark:text-gray-100">
+          <td class="px-3 sm:px-4 py-4 text-sm text-gray-900 dark:text-gray-100 hidden md:table-cell">
             <span class="truncate max-w-[120px] block" [title]="course.Category?.name || 'N/A'">
               {{ course.Category?.name || "N/A" }}
             </span>
           </td>
-          <td class="px-3 py-4 text-sm text-gray-900 dark:text-gray-100">
+          <td class="px-3 sm:px-4 py-4 text-sm text-gray-900 dark:text-gray-100 hidden lg:table-cell">
             <span class="truncate max-w-[120px] block" [title]="course.Instructor?.name || 'N/A'">
               {{ course.Instructor?.name || "N/A" }}
             </span>
           </td>
-          <td class="px-3 py-4 text-sm text-gray-900 dark:text-gray-100">
+          <td class="px-3 sm:px-4 py-4 text-sm text-gray-900 dark:text-gray-100">
             <div *ngIf="course.price && course.price > 0" class="whitespace-nowrap">
-              <div class="font-semibold text-green-600 dark:text-green-400 text-xs">
+              <div class="font-semibold text-green-600 dark:text-green-400 text-xs sm:text-sm">
                 {{ (course.price / 1000).toFixed(0) }}k
               </div>
               <div
@@ -208,12 +232,12 @@
             </div>
             <div
               *ngIf="!course.price || course.price === 0"
-              class="text-green-600 dark:text-green-400 font-semibold text-xs"
+              class="text-green-600 dark:text-green-400 font-semibold text-xs sm:text-sm"
             >
               Free
             </div>
           </td>
-          <td class="px-3 py-4">
+          <td class="px-3 sm:px-4 py-4">
             <div class="relative inline-block">
               <select
                 [value]="course.status"
@@ -247,28 +271,28 @@
               </div>
             </div>
           </td>
-          <td class="px-3 py-4 text-sm text-gray-900 dark:text-gray-100 text-center">
-            {{ course.students }}
+          <td class="px-3 sm:px-4 py-4 text-sm text-gray-900 dark:text-gray-100 text-center hidden sm:table-cell">
+            {{ course.students || 0 }}
           </td>
-          <td class="px-3 py-4 text-sm text-gray-900 dark:text-gray-100 text-center">
-            <div class="flex items-center justify-center">
-              <span>{{ course.rating }}</span>
-              <i class="icon-star text-yellow-500 ml-1 text-xs"></i>
+          <td class="px-3 sm:px-4 py-4 text-sm text-gray-900 dark:text-gray-100 text-center hidden lg:table-cell">
+            <div class="flex items-center justify-center gap-0.5">
+              <span>{{ course.rating || 0 }}</span>
+              <i class="icon-star text-yellow-500 text-[10px] leading-none"></i>
             </div>
           </td>
-          <td class="px-3 py-4 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+          <td class="px-3 sm:px-4 py-4 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap hidden xl:table-cell">
             {{ formatDate(course.created_at) }}
           </td>
-          <td class="px-3 py-4 text-right text-sm font-medium">
-            <div class="flex items-center justify-end gap-1">
+          <td class="px-3 sm:px-4 py-4 text-right text-sm font-medium sticky right-0 bg-white dark:bg-gray-800 group-hover:bg-gray-50 dark:group-hover:bg-gray-700 z-20 transition-colors">
+            <div class="flex items-center justify-end gap-0.5 sm:gap-1 flex-wrap sm:flex-nowrap">
               <!-- View Button -->
               <button
                 (click)="onView(course)"
-                class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                class="p-1.5 sm:p-1 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
                 title="View Details"
               >
                 <svg
-                  class="w-4 h-4"
+                  class="w-4 h-4 sm:w-3.5 sm:h-3.5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -291,11 +315,11 @@
               <!-- Edit Button - Always visible -->
               <button
                 (click)="onEdit(course)"
-                class="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 transition-colors"
+                class="p-1.5 sm:p-1 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
                 title="Edit Course"
               >
                 <svg
-                  class="w-4 h-4"
+                  class="w-4 h-4 sm:w-3.5 sm:h-3.5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -312,11 +336,11 @@
               <!-- Edit Content Button - Navigate to lessons -->
               <button
                 (click)="onEditContent(course)"
-                class="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
+                class="p-1.5 sm:p-1 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded transition-colors hidden sm:inline-flex"
                 title="Chỉnh sửa nội dung khóa học"
               >
                 <svg
-                  class="w-4 h-4"
+                  class="w-4 h-4 sm:w-3.5 sm:h-3.5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -334,11 +358,11 @@
               <button
                 *ngIf="showDeletedActions"
                 (click)="onRestore(course.id)"
-                class="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 transition-colors"
+                class="p-1.5 sm:p-1 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
                 title="Restore Course"
               >
                 <svg
-                  class="w-4 h-4"
+                  class="w-4 h-4 sm:w-3.5 sm:h-3.5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -355,11 +379,11 @@
               <!-- Delete Button -->
               <button
                 (click)="onDelete(course.id)"
-                class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors"
+                class="p-1.5 sm:p-1 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                 [title]="showDeletedActions ? 'Permanently Delete' : 'Delete Course'"
               >
                 <svg
-                  class="w-4 h-4"
+                  class="w-4 h-4 sm:w-3.5 sm:h-3.5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -402,10 +426,10 @@
   <!-- Pagination -->
   <div
     *ngIf="!loading && courses.length > 0"
-    class="border-t border-gray-200 dark:border-gray-700 px-6 py-4"
+    class="border-t border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-3 sm:py-4"
   >
-    <div class="flex items-center justify-between">
-      <div class="text-sm text-gray-700 dark:text-gray-300">
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
+      <div class="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
         Showing {{ (currentPage - 1) * itemsPerPage + 1 }} to
         {{ Math.min(currentPage * itemsPerPage, totalItems) }} of
         {{ totalItems }} results
@@ -415,19 +439,20 @@
         <button
           (click)="pageChange.emit(currentPage - 1)"
           [disabled]="currentPage <= 1"
-          class="px-3 py-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          class="px-3 py-1.5 sm:py-1 text-xs sm:text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          Previous
+          <span class="hidden sm:inline">Previous</span>
+          <span class="sm:hidden">Prev</span>
         </button>
 
-        <span class="px-3 py-1 text-sm text-gray-700 dark:text-gray-300">
+        <span class="px-3 py-1.5 sm:py-1 text-xs sm:text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
           Page {{ currentPage }} of {{ totalPages }}
         </span>
 
         <button
           (click)="pageChange.emit(currentPage + 1)"
           [disabled]="currentPage >= totalPages"
-          class="px-3 py-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          class="px-3 py-1.5 sm:py-1 text-xs sm:text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           Next
         </button>

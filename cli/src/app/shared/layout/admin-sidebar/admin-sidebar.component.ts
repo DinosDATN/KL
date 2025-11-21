@@ -338,4 +338,9 @@ export class AdminSidebarComponent implements OnInit {
     if (!item.children) return false;
     return item.children.some((child) => this.isActive(child.route));
   }
+
+  isMobile(): boolean {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth < 1024;
+  }
 }

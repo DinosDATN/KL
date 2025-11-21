@@ -58,12 +58,23 @@ button:active {
 }
 
 /* Mobile responsive adjustments */
-@media (max-width: 768px) {
-  .admin-title {
-    display: none;
+@media (max-width: 640px) {
+  header {
+    padding: 0 0.5rem;
   }
   
-  .user-info {
-    display: none;
+  .user-dropdown {
+    right: 0;
+    left: auto;
+    min-width: 200px;
+  }
+}
+
+/* Close dropdown when clicking outside */
+@media (max-width: 1024px) {
+  .user-dropdown {
+    position: fixed;
+    right: 1rem;
+    top: 4rem;
   }
 }

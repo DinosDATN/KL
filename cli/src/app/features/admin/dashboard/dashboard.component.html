@@ -1,18 +1,19 @@
 <!-- Dashboard Header -->
-<div class="flex items-center justify-between mb-8">
-  <div>
-    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Dashboard Overview</h1>
-    <p class="mt-2 text-gray-600 dark:text-gray-400">Welcome to the admin panel. Monitor your platform performance and manage operations.</p>
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
+  <div class="min-w-0 flex-1">
+    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Dashboard Overview</h1>
+    <p class="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600 dark:text-gray-400">Welcome to the admin panel. Monitor your platform performance and manage operations.</p>
   </div>
-  <div class="flex space-x-4">
+  <div class="flex space-x-2 sm:space-x-4 flex-shrink-0">
     <button
       (click)="onRefreshData()"
       [disabled]="isLoading"
-      class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-      <svg [class.animate-spin]="isLoading" class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      class="inline-flex items-center px-3 sm:px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+      <svg [class.animate-spin]="isLoading" class="w-4 h-4 mr-1 sm:mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
       </svg>
-      {{ isLoading ? 'Refreshing...' : 'Refresh Data' }}
+      <span class="hidden sm:inline">{{ isLoading ? 'Refreshing...' : 'Refresh Data' }}</span>
+      <span class="sm:hidden">{{ isLoading ? '...' : 'Refresh' }}</span>
     </button>
   </div>
 </div>
@@ -41,7 +42,7 @@
 <!-- Dashboard Content -->
 <div *ngIf="!isLoading && !error && dashboardStats">
   <!-- Metric Cards -->
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6 mb-6 sm:mb-8">
     <div 
       *ngFor="let card of metricCards"
       class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-shadow">
@@ -103,7 +104,7 @@
   </div>
 
   <!-- Charts Section -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
     <!-- User Growth Chart -->
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
       <div class="flex items-center justify-between mb-6">
@@ -154,7 +155,7 @@
   </div>
 
   <!-- Content Overview and Recent Activity -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
     <!-- Top Courses -->
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
       <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Popular Courses</h3>
@@ -303,7 +304,7 @@
   <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
     <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Quick Actions</h3>
     
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
       <a 
         routerLink="/admin/users" 
         class="flex items-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors group">

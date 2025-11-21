@@ -1,0 +1,168 @@
+/* Course List Component Styles */
+
+/* Table container with horizontal scroll on mobile */
+.overflow-x-auto {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+  
+  &::-webkit-scrollbar {
+    height: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.5);
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.8);
+  }
+}
+
+/* Sticky columns for better UX */
+.sticky {
+  position: sticky;
+  
+  &.left-0 {
+    left: 0;
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  &.right-0 {
+    right: 0;
+    box-shadow: -2px 0 4px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Dark mode sticky columns */
+.dark .sticky {
+  &.left-0,
+  &.right-0 {
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Table row hover effect - Let Tailwind handle colors */
+/* Removed custom hover colors to allow Tailwind dark mode classes to work properly */
+/* The hover colors are now handled by Tailwind classes in the HTML template */
+
+/* Action buttons styling */
+button[title] {
+  position: relative;
+  
+  &:hover {
+    transform: scale(1.1);
+  }
+  
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+/* Responsive improvements */
+@media (max-width: 640px) {
+  table {
+    font-size: 0.875rem;
+  }
+  
+  th, td {
+    padding: 0.5rem 0.75rem;
+  }
+  
+  /* Ensure sticky columns work on mobile */
+  .sticky {
+    z-index: 20;
+  }
+  
+  /* Better button touch targets on mobile */
+  button {
+    min-width: 36px;
+    min-height: 36px;
+  }
+}
+
+@media (max-width: 1024px) {
+  /* Reduce padding on tablet */
+  th, td {
+    padding: 0.75rem;
+  }
+}
+
+/* Loading skeleton animation */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Status select styling */
+select.status-select {
+  transition: all 0.2s ease;
+  
+  &:hover:not(:disabled) {
+    transform: scale(1.05);
+  }
+  
+  &:disabled {
+    cursor: wait;
+  }
+}
+
+/* Badge styling improvements */
+span[class*="inline-flex"] {
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Empty state styling */
+.text-center {
+  padding: 3rem 1rem;
+  
+  i {
+    font-size: 3rem;
+    opacity: 0.5;
+  }
+}
+
+/* Pagination responsive */
+@media (max-width: 640px) {
+  .pagination {
+    flex-direction: column;
+    gap: 1rem;
+    
+    > div {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+}
+
+/* Improve checkbox visibility */
+input[type="checkbox"] {
+  cursor: pointer;
+  
+  &:focus {
+    ring: 2px;
+    ring-color: rgb(59, 130, 246);
+  }
+}
+
+/* Smooth transitions */
+* {
+  transition-property: background-color, border-color, color, transform;
+  transition-duration: 0.15s;
+  transition-timing-function: ease-in-out;
+}
+

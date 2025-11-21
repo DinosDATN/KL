@@ -1,7 +1,9 @@
 <aside
-  class="bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 fixed left-0 top-16 h-[calc(100vh-4rem)] z-40 overflow-y-auto shadow-sm"
+  class="bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 fixed left-0 top-16 h-[calc(100vh-4rem)] z-40 overflow-y-auto shadow-sm lg:translate-x-0"
   [class.w-64]="!isCollapsed"
-  [class.w-16]="isCollapsed"
+  [class.w-16]="isCollapsed && !isMobile()"
+  [class.translate-x-0]="!isCollapsed"
+  [class.-translate-x-full]="isCollapsed"
 >
   <nav [class]="isCollapsed ? 'p-2 space-y-1' : 'p-4 space-y-2'">
     <div
@@ -103,8 +105,8 @@
 
       <!-- Submenu items -->
       <div
-        *ngIf="item.children && item.isExpanded && !isCollapsed"
-        class="ml-8 mt-2 space-y-1 submenu-enter"
+        *ngIf="item.children && item.isExpanded && (!isCollapsed || isMobile())"
+        class="ml-4 sm:ml-8 mt-2 space-y-1 submenu-enter"
       >
         <a
           *ngFor="let child of item.children"

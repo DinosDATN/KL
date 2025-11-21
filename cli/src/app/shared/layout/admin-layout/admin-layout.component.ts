@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
@@ -18,9 +18,10 @@ import { AdminHeaderComponent } from '../admin-header/admin-header.component';
   templateUrl: './admin-layout.component.html',
   styleUrls: ['./admin-layout.component.css']
 })
-export class AdminLayoutComponent implements OnInit {
-  isSidebarCollapsed = false;
+export class AdminLayoutComponent implements OnInit, OnDestroy {
+  isSidebarCollapsed = true; // Default to collapsed for mobile
   currentTheme$: any;
+  private resizeListener?: () => void;
 
   constructor(
     private authService: AuthService,
@@ -34,6 +35,34 @@ export class AdminLayoutComponent implements OnInit {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser || currentUser.role !== 'admin') {
       this.router.navigate(['/']);
+    }
+
+    // Initialize sidebar state based on screen size
+    this.updateSidebarState();
+    
+    // Listen to window resize events
+    if (typeof window !== 'undefined') {
+      this.resizeListener = () => this.updateSidebarState();
+      window.addEventListener('resize', this.resizeListener);
+    }
+  }
+
+  ngOnDestroy() {
+    if (this.resizeListener && typeof window !== 'undefined') {
+      window.removeEventListener('resize', this.resizeListener);
+    }
+  }
+
+  private updateSidebarState() {
+    if (typeof window === 'undefined') return;
+    // On mobile/tablet (less than 1024px), default to collapsed
+    // On desktop, default to expanded
+    if (window.innerWidth < 1024) {
+      this.isSidebarCollapsed = true;
+    } else {
+      // On desktop, you might want to remember user preference
+      // For now, default to expanded
+      // this.isSidebarCollapsed = false;
     }
   }
 

@@ -266,18 +266,33 @@ aside[class*="w-16"] .active-collapsed {
 }
 
 /* Mobile responsive behavior */
-@media (max-width: 768px) {
+@media (max-width: 1023px) {
   aside {
-    @apply -translate-x-full;
+    width: 16rem !important;
+    transform: translateX(-100%);
+    z-index: 40;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
   }
 
-  aside.mobile-open {
-    @apply translate-x-0;
+  aside:not([class*="-translate-x-full"]) {
+    transform: translateX(0);
   }
 
-  /* Backdrop for mobile */
-  .mobile-backdrop {
-    @apply fixed inset-0 bg-black bg-opacity-50 z-30;
+  /* On mobile, always show full width when open */
+  aside[class*="w-64"],
+  aside[class*="w-16"] {
+    width: 16rem !important;
+  }
+
+  /* Submenu should always show on mobile */
+  .submenu-enter {
+    margin-left: 0.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  aside {
+    transform: translateX(0) !important;
   }
 }
 
