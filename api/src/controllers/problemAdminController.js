@@ -78,12 +78,48 @@ class ProblemAdminController {
         await ProblemExample.bulkCreate(exampleData);
       }
 
-      if (constraints && Array.isArray(constraints)) {
-        const constraintData = constraints.map(constraint => ({
-          problem_id: problem.id,
-          constraint: constraint.constraint
-        }));
-        await ProblemConstraint.bulkCreate(constraintData);
+      // Handle constraints - accept both empty array and undefined
+      if (constraints !== undefined) {
+        console.log('Constraints field received:', typeof constraints, Array.isArray(constraints));
+        console.log('Constraints received:', JSON.stringify(constraints, null, 2));
+        
+        if (Array.isArray(constraints) && constraints.length > 0) {
+          console.log('Processing constraints for problem:', problem.id);
+          
+          // Filter out empty constraints and map to correct field name
+          const constraintData = constraints
+            .filter(constraint => {
+              const text = constraint?.constraint || constraint?.constraint_text;
+              const isValid = text && typeof text === 'string' && text.trim().length > 0;
+              if (!isValid) {
+                console.log('Filtered out invalid constraint:', constraint);
+              }
+              return isValid;
+            })
+            .map(constraint => ({
+              problem_id: problem.id,
+              constraint_text: (constraint.constraint || constraint.constraint_text || '').trim()
+            }));
+          
+          console.log('Constraint data to create (count):', constraintData.length);
+          console.log('Constraint data to create:', JSON.stringify(constraintData, null, 2));
+          
+          if (constraintData.length > 0) {
+            try {
+              const createdConstraints = await ProblemConstraint.bulkCreate(constraintData);
+              console.log('Successfully created constraints:', createdConstraints.length);
+            } catch (error) {
+              console.error('Error creating constraints:', error);
+              throw error;
+            }
+          } else {
+            console.log('No valid constraints to create after filtering');
+          }
+        } else {
+          console.log('Constraints array is empty or not an array');
+        }
+      } else {
+        console.log('Constraints field is undefined - not creating constraints');
       }
 
       if (starter_codes && Array.isArray(starter_codes)) {
@@ -95,14 +131,47 @@ class ProblemAdminController {
         await StarterCode.bulkCreate(starterCodeData);
       }
 
-      if (test_cases && Array.isArray(test_cases)) {
-        const testCaseData = test_cases.map(testCase => ({
-          problem_id: problem.id,
-          input: testCase.input,
-          output: testCase.output,
-          is_hidden: testCase.is_hidden || false
-        }));
-        await TestCase.bulkCreate(testCaseData);
+      if (test_cases && Array.isArray(test_cases) && test_cases.length > 0) {
+        console.log('Creating test cases for problem:', problem.id);
+        console.log('Test cases received:', JSON.stringify(test_cases, null, 2));
+        
+        // Filter out invalid test cases and map to correct field names
+        const testCaseData = test_cases
+          .filter(testCase => {
+            const hasInput = testCase.input && typeof testCase.input === 'string' && testCase.input.trim().length > 0;
+            const hasOutput = (testCase.output || testCase.expected_output) && 
+                            typeof (testCase.output || testCase.expected_output) === 'string' && 
+                            (testCase.output || testCase.expected_output).trim().length > 0;
+            const isValid = hasInput && hasOutput;
+            if (!isValid) {
+              console.log('Filtered out invalid test case:', testCase);
+            }
+            return isValid;
+          })
+          .map(testCase => ({
+            problem_id: problem.id,
+            input: testCase.input.trim(),
+            expected_output: (testCase.output || testCase.expected_output || '').trim(),
+            // is_hidden: true means hidden (not a sample), false means visible (is sample)
+            is_sample: !(testCase.is_hidden === true)
+          }));
+        
+        console.log('Test case data to create (count):', testCaseData.length);
+        console.log('Test case data to create:', JSON.stringify(testCaseData, null, 2));
+        
+        if (testCaseData.length > 0) {
+          try {
+            const createdTestCases = await TestCase.bulkCreate(testCaseData);
+            console.log('Successfully created test cases:', createdTestCases.length);
+          } catch (error) {
+            console.error('Error creating test cases:', error);
+            throw error;
+          }
+        } else {
+          console.log('No valid test cases to create after filtering');
+        }
+      } else {
+        console.log('Test cases field is undefined or empty array');
       }
 
       if (tags && Array.isArray(tags)) {
@@ -315,7 +384,14 @@ class ProblemAdminController {
   async updateProblem(req, res) {
     try {
       const { id } = req.params;
-      const updateData = req.body;
+      const {
+        examples,
+        constraints,
+        starter_codes,
+        test_cases,
+        tags,
+        ...updateData
+      } = req.body;
       const userId = req.user.id;
       const userRole = req.user.role;
 
@@ -342,10 +418,97 @@ class ProblemAdminController {
         });
       }
 
-      // Update the problem
+      // Update the problem basic fields
       await problem.update(updateData);
 
-      // Fetch updated problem with associations
+      // Update related data if provided
+      if (examples !== undefined) {
+        // Delete existing examples
+        await ProblemExample.destroy({ where: { problem_id: id } });
+        
+        // Create new examples if provided
+        if (Array.isArray(examples) && examples.length > 0) {
+          const exampleData = examples.map(example => ({
+            problem_id: id,
+            input: example.input,
+            output: example.output,
+            explanation: example.explanation
+          }));
+          await ProblemExample.bulkCreate(exampleData);
+        }
+      }
+
+      if (constraints !== undefined) {
+        // Delete existing constraints
+        await ProblemConstraint.destroy({ where: { problem_id: id } });
+        
+        // Create new constraints if provided
+        if (Array.isArray(constraints) && constraints.length > 0) {
+          // Filter out empty constraints and map to correct field name
+          const constraintData = constraints
+            .filter(constraint => {
+              const text = constraint.constraint || constraint.constraint_text;
+              return text && text.trim().length > 0;
+            })
+            .map(constraint => ({
+              problem_id: id,
+              constraint_text: (constraint.constraint || constraint.constraint_text).trim()
+            }));
+          
+          if (constraintData.length > 0) {
+            await ProblemConstraint.bulkCreate(constraintData);
+          }
+        }
+      }
+
+      if (starter_codes !== undefined) {
+        // Delete existing starter codes
+        await StarterCode.destroy({ where: { problem_id: id } });
+        
+        // Create new starter codes if provided
+        if (Array.isArray(starter_codes) && starter_codes.length > 0) {
+          const starterCodeData = starter_codes.map(code => ({
+            problem_id: id,
+            language: code.language,
+            code: code.code
+          }));
+          await StarterCode.bulkCreate(starterCodeData);
+        }
+      }
+
+      if (test_cases !== undefined) {
+        // Delete existing test cases
+        await TestCase.destroy({ where: { problem_id: id } });
+        
+        // Create new test cases if provided
+        if (Array.isArray(test_cases) && test_cases.length > 0) {
+          const testCaseData = test_cases.map(testCase => ({
+            problem_id: id,
+            input: testCase.input,
+            expected_output: testCase.output || testCase.expected_output,
+            // is_sample: true means it's a sample (visible), false means hidden
+            // is_hidden: true means hidden (not a sample), false means visible (is sample)
+            is_sample: !(testCase.is_hidden === true)
+          }));
+          await TestCase.bulkCreate(testCaseData);
+        }
+      }
+
+      if (tags !== undefined) {
+        // Delete existing tags
+        await ProblemTag.destroy({ where: { problem_id: id } });
+        
+        // Create new tags if provided
+        if (Array.isArray(tags) && tags.length > 0) {
+          const tagData = tags.map(tagId => ({
+            problem_id: id,
+            tag_id: tagId
+          }));
+          await ProblemTag.bulkCreate(tagData);
+        }
+      }
+
+      // Fetch updated problem with all associations
       const updatedProblem = await Problem.findOne({
         where: { id },
         include: [
@@ -358,6 +521,27 @@ class ProblemAdminController {
             model: ProblemCategory,
             as: 'Category',
             attributes: ['id', 'name']
+          },
+          {
+            model: ProblemExample,
+            as: 'Examples'
+          },
+          {
+            model: ProblemConstraint,
+            as: 'Constraints'
+          },
+          {
+            model: StarterCode,
+            as: 'StarterCodes'
+          },
+          {
+            model: TestCase,
+            as: 'TestCases'
+          },
+          {
+            model: Tag,
+            as: 'Tags',
+            through: { attributes: [] }
           }
         ]
       });

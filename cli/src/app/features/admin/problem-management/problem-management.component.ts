@@ -15,6 +15,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { BaseAdminComponent } from '../base-admin.component';
 import { ThemeService } from '../../../core/services/theme.service';
 import { ProblemFiltersComponent } from './components/problem-filters/problem-filters.component';
+import { ProblemFormComponent } from './components/problem-form/problem-form.component';
 
 @Component({
   selector: 'app-problem-management',
@@ -24,6 +25,7 @@ import { ProblemFiltersComponent } from './components/problem-filters/problem-fi
     FormsModule, 
     ReactiveFormsModule,
     ProblemFiltersComponent,
+    ProblemFormComponent,
   ],
   templateUrl: './problem-management.component.html',
   styleUrls: ['./problem-management.component.css']

@@ -200,7 +200,8 @@ export interface AdminProblem {
   }>;
   Constraints?: Array<{
     id: number;
-    constraint: string;
+    constraint?: string;
+    constraint_text?: string;
   }>;
   StarterCodes?: Array<{
     id: number;
@@ -210,8 +211,10 @@ export interface AdminProblem {
   TestCases?: Array<{
     id: number;
     input: string;
-    output: string;
-    is_hidden: boolean;
+    output?: string;
+    expected_output?: string;
+    is_hidden?: boolean;
+    is_sample?: boolean;
   }>;
   Tags?: Array<{
     id: number;
@@ -801,7 +804,21 @@ export class AdminService {
     );
   }
 
-  updateProblem(problemId: number, problemData: Partial<AdminProblem>): Observable<AdminProblem> {
+  updateProblem(problemId: number, problemData: {
+    title?: string;
+    description?: string;
+    difficulty?: 'Easy' | 'Medium' | 'Hard';
+    estimated_time?: string;
+    category_id?: number;
+    is_premium?: boolean;
+    is_popular?: boolean;
+    is_new?: boolean;
+    examples?: Array<{ input: string; output: string; explanation?: string }>;
+    constraints?: Array<{ constraint: string }>;
+    starter_codes?: Array<{ language: string; code: string }>;
+    test_cases?: Array<{ input: string; output: string; is_hidden?: boolean }>;
+    tags?: number[];
+  }): Observable<AdminProblem> {
     return this.http.put<ApiResponse<AdminProblem>>(
       `${this.apiUrl}/problems/${problemId}`,
       problemData,

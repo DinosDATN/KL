@@ -451,41 +451,13 @@
     </div>
   </div>
 
-  <!-- Problem Form Modal (Placeholder - to be implemented) -->
-  <div
+  <!-- Problem Form Modal -->
+  <app-problem-form
     *ngIf="isFormModalOpen"
-    class="fixed inset-0 z-50 overflow-y-auto"
-    aria-labelledby="modal-title"
-    role="dialog"
-    aria-modal="true"
-  >
-    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-      <div
-        class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-        (click)="closeFormModal()"
-      ></div>
-      <div
-        class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full"
-      >
-        <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">
-              {{ editingProblem ? 'Edit Problem' : 'Create Problem' }}
-            </h3>
-            <button
-              (click)="closeFormModal()"
-              class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
-            >
-              <i class="icon-x text-xl"></i>
-            </button>
-          </div>
-          <div class="text-center py-8">
-            <p class="text-gray-600 dark:text-gray-400">
-              Problem form will be implemented here
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+    [problem]="editingProblem"
+    [isEdit]="!!editingProblem"
+    (problemCreated)="onProblemCreated($event)"
+    (problemUpdated)="onProblemUpdated($event)"
+    (close)="closeFormModal()"
+  ></app-problem-form>
 </div>

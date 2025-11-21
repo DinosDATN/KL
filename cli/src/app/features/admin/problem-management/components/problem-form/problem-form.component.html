@@ -1,0 +1,573 @@
+<!-- Problem Form Modal -->
+<div
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto py-8"
+>
+  <div
+    class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-6xl mx-4 max-h-[95vh] overflow-hidden flex flex-col"
+  >
+    <!-- Form Header -->
+    <div
+      class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0"
+    >
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+        {{ isEdit ? "Edit Problem" : "Create New Problem" }}
+      </h2>
+      <button
+        type="button"
+        (click)="onClose()"
+        class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+      >
+        <i class="icon-x text-xl"></i>
+      </button>
+    </div>
+
+    <!-- Form Content -->
+    <div class="flex-1 overflow-y-auto p-6">
+      <form [formGroup]="problemForm" (ngSubmit)="onSubmit()">
+        <!-- Basic Information -->
+        <div class="mb-8">
+          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+            Basic Information
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Title -->
+            <div class="md:col-span-2">
+              <label
+                for="title"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+              >
+                Title *
+              </label>
+              <input
+                type="text"
+                id="title"
+                formControlName="title"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                placeholder="Enter problem title"
+              />
+              <div
+                *ngIf="
+                  problemForm.get('title')?.touched &&
+                  problemForm.get('title')?.errors
+                "
+                class="mt-1 text-sm text-red-600 dark:text-red-400"
+              >
+                <div *ngIf="problemForm.get('title')?.errors?.['required']">
+                  Title is required
+                </div>
+              </div>
+            </div>
+
+            <!-- Description -->
+            <div class="md:col-span-2">
+              <label
+                for="description"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+              >
+                Description
+              </label>
+              <textarea
+                id="description"
+                formControlName="description"
+                rows="6"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                placeholder="Enter problem description"
+              ></textarea>
+            </div>
+
+            <!-- Difficulty -->
+            <div>
+              <label
+                for="difficulty"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+              >
+                Difficulty *
+              </label>
+              <select
+                id="difficulty"
+                formControlName="difficulty"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                <option *ngFor="let diff of difficulties" [value]="diff.value">
+                  {{ diff.label }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Estimated Time -->
+            <div>
+              <label
+                for="estimated_time"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+              >
+                Estimated Time
+              </label>
+              <input
+                type="text"
+                id="estimated_time"
+                formControlName="estimated_time"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                placeholder="e.g., 30 minutes"
+              />
+            </div>
+
+            <!-- Category -->
+            <div>
+              <label
+                for="category_id"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+              >
+                Category *
+              </label>
+              <select
+                id="category_id"
+                formControlName="category_id"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                <option [value]="">Select a category</option>
+                <option
+                  *ngFor="let category of categories"
+                  [value]="category.id"
+                >
+                  {{ category.name }}
+                </option>
+              </select>
+              <div
+                *ngIf="
+                  problemForm.get('category_id')?.touched &&
+                  problemForm.get('category_id')?.errors
+                "
+                class="mt-1 text-sm text-red-600 dark:text-red-400"
+              >
+                <div
+                  *ngIf="problemForm.get('category_id')?.errors?.['required']"
+                >
+                  Category is required
+                </div>
+              </div>
+            </div>
+
+            <!-- Tags -->
+            <div>
+              <label
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+              >
+                Tags
+              </label>
+              <div
+                class="border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+              >
+                <div
+                  *ngIf="loadingTags"
+                  class="p-4 text-center text-gray-500 dark:text-gray-400"
+                >
+                  <div class="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                  <p class="mt-2 text-sm">Loading tags...</p>
+                </div>
+                <div
+                  *ngIf="!loadingTags && tags.length === 0"
+                  class="p-4 text-center text-gray-500 dark:text-gray-400"
+                >
+                  No tags available
+                </div>
+                <div
+                  *ngIf="!loadingTags && tags.length > 0"
+                  class="max-h-48 overflow-y-auto p-3 space-y-2"
+                >
+                  <label
+                    *ngFor="let tag of tags"
+                    class="flex items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 rounded p-2 transition-colors duration-200"
+                  >
+                    <input
+                      type="checkbox"
+                      [value]="tag.id"
+                      [checked]="isTagSelected(tag.id)"
+                      (change)="onTagToggle(tag.id, $event)"
+                      class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                    />
+                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                      {{ tag.name }}
+                    </span>
+                  </label>
+                </div>
+              </div>
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Select one or more tags for this problem
+              </p>
+            </div>
+
+            <!-- Flags -->
+            <div class="md:col-span-2 flex gap-6">
+              <label class="flex items-center">
+                <input
+                  type="checkbox"
+                  formControlName="is_premium"
+                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                  Premium
+                </span>
+              </label>
+              <label class="flex items-center">
+                <input
+                  type="checkbox"
+                  formControlName="is_popular"
+                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                  Popular
+                </span>
+              </label>
+              <label class="flex items-center">
+                <input
+                  type="checkbox"
+                  formControlName="is_new"
+                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                  New
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Examples Section -->
+        <div class="mb-8">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+              Examples
+            </h3>
+            <button
+              type="button"
+              (click)="addExample()"
+              class="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+            >
+              <i class="icon-plus mr-1"></i> Add Example
+            </button>
+          </div>
+          <div
+            formArrayName="examples"
+            class="space-y-4"
+            *ngIf="examplesFormArray.length > 0"
+          >
+            <div
+              *ngFor="
+                let example of examplesFormArray.controls;
+                let i = index
+              "
+              class="border border-gray-300 dark:border-gray-600 rounded-lg p-4"
+            >
+              <div class="flex items-center justify-between mb-3">
+                <h4 class="text-sm font-medium text-gray-900 dark:text-white">
+                  Example {{ i + 1 }}
+                </h4>
+                <button
+                  type="button"
+                  (click)="removeExample(i)"
+                  class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                >
+                  <i class="icon-trash"></i>
+                </button>
+              </div>
+              <div [formGroup]="$any(example)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                  >
+                    Input *
+                  </label>
+                  <textarea
+                    formControlName="input"
+                    rows="3"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono text-sm"
+                    placeholder="Input example"
+                  ></textarea>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                  >
+                    Output *
+                  </label>
+                  <textarea
+                    formControlName="output"
+                    rows="3"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono text-sm"
+                    placeholder="Expected output"
+                  ></textarea>
+                </div>
+              </div>
+              <div [formGroup]="$any(example)" class="mt-3">
+                <label
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
+                  Explanation
+                </label>
+                <textarea
+                  formControlName="explanation"
+                  rows="2"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="Explanation (optional)"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+          <div
+            *ngIf="examplesFormArray.length === 0"
+            class="text-center py-8 text-gray-500 dark:text-gray-400"
+          >
+            No examples added. Click "Add Example" to add one.
+          </div>
+        </div>
+
+        <!-- Constraints Section -->
+        <div class="mb-8">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+              Constraints
+            </h3>
+            <button
+              type="button"
+              (click)="addConstraint()"
+              class="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+            >
+              <i class="icon-plus mr-1"></i> Add Constraint
+            </button>
+          </div>
+          <div
+            formArrayName="constraints"
+            class="space-y-3"
+            *ngIf="constraintsFormArray.length > 0"
+          >
+            <div
+              *ngFor="
+                let constraint of constraintsFormArray.controls;
+                let i = index
+              "
+              [formGroup]="$any(constraint)"
+              class="flex items-start gap-3"
+            >
+              <div class="flex-1">
+                <input
+                  type="text"
+                  formControlName="constraint"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="e.g., 1 <= n <= 1000"
+                />
+              </div>
+              <button
+                type="button"
+                (click)="removeConstraint(i)"
+                class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 mt-2"
+              >
+                <i class="icon-trash"></i>
+              </button>
+            </div>
+          </div>
+          <div
+            *ngIf="constraintsFormArray.length === 0"
+            class="text-center py-8 text-gray-500 dark:text-gray-400"
+          >
+            No constraints added. Click "Add Constraint" to add one.
+          </div>
+        </div>
+
+        <!-- Starter Codes Section -->
+        <div class="mb-8">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+              Starter Codes
+            </h3>
+            <button
+              type="button"
+              (click)="addStarterCode()"
+              class="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+            >
+              <i class="icon-plus mr-1"></i> Add Starter Code
+            </button>
+          </div>
+          <div
+            formArrayName="starter_codes"
+            class="space-y-4"
+            *ngIf="starterCodesFormArray.length > 0"
+          >
+            <div
+              *ngFor="
+                let starterCode of starterCodesFormArray.controls;
+                let i = index
+              "
+              class="border border-gray-300 dark:border-gray-600 rounded-lg p-4"
+            >
+              <div [formGroup]="$any(starterCode)" class="space-y-3">
+                <div class="flex items-center justify-between">
+                  <select
+                    formControlName="language"
+                    class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  >
+                    <option
+                      *ngFor="let lang of commonLanguages"
+                      [value]="lang.value"
+                    >
+                      {{ lang.label }}
+                    </option>
+                  </select>
+                  <button
+                    type="button"
+                    (click)="removeStarterCode(i)"
+                    class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 ml-3"
+                  >
+                    <i class="icon-trash"></i>
+                  </button>
+                </div>
+                <textarea
+                  formControlName="code"
+                  rows="8"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono text-sm"
+                  placeholder="Enter starter code"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+          <div
+            *ngIf="starterCodesFormArray.length === 0"
+            class="text-center py-8 text-gray-500 dark:text-gray-400"
+          >
+            No starter codes added. Click "Add Starter Code" to add one.
+          </div>
+        </div>
+
+        <!-- Test Cases Section -->
+        <div class="mb-8">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+              Test Cases
+            </h3>
+            <button
+              type="button"
+              (click)="addTestCase()"
+              class="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+            >
+              <i class="icon-plus mr-1"></i> Add Test Case
+            </button>
+          </div>
+          <div
+            formArrayName="test_cases"
+            class="space-y-4"
+            *ngIf="testCasesFormArray.length > 0"
+          >
+            <div
+              *ngFor="let testCase of testCasesFormArray.controls; let i = index"
+              class="border border-gray-300 dark:border-gray-600 rounded-lg p-4"
+            >
+              <div [formGroup]="$any(testCase)" class="space-y-3">
+                <div class="flex items-center justify-between">
+                  <h4 class="text-sm font-medium text-gray-900 dark:text-white">
+                    Test Case {{ i + 1 }}
+                  </h4>
+                  <div class="flex items-center gap-3">
+                    <label class="flex items-center">
+                      <input
+                        type="checkbox"
+                        formControlName="is_hidden"
+                        class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span class="ml-2 text-xs text-gray-700 dark:text-gray-300">
+                        Hidden
+                      </span>
+                    </label>
+                    <button
+                      type="button"
+                      (click)="removeTestCase(i)"
+                      class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                    >
+                      <i class="icon-trash"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label
+                      class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                    >
+                      Input *
+                    </label>
+                    <textarea
+                      formControlName="input"
+                      rows="4"
+                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono text-sm"
+                      placeholder="Test case input"
+                    ></textarea>
+                  </div>
+                  <div>
+                    <label
+                      class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                    >
+                      Expected Output *
+                    </label>
+                    <textarea
+                      formControlName="output"
+                      rows="4"
+                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono text-sm"
+                      placeholder="Expected output"
+                    ></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            *ngIf="testCasesFormArray.length === 0"
+            class="text-center py-8 text-gray-500 dark:text-gray-400"
+          >
+            No test cases added. Click "Add Test Case" to add one.
+          </div>
+        </div>
+
+        <!-- Error Message -->
+        <div *ngIf="error" class="mb-6">
+          <div
+            class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4"
+          >
+            <p class="text-sm text-red-800 dark:text-red-300">{{ error }}</p>
+          </div>
+        </div>
+
+        <!-- Debug: Form Validation Status -->
+        <div *ngIf="true" class="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded text-xs">
+          <p><strong>Form Valid:</strong> {{ problemForm.valid }}</p>
+          <p><strong>Form Invalid:</strong> {{ problemForm.invalid }}</p>
+          <p><strong>Form Errors:</strong> {{ problemForm.errors | json }}</p>
+          <p><strong>Title Value:</strong> {{ problemForm.get('title')?.value }}</p>
+          <p><strong>Title Errors:</strong> {{ problemForm.get('title')?.errors | json }}</p>
+          <p><strong>Category Value:</strong> {{ problemForm.get('category_id')?.value }}</p>
+          <p><strong>Category Errors:</strong> {{ problemForm.get('category_id')?.errors | json }}</p>
+          <p><strong>Difficulty Value:</strong> {{ problemForm.get('difficulty')?.value }}</p>
+          <p><strong>Difficulty Errors:</strong> {{ problemForm.get('difficulty')?.errors | json }}</p>
+        </div>
+
+        <!-- Form Actions -->
+        <div
+          class="flex items-center justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700"
+        >
+          <button
+            type="button"
+            (click)="onClose()"
+            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            [disabled]="loading"
+            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <span *ngIf="loading">Saving...</span>
+            <span *ngIf="!loading">{{ isEdit ? "Update" : "Create" }}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
