@@ -114,6 +114,55 @@ export interface CourseFilters {
   instructor_id?: number;
 }
 
+// Document Management Interfaces
+export interface AdminDocument {
+  id: number;
+  title: string;
+  description: string;
+  content?: string;
+  topic_id: number;
+  level: 'Beginner' | 'Intermediate' | 'Advanced';
+  duration?: number;
+  students: number;
+  rating: number;
+  thumbnail_url?: string;
+  created_by: number;
+  created_at: string;
+  updated_at: string;
+  is_deleted: boolean;
+  Creator?: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  Topic?: {
+    id: number;
+    name: string;
+  };
+}
+
+export interface DocumentFilters {
+  page?: number;
+  limit?: number;
+  topic_id?: number;
+  created_by?: number;
+  level?: string;
+  is_deleted?: boolean;
+  search?: string;
+  sortBy?: string;
+  students_range?: 'low' | 'medium' | 'high';
+}
+
+export interface DocumentStats {
+  totalDocuments: number;
+  publishedDocuments: number;
+  deletedDocuments: number;
+  documentsByLevel: Array<{ level: string; count: number }>;
+  topTopics: Array<{ topic: { id: number; name: string }; count: number }>;
+  totalStudents: number;
+  averageRating: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -420,6 +469,173 @@ export class AdminService {
       map(response => response.data!),
       catchError(this.handleError)
     );
+  }
+
+  // Document Management APIs
+  getDocuments(filters: DocumentFilters = {}): Observable<{ documents: AdminDocument[], pagination: PaginationInfo }> {
+    let params = new HttpParams();
+    
+    Object.keys(filters).forEach(key => {
+      const value = filters[key as keyof DocumentFilters];
+      if (value !== undefined && value !== null) {
+        params = params.set(key, value.toString());
+      }
+    });
+
+    return this.http.get<ApiResponse<AdminDocument[]>>(
+      `${this.apiUrl}/documents`, 
+      { params, withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => ({
+        documents: response.data || [],
+        pagination: response.pagination!
+      })),
+      catchError(this.handleError)
+    );
+  }
+
+  getDocumentById(id: number): Observable<AdminDocument> {
+    return this.http.get<ApiResponse<AdminDocument>>(
+      `${this.apiUrl}/documents/${id}`,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  createDocument(documentData: {
+    title: string;
+    description?: string;
+    content?: string;
+    topic_id: number;
+    level?: 'Beginner' | 'Intermediate' | 'Advanced';
+    duration?: number;
+    thumbnail_url?: string;
+    created_by?: number;
+  }): Observable<AdminDocument> {
+    return this.http.post<ApiResponse<AdminDocument>>(
+      `${this.apiUrl}/documents`,
+      documentData,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  updateDocument(documentId: number, documentData: Partial<AdminDocument>): Observable<AdminDocument> {
+    return this.http.put<ApiResponse<AdminDocument>>(
+      `${this.apiUrl}/documents/${documentId}`,
+      documentData,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  deleteDocument(documentId: number): Observable<void> {
+    return this.http.delete<ApiResponse<void>>(
+      `${this.apiUrl}/documents/${documentId}`,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(() => void 0),
+      catchError(this.handleError)
+    );
+  }
+
+  restoreDocument(documentId: number): Observable<AdminDocument> {
+    return this.http.post<ApiResponse<AdminDocument>>(
+      `${this.apiUrl}/documents/${documentId}/restore`,
+      {},
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  permanentlyDeleteDocument(documentId: number): Observable<void> {
+    return this.http.delete<ApiResponse<void>>(
+      `${this.apiUrl}/documents/${documentId}/permanent`,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(() => void 0),
+      catchError(this.handleError)
+    );
+  }
+
+  getDocumentStatistics(): Observable<DocumentStats> {
+    return this.http.get<ApiResponse<DocumentStats>>(
+      `${this.apiUrl}/documents/statistics`,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  getDeletedDocuments(filters: { page?: number; limit?: number } = {}): Observable<{ documents: AdminDocument[], pagination: PaginationInfo }> {
+    let params = new HttpParams();
+    if (filters.page) params = params.set('page', filters.page.toString());
+    if (filters.limit) params = params.set('limit', filters.limit.toString());
+
+    return this.http.get<ApiResponse<AdminDocument[]>>(
+      `${this.apiUrl}/documents/deleted`,
+      { params, withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => ({
+        documents: response.data || [],
+        pagination: response.pagination!
+      })),
+      catchError(this.handleError)
+    );
+  }
+
+  bulkUpdateDocuments(documentIds: number[], updateData: Partial<AdminDocument>): Observable<{ updatedCount: number; totalRequested: number }> {
+    return this.http.patch<ApiResponse<{ updatedCount: number; totalRequested: number }>>(
+      `${this.apiUrl}/documents/bulk/update`,
+      { document_ids: documentIds, update_data: updateData },
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  bulkDeleteDocuments(documentIds: number[], permanent: boolean = false): Observable<{ deletedCount: number; totalRequested: number }> {
+    return this.http.post<ApiResponse<{ deletedCount: number; totalRequested: number }>>(
+      `${this.apiUrl}/documents/bulk/delete`,
+      { document_ids: documentIds, permanent },
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  bulkRestoreDocuments(documentIds: number[]): Observable<{ restoredCount: number; totalRequested: number }> {
+    return this.http.post<ApiResponse<{ restoredCount: number; totalRequested: number }>>(
+      `${this.apiUrl}/documents/bulk/restore`,
+      { document_ids: documentIds },
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  exportDocuments(format: 'json' | 'csv' = 'json', includeDeleted: boolean = false): Observable<Blob> {
+    let params = new HttpParams()
+      .set('format', format)
+      .set('include_deleted', includeDeleted.toString());
+
+    return this.http.get(`${this.apiUrl}/documents/export`, {
+      params,
+      responseType: 'blob',
+      withCredentials: true // ✅ Send HttpOnly cookie
+    });
   }
 
   // Problem Management APIs
