@@ -460,7 +460,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
       if (this.currentUser?.role === 'admin') {
         baseItems.splice(1, 0, {
           label: 'Admin Panel',
-          link: '/admin/courses',
+          link: '/admin/dashboard',
           icon: 'settings',
         });
       }
