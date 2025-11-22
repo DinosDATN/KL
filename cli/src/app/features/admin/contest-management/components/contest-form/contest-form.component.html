@@ -168,15 +168,16 @@
               No problems found
             </div>
             <div *ngIf="!loadingProblems && getFilteredProblems().length > 0" class="divide-y divide-gray-200 dark:divide-gray-700">
-              <label
+              <div
                 *ngFor="let problem of getFilteredProblems()"
-                class="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+                class="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700"
               >
-                <div class="flex items-center gap-3 flex-1">
+                <div class="flex items-center gap-3 flex-1 cursor-pointer" (click)="toggleProblemSelection(problem.id)">
                   <input
                     type="checkbox"
                     [checked]="isProblemSelected(problem.id)"
                     (change)="onProblemToggle(problem.id, $event)"
+                    (click)="$event.stopPropagation()"
                     class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600"
                   />
                   <div class="flex-1">
@@ -188,7 +189,7 @@
                     </div>
                   </div>
                 </div>
-                <div *ngIf="isProblemSelected(problem.id)" class="ml-2">
+                <div *ngIf="isProblemSelected(problem.id)" class="ml-2" (click)="$event.stopPropagation()">
                   <input
                     type="number"
                     [value]="getProblemPoints(problem.id)"
@@ -198,7 +199,7 @@
                     placeholder="Points"
                   />
                 </div>
-              </label>
+              </div>
             </div>
           </div>
         </div>

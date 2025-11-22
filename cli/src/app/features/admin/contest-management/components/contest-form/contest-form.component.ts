@@ -153,7 +153,13 @@ export class ContestFormComponent implements OnInit, OnChanges {
 
     // Add problem_ids if creating new contest and problems are selected
     if (!this.isEdit && this.selectedProblems.length > 0) {
-      contestData.problem_ids = this.selectedProblems;
+      contestData.problem_ids = this.selectedProblems.map(p => ({
+        id: p.id,
+        points: p.points || 100
+      }));
+      console.log('Sending contest data with problems:', contestData);
+    } else {
+      console.log('No problems selected or editing contest');
     }
 
     const operation = this.isEdit && this.contest
@@ -218,6 +224,19 @@ export class ContestFormComponent implements OnInit, OnChanges {
     } else {
       this.selectedProblems = this.selectedProblems.filter(p => p.id !== problemId);
     }
+    console.log('Selected problems after toggle:', this.selectedProblems);
+  }
+
+  toggleProblemSelection(problemId: number): void {
+    const isSelected = this.isProblemSelected(problemId);
+    if (isSelected) {
+      this.selectedProblems = this.selectedProblems.filter(p => p.id !== problemId);
+    } else {
+      if (!this.selectedProblems.find(p => p.id === problemId)) {
+        this.selectedProblems.push({ id: problemId, points: 100 });
+      }
+    }
+    console.log('Selected problems after toggle:', this.selectedProblems);
   }
 
   isProblemSelected(problemId: number): boolean {
