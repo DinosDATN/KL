@@ -307,6 +307,21 @@ export class ContestManagementComponent extends BaseAdminComponent implements On
       });
   }
 
+  onBulkAction(actionData: any): void {
+    if (this.selectedContests.length === 0) {
+      return;
+    }
+
+    // Xử lý bulk delete
+    if (actionData.action === 'delete') {
+      this.onBulkDelete();
+      return;
+    }
+
+    // Xử lý bulk update cho các action khác
+    this.onBulkUpdate(actionData);
+  }
+
   onBulkUpdate(updateData: Partial<AdminContest>): void {
     if (this.selectedContests.length === 0) {
       return;

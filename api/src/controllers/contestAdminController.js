@@ -564,17 +564,33 @@ class ContestAdminController {
         });
       }
 
-      // Delete related records first
-      await ContestSubmission.destroy({
-        include: [
-          {
-            model: ContestProblem,
-            where: { contest_id: id },
-          },
-        ],
+      // Get all contest problems for this contest
+      const contestProblems = await ContestProblem.findAll({
+        where: { contest_id: id },
+        attributes: ['id']
       });
+
+      const contestProblemIds = contestProblems.map(cp => cp.id);
+
+      // Delete related records first (in correct order to avoid foreign key constraints)
+      // 1. Delete ContestSubmissions (references contest_problem_id)
+      if (contestProblemIds.length > 0) {
+        await ContestSubmission.destroy({
+          where: {
+            contest_problem_id: {
+              [Op.in]: contestProblemIds
+            }
+          }
+        });
+      }
+
+      // 2. Delete ContestProblems (references contest_id)
       await ContestProblem.destroy({ where: { contest_id: id } });
+
+      // 3. Delete UserContest (references contest_id)
       await UserContest.destroy({ where: { contest_id: id } });
+
+      // 4. Finally delete the contest itself
       await contest.destroy();
 
       res.status(200).json({
