@@ -420,12 +420,17 @@ export class AuthService implements OnDestroy {
    * Handle HTTP errors
    */
   private handleError = (error: HttpErrorResponse): Observable<never> => {
-    if (environment.enableLogging) {
+    // ✅ Don't log 401 errors for /auth/profile endpoint - these are expected during OAuth callback retries
+    // Cookie needs time to be processed after redirect, errors are handled by retry logic in OAuth callback
+    const isOAuthProfileError = error.url?.includes('/auth/profile') && error.status === 401;
+    
+    // Only log errors if not OAuth profile error (to avoid spam during retries)
+    if (environment.enableLogging && !isOAuthProfileError) {
       console.error('[Auth] Error:', error.status, error.message);
     }
     
-    // If unauthorized, clear auth data
-    if (error.status === 401) {
+    // If unauthorized, clear auth data (but not during OAuth retries - those are handled by OAuth callback)
+    if (error.status === 401 && !isOAuthProfileError) {
       this.clearAuthData();
     }
 
