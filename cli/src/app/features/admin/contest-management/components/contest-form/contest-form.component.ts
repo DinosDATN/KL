@@ -45,6 +45,7 @@ export class ContestFormComponent implements OnInit, OnChanges {
   selectedProblems: Array<{ id: number; points: number }> = [];
   loadingProblems = false;
   searchProblemTerm = '';
+  filteredProblems: Problem[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -67,6 +68,7 @@ export class ContestFormComponent implements OnInit, OnChanges {
     this.problemsService.getProblems().subscribe({
       next: (problems) => {
         this.availableProblems = problems;
+        this.filteredProblems = problems;
         this.loadingProblems = false;
       },
       error: (error) => {
@@ -255,15 +257,32 @@ export class ContestFormComponent implements OnInit, OnChanges {
     return problem?.points || 100;
   }
 
-  getFilteredProblems(): Problem[] {
-    if (!this.searchProblemTerm) {
-      return this.availableProblems;
+  onSearchChange(value: string): void {
+    this.searchProblemTerm = value;
+    this.updateFilteredProblems();
+  }
+
+  onSearchInput(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.searchProblemTerm = target.value;
+    this.updateFilteredProblems();
+  }
+
+  private updateFilteredProblems(): void {
+    if (!this.searchProblemTerm || this.searchProblemTerm.trim() === '') {
+      this.filteredProblems = this.availableProblems;
+      return;
     }
-    const term = this.searchProblemTerm.toLowerCase();
-    return this.availableProblems.filter(p =>
-      p.title.toLowerCase().includes(term) ||
-      p.description?.toLowerCase().includes(term)
+    const term = this.searchProblemTerm.toLowerCase().trim();
+    this.filteredProblems = this.availableProblems.filter(p =>
+      p.title?.toLowerCase().includes(term) ||
+      p.description?.toLowerCase().includes(term) ||
+      p.id.toString().includes(term)
     );
+  }
+
+  getFilteredProblems(): Problem[] {
+    return this.filteredProblems;
   }
 
   getProblemTitle(problemId: number): string {
