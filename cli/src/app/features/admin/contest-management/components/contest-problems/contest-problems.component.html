@@ -1,0 +1,184 @@
+<!-- Contest Problems Management Modal -->
+<div
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+  (click)="onClose()"
+>
+  <div
+    class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden"
+    (click)="$event.stopPropagation()"
+  >
+    <!-- Header -->
+    <div
+      class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700"
+    >
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+        Manage Problems - {{ contest?.title }}
+      </h2>
+      <button
+        type="button"
+        (click)="onClose()"
+        class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+      >
+        <i class="icon-x text-xl"></i>
+      </button>
+    </div>
+
+    <!-- Content -->
+    <div class="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+      <!-- Add Problem Button -->
+      <div class="mb-4">
+        <button
+          (click)="openAddProblemModal()"
+          class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+        >
+          <i class="icon-plus mr-2"></i>
+          Add Problem
+        </button>
+      </div>
+
+      <!-- Contest Problems List -->
+      <div *ngIf="loading" class="text-center py-8">
+        <div class="animate-spin text-blue-600 text-2xl mb-2">
+          <i class="icon-loader"></i>
+        </div>
+        <p class="text-gray-600 dark:text-gray-400">Loading problems...</p>
+      </div>
+
+      <div *ngIf="!loading" class="space-y-3">
+        <div
+          *ngFor="let cp of contestProblems"
+          class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600"
+        >
+          <div class="flex-1">
+            <div class="text-sm font-medium text-gray-900 dark:text-white">
+              {{ cp.Problem?.title || 'Problem #' + cp.problem_id }}
+            </div>
+            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              {{ cp.Problem?.difficulty || 'N/A' }} • Points: {{ cp.points }}
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <input
+              type="number"
+              [value]="cp.points"
+              (change)="updateProblemPoints(cp.problem_id, +$any($event.target).value)"
+              min="0"
+              class="w-20 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              placeholder="Points"
+            />
+            <button
+              (click)="removeProblem(cp.problem_id)"
+              class="p-2 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+              title="Remove Problem"
+            >
+              <i class="icon-trash"></i>
+            </button>
+          </div>
+        </div>
+
+        <div
+          *ngIf="contestProblems.length === 0"
+          class="text-center py-8 text-gray-500 dark:text-gray-400"
+        >
+          <i class="icon-file-text text-4xl mb-2"></i>
+          <p>No problems added to this contest yet.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Problem Modal -->
+  <div
+    *ngIf="showAddProblemModal"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]"
+    (click)="closeAddProblemModal()"
+  >
+    <div
+      class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[80vh] overflow-hidden"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+          Add Problem to Contest
+        </h3>
+      </div>
+
+      <div class="p-6 overflow-y-auto max-h-[calc(80vh-140px)]">
+        <!-- Search -->
+        <div class="mb-4">
+          <input
+            type="text"
+            [(ngModel)]="searchTerm"
+            placeholder="Search problems..."
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          />
+        </div>
+
+        <!-- Points Input -->
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Points
+          </label>
+          <input
+            type="number"
+            [(ngModel)]="problemPoints"
+            min="0"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          />
+        </div>
+
+        <!-- Problems List -->
+        <div class="border border-gray-300 dark:border-gray-600 rounded-md max-h-64 overflow-y-auto">
+          <div *ngIf="loadingProblems" class="p-4 text-center text-gray-500 dark:text-gray-400">
+            Loading problems...
+          </div>
+          <div *ngIf="!loadingProblems && getFilteredProblems().length === 0" class="p-4 text-center text-gray-500 dark:text-gray-400">
+            No problems found
+          </div>
+          <div *ngIf="!loadingProblems && getFilteredProblems().length > 0" class="divide-y divide-gray-200 dark:divide-gray-700">
+            <label
+              *ngFor="let problem of getFilteredProblems()"
+              class="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+            >
+              <input
+                type="radio"
+                name="selectedProblem"
+                [value]="problem.id"
+                [(ngModel)]="selectedProblemId"
+                class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600"
+              />
+              <div class="flex-1">
+                <div class="text-sm font-medium text-gray-900 dark:text-white">
+                  {{ problem.title }}
+                </div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ problem.difficulty }} • {{ problem.estimated_time || 'N/A' }}
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <button
+            type="button"
+            (click)="closeAddProblemModal()"
+            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            (click)="addProblem()"
+            [disabled]="!selectedProblemId"
+            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Add Problem
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

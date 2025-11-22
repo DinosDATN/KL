@@ -1,0 +1,359 @@
+<!-- Contest List -->
+<div
+  class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 transition-colors duration-200"
+>
+  <!-- Loading State -->
+  <div *ngIf="loading" class="p-8">
+    <div class="animate-pulse">
+      <div class="space-y-4">
+        <div
+          *ngFor="let i of [1, 2, 3, 4, 5]"
+          class="flex items-center space-x-4"
+        >
+          <div class="w-4 h-4 bg-gray-300 dark:bg-gray-600 rounded"></div>
+          <div class="flex-1 space-y-2">
+            <div class="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4"></div>
+            <div class="h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="p-8 text-center">
+    <div class="text-red-500 mb-4">
+      <i class="icon-alert-circle text-2xl"></i>
+    </div>
+    <p class="text-red-600 dark:text-red-400 font-medium">{{ error }}</p>
+  </div>
+
+  <!-- Contest Table -->
+  <div *ngIf="!loading && !error" class="overflow-x-auto -mx-4 sm:mx-0">
+    <table class="w-full divide-y divide-gray-200 dark:divide-gray-700 min-w-max">
+      <!-- Table Header -->
+      <thead class="bg-gray-50 dark:bg-gray-700">
+        <tr>
+          <th scope="col" class="w-4 px-2 sm:px-3 py-3 sticky left-0 bg-gray-50 dark:bg-gray-700 z-20">
+            <input
+              type="checkbox"
+              [(ngModel)]="selectAllChecked"
+              (change)="onSelectAll()"
+              class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600"
+            />
+          </th>
+          <th
+            scope="col"
+            class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer min-w-[200px] sm:min-w-[250px]"
+            (click)="onSort('title')"
+          >
+            <span class="flex items-center">
+              Title
+              <i
+                class="icon-chevron-up ml-1 text-xs"
+                *ngIf="sortBy === 'title' && sortOrder === 'asc'"
+              ></i>
+              <i
+                class="icon-chevron-down ml-1 text-xs"
+                *ngIf="sortBy === 'title' && sortOrder === 'desc'"
+              ></i>
+            </span>
+          </th>
+          <th
+            scope="col"
+            class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell min-w-[120px]"
+          >
+            Creator
+          </th>
+          <th
+            scope="col"
+            class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer min-w-[150px]"
+            (click)="onSort('start_time')"
+          >
+            <span class="flex items-center">
+              Start Time
+              <i
+                class="icon-chevron-up ml-1 text-xs"
+                *ngIf="sortBy === 'start_time' && sortOrder === 'asc'"
+              ></i>
+              <i
+                class="icon-chevron-down ml-1 text-xs"
+                *ngIf="sortBy === 'start_time' && sortOrder === 'desc'"
+              ></i>
+            </span>
+          </th>
+          <th
+            scope="col"
+            class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[100px]"
+          >
+            Status
+          </th>
+          <th
+            scope="col"
+            class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hidden sm:table-cell min-w-[70px]"
+          >
+            Participants
+          </th>
+          <th
+            scope="col"
+            class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hidden lg:table-cell min-w-[70px]"
+          >
+            Problems
+          </th>
+          <th
+            scope="col"
+            class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hidden xl:table-cell min-w-[90px]"
+            (click)="onSort('created_at')"
+          >
+            <span class="flex items-center">
+              Created
+              <i
+                class="icon-chevron-up ml-1 text-xs"
+                *ngIf="sortBy === 'created_at' && sortOrder === 'asc'"
+              ></i>
+              <i
+                class="icon-chevron-down ml-1 text-xs"
+                *ngIf="sortBy === 'created_at' && sortOrder === 'desc'"
+              ></i>
+            </span>
+          </th>
+          <th scope="col" class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider sticky right-0 bg-gray-50 dark:bg-gray-700 z-20 min-w-[140px]">
+            Actions
+          </th>
+        </tr>
+      </thead>
+
+      <!-- Table Body -->
+      <tbody
+        class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+      >
+        <tr
+          *ngFor="let contest of contests"
+          class="group hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors bg-white dark:bg-gray-800"
+        >
+          <td class="w-4 px-2 sm:px-3 py-4 sticky left-0 bg-white dark:bg-gray-800 group-hover:bg-gray-50 dark:group-hover:bg-gray-700 z-20 transition-colors">
+            <input
+              type="checkbox"
+              [checked]="isContestSelected(contest.id)"
+              (change)="onContestToggle(contest.id, $event)"
+              class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600"
+            />
+          </td>
+          <td class="px-3 sm:px-4 py-4">
+            <div class="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[200px] sm:max-w-[250px]">
+              {{ contest.title }}
+            </div>
+            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
+              {{ contest.description || 'No description' }}
+            </div>
+          </td>
+          <td class="px-3 sm:px-4 py-4 text-sm text-gray-900 dark:text-gray-100 hidden md:table-cell">
+            <span class="truncate max-w-[120px] block" [title]="contest.Creator?.name || 'N/A'">
+              {{ contest.Creator?.name || "N/A" }}
+            </span>
+          </td>
+          <td class="px-3 sm:px-4 py-4 text-sm text-gray-900 dark:text-gray-100">
+            <div class="whitespace-nowrap">
+              {{ formatDate(contest.start_time) }}
+            </div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">
+              {{ formatDate(contest.end_time) }}
+            </div>
+          </td>
+          <td class="px-3 sm:px-4 py-4">
+            <span
+              class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full"
+              [ngClass]="getStatusColor(contest.status || 'upcoming')"
+            >
+              {{ getStatusLabel(contest.status || 'upcoming') }}
+            </span>
+          </td>
+          <td class="px-3 sm:px-4 py-4 text-sm text-gray-900 dark:text-gray-100 text-center hidden sm:table-cell">
+            {{ contest.participantCount || 0 }}
+          </td>
+          <td class="px-3 sm:px-4 py-4 text-sm text-gray-900 dark:text-gray-100 text-center hidden lg:table-cell">
+            {{ contest.problemCount || 0 }}
+          </td>
+          <td class="px-3 sm:px-4 py-4 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap hidden xl:table-cell">
+            {{ formatDate(contest.created_at) }}
+          </td>
+          <td class="px-3 sm:px-4 py-4 text-right text-sm font-medium sticky right-0 bg-white dark:bg-gray-800 group-hover:bg-gray-50 dark:group-hover:bg-gray-700 z-20 transition-colors">
+            <div class="flex items-center justify-end gap-0.5 sm:gap-1 flex-wrap sm:flex-nowrap">
+              <!-- View Button -->
+              <button
+                (click)="onView(contest)"
+                class="p-1.5 sm:p-1 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                title="View Details"
+              >
+                <svg
+                  class="w-4 h-4 sm:w-3.5 sm:h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  ></path>
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                  ></path>
+                </svg>
+              </button>
+
+              <!-- Manage Problems Button -->
+              <button
+                *ngIf="!showDeletedActions"
+                (click)="onManageProblems(contest)"
+                class="p-1.5 sm:p-1 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded transition-colors"
+                title="Manage Problems"
+              >
+                <svg
+                  class="w-4 h-4 sm:w-3.5 sm:h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                  ></path>
+                </svg>
+              </button>
+
+              <!-- Edit Button -->
+              <button
+                *ngIf="!showDeletedActions"
+                (click)="onEdit(contest)"
+                class="p-1.5 sm:p-1 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
+                title="Edit Contest"
+              >
+                <svg
+                  class="w-4 h-4 sm:w-3.5 sm:h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                  ></path>
+                </svg>
+              </button>
+
+              <!-- Restore Button - Only in deleted tab -->
+              <button
+                *ngIf="showDeletedActions"
+                (click)="onRestore(contest.id)"
+                class="p-1.5 sm:p-1 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
+                title="Restore Contest"
+              >
+                <svg
+                  class="w-4 h-4 sm:w-3.5 sm:h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  ></path>
+                </svg>
+              </button>
+
+              <!-- Delete Button -->
+              <button
+                (click)="showDeletedActions ? onPermanentlyDelete(contest.id) : onDelete(contest.id)"
+                class="p-1.5 sm:p-1 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                [title]="showDeletedActions ? 'Permanently Delete' : 'Delete Contest'"
+              >
+                <svg
+                  class="w-4 h-4 sm:w-3.5 sm:h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  ></path>
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Empty State -->
+  <div
+    *ngIf="!loading && !error && contests.length === 0"
+    class="text-center py-12"
+  >
+    <div class="text-gray-400 dark:text-gray-500 text-4xl mb-4">
+      <i class="icon-trophy"></i>
+    </div>
+    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+      {{ showDeletedActions ? "No deleted contests" : "No contests found" }}
+    </h3>
+    <p class="text-gray-600 dark:text-gray-400">
+      {{
+        showDeletedActions
+          ? "All deleted contests have been restored or permanently removed"
+          : "No contests match your current filters. Try adjusting your search or filters."
+      }}
+    </p>
+  </div>
+
+  <!-- Pagination -->
+  <div
+    *ngIf="!loading && contests.length > 0"
+    class="border-t border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-3 sm:py-4"
+  >
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
+      <div class="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+        Showing {{ (currentPage - 1) * itemsPerPage + 1 }} to
+        {{ Math.min(currentPage * itemsPerPage, totalItems) }} of
+        {{ totalItems }} results
+      </div>
+
+      <div class="flex items-center space-x-2">
+        <button
+          (click)="pageChange.emit(currentPage - 1)"
+          [disabled]="currentPage <= 1"
+          class="px-3 py-1.5 sm:py-1 text-xs sm:text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          <span class="hidden sm:inline">Previous</span>
+          <span class="sm:hidden">Prev</span>
+        </button>
+
+        <span class="px-3 py-1.5 sm:py-1 text-xs sm:text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
+          Page {{ currentPage }} of {{ totalPages }}
+        </span>
+
+        <button
+          (click)="pageChange.emit(currentPage + 1)"
+          [disabled]="currentPage >= totalPages"
+          class="px-3 py-1.5 sm:py-1 text-xs sm:text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+

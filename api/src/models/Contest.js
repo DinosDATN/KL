@@ -58,6 +58,15 @@ const Contest = sequelize.define('Contest', {
       model: 'users',
       key: 'id'
     }
+  },
+  is_deleted: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    allowNull: false
+  },
+  deleted_at: {
+    type: DataTypes.DATE,
+    allowNull: true
   }
 }, {
   tableName: 'contests',

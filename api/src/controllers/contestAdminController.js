@@ -15,7 +15,8 @@ class ContestAdminController {
         description,
         start_time,
         end_time,
-        created_by
+        created_by,
+        problem_ids
       } = req.body;
 
       // Validate required fields
@@ -53,10 +54,52 @@ class ContestAdminController {
 
       const contest = await Contest.create(contestData);
 
+      // Add problems to contest if provided
+      if (problem_ids && Array.isArray(problem_ids) && problem_ids.length > 0) {
+        const contestProblems = problem_ids.map(item => {
+          if (typeof item === 'object' && item.id) {
+            return {
+              contest_id: contest.id,
+              problem_id: item.id,
+              score: item.points || 100
+            };
+          } else {
+            return {
+              contest_id: contest.id,
+              problem_id: item,
+              score: 100
+            };
+          }
+        });
+
+        await ContestProblem.bulkCreate(contestProblems);
+      }
+
+      // Fetch contest with associations
+      const createdContest = await Contest.findByPk(contest.id, {
+        include: [
+          {
+            model: User,
+            as: 'Creator',
+            attributes: ['id', 'name', 'email']
+          },
+          {
+            model: Problem,
+            as: 'Problems',
+            through: {
+              model: ContestProblem,
+              attributes: ['score', 'id'],
+              as: 'ContestProblem'
+            },
+            attributes: ['id', 'title', 'difficulty']
+          }
+        ]
+      });
+
       res.status(201).json({
         success: true,
         message: 'Contest created successfully',
-        data: contest
+        data: createdContest
       });
     } catch (error) {
       console.error('Error in createContest:', error);
@@ -78,11 +121,19 @@ class ContestAdminController {
         status,
         search,
         sortBy,
-        date_range
+        date_range,
+        is_deleted
       } = req.query;
 
       // Build where clause
       const whereClause = {};
+
+      // Filter by is_deleted (default to false if not specified)
+      if (is_deleted !== undefined) {
+        whereClause.is_deleted = is_deleted === 'true' || is_deleted === true;
+      } else {
+        whereClause.is_deleted = false;
+      }
 
       if (created_by) whereClause.created_by = created_by;
 
@@ -239,7 +290,8 @@ class ContestAdminController {
             as: 'Problems',
             through: {
               model: ContestProblem,
-              attributes: ['points']
+              attributes: ['score', 'id'],
+              as: 'ContestProblem'
             },
             attributes: ['id', 'title', 'difficulty']
           }
@@ -361,7 +413,7 @@ class ContestAdminController {
     }
   }
 
-  // Delete a contest (Admin only)
+  // Delete a contest (Soft delete - Admin only)
   async deleteContest(req, res) {
     try {
       const { id } = req.params;
@@ -383,16 +435,18 @@ class ContestAdminController {
         });
       }
 
-      // Delete related records first
-      await ContestSubmission.destroy({
-        include: [{
-          model: ContestProblem,
-          where: { contest_id: id }
-        }]
+      if (contest.is_deleted) {
+        return res.status(400).json({
+          success: false,
+          message: 'Contest is already deleted'
+        });
+      }
+
+      // Soft delete
+      await contest.update({
+        is_deleted: true,
+        deleted_at: new Date()
       });
-      await ContestProblem.destroy({ where: { contest_id: id } });
-      await UserContest.destroy({ where: { contest_id: id } });
-      await contest.destroy();
 
       res.status(200).json({
         success: true,
@@ -408,25 +462,153 @@ class ContestAdminController {
     }
   }
 
+  // Restore a soft-deleted contest (Admin only)
+  async restoreContest(req, res) {
+    try {
+      const { id } = req.params;
+      const userRole = req.user.role;
+
+      if (userRole !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          message: 'Only admins can restore contests'
+        });
+      }
+
+      const contest = await Contest.findByPk(id);
+      
+      if (!contest) {
+        return res.status(404).json({
+          success: false,
+          message: 'Contest not found'
+        });
+      }
+
+      if (!contest.is_deleted) {
+        return res.status(400).json({
+          success: false,
+          message: 'Contest is not deleted'
+        });
+      }
+
+      // Restore
+      await contest.update({
+        is_deleted: false,
+        deleted_at: null
+      });
+
+      // Fetch updated contest with associations
+      const restoredContest = await Contest.findByPk(id, {
+        include: [
+          {
+            model: User,
+            as: 'Creator',
+            attributes: ['id', 'name', 'email']
+          }
+        ]
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'Contest restored successfully',
+        data: restoredContest
+      });
+    } catch (error) {
+      console.error('Error in restoreContest:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to restore contest',
+        error: error.message
+      });
+    }
+  }
+
+  // Permanently delete a contest (Admin only)
+  async permanentlyDeleteContest(req, res) {
+    try {
+      const { id } = req.params;
+      const userRole = req.user.role;
+
+      if (userRole !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          message: 'Only admins can permanently delete contests'
+        });
+      }
+
+      const contest = await Contest.findByPk(id);
+      
+      if (!contest) {
+        return res.status(404).json({
+          success: false,
+          message: 'Contest not found'
+        });
+      }
+
+      if (!contest.is_deleted) {
+        return res.status(400).json({
+          success: false,
+          message: 'Contest must be soft-deleted before permanent deletion'
+        });
+      }
+
+      // Delete related records first
+      await ContestSubmission.destroy({
+        include: [{
+          model: ContestProblem,
+          where: { contest_id: id }
+        }]
+      });
+      await ContestProblem.destroy({ where: { contest_id: id } });
+      await UserContest.destroy({ where: { contest_id: id } });
+      await contest.destroy();
+
+      res.status(200).json({
+        success: true,
+        message: 'Contest permanently deleted successfully'
+      });
+    } catch (error) {
+      console.error('Error in permanentlyDeleteContest:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to permanently delete contest',
+        error: error.message
+      });
+    }
+  }
+
   // Get contest statistics (Admin only)
   async getContestStatistics(req, res) {
     try {
-      const totalContests = await Contest.count();
+      const totalContests = await Contest.count({
+        where: { is_deleted: false }
+      });
+      
+      const deletedContests = await Contest.count({
+        where: { is_deleted: true }
+      });
       
       const now = new Date();
       const upcomingContests = await Contest.count({
-        where: { start_time: { [Op.gt]: now } }
+        where: { 
+          start_time: { [Op.gt]: now },
+          is_deleted: false
+        }
       });
       
       const activeContests = await Contest.count({
         where: {
           start_time: { [Op.lte]: now },
-          end_time: { [Op.gt]: now }
+          end_time: { [Op.gt]: now },
+          is_deleted: false
         }
       });
       
       const completedContests = await Contest.count({
-        where: { end_time: { [Op.lt]: now } }
+        where: { 
+          end_time: { [Op.lt]: now },
+          is_deleted: false
+        }
       });
 
       const totalParticipants = await UserContest.count();
@@ -463,6 +645,7 @@ class ContestAdminController {
         success: true,
         data: {
           totalContests,
+          deletedContests,
           upcomingContests,
           activeContests,
           completedContests,
@@ -537,7 +720,7 @@ class ContestAdminController {
       const contestProblem = await ContestProblem.create({
         contest_id: id,
         problem_id,
-        points: points || 100
+        score: points || 100
       });
 
       res.status(201).json({

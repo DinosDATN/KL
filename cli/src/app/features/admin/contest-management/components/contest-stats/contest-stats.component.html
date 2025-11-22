@@ -1,0 +1,172 @@
+<!-- Contest Statistics Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+  <!-- Loading State -->
+  <ng-container *ngIf="loading">
+    <div *ngFor="let i of [1, 2, 3, 4]" class="animate-pulse">
+      <div
+        class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700"
+      >
+        <div class="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4 mb-3"></div>
+        <div class="h-8 bg-gray-300 dark:bg-gray-600 rounded w-1/2 mb-2"></div>
+        <div class="h-3 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- Statistics Cards -->
+  <ng-container *ngIf="!loading && stats">
+    <!-- Total Contests -->
+    <div
+      class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors duration-200"
+    >
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">
+          Total Contests
+        </h3>
+        <i
+          [class]="'icon-' + getStatusIcon('total')"
+          [ngClass]="getStatusColor('total')"
+        ></i>
+      </div>
+      <div class="text-2xl font-bold" [ngClass]="getStatusColor('total')">
+        {{ formatNumber(stats.totalContests) }}
+      </div>
+      <div
+        class="flex items-center gap-4 mt-3 text-xs text-gray-500 dark:text-gray-400"
+      >
+        <span class="flex items-center gap-1">
+          <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+          Upcoming: {{ stats.upcomingContests }}
+        </span>
+        <span class="flex items-center gap-1">
+          <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+          Active: {{ stats.activeContests }}
+        </span>
+        <span class="flex items-center gap-1">
+          <span class="w-2 h-2 bg-red-500 rounded-full"></span>
+          Deleted: {{ stats.deletedContests }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Active Contests -->
+    <div
+      class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors duration-200"
+    >
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">
+          Status Breakdown
+        </h3>
+        <i
+          [class]="'icon-' + getStatusIcon('active')"
+          [ngClass]="getStatusColor('active')"
+        ></i>
+      </div>
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-sm text-gray-600 dark:text-gray-400">Active</span>
+          <span
+            class="text-lg font-semibold"
+            [ngClass]="getStatusColor('active')"
+          >
+            {{ formatNumber(stats.activeContests) }}
+          </span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-sm text-gray-600 dark:text-gray-400">Upcoming</span>
+          <span
+            class="text-lg font-semibold"
+            [ngClass]="getStatusColor('upcoming')"
+          >
+            {{ formatNumber(stats.upcomingContests) }}
+          </span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-sm text-gray-600 dark:text-gray-400">Completed</span>
+          <span
+            class="text-lg font-semibold"
+            [ngClass]="getStatusColor('completed')"
+          >
+            {{ formatNumber(stats.completedContests) }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Participants -->
+    <div
+      class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors duration-200"
+    >
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">
+          Participants
+        </h3>
+        <i
+          [class]="'icon-' + getStatusIcon('participants')"
+          [ngClass]="getStatusColor('participants')"
+        ></i>
+      </div>
+      <div class="text-2xl font-bold" [ngClass]="getStatusColor('participants')">
+        {{ formatNumber(stats.totalParticipants) }}
+      </div>
+      <div class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+        Avg: {{ stats.avgParticipantsPerContest.toFixed(1) }} per contest
+      </div>
+    </div>
+
+    <!-- Submissions & Duration -->
+    <div
+      class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors duration-200"
+    >
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">
+          Activity
+        </h3>
+        <i
+          [class]="'icon-' + getStatusIcon('submissions')"
+          [ngClass]="getStatusColor('submissions')"
+        ></i>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <div
+            class="text-lg font-semibold"
+            [ngClass]="getStatusColor('submissions')"
+          >
+            {{ formatNumber(stats.totalSubmissions) }}
+          </div>
+          <div class="text-xs text-gray-500 dark:text-gray-400">
+            Total Submissions
+          </div>
+        </div>
+        <div class="border-t border-gray-200 dark:border-gray-700 pt-3">
+          <div
+            class="text-lg font-semibold"
+            [ngClass]="getStatusColor('duration')"
+          >
+            {{ stats.avgDurationMinutes }} min
+          </div>
+          <div class="text-xs text-gray-500 dark:text-gray-400">
+            Avg Duration
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- Error State -->
+  <ng-container *ngIf="!loading && !stats">
+    <div
+      class="col-span-full bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center"
+    >
+      <i class="icon-alert-circle text-red-500 text-2xl mb-2"></i>
+      <p class="text-red-600 dark:text-red-400 font-medium">
+        Failed to load statistics
+      </p>
+      <p class="text-red-500 dark:text-red-400 text-sm mt-1">
+        Please refresh the page to try again
+      </p>
+    </div>
+  </ng-container>
+</div>
+

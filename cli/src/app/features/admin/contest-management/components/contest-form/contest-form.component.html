@@ -1,0 +1,233 @@
+<!-- Contest Form Modal -->
+<div
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+>
+  <div
+    class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden"
+    (click)="$event.stopPropagation()"
+  >
+    <!-- Form Header -->
+    <div
+      class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700"
+    >
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+        {{ isEdit ? "Edit Contest" : "Create New Contest" }}
+      </h2>
+      <button
+        type="button"
+        (click)="onCancel()"
+        class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+      >
+        <i class="icon-x text-xl"></i>
+      </button>
+    </div>
+
+    <!-- Form Content -->
+    <div class="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+      <form [formGroup]="contestForm" (ngSubmit)="onSubmit()">
+        <!-- Title -->
+        <div class="mb-6">
+          <label
+            for="title"
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          >
+            Contest Title *
+          </label>
+          <input
+            type="text"
+            id="title"
+            formControlName="title"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            placeholder="Enter contest title"
+          />
+          <div
+            *ngIf="getFieldError('title')"
+            class="mt-1 text-sm text-red-600 dark:text-red-400"
+          >
+            {{ getFieldError('title') }}
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="mb-6">
+          <label
+            for="description"
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          >
+            Description
+          </label>
+          <textarea
+            id="description"
+            formControlName="description"
+            rows="4"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            placeholder="Enter contest description"
+          ></textarea>
+        </div>
+
+        <!-- Start Time -->
+        <div class="mb-6">
+          <label
+            for="start_time"
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          >
+            Start Time *
+          </label>
+          <input
+            type="datetime-local"
+            id="start_time"
+            formControlName="start_time"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          />
+          <div
+            *ngIf="getFieldError('start_time')"
+            class="mt-1 text-sm text-red-600 dark:text-red-400"
+          >
+            {{ getFieldError('start_time') }}
+          </div>
+        </div>
+
+        <!-- End Time -->
+        <div class="mb-6">
+          <label
+            for="end_time"
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          >
+            End Time *
+          </label>
+          <input
+            type="datetime-local"
+            id="end_time"
+            formControlName="end_time"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          />
+          <div
+            *ngIf="getFieldError('end_time')"
+            class="mt-1 text-sm text-red-600 dark:text-red-400"
+          >
+            {{ getFieldError('end_time') }}
+          </div>
+        </div>
+
+        <!-- Problems Selection (Only when creating new contest) -->
+        <div *ngIf="!isEdit" class="mb-6">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Select Problems (Optional)
+          </label>
+          
+          <!-- Search Problems -->
+          <div class="mb-3">
+            <input
+              type="text"
+              [(ngModel)]="searchProblemTerm"
+              placeholder="Search problems..."
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            />
+          </div>
+
+          <!-- Selected Problems Summary -->
+          <div *ngIf="selectedProblems.length > 0" class="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+            <p class="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">
+              Selected Problems ({{ selectedProblems.length }})
+            </p>
+            <div class="space-y-2 max-h-32 overflow-y-auto">
+              <div
+                *ngFor="let selected of selectedProblems"
+                class="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700"
+              >
+                <span class="text-sm text-gray-900 dark:text-white">
+                  {{ getProblemTitle(selected.id) }}
+                </span>
+                <div class="flex items-center gap-2">
+                  <input
+                    type="number"
+                    [value]="selected.points"
+                    (change)="updateProblemPoints(selected.id, +$any($event.target).value)"
+                    min="0"
+                    class="w-20 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="Points"
+                  />
+                  <button
+                    type="button"
+                    (click)="removeSelectedProblem(selected.id)"
+                    class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                  >
+                    <i class="icon-x"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Problems List -->
+          <div class="border border-gray-300 dark:border-gray-600 rounded-md max-h-64 overflow-y-auto">
+            <div *ngIf="loadingProblems" class="p-4 text-center text-gray-500 dark:text-gray-400">
+              Loading problems...
+            </div>
+            <div *ngIf="!loadingProblems && getFilteredProblems().length === 0" class="p-4 text-center text-gray-500 dark:text-gray-400">
+              No problems found
+            </div>
+            <div *ngIf="!loadingProblems && getFilteredProblems().length > 0" class="divide-y divide-gray-200 dark:divide-gray-700">
+              <label
+                *ngFor="let problem of getFilteredProblems()"
+                class="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+              >
+                <div class="flex items-center gap-3 flex-1">
+                  <input
+                    type="checkbox"
+                    [checked]="isProblemSelected(problem.id)"
+                    (change)="onProblemToggle(problem.id, $event)"
+                    class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600"
+                  />
+                  <div class="flex-1">
+                    <div class="text-sm font-medium text-gray-900 dark:text-white">
+                      {{ problem.title }}
+                    </div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">
+                      {{ problem.difficulty }} • {{ problem.estimated_time || 'N/A' }}
+                    </div>
+                  </div>
+                </div>
+                <div *ngIf="isProblemSelected(problem.id)" class="ml-2">
+                  <input
+                    type="number"
+                    [value]="getProblemPoints(problem.id)"
+                    (change)="updateProblemPoints(problem.id, +$any($event.target).value)"
+                    min="0"
+                    class="w-20 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="Points"
+                  />
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Error Message -->
+        <div *ngIf="error" class="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+          <p class="text-sm text-red-600 dark:text-red-400">{{ error }}</p>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <button
+            type="button"
+            (click)="onCancel()"
+            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            [disabled]="loading || contestForm.invalid"
+            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <span *ngIf="loading">Saving...</span>
+            <span *ngIf="!loading">{{ isEdit ? "Update" : "Create" }}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+

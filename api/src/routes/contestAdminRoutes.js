@@ -32,8 +32,14 @@ router.get('/:id', contestAdminController.getContestByIdForAdmin);
 // PUT /api/admin/contests/:id - Update a contest
 router.put('/:id', contestAdminController.updateContest);
 
-// DELETE /api/admin/contests/:id - Delete a contest
+// DELETE /api/admin/contests/:id - Delete a contest (soft delete)
 router.delete('/:id', requireRole(['admin']), contestAdminController.deleteContest);
+
+// POST /api/admin/contests/:id/restore - Restore a soft-deleted contest
+router.post('/:id/restore', requireRole(['admin']), contestAdminController.restoreContest);
+
+// DELETE /api/admin/contests/:id/permanent - Permanently delete a contest
+router.delete('/:id/permanent', requireRole(['admin']), contestAdminController.permanentlyDeleteContest);
 
 /**
  * Contest Problem Management (Admin/Creator)

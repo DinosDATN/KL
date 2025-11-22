@@ -267,6 +267,85 @@ export interface ProblemTag {
   updated_at?: string;
 }
 
+// Contest Management Interfaces
+export interface AdminContest {
+  id: number;
+  title: string;
+  description?: string | null;
+  start_time: string;
+  end_time: string;
+  created_by: number;
+  created_at: string;
+  updated_at?: string | null;
+  is_deleted?: boolean;
+  deleted_at?: string | null;
+  status?: 'upcoming' | 'active' | 'completed';
+  participantCount?: number;
+  problemCount?: number;
+  duration?: number;
+  timeRemaining?: number;
+  submissionCount?: number;
+  Creator?: {
+    id: number;
+    name: string;
+    email: string;
+    avatar_url?: string;
+  };
+  Problems?: Array<{
+    id: number;
+    title: string;
+    difficulty: string;
+    ContestProblem?: {
+      score: number;
+      id: number;
+    };
+  }>;
+}
+
+export interface ContestFilters {
+  page?: number;
+  limit?: number;
+  created_by?: number;
+  status?: 'upcoming' | 'active' | 'completed';
+  search?: string;
+  sortBy?: 'title' | 'start_time' | 'end_time' | 'created_at';
+  date_range?: 'today' | 'this_week' | 'this_month';
+  is_deleted?: boolean;
+}
+
+export interface ContestStats {
+  totalContests: number;
+  deletedContests: number;
+  upcomingContests: number;
+  activeContests: number;
+  completedContests: number;
+  totalParticipants: number;
+  avgParticipantsPerContest: number;
+  totalSubmissions: number;
+  avgDurationMinutes: number;
+  topCreators: Array<{
+    creator: {
+      id: number;
+      name: string;
+      email: string;
+    };
+    contestCount: number;
+  }>;
+}
+
+export interface ContestParticipant {
+  id: number;
+  contest_id: number;
+  user_id: number;
+  registered_at: string;
+  User?: {
+    id: number;
+    name: string;
+    email: string;
+    avatar_url?: string;
+  };
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -986,33 +1065,185 @@ export class AdminService {
   }
 
   // Contest Management APIs
-  getContests(filters: any = {}): Observable<any> {
+  getContests(filters: ContestFilters = {}): Observable<{ contests: AdminContest[], pagination: PaginationInfo }> {
     let params = new HttpParams();
     
     Object.keys(filters).forEach(key => {
-      const value = filters[key];
+      const value = filters[key as keyof ContestFilters];
       if (value !== undefined && value !== null) {
         params = params.set(key, value.toString());
       }
     });
 
-    return this.http.get<ApiResponse<any>>(
+    return this.http.get<ApiResponse<AdminContest[]>>(
       `${this.apiUrl}/contests`, 
       { params, withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => ({
+        contests: response.data || [],
+        pagination: response.pagination!
+      })),
+      catchError(this.handleError)
+    );
+  }
+
+  getContestById(id: number): Observable<AdminContest> {
+    return this.http.get<ApiResponse<AdminContest>>(
+      `${this.apiUrl}/contests/${id}`,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
     ).pipe(
       map(response => response.data!),
       catchError(this.handleError)
     );
   }
 
-  getContestStatistics(): Observable<any> {
-    return this.http.get<ApiResponse<any>>(
+  createContest(contestData: {
+    title: string;
+    description?: string;
+    start_time: string;
+    end_time: string;
+    created_by?: number;
+    problem_ids?: Array<number | { id: number; points: number }>;
+  }): Observable<AdminContest> {
+    return this.http.post<ApiResponse<AdminContest>>(
+      `${this.apiUrl}/contests`,
+      contestData,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  updateContest(contestId: number, contestData: Partial<AdminContest>): Observable<AdminContest> {
+    return this.http.put<ApiResponse<AdminContest>>(
+      `${this.apiUrl}/contests/${contestId}`,
+      contestData,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  deleteContest(contestId: number): Observable<void> {
+    return this.http.delete<ApiResponse<void>>(
+      `${this.apiUrl}/contests/${contestId}`,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(() => void 0),
+      catchError(this.handleError)
+    );
+  }
+
+  getContestStatistics(): Observable<ContestStats> {
+    return this.http.get<ApiResponse<ContestStats>>(
       `${this.apiUrl}/contests/statistics`,
       { withCredentials: true } // ✅ Send HttpOnly cookie
     ).pipe(
       map(response => response.data!),
       catchError(this.handleError)
     );
+  }
+
+  getContestParticipants(contestId: number, page: number = 1, limit: number = 10): Observable<{ participants: ContestParticipant[], pagination: PaginationInfo }> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('limit', limit.toString());
+
+    return this.http.get<ApiResponse<ContestParticipant[]>>(
+      `${this.apiUrl}/contests/${contestId}/participants`,
+      { params, withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => ({
+        participants: response.data || [],
+        pagination: response.pagination!
+      })),
+      catchError(this.handleError)
+    );
+  }
+
+  addProblemToContest(contestId: number, problemId: number, points: number = 100): Observable<any> {
+    return this.http.post<ApiResponse<any>>(
+      `${this.apiUrl}/contests/${contestId}/problems`,
+      { problem_id: problemId, points },
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  removeProblemFromContest(contestId: number, problemId: number): Observable<void> {
+    return this.http.delete<ApiResponse<void>>(
+      `${this.apiUrl}/contests/${contestId}/problems/${problemId}`,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(() => void 0),
+      catchError(this.handleError)
+    );
+  }
+
+  bulkUpdateContests(contestIds: number[], updateData: Partial<AdminContest>): Observable<{ updatedCount: number; totalRequested: number }> {
+    return this.http.patch<ApiResponse<{ updatedCount: number; totalRequested: number }>>(
+      `${this.apiUrl}/contests/bulk/update`,
+      { contest_ids: contestIds, update_data: updateData },
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  restoreContest(contestId: number): Observable<AdminContest> {
+    return this.http.post<ApiResponse<AdminContest>>(
+      `${this.apiUrl}/contests/${contestId}/restore`,
+      {},
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  permanentlyDeleteContest(contestId: number): Observable<void> {
+    return this.http.delete<ApiResponse<void>>(
+      `${this.apiUrl}/contests/${contestId}/permanent`,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      map(() => void 0),
+      catchError(this.handleError)
+    );
+  }
+
+  exportContests(format: 'json' | 'csv' = 'json', includeParticipants: boolean = false): Observable<any> {
+    const params = new HttpParams()
+      .set('format', format)
+      .set('include_participants', includeParticipants.toString());
+
+    if (format === 'csv') {
+      return this.http.get(
+        `${this.apiUrl}/contests/export`,
+        { 
+          params, 
+          withCredentials: true,
+          responseType: 'text'
+        } // ✅ Send HttpOnly cookie
+      ).pipe(
+        catchError(this.handleError)
+      );
+    } else {
+      return this.http.get(
+        `${this.apiUrl}/contests/export`,
+        { 
+          params, 
+          withCredentials: true,
+          responseType: 'json'
+        } // ✅ Send HttpOnly cookie
+      ).pipe(
+        catchError(this.handleError)
+      );
+    }
   }
 
   // Analytics APIs
