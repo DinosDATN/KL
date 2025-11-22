@@ -610,45 +610,138 @@ class ContestAdminController {
   // Get contest statistics (Admin only)
   async getContestStatistics(req, res) {
     try {
+      const { range = '30d' } = req.query;
+      
+      let startDate;
+      const now = new Date();
+      
+      switch (range) {
+        case '7d':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case '30d':
+          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          break;
+        case '90d':
+          startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+          break;
+        case 'all':
+          startDate = null;
+          break;
+        default:
+          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      }
+
+      const whereClause = startDate ? { created_at: { [Op.gte]: startDate } } : {};
+      const whereClauseNotDeleted = { ...whereClause, is_deleted: false };
+
       const totalContests = await Contest.count({
-        where: { is_deleted: false },
+        where: whereClauseNotDeleted,
       });
 
       const deletedContests = await Contest.count({
-        where: { is_deleted: true },
+        where: { ...whereClause, is_deleted: true },
       });
 
-      const now = new Date();
       const upcomingContests = await Contest.count({
         where: {
+          ...whereClauseNotDeleted,
           start_time: { [Op.gt]: now },
-          is_deleted: false,
         },
       });
 
       const activeContests = await Contest.count({
         where: {
+          ...whereClauseNotDeleted,
           start_time: { [Op.lte]: now },
           end_time: { [Op.gt]: now },
-          is_deleted: false,
         },
       });
 
       const completedContests = await Contest.count({
         where: {
+          ...whereClauseNotDeleted,
           end_time: { [Op.lt]: now },
-          is_deleted: false,
         },
       });
 
-      const totalParticipants = await UserContest.count();
+      const totalParticipants = await UserContest.count({
+        include: [{
+          model: Contest,
+          as: 'Contest',
+          where: whereClauseNotDeleted,
+          required: true
+        }]
+      });
+
       const avgParticipantsPerContest =
         totalContests > 0 ? (totalParticipants / totalContests).toFixed(2) : 0;
 
-      const totalSubmissions = await ContestSubmission.count();
+      // Submission statistics
+      const totalSubmissions = await ContestSubmission.count({
+        include: [{
+          model: ContestProblem,
+          as: 'ContestProblem',
+          include: [{
+            model: Contest,
+            as: 'Contest',
+            where: whereClauseNotDeleted,
+            required: true
+          }],
+          required: true
+        }]
+      });
+
+      // Submissions by status
+      const submissionsByStatusRaw = await ContestSubmission.sequelize.query(`
+        SELECT cs.status, COUNT(*) as count
+        FROM contest_submissions cs
+        INNER JOIN contest_problems cp ON cs.contest_problem_id = cp.id
+        INNER JOIN contests c ON cp.contest_id = c.id
+        WHERE c.is_deleted = false
+        ${startDate ? `AND c.created_at >= '${startDate.toISOString()}'` : ''}
+        GROUP BY cs.status
+      `, { type: ContestSubmission.sequelize.QueryTypes.SELECT });
+
+      // Submissions by language
+      const submissionsByLanguageRaw = await ContestSubmission.sequelize.query(`
+        SELECT cs.language, COUNT(*) as count
+        FROM contest_submissions cs
+        INNER JOIN contest_problems cp ON cs.contest_problem_id = cp.id
+        INNER JOIN contests c ON cp.contest_id = c.id
+        WHERE c.is_deleted = false
+        ${startDate ? `AND c.created_at >= '${startDate.toISOString()}'` : ''}
+        GROUP BY cs.language
+        ORDER BY count DESC
+        LIMIT 5
+      `, { type: ContestSubmission.sequelize.QueryTypes.SELECT });
+
+      // Contest creation trend
+      const contestCreationTrend = await Contest.findAll({
+        where: whereClauseNotDeleted,
+        attributes: [
+          [Contest.sequelize.fn('DATE', Contest.sequelize.col('created_at')), 'date'],
+          [Contest.sequelize.fn('COUNT', '*'), 'count']
+        ],
+        group: [Contest.sequelize.fn('DATE', Contest.sequelize.col('created_at'))],
+        order: [[Contest.sequelize.fn('DATE', Contest.sequelize.col('created_at')), 'ASC']],
+        raw: true
+      });
+
+      // Participation trend
+      const participationTrendRaw = await UserContest.sequelize.query(`
+        SELECT DATE(uc.joined_at) as date, COUNT(*) as count
+        FROM user_contests uc
+        INNER JOIN contests c ON uc.contest_id = c.id
+        WHERE c.is_deleted = false
+        ${startDate ? `AND c.created_at >= '${startDate.toISOString()}'` : ''}
+        GROUP BY DATE(uc.joined_at)
+        ORDER BY date ASC
+      `, { type: UserContest.sequelize.QueryTypes.SELECT });
 
       // Top creators
       const topCreators = await Contest.findAll({
+        where: whereClauseNotDeleted,
         include: [
           {
             model: User,
@@ -665,8 +758,24 @@ class ContestAdminController {
         limit: 5,
       });
 
+      // Top contests by participants
+      const topContestsByParticipants = await Contest.findAll({
+        where: whereClauseNotDeleted,
+        attributes: [
+          'id',
+          'title',
+          'start_time',
+          'end_time',
+          [Contest.sequelize.literal('(SELECT COUNT(*) FROM user_contests WHERE user_contests.contest_id = Contest.id)'), 'participant_count']
+        ],
+        order: [[Contest.sequelize.literal('participant_count'), 'DESC']],
+        limit: 5,
+        raw: true
+      });
+
       // Contest duration statistics
       const contests = await Contest.findAll({
+        where: whereClauseNotDeleted,
         attributes: ["start_time", "end_time"],
       });
 
@@ -682,6 +791,41 @@ class ContestAdminController {
           ? Math.floor(durations.reduce((a, b) => a + b, 0) / durations.length)
           : 0;
 
+      const minDuration = durations.length > 0 ? Math.min(...durations) : 0;
+      const maxDuration = durations.length > 0 ? Math.max(...durations) : 0;
+
+      // Submission trend
+      const submissionTrendRaw = await ContestSubmission.sequelize.query(`
+        SELECT DATE(cs.submitted_at) as date, COUNT(*) as count
+        FROM contest_submissions cs
+        INNER JOIN contest_problems cp ON cs.contest_problem_id = cp.id
+        INNER JOIN contests c ON cp.contest_id = c.id
+        WHERE c.is_deleted = false
+        ${startDate ? `AND c.created_at >= '${startDate.toISOString()}'` : ''}
+        GROUP BY DATE(cs.submitted_at)
+        ORDER BY date ASC
+      `, { type: ContestSubmission.sequelize.QueryTypes.SELECT });
+
+      // Average submissions per contest
+      const avgSubmissionsPerContest = totalContests > 0 
+        ? (totalSubmissions / totalContests).toFixed(2) 
+        : 0;
+
+      // Acceptance rate
+      const acceptedSubmissionsResult = await ContestSubmission.sequelize.query(`
+        SELECT COUNT(*) as count
+        FROM contest_submissions cs
+        INNER JOIN contest_problems cp ON cs.contest_problem_id = cp.id
+        INNER JOIN contests c ON cp.contest_id = c.id
+        WHERE cs.status = 'accepted' AND c.is_deleted = false
+        ${startDate ? `AND c.created_at >= '${startDate.toISOString()}'` : ''}
+      `, { type: ContestSubmission.sequelize.QueryTypes.SELECT });
+      const acceptedSubmissions = parseInt(acceptedSubmissionsResult[0]?.count || 0);
+
+      const acceptanceRate = totalSubmissions > 0 
+        ? ((acceptedSubmissions / totalSubmissions) * 100).toFixed(2) 
+        : 0;
+
       res.status(200).json({
         success: true,
         data: {
@@ -693,11 +837,43 @@ class ContestAdminController {
           totalParticipants,
           avgParticipantsPerContest: parseFloat(avgParticipantsPerContest),
           totalSubmissions,
+          avgSubmissionsPerContest: parseFloat(avgSubmissionsPerContest),
+          acceptanceRate: parseFloat(acceptanceRate),
           avgDurationMinutes: avgDuration,
+          minDurationMinutes: minDuration,
+          maxDurationMinutes: maxDuration,
+          submissionsByStatus: submissionsByStatusRaw.map(item => ({
+            status: item.status,
+            count: parseInt(item.count)
+          })),
+          submissionsByLanguage: submissionsByLanguageRaw.map(item => ({
+            language: item.language,
+            count: parseInt(item.count)
+          })),
+          contestCreationTrend: contestCreationTrend.map(item => ({
+            date: item.date,
+            count: parseInt(item.count)
+          })),
+          participationTrend: participationTrendRaw.map(item => ({
+            date: item.date,
+            count: parseInt(item.count)
+          })),
+          submissionTrend: submissionTrendRaw.map(item => ({
+            date: item.date,
+            count: parseInt(item.count)
+          })),
           topCreators: topCreators.map((item) => ({
             creator: item.Creator,
             contestCount: parseInt(item.dataValues.contest_count),
           })),
+          topContestsByParticipants: topContestsByParticipants.map(item => ({
+            id: item.id,
+            title: item.title,
+            start_time: item.start_time,
+            end_time: item.end_time,
+            participantCount: parseInt(item.participant_count) || 0
+          })),
+          dateRange: range
         },
       });
     } catch (error) {
@@ -858,7 +1034,7 @@ class ContestAdminController {
         ],
         limit,
         offset,
-        order: [["registered_at", "DESC"]],
+        order: [["joined_at", "DESC"]],
       });
 
       res.status(200).json({

@@ -322,7 +322,31 @@ export interface ContestStats {
   totalParticipants: number;
   avgParticipantsPerContest: number;
   totalSubmissions: number;
+  avgSubmissionsPerContest: number;
+  acceptanceRate: number;
   avgDurationMinutes: number;
+  minDurationMinutes: number;
+  maxDurationMinutes: number;
+  submissionsByStatus: Array<{
+    status: string;
+    count: number;
+  }>;
+  submissionsByLanguage: Array<{
+    language: string;
+    count: number;
+  }>;
+  contestCreationTrend: Array<{
+    date: string;
+    count: number;
+  }>;
+  participationTrend: Array<{
+    date: string;
+    count: number;
+  }>;
+  submissionTrend: Array<{
+    date: string;
+    count: number;
+  }>;
   topCreators: Array<{
     creator: {
       id: number;
@@ -331,6 +355,14 @@ export interface ContestStats {
     };
     contestCount: number;
   }>;
+  topContestsByParticipants: Array<{
+    id: number;
+    title: string;
+    start_time: string;
+    end_time: string;
+    participantCount: number;
+  }>;
+  dateRange?: string;
 }
 
 export interface ContestParticipant {
@@ -1136,10 +1168,14 @@ export class AdminService {
     );
   }
 
-  getContestStatistics(): Observable<ContestStats> {
+  getContestStatistics(range: '7d' | '30d' | '90d' | 'all' = '30d'): Observable<ContestStats> {
+    const params = new HttpParams().set('range', range);
     return this.http.get<ApiResponse<ContestStats>>(
       `${this.apiUrl}/contests/statistics`,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
+      { 
+        params,
+        withCredentials: true // ✅ Send HttpOnly cookie
+      }
     ).pipe(
       map(response => response.data!),
       catchError(this.handleError)
