@@ -1,0 +1,306 @@
+<div class="p-6">
+  <!-- Header -->
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+      Send Notification
+    </h1>
+    <p class="mt-2 text-gray-600 dark:text-gray-400">
+      Send notifications to specific users or broadcast to all users.
+    </p>
+  </div>
+
+  <!-- Notification Type Selection -->
+  <div
+    class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8"
+  >
+    <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+      Notification Type
+    </h2>
+    <div class="flex gap-4">
+      <button
+        type="button"
+        (click)="setNotificationType('specific')"
+        [class.bg-blue-600]="notificationType === 'specific'"
+        [class.text-white]="notificationType === 'specific'"
+        [class.bg-gray-100]="notificationType !== 'specific'"
+        [class.dark:bg-gray-700]="notificationType !== 'specific'"
+        [class.text-gray-700]="notificationType !== 'specific'"
+        [class.dark:text-gray-300]="notificationType !== 'specific'"
+        class="px-6 py-3 rounded-lg font-medium transition-colors"
+      >
+        Send to Specific Users
+      </button>
+      <button
+        type="button"
+        (click)="setNotificationType('broadcast')"
+        [class.bg-blue-600]="notificationType === 'broadcast'"
+        [class.text-white]="notificationType === 'broadcast'"
+        [class.bg-gray-100]="notificationType !== 'broadcast'"
+        [class.dark:bg-gray-700]="notificationType !== 'broadcast'"
+        [class.text-gray-700]="notificationType !== 'broadcast'"
+        [class.dark:text-gray-300]="notificationType !== 'broadcast'"
+        class="px-6 py-3 rounded-lg font-medium transition-colors"
+      >
+        Broadcast to All Users
+      </button>
+    </div>
+  </div>
+
+  <!-- Notification Form -->
+  <form
+    [formGroup]="notificationForm"
+    (ngSubmit)="onSubmit()"
+    class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
+  >
+    <!-- Type -->
+    <div class="mb-6">
+      <label
+        class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+      >
+        Notification Type <span class="text-red-500">*</span>
+      </label>
+      <select
+        formControlName="type"
+        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+      >
+        <option *ngFor="let option of typeOptions" [value]="option.value">
+          {{ option.label }}
+        </option>
+      </select>
+      <div
+        *ngIf="
+          notificationForm.get('type')?.invalid &&
+          notificationForm.get('type')?.touched
+        "
+        class="mt-1 text-sm text-red-600 dark:text-red-400"
+      >
+        Type is required
+      </div>
+    </div>
+
+    <!-- Title -->
+    <div class="mb-6">
+      <label
+        class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+      >
+        Title <span class="text-red-500">*</span>
+      </label>
+      <input
+        type="text"
+        formControlName="title"
+        placeholder="Enter notification title..."
+        maxlength="255"
+        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+      />
+      <div
+        *ngIf="
+          notificationForm.get('title')?.invalid &&
+          notificationForm.get('title')?.touched
+        "
+        class="mt-1 text-sm text-red-600 dark:text-red-400"
+      >
+        Title is required (max 255 characters)
+      </div>
+    </div>
+
+    <!-- Message -->
+    <div class="mb-6">
+      <label
+        class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+      >
+        Message <span class="text-red-500">*</span>
+      </label>
+      <textarea
+        formControlName="message"
+        rows="5"
+        placeholder="Enter notification message..."
+        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+      ></textarea>
+      <div
+        *ngIf="
+          notificationForm.get('message')?.invalid &&
+          notificationForm.get('message')?.touched
+        "
+        class="mt-1 text-sm text-red-600 dark:text-red-400"
+      >
+        Message is required
+      </div>
+    </div>
+
+    <!-- Data (JSON) -->
+    <div class="mb-6">
+      <label
+        class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+      >
+        Additional Data (JSON - Optional)
+      </label>
+      <textarea
+        formControlName="data"
+        rows="3"
+        placeholder='{"key": "value"}'
+        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white font-mono text-sm"
+      ></textarea>
+      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        Optional JSON data to include with the notification
+      </p>
+    </div>
+
+    <!-- Specific Users Selection -->
+    <div *ngIf="notificationType === 'specific'" class="mb-6">
+      <label
+        class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+      >
+        Select Users <span class="text-red-500">*</span>
+      </label>
+      
+      <!-- User Search -->
+      <input
+        type="text"
+        formControlName="user_search"
+        placeholder="Search users by name or email..."
+        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white mb-4"
+      />
+
+      <!-- Selected Users -->
+      <div *ngIf="selectedUsers.length > 0" class="mb-4">
+        <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Selected Users ({{ selectedUsers.length }})
+        </p>
+        <div class="flex flex-wrap gap-2">
+          <span
+            *ngFor="let userId of selectedUsers"
+            class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+          >
+            User ID: {{ userId }}
+            <button
+              type="button"
+              (click)="removeUser(userId)"
+              class="ml-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+            >
+              ×
+            </button>
+          </span>
+        </div>
+      </div>
+
+      <!-- User Search Results -->
+      <div
+        *ngIf="users.length > 0"
+        class="border border-gray-300 dark:border-gray-600 rounded-lg max-h-60 overflow-y-auto"
+      >
+        <div
+          *ngFor="let user of users"
+          class="p-3 border-b border-gray-200 dark:border-gray-700 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+          (click)="toggleUserSelection(user.id)"
+        >
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-900 dark:text-white">
+                {{ user.name }}
+              </p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                {{ user.email }} • ID: {{ user.id }}
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              [checked]="isUserSelected(user.id)"
+              (click)="$event.stopPropagation(); toggleUserSelection(user.id)"
+              class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div
+        *ngIf="isSearchingUsers"
+        class="text-center py-4 text-gray-500 dark:text-gray-400"
+      >
+        Searching users...
+      </div>
+    </div>
+
+    <!-- Broadcast Filters -->
+    <div *ngIf="notificationType === 'broadcast'" class="mb-6">
+      <h3 class="text-md font-semibold text-gray-900 dark:text-white mb-4">
+        User Filters (Optional)
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          >
+            Role
+          </label>
+          <select
+            formControlName="broadcast_role"
+            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+          >
+            <option *ngFor="let option of roleOptions" [value]="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+        </div>
+
+        <div>
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          >
+            Subscription Status
+          </label>
+          <select
+            formControlName="broadcast_subscription_status"
+            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+          >
+            <option
+              *ngFor="let option of subscriptionOptions"
+              [value]="option.value"
+            >
+              {{ option.label }}
+            </option>
+          </select>
+        </div>
+
+        <div>
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          >
+            Active Status
+          </label>
+          <select
+            formControlName="broadcast_is_active"
+            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+          >
+            <option [value]="true">Active Only</option>
+            <option [value]="false">Inactive Only</option>
+          </select>
+        </div>
+      </div>
+      <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+        Leave filters empty to send to all users
+      </p>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="flex items-center justify-end gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
+      <button
+        type="button"
+        (click)="onCancel()"
+        class="px-6 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        [disabled]="isLoading || notificationForm.invalid"
+        class="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      >
+        <span *ngIf="!isLoading">
+          {{ notificationType === 'specific' ? 'Send Notification' : 'Broadcast Notification' }}
+        </span>
+        <span *ngIf="isLoading">Sending...</span>
+      </button>
+    </div>
+  </form>
+</div>
+

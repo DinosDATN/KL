@@ -1433,6 +1433,146 @@ export class AdminService {
     );
   }
 
+  // Notification Management APIs
+  getNotifications(filters: {
+    page?: number;
+    limit?: number;
+    user_id?: number;
+    type?: string;
+    is_read?: boolean;
+    search?: string;
+    start_date?: string;
+    end_date?: string;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+  } = {}): Observable<{ notifications: any[], pagination: PaginationInfo }> {
+    let params = new HttpParams();
+    
+    Object.keys(filters).forEach(key => {
+      const value = filters[key as keyof typeof filters];
+      if (value !== undefined && value !== null) {
+        params = params.set(key, value.toString());
+      }
+    });
+
+    return this.http.get<ApiResponse<{ notifications: any[], totalCount: number, currentPage: number, totalPages: number, itemsPerPage: number }>>(
+      `${this.apiUrl}/notifications`, 
+      { params, withCredentials: true }
+    ).pipe(
+      map(response => {
+        const data = response.data!;
+        // Map backend response (camelCase) to frontend format (snake_case)
+        return {
+          notifications: data.notifications || [],
+          pagination: {
+            current_page: data.currentPage || 1,
+            total_pages: data.totalPages || 0,
+            total_items: data.totalCount || 0,
+            items_per_page: data.itemsPerPage || 20
+          }
+        };
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  getNotificationStatistics(filters: {
+    start_date?: string;
+    end_date?: string;
+  } = {}): Observable<any> {
+    let params = new HttpParams();
+    if (filters.start_date) params = params.set('start_date', filters.start_date);
+    if (filters.end_date) params = params.set('end_date', filters.end_date);
+
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/notifications/statistics`,
+      { params, withCredentials: true }
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  getNotificationById(notificationId: number): Observable<any> {
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/notifications/${notificationId}`,
+      { withCredentials: true }
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  sendNotification(data: {
+    user_ids: number[];
+    type?: string;
+    title: string;
+    message: string;
+    data?: any;
+  }): Observable<{ notifications: any[], count: number }> {
+    return this.http.post<ApiResponse<{ notifications: any[], count: number }>>(
+      `${this.apiUrl}/notifications/send`,
+      data,
+      { withCredentials: true }
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  sendBroadcastNotification(data: {
+    type?: string;
+    title: string;
+    message: string;
+    data?: any;
+    user_filter?: {
+      role?: string;
+      is_active?: boolean;
+      subscription_status?: string;
+    };
+  }): Observable<{ count: number; userFilter: string }> {
+    return this.http.post<ApiResponse<{ count: number; userFilter: string }>>(
+      `${this.apiUrl}/notifications/broadcast`,
+      data,
+      { withCredentials: true }
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  updateNotificationStatus(notificationId: number, is_read: boolean): Observable<any> {
+    return this.http.put<ApiResponse<any>>(
+      `${this.apiUrl}/notifications/${notificationId}/status`,
+      { is_read },
+      { withCredentials: true }
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
+  deleteNotification(notificationId: number): Observable<void> {
+    return this.http.delete<ApiResponse<void>>(
+      `${this.apiUrl}/notifications/${notificationId}`,
+      { withCredentials: true }
+    ).pipe(
+      map(() => void 0),
+      catchError(this.handleError)
+    );
+  }
+
+  bulkDeleteNotifications(notificationIds: number[]): Observable<{ deletedCount: number; requestedCount: number }> {
+    return this.http.post<ApiResponse<{ deletedCount: number; requestedCount: number }>>(
+      `${this.apiUrl}/notifications/bulk-delete`,
+      { notification_ids: notificationIds },
+      { withCredentials: true }
+    ).pipe(
+      map(response => response.data!),
+      catchError(this.handleError)
+    );
+  }
+
   // Error handling
   private handleError = (error: HttpErrorResponse) => {
     console.error('Admin API error:', error);
