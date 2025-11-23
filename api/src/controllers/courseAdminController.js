@@ -291,8 +291,13 @@ class CourseAdminController {
           success: false,
           message: error.message,
         });
-      } else if (error.message.includes("Only admins")) {
+      } else if (error.message.includes("Only admins") || error.message.includes("can only permanently delete")) {
         res.status(403).json({
+          success: false,
+          message: error.message,
+        });
+      } else if (error.message.includes("must be soft-deleted")) {
+        res.status(400).json({
           success: false,
           message: error.message,
         });
@@ -339,7 +344,7 @@ class CourseAdminController {
           success: false,
           message: error.message,
         });
-      } else if (error.message.includes("Only admins")) {
+      } else if (error.message.includes("Only admins") || error.message.includes("can only restore")) {
         res.status(403).json({
           success: false,
           message: error.message,

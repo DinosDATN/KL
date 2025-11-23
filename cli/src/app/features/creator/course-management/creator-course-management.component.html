@@ -218,6 +218,25 @@
             {{ stats.archived_courses }}
           </span>
         </button>
+
+        <button
+          (click)="onTabChange('deleted')"
+          [ngClass]="{
+            'border-red-500 text-red-600 dark:text-red-400':
+              activeTab === 'deleted',
+            'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600':
+              activeTab !== 'deleted'
+          }"
+          class="whitespace-nowrap py-2 px-1 sm:px-2 border-b-2 font-medium text-xs sm:text-sm transition-colors duration-200"
+        >
+          Đã xóa
+          <span
+            *ngIf="stats"
+            class="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded-full"
+          >
+            {{ stats.deleted_courses }}
+          </span>
+        </button>
       </nav>
     </div>
 
@@ -400,7 +419,23 @@
             </button>
             <div class="flex gap-2 ml-auto">
               <button
-                *ngIf="course.status === 'draft'"
+                *ngIf="activeTab === 'deleted' && course.is_deleted"
+                (click)="onRestoreCourse(course)"
+                class="px-3 py-1.5 text-sm font-medium text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors duration-200"
+              >
+                <i class="icon-rotate-cw mr-1"></i>
+                Khôi phục
+              </button>
+              <button
+                *ngIf="activeTab === 'deleted' && course.is_deleted"
+                (click)="onPermanentlyDeleteCourse(course)"
+                class="px-3 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-200"
+              >
+                <i class="icon-trash-2 mr-1"></i>
+                Xóa vĩnh viễn
+              </button>
+              <button
+                *ngIf="activeTab !== 'deleted' && course.status === 'draft'"
                 (click)="onUpdateStatus(course, 'published')"
                 class="px-3 py-1.5 text-sm font-medium text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors duration-200"
               >
@@ -408,7 +443,7 @@
                 Xuất bản
               </button>
               <button
-                *ngIf="course.status === 'published'"
+                *ngIf="activeTab !== 'deleted' && course.status === 'published'"
                 (click)="onUpdateStatus(course, 'archived')"
                 class="px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
               >
@@ -416,6 +451,7 @@
                 Lưu trữ
               </button>
               <button
+                *ngIf="activeTab !== 'deleted'"
                 (click)="onDeleteCourse(course)"
                 class="px-3 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-200"
               >

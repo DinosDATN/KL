@@ -309,8 +309,8 @@ class CourseService {
   async permanentlyDeleteCourse(courseId, userId) {
     const user = await User.findByPk(userId);
     
-    if (user.role !== 'admin') {
-      throw new Error('Only admins can permanently delete courses');
+    if (!user) {
+      throw new Error('User not found');
     }
 
     const course = await Course.findByPk(courseId);
@@ -319,8 +319,18 @@ class CourseService {
       throw new Error('Course not found');
     }
 
+    // Check permissions: admin can permanently delete any course, creator can only delete their own courses
+    if (user.role !== 'admin' && course.instructor_id !== userId) {
+      throw new Error('You can only permanently delete your own courses');
+    }
+
+    // Only allow permanent delete if course is already soft-deleted
+    if (!course.is_deleted) {
+      throw new Error('Course must be soft-deleted before permanent deletion');
+    }
+
     // Permanently delete
-    await course.destroy();
+    await course.destroy({ force: true });
 
     return { success: true };
   }
@@ -503,10 +513,6 @@ class CourseService {
     if (!user) {
       throw new Error('User not found');
     }
-    
-    if (user.role !== 'admin') {
-      throw new Error('Only admins can restore courses');
-    }
 
     // Find the deleted course
     const course = await Course.findOne({
@@ -515,6 +521,11 @@ class CourseService {
     
     if (!course) {
       throw new Error('Deleted course not found');
+    }
+
+    // Check permissions: admin can restore any course, creator can only restore their own courses
+    if (user.role !== 'admin' && course.instructor_id !== userId) {
+      throw new Error('You can only restore your own courses');
     }
 
     // Use direct update to ensure it's committed to database

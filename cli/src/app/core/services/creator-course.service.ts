@@ -1,6 +1,6 @@
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { Observable, of, forkJoin } from 'rxjs';
 import { map, catchError, switchMap } from 'rxjs/operators';
 import { isPlatformBrowser } from '@angular/common';
 import { environment } from '../../../environments/environment';
@@ -14,6 +14,7 @@ export interface CreatorCourseStats {
   published_courses: number;
   draft_courses: number;
   archived_courses: number;
+  deleted_courses: number;
   total_students: number;
   total_enrollments: number;
   total_revenue: number;
@@ -60,10 +61,18 @@ export class CreatorCourseService {
     };
 
     return this.adminCourseService.getCourses(filtersWithInstructor).pipe(
-      map(response => ({
-        ...response,
-        data: response.data.filter(course => !course.is_deleted)
-      })),
+      map(response => {
+        // If filtering for deleted courses, return all (including deleted)
+        // Otherwise, filter out deleted courses
+        if (filters.is_deleted === true) {
+          return response;
+        } else {
+          return {
+            ...response,
+            data: response.data.filter(course => !course.is_deleted)
+          };
+        }
+      }),
       catchError(error => {
         console.error('Error fetching creator courses:', error);
         return of({
@@ -182,6 +191,44 @@ export class CreatorCourseService {
   }
 
   /**
+   * Restore a soft-deleted course (only if creator owns it)
+   */
+  restoreCourse(id: number): Observable<ApiResponse<CreatorCourse>> {
+    // Verify ownership before restoring
+    return this.http.post<ApiResponse<CreatorCourse>>(
+      `${this.apiUrl}/${id}/restore`,
+      {},
+      { withCredentials: true }
+    ).pipe(
+      catchError(error => {
+        console.error('Error restoring course:', error);
+        return of({
+          success: false,
+          message: error.error?.message || 'Failed to restore course'
+        } as ApiResponse<CreatorCourse>);
+      })
+    );
+  }
+
+  /**
+   * Permanently delete a course (only if creator owns it)
+   */
+  permanentlyDeleteCourse(id: number): Observable<ApiResponse<void>> {
+    return this.http.delete<ApiResponse<void>>(
+      `${this.apiUrl}/${id}/permanent`,
+      { withCredentials: true }
+    ).pipe(
+      catchError(error => {
+        console.error('Error permanently deleting course:', error);
+        return of({
+          success: false,
+          message: error.error?.message || 'Failed to permanently delete course'
+        } as ApiResponse<void>);
+      })
+    );
+  }
+
+  /**
    * Update course status
    */
   updateCourseStatus(id: number, status: 'draft' | 'published' | 'archived'): Observable<ApiResponse<CreatorCourse>> {
@@ -216,12 +263,19 @@ export class CreatorCourseService {
    * Get creator course statistics
    */
   getCreatorCourseStatistics(): Observable<CreatorCourseStats> {
-    return this.getMyCourses({ limit: 1000 }).pipe(
-      map(response => {
-        const courses = response.data;
-        const publishedCourses = courses.filter(c => c.status === 'published');
-        const draftCourses = courses.filter(c => c.status === 'draft');
-        const archivedCourses = courses.filter(c => c.status === 'archived');
+    // Get all courses (including deleted) and non-deleted courses separately
+    return forkJoin({
+      allCourses: this.getMyCourses({ limit: 1000, is_deleted: true }),
+      activeCourses: this.getMyCourses({ limit: 1000, is_deleted: false })
+    }).pipe(
+      map(({ allCourses, activeCourses }) => {
+        const allCoursesList = allCourses.data;
+        const activeCoursesList = activeCourses.data;
+        
+        const publishedCourses = activeCoursesList.filter(c => c.status === 'published');
+        const draftCourses = activeCoursesList.filter(c => c.status === 'draft');
+        const archivedCourses = activeCoursesList.filter(c => c.status === 'archived');
+        const deletedCourses = allCoursesList.filter(c => c.is_deleted);
 
         const totalStudents = publishedCourses.reduce((sum, c) => sum + (c.students || 0), 0);
         const totalEnrollments = publishedCourses.reduce((sum, c) => sum + (c.students || 0), 0);
@@ -238,10 +292,11 @@ export class CreatorCourseService {
           : 0;
 
         return {
-          total_courses: courses.length,
+          total_courses: activeCoursesList.length,
           published_courses: publishedCourses.length,
           draft_courses: draftCourses.length,
           archived_courses: archivedCourses.length,
+          deleted_courses: deletedCourses.length,
           total_students: totalStudents,
           total_enrollments: totalEnrollments,
           total_revenue: totalRevenue,
@@ -256,6 +311,7 @@ export class CreatorCourseService {
           published_courses: 0,
           draft_courses: 0,
           archived_courses: 0,
+          deleted_courses: 0,
           total_students: 0,
           total_enrollments: 0,
           total_revenue: 0,

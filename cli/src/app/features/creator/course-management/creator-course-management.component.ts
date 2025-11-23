@@ -44,7 +44,7 @@ export class CreatorCourseManagementComponent implements OnInit, OnDestroy {
   error: string | null = null;
 
   // UI State
-  activeTab: 'all' | 'draft' | 'published' | 'archived' = 'all';
+  activeTab: 'all' | 'draft' | 'published' | 'archived' | 'deleted' = 'all';
   showCreateModal = false;
   editingCourse: CreatorCourse | null = null;
   selectedStatus: string = 'all';
@@ -118,8 +118,13 @@ export class CreatorCourseManagementComponent implements OnInit, OnDestroy {
     };
 
     // Add status filter based on active tab
-    if (this.activeTab !== 'all') {
+    if (this.activeTab === 'deleted') {
+      filters.is_deleted = true;
+    } else if (this.activeTab !== 'all') {
       filters.status = this.activeTab;
+      filters.is_deleted = false;
+    } else {
+      filters.is_deleted = false;
     }
 
     this.creatorCourseService
@@ -159,7 +164,7 @@ export class CreatorCourseManagementComponent implements OnInit, OnDestroy {
       });
   }
 
-  onTabChange(tab: 'all' | 'draft' | 'published' | 'archived'): void {
+  onTabChange(tab: 'all' | 'draft' | 'published' | 'archived' | 'deleted'): void {
     this.activeTab = tab;
     this.currentPage = 1;
     this.loadCourses();
@@ -268,6 +273,80 @@ export class CreatorCourseManagementComponent implements OnInit, OnDestroy {
       'Thành công',
       'Cập nhật khóa học thành công!'
     );
+  }
+
+  onRestoreCourse(course: CreatorCourse): void {
+    if (!confirm(`Bạn có chắc chắn muốn khôi phục khóa học "${course.title}"?`)) {
+      return;
+    }
+
+    this.loading = true;
+    this.creatorCourseService
+      .restoreCourse(course.id)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => (this.loading = false))
+      )
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.notificationService.success(
+              'Thành công',
+              'Khôi phục khóa học thành công!'
+            );
+            this.loadCourses();
+            this.loadStatistics();
+          } else {
+            this.notificationService.error(
+              'Lỗi',
+              response.message || 'Không thể khôi phục khóa học'
+            );
+          }
+        },
+        error: (error) => {
+          this.notificationService.error(
+            'Lỗi',
+            error.message || 'Không thể khôi phục khóa học'
+          );
+        },
+      });
+  }
+
+  onPermanentlyDeleteCourse(course: CreatorCourse): void {
+    if (!confirm(`Bạn có chắc chắn muốn XÓA VĨNH VIỄN khóa học "${course.title}"?\n\nHành động này không thể hoàn tác!`)) {
+      return;
+    }
+
+    this.loading = true;
+    this.creatorCourseService
+      .permanentlyDeleteCourse(course.id)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => (this.loading = false))
+      )
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.notificationService.success(
+              'Thành công',
+              'Xóa vĩnh viễn khóa học thành công!'
+            );
+            this.loadCourses();
+            this.loadStatistics();
+          } else {
+            this.notificationService.error(
+              'Lỗi',
+              response.message || 'Không thể xóa vĩnh viễn khóa học'
+            );
+          }
+        },
+        error: (error) => {
+          this.notificationService.error(
+            'Lỗi',
+            error.error?.message || 'Không thể xóa vĩnh viễn khóa học'
+          );
+        },
+      });
   }
 
   onDeleteCourse(course: CreatorCourse): void {
