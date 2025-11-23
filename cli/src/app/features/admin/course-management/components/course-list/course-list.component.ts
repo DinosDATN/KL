@@ -57,8 +57,9 @@ export class CourseListComponent implements OnChanges {
   selectAllChecked = false;
   updatingStatus: { [courseId: number]: boolean } = {};
 
-  onSelectAll(): void {
-    this.selectAllChecked = !this.selectAllChecked;
+  onSelectAll(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.selectAllChecked = target.checked;
     this.selectAll.emit(this.selectAllChecked);
   }
 
@@ -162,6 +163,11 @@ export class CourseListComponent implements OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    // Update select all checkbox state when courses or selectedCourseIds change
+    if (changes['courses'] || changes['selectedCourseIds']) {
+      this.updateSelectAllState();
+    }
+    
     // Reset updating status when courses change (after successful update)
     if (changes['courses'] && !changes['courses'].firstChange) {
       const previousCourses = changes['courses'].previousValue as AdminCourse[] || [];

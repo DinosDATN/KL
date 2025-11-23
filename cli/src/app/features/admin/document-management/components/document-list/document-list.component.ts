@@ -51,8 +51,9 @@ export class DocumentListComponent implements OnChanges {
 
   selectAllChecked = false;
 
-  onSelectAll(): void {
-    this.selectAllChecked = !this.selectAllChecked;
+  onSelectAll(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.selectAllChecked = target.checked;
     this.selectAll.emit(this.selectAllChecked);
   }
 
