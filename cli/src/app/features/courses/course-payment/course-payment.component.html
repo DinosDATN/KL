@@ -1,129 +1,164 @@
-<div class="payment-container" *ngIf="!isLoading">
-  <div class="payment-header">
-    <button class="back-button" (click)="goBack()">
-      <i class="fas fa-arrow-left"></i> Quay lại
-    </button>
-    <h2>Thanh toán khóa học</h2>
-  </div>
-
-  <div class="payment-content" *ngIf="course">
-    <div class="course-info-card">
-      <img [src]="course.thumbnail" [alt]="course.title" class="course-thumbnail">
-      <div class="course-details">
-        <h3>{{ course.title }}</h3>
-        <p class="course-level">
-          <i class="fas fa-signal"></i> {{ course.level }}
-        </p>
-        <p class="course-duration" *ngIf="course.duration">
-          <i class="fas fa-clock"></i> {{ course.duration }} phút
-        </p>
-      </div>
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200" *ngIf="!isLoading">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-6">
+      <button 
+        class="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-200 mb-4"
+        (click)="goBack()">
+        <i class="fas fa-arrow-left"></i> 
+        <span>Quay lại</span>
+      </button>
+      <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Thanh toán khóa học</h2>
     </div>
 
-    <div class="payment-form-card">
-      <div class="price-summary">
-        <h4>Chi tiết thanh toán</h4>
-        
-        <div class="price-row">
-          <span>Giá gốc:</span>
-          <span class="price">{{ formatCurrency(originalAmount) }}</span>
-        </div>
-
-        <div class="price-row discount" *ngIf="discountAmount > 0">
-          <span>
-            <i class="fas fa-tag"></i> Giảm giá:
-          </span>
-          <span class="discount-amount">-{{ formatCurrency(discountAmount) }}</span>
-        </div>
-
-        <div class="price-row total">
-          <span>Tổng cộng:</span>
-          <span class="total-amount">{{ formatCurrency(finalAmount) }}</span>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6" *ngIf="course">
+      <!-- Course Info Card -->
+      <div class="lg:col-span-1">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 sticky top-6">
+          <img 
+            [src]="course.thumbnail" 
+            [alt]="course.title" 
+            class="w-full h-48 object-cover rounded-lg mb-4">
+          <div>
+            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">{{ course.title }}</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
+              <i class="fas fa-signal text-green-500 mr-2"></i> 
+              {{ course.level }}
+            </p>
+            <p class="text-sm text-gray-600 dark:text-gray-400" *ngIf="course.duration">
+              <i class="fas fa-clock text-blue-500 mr-2"></i> 
+              {{ course.duration }} phút
+            </p>
+          </div>
         </div>
       </div>
 
-      <div class="coupon-section">
-        <h4>Mã giảm giá</h4>
-        
-        <div class="coupon-input-group" *ngIf="!appliedCoupon">
-          <input 
-            type="text" 
-            [(ngModel)]="couponCode" 
-            placeholder="Nhập mã giảm giá"
-            class="coupon-input"
-            [disabled]="isApplyingCoupon">
-          <button 
-            class="apply-button" 
-            (click)="applyCoupon()"
-            [disabled]="!couponCode.trim() || isApplyingCoupon">
-            <span *ngIf="!isApplyingCoupon">Áp dụng</span>
-            <span *ngIf="isApplyingCoupon">
-              <i class="fas fa-spinner fa-spin"></i>
-            </span>
-          </button>
-        </div>
+      <!-- Payment Form Card -->
+      <div class="lg:col-span-2">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <!-- Price Summary -->
+          <div class="border-b border-gray-200 dark:border-gray-700 pb-6 mb-6">
+            <h4 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Chi tiết thanh toán</h4>
+            
+            <div class="flex justify-between items-center py-3 text-base text-gray-700 dark:text-gray-300">
+              <span>Giá gốc:</span>
+              <span class="font-medium">{{ formatCurrency(originalAmount) }}</span>
+            </div>
 
-        <div class="applied-coupon" *ngIf="appliedCoupon">
-          <div class="coupon-info">
-            <i class="fas fa-check-circle"></i>
-            <div>
-              <strong>{{ appliedCoupon.code }}</strong>
-              <p>{{ appliedCoupon.description }}</p>
+            <div 
+              class="flex justify-between items-center py-3 text-base text-green-600 dark:text-green-400" 
+              *ngIf="discountAmount > 0">
+              <span>
+                <i class="fas fa-tag mr-2"></i> Giảm giá:
+              </span>
+              <span class="font-semibold">-{{ formatCurrency(discountAmount) }}</span>
+            </div>
+
+            <div class="flex justify-between items-center pt-4 mt-2 border-t border-gray-200 dark:border-gray-700">
+              <span class="text-lg font-semibold text-gray-900 dark:text-white">Tổng cộng:</span>
+              <span class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ formatCurrency(finalAmount) }}</span>
             </div>
           </div>
-          <button class="remove-button" (click)="removeCoupon()">
-            <i class="fas fa-times"></i>
+
+          <!-- Coupon Section -->
+          <div class="mb-6">
+            <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Mã giảm giá</h4>
+            
+            <div class="flex gap-2" *ngIf="!appliedCoupon">
+              <input 
+                type="text" 
+                [(ngModel)]="couponCode" 
+                placeholder="Nhập mã giảm giá"
+                class="flex-1 px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-lg text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
+                [disabled]="isApplyingCoupon">
+              <button 
+                class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-colors duration-200 min-w-[100px] disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed"
+                (click)="applyCoupon()"
+                [disabled]="!couponCode.trim() || isApplyingCoupon">
+                <span *ngIf="!isApplyingCoupon">Áp dụng</span>
+                <span *ngIf="isApplyingCoupon">
+                  <i class="fas fa-spinner fa-spin"></i>
+                </span>
+              </button>
+            </div>
+
+            <div 
+              class="flex justify-between items-center p-4 bg-green-50 dark:bg-green-900/20 border-2 border-green-500 dark:border-green-400 rounded-lg"
+              *ngIf="appliedCoupon">
+              <div class="flex items-center gap-3">
+                <i class="fas fa-check-circle text-green-500 dark:text-green-400 text-xl"></i>
+                <div>
+                  <strong class="block text-gray-900 dark:text-white">{{ appliedCoupon.code }}</strong>
+                  <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ appliedCoupon.description }}</p>
+                </div>
+              </div>
+              <button 
+                class="p-2 text-gray-600 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                (click)="removeCoupon()">
+                <i class="fas fa-times text-lg"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Payment Methods Section -->
+          <div class="mb-6">
+            <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Phương thức thanh toán</h4>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <label 
+                *ngFor="let method of paymentMethods"
+                [ngClass]="{
+                  'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20': paymentMethod === method.value,
+                  'border-gray-200 dark:border-gray-700': paymentMethod !== method.value
+                }"
+                class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 hover:border-blue-500 dark:hover:border-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                <input 
+                  type="radio" 
+                  name="paymentMethod" 
+                  [value]="method.value"
+                  [(ngModel)]="paymentMethod"
+                  class="w-4 h-4 text-blue-600 dark:text-blue-400">
+                <span class="text-2xl">{{ method.icon }}</span>
+                <span class="text-sm font-medium text-gray-900 dark:text-white">{{ method.label }}</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Error Message -->
+          <div 
+            class="flex items-center gap-2 p-4 bg-red-50 dark:bg-red-900/20 border border-red-500 dark:border-red-400 rounded-lg text-red-700 dark:text-red-400 mb-4"
+            *ngIf="errorMessage">
+            <i class="fas fa-exclamation-circle"></i>
+            <span>{{ errorMessage }}</span>
+          </div>
+
+          <!-- Pay Button -->
+          <button 
+            class="w-full py-4 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed text-lg"
+            (click)="processPayment()"
+            [disabled]="isProcessing || !paymentMethod">
+            <span *ngIf="!isProcessing">
+              <i class="fas fa-lock"></i>
+              Thanh toán {{ formatCurrency(finalAmount) }}
+            </span>
+            <span *ngIf="isProcessing">
+              <i class="fas fa-spinner fa-spin"></i>
+              Đang xử lý...
+            </span>
           </button>
+
+          <!-- Security Note -->
+          <p class="text-center text-sm text-gray-600 dark:text-gray-400 mt-4 flex items-center justify-center gap-2">
+            <i class="fas fa-shield-alt text-green-500"></i>
+            Giao dịch được bảo mật và mã hóa
+          </p>
         </div>
       </div>
-
-      <div class="payment-methods-section">
-        <h4>Phương thức thanh toán</h4>
-        
-        <div class="payment-methods">
-          <label 
-            *ngFor="let method of paymentMethods" 
-            class="payment-method"
-            [class.selected]="paymentMethod === method.value">
-            <input 
-              type="radio" 
-              name="paymentMethod" 
-              [value]="method.value"
-              [(ngModel)]="paymentMethod">
-            <span class="method-icon">{{ method.icon }}</span>
-            <span class="method-label">{{ method.label }}</span>
-          </label>
-        </div>
-      </div>
-
-      <div class="error-message" *ngIf="errorMessage">
-        <i class="fas fa-exclamation-circle"></i>
-        {{ errorMessage }}
-      </div>
-
-      <button 
-        class="pay-button"
-        (click)="processPayment()"
-        [disabled]="isProcessing || !paymentMethod">
-        <span *ngIf="!isProcessing">
-          <i class="fas fa-lock"></i>
-          Thanh toán {{ formatCurrency(finalAmount) }}
-        </span>
-        <span *ngIf="isProcessing">
-          <i class="fas fa-spinner fa-spin"></i>
-          Đang xử lý...
-        </span>
-      </button>
-
-      <p class="security-note">
-        <i class="fas fa-shield-alt"></i>
-        Giao dịch được bảo mật và mã hóa
-      </p>
     </div>
   </div>
 </div>
 
-<div class="loading-container" *ngIf="isLoading">
-  <div class="spinner"></div>
-  <p>Đang tải thông tin...</p>
+<!-- Loading State -->
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center" *ngIf="isLoading">
+  <div class="w-12 h-12 border-4 border-gray-200 dark:border-gray-700 border-t-blue-600 dark:border-t-blue-400 rounded-full animate-spin"></div>
+  <p class="mt-4 text-gray-600 dark:text-gray-400">Đang tải thông tin...</p>
 </div>

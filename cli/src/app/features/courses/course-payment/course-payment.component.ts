@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CoursesService } from '../../../core/services/courses.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { ThemeService } from '../../../core/services/theme.service';
 
 @Component({
   selector: 'app-course-payment',
@@ -40,7 +41,8 @@ export class CoursePaymentComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private coursesService: CoursesService,
-    private authService: AuthService
+    private authService: AuthService,
+    public themeService: ThemeService
   ) {}
 
   ngOnInit(): void {
