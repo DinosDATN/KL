@@ -1,14 +1,26 @@
-import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  Inject,
+  PLATFORM_ID,
+  ChangeDetectorRef,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil, finalize } from 'rxjs/operators';
-import { CreatorCourseService, CreatorCourse, CreatorCourseStats } from '../../../core/services/creator-course.service';
+import {
+  CreatorCourseService,
+  CreatorCourse,
+  CreatorCourseStats,
+} from '../../../core/services/creator-course.service';
 import { CourseFilters } from '../../../core/services/admin-course.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { isPlatformBrowser } from '@angular/common';
+import { CreatorCourseFormComponent } from './components/creator-course-form/creator-course-form.component';
 
 @Component({
   selector: 'app-creator-course-management',
@@ -17,10 +29,11 @@ import { isPlatformBrowser } from '@angular/common';
     CommonModule,
     RouterModule,
     FormsModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    CreatorCourseFormComponent,
   ],
   templateUrl: './creator-course-management.component.html',
-  styleUrls: ['./creator-course-management.component.css']
+  styleUrls: ['./creator-course-management.component.css'],
 })
 export class CreatorCourseManagementComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
@@ -52,6 +65,7 @@ export class CreatorCourseManagementComponent implements OnInit, OnDestroy {
     private notificationService: NotificationService,
     private authService: AuthService,
     private router: Router,
+    private cdr: ChangeDetectorRef,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
@@ -67,7 +81,10 @@ export class CreatorCourseManagementComponent implements OnInit, OnDestroy {
     }
 
     const currentUser = this.authService.getCurrentUser();
-    if (!currentUser || (currentUser.role !== 'creator' && currentUser.role !== 'admin')) {
+    if (
+      !currentUser ||
+      (currentUser.role !== 'creator' && currentUser.role !== 'admin')
+    ) {
       this.error = 'Bạn cần quyền creator để truy cập trang này';
       return;
     }
@@ -97,7 +114,7 @@ export class CreatorCourseManagementComponent implements OnInit, OnDestroy {
       page: this.currentPage,
       limit: this.itemsPerPage,
       sortBy: `${this.sortBy}_${this.sortOrder}`,
-      search: this.searchTerm || undefined
+      search: this.searchTerm || undefined,
     };
 
     // Add status filter based on active tab
@@ -120,7 +137,10 @@ export class CreatorCourseManagementComponent implements OnInit, OnDestroy {
         },
         error: (error) => {
           this.error = error.message || 'Không thể tải danh sách khóa học';
-          this.notificationService.error('Lỗi', 'Không thể tải danh sách khóa học');
+          this.notificationService.error(
+            'Lỗi',
+            'Không thể tải danh sách khóa học'
+          );
         },
       });
   }
@@ -165,14 +185,67 @@ export class CreatorCourseManagementComponent implements OnInit, OnDestroy {
     this.loadCourses();
   }
 
-  openCreateModal(): void {
-    this.editingCourse = null;
-    this.showCreateModal = true;
+  openCreateModal(event?: Event): void {
+    try {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+      }
+      console.log('Opening create course modal...');
+      console.log('Current route:', this.router.url);
+      console.log('Current showCreateModal before:', this.showCreateModal);
+
+      this.editingCourse = null;
+      this.showCreateModal = true;
+
+      console.log('Modal state after set:', this.showCreateModal);
+
+      // Force change detection
+      this.cdr.detectChanges();
+
+      setTimeout(() => {
+        console.log('After timeout - showCreateModal:', this.showCreateModal);
+        this.cdr.detectChanges();
+      }, 0);
+    } catch (error) {
+      console.error('Error opening create modal:', error);
+      console.error(
+        'Error stack:',
+        error instanceof Error ? error.stack : 'No stack'
+      );
+      this.notificationService.error('Lỗi', 'Không thể mở form tạo khóa học');
+    }
   }
 
   openEditModal(course: CreatorCourse): void {
-    this.editingCourse = course;
-    this.showCreateModal = true;
+    // Load full course details before editing
+    this.loading = true;
+    this.creatorCourseService
+      .getMyCourse(course.id)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => (this.loading = false))
+      )
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.editingCourse = response.data;
+            this.showCreateModal = true;
+          } else {
+            this.notificationService.error(
+              'Lỗi',
+              response.message || 'Không thể tải thông tin khóa học'
+            );
+          }
+        },
+        error: (error) => {
+          this.notificationService.error(
+            'Lỗi',
+            error.message || 'Không thể tải thông tin khóa học'
+          );
+        },
+      });
   }
 
   closeModal(): void {
@@ -191,7 +264,10 @@ export class CreatorCourseManagementComponent implements OnInit, OnDestroy {
     this.closeModal();
     this.loadCourses();
     this.loadStatistics();
-    this.notificationService.success('Thành công', 'Cập nhật khóa học thành công!');
+    this.notificationService.success(
+      'Thành công',
+      'Cập nhật khóa học thành công!'
+    );
   }
 
   onDeleteCourse(course: CreatorCourse): void {
@@ -209,20 +285,32 @@ export class CreatorCourseManagementComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response) => {
           if (response.success) {
-            this.notificationService.success('Thành công', 'Xóa khóa học thành công!');
+            this.notificationService.success(
+              'Thành công',
+              'Xóa khóa học thành công!'
+            );
             this.loadCourses();
             this.loadStatistics();
           } else {
-            this.notificationService.error('Lỗi', response.message || 'Không thể xóa khóa học');
+            this.notificationService.error(
+              'Lỗi',
+              response.message || 'Không thể xóa khóa học'
+            );
           }
         },
         error: (error) => {
-          this.notificationService.error('Lỗi', error.message || 'Không thể xóa khóa học');
+          this.notificationService.error(
+            'Lỗi',
+            error.message || 'Không thể xóa khóa học'
+          );
         },
       });
   }
 
-  onUpdateStatus(course: CreatorCourse, status: 'draft' | 'published' | 'archived'): void {
+  onUpdateStatus(
+    course: CreatorCourse,
+    status: 'draft' | 'published' | 'archived'
+  ): void {
     this.loading = true;
     this.creatorCourseService
       .updateCourseStatusDirect(course.id, status)
@@ -233,15 +321,24 @@ export class CreatorCourseManagementComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response) => {
           if (response.success) {
-            this.notificationService.success('Thành công', 'Cập nhật trạng thái thành công!');
+            this.notificationService.success(
+              'Thành công',
+              'Cập nhật trạng thái thành công!'
+            );
             this.loadCourses();
             this.loadStatistics();
           } else {
-            this.notificationService.error('Lỗi', response.message || 'Không thể cập nhật trạng thái');
+            this.notificationService.error(
+              'Lỗi',
+              response.message || 'Không thể cập nhật trạng thái'
+            );
           }
         },
         error: (error) => {
-          this.notificationService.error('Lỗi', error.message || 'Không thể cập nhật trạng thái');
+          this.notificationService.error(
+            'Lỗi',
+            error.message || 'Không thể cập nhật trạng thái'
+          );
         },
       });
   }
