@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -72,7 +72,8 @@ export class ModuleLessonsComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private http: HttpClient,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -168,12 +169,26 @@ export class ModuleLessonsComponent implements OnInit, OnDestroy {
   }
 
   onFilterChange(): void {
+    this.cdr.detectChanges();
     this.currentPage = 1;
     this.applyFilters();
   }
 
   onSortChange(): void {
     this.applyFilters();
+  }
+
+  clearFilters(): void {
+    this.searchTerm = '';
+    this.selectedType = 'all';
+    this.sortBy = 'position';
+    this.sortOrder = 'asc';
+    this.currentPage = 1;
+    this.applyFilters();
+  }
+
+  hasActiveFilters(): boolean {
+    return this.searchTerm.trim() !== '' || this.selectedType !== 'all';
   }
 
   onPageChange(page: number): void {
