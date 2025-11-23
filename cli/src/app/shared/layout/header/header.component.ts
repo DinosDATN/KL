@@ -458,8 +458,16 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
 
       const baseItems = [
         { label: 'Hồ sơ', link: profileLink, icon: 'user' },
-        { label: 'Cài đặt', link: '/settings', icon: 'settings' },
       ];
+
+      // Add "Khóa học" menu for creator role
+      if (this.currentUser?.role === 'creator') {
+        baseItems.push({
+          label: 'Khóa học',
+          link: '/creator/courses',
+          icon: 'book',
+        });
+      }
 
       // Add admin menu if user is admin
       if (this.currentUser?.role === 'admin') {
@@ -469,6 +477,8 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
           icon: 'settings',
         });
       }
+
+      baseItems.push({ label: 'Cài đặt', link: '/settings', icon: 'settings' });
 
       baseItems.push({
         label: 'Đăng xuất',
