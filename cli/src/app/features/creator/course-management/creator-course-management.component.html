@@ -1,0 +1,400 @@
+<!-- Creator Course Management Page -->
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+  <!-- Header -->
+  <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
+        <!-- Title -->
+        <div class="min-w-0 flex-1">
+          <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1 sm:mb-2">
+            Quản lý khóa học
+          </h1>
+          <p class="text-sm sm:text-base text-gray-600 dark:text-gray-400">
+            Tạo, chỉnh sửa và quản lý các khóa học của bạn
+          </p>
+        </div>
+
+        <!-- Create Course Button -->
+        <button
+          (click)="openCreateModal()"
+          class="px-4 sm:px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base font-medium rounded-lg transition-colors duration-200"
+        >
+          <i class="icon-plus mr-1 sm:mr-2"></i>
+          <span>Tạo khóa học mới</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6" *ngIf="stats">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <!-- Total Courses -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
+              <i class="icon-book text-blue-600 dark:text-blue-400"></i>
+            </div>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Tổng khóa học</p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.total_courses }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Published Courses -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
+              <i class="icon-check-circle text-green-600 dark:text-green-400"></i>
+            </div>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Đã xuất bản</p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.published_courses }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Total Students -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center">
+              <i class="icon-users text-purple-600 dark:text-purple-400"></i>
+            </div>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Tổng học viên</p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.total_students }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Total Revenue -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg flex items-center justify-center">
+              <i class="icon-dollar-sign text-yellow-600 dark:text-yellow-400"></i>
+            </div>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Tổng doanh thu</p>
+            <p class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+              {{ formatCurrency(stats.total_revenue) }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+    <!-- Tabs -->
+    <div class="mb-4 sm:mb-6 overflow-x-auto">
+      <nav class="flex space-x-4 sm:space-x-8 min-w-max" aria-label="Tabs">
+        <button
+          (click)="onTabChange('all')"
+          [ngClass]="{
+            'border-blue-500 text-blue-600 dark:text-blue-400': activeTab === 'all',
+            'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600': activeTab !== 'all'
+          }"
+          class="whitespace-nowrap py-2 px-1 sm:px-2 border-b-2 font-medium text-xs sm:text-sm transition-colors duration-200"
+        >
+          Tất cả
+          <span *ngIf="stats" class="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded-full">
+            {{ stats.total_courses }}
+          </span>
+        </button>
+
+        <button
+          (click)="onTabChange('published')"
+          [ngClass]="{
+            'border-green-500 text-green-600 dark:text-green-400': activeTab === 'published',
+            'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600': activeTab !== 'published'
+          }"
+          class="whitespace-nowrap py-2 px-1 sm:px-2 border-b-2 font-medium text-xs sm:text-sm transition-colors duration-200"
+        >
+          Đã xuất bản
+          <span *ngIf="stats" class="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded-full">
+            {{ stats.published_courses }}
+          </span>
+        </button>
+
+        <button
+          (click)="onTabChange('draft')"
+          [ngClass]="{
+            'border-yellow-500 text-yellow-600 dark:text-yellow-400': activeTab === 'draft',
+            'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600': activeTab !== 'draft'
+          }"
+          class="whitespace-nowrap py-2 px-1 sm:px-2 border-b-2 font-medium text-xs sm:text-sm transition-colors duration-200"
+        >
+          Bản nháp
+          <span *ngIf="stats" class="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded-full">
+            {{ stats.draft_courses }}
+          </span>
+        </button>
+
+        <button
+          (click)="onTabChange('archived')"
+          [ngClass]="{
+            'border-gray-500 text-gray-600 dark:text-gray-400': activeTab === 'archived',
+            'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600': activeTab !== 'archived'
+          }"
+          class="whitespace-nowrap py-2 px-1 sm:px-2 border-b-2 font-medium text-xs sm:text-sm transition-colors duration-200"
+        >
+          Đã lưu trữ
+          <span *ngIf="stats" class="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded-full">
+            {{ stats.archived_courses }}
+          </span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="mb-4 sm:mb-6 flex flex-col sm:flex-row gap-4">
+      <!-- Search -->
+      <div class="flex-1">
+        <div class="relative">
+          <input
+            type="text"
+            [(ngModel)]="searchTerm"
+            (keyup.enter)="onSearch()"
+            placeholder="Tìm kiếm khóa học..."
+            class="w-full px-4 py-2 pl-10 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+          <i class="icon-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+        </div>
+      </div>
+
+      <!-- Search Button -->
+      <button
+        (click)="onSearch()"
+        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200"
+      >
+        Tìm kiếm
+      </button>
+    </div>
+
+    <!-- Error Message -->
+    <div *ngIf="error" class="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+      <p class="text-sm text-red-800 dark:text-red-400">{{ error }}</p>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading && courses.length === 0" class="text-center py-12">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <p class="mt-4 text-sm text-gray-600 dark:text-gray-400">Đang tải...</p>
+    </div>
+
+    <!-- Courses List -->
+    <div *ngIf="!loading || courses.length > 0" class="space-y-4">
+      <div *ngIf="courses.length === 0" class="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <i class="icon-book text-4xl text-gray-400 mb-4"></i>
+        <p class="text-lg font-medium text-gray-900 dark:text-white mb-2">Chưa có khóa học nào</p>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Bắt đầu tạo khóa học đầu tiên của bạn</p>
+        <button
+          (click)="openCreateModal()"
+          class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200"
+        >
+          Tạo khóa học mới
+        </button>
+      </div>
+
+      <!-- Course Cards -->
+      <div *ngFor="let course of courses" class="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <!-- Course Info -->
+          <div class="flex-1">
+            <div class="flex items-start gap-4">
+              <!-- Thumbnail -->
+              <div *ngIf="course.thumbnail" class="flex-shrink-0">
+                <img
+                  [src]="course.thumbnail"
+                  [alt]="course.title"
+                  class="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg"
+                />
+              </div>
+              <div *ngIf="!course.thumbnail" class="flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                <i class="icon-book text-2xl text-gray-400"></i>
+              </div>
+
+              <!-- Course Details -->
+              <div class="flex-1 min-w-0">
+                <div class="flex items-start justify-between gap-2 mb-2">
+                  <h3 class="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white line-clamp-2">
+                    {{ course.title }}
+                  </h3>
+                  <span
+                    [ngClass]="getStatusColor(course.status)"
+                    class="px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap"
+                  >
+                    {{ getStatusLabel(course.status) }}
+                  </span>
+                </div>
+
+                <p *ngIf="course.description" class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-3">
+                  {{ course.description }}
+                </p>
+
+                <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                  <span *ngIf="course.level">
+                    <i class="icon-bar-chart mr-1"></i>
+                    {{ course.level }}
+                  </span>
+                  <span *ngIf="course.students !== undefined">
+                    <i class="icon-users mr-1"></i>
+                    {{ course.students }} học viên
+                  </span>
+                  <span *ngIf="course.rating && course.rating > 0">
+                    <i class="icon-star mr-1"></i>
+                    {{ course.rating.toFixed(1) }}
+                  </span>
+                  <span *ngIf="course.price">
+                    <i class="icon-dollar-sign mr-1"></i>
+                    {{ formatCurrency(course.price) }}
+                  </span>
+                </div>
+
+                <div class="mt-2 text-xs text-gray-500 dark:text-gray-500">
+                  Tạo ngày: {{ formatDate(course.created_at) }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex flex-wrap gap-2 sm:flex-col sm:items-end">
+            <button
+              (click)="viewCourse(course)"
+              class="px-3 py-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors duration-200"
+            >
+              Xem
+            </button>
+            <button
+              (click)="editCourse(course)"
+              class="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+            >
+              Chỉnh sửa
+            </button>
+            <button
+              (click)="manageContent(course)"
+              class="px-3 py-1.5 text-sm font-medium text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors duration-200"
+            >
+              Nội dung
+            </button>
+            <button
+              (click)="viewAnalytics(course)"
+              class="px-3 py-1.5 text-sm font-medium text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors duration-200"
+            >
+              Thống kê
+            </button>
+            <div class="flex gap-2">
+              <button
+                *ngIf="course.status === 'draft'"
+                (click)="onUpdateStatus(course, 'published')"
+                class="px-3 py-1.5 text-sm font-medium text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors duration-200"
+              >
+                Xuất bản
+              </button>
+              <button
+                *ngIf="course.status === 'published'"
+                (click)="onUpdateStatus(course, 'archived')"
+                class="px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+              >
+                Lưu trữ
+              </button>
+              <button
+                (click)="onDeleteCourse(course)"
+                class="px-3 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-200"
+              >
+                Xóa
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div *ngIf="totalPages > 1" class="mt-6 flex items-center justify-between">
+      <div class="text-sm text-gray-700 dark:text-gray-300">
+        Hiển thị {{ (currentPage - 1) * itemsPerPage + 1 }} đến
+        {{ Math.min(currentPage * itemsPerPage, totalItems) }} trong tổng số {{ totalItems }} khóa học
+      </div>
+      <div class="flex gap-2">
+        <button
+          (click)="onPageChange(currentPage - 1)"
+          [disabled]="currentPage === 1"
+          class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+        >
+          Trước
+        </button>
+        <ng-container *ngFor="let page of getPageNumbers(); let i = index">
+          <button
+            (click)="onPageChange(page)"
+            [ngClass]="{
+              'bg-blue-600 text-white': currentPage === page,
+              'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300': currentPage !== page
+            }"
+            class="px-3 py-2 text-sm font-medium border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
+          >
+            {{ page }}
+          </button>
+        </ng-container>
+        <button
+          (click)="onPageChange(currentPage + 1)"
+          [disabled]="currentPage === totalPages"
+          class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+        >
+          Sau
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create/Edit Course Modal -->
+  <div
+    *ngIf="showCreateModal"
+    class="fixed inset-0 z-50 overflow-y-auto"
+    aria-labelledby="modal-title"
+    role="dialog"
+    aria-modal="true"
+  >
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+      <!-- Background overlay -->
+      <div
+        class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+        (click)="closeModal()"
+      ></div>
+
+      <!-- Modal panel -->
+      <div
+        class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full"
+      >
+        <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+              {{ editingCourse ? 'Chỉnh sửa khóa học' : 'Tạo khóa học mới' }}
+            </h3>
+            <button
+              (click)="closeModal()"
+              class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+            >
+              <i class="icon-x text-xl"></i>
+            </button>
+          </div>
+          <!-- Course form will be integrated here -->
+          <p class="text-sm text-gray-600 dark:text-gray-400">
+            Form tạo/sửa khóa học sẽ được tích hợp ở đây
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

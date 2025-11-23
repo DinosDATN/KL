@@ -421,6 +421,14 @@ export const routes: Routes = [
         canActivate: [AuthGuard],
       },
       {
+        path: 'creator/courses',
+        loadComponent: () =>
+          import(
+            './features/creator/course-management/creator-course-management.component'
+          ).then((m) => m.CreatorCourseManagementComponent),
+        canActivate: [AuthGuard],
+      },
+      {
         path: 'grading-board',
         loadComponent: () =>
           import('./grading-board/grading-board.component').then(

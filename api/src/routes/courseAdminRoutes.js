@@ -23,8 +23,8 @@ const router = express.Router();
 // Apply authentication middleware to all admin routes
 router.use(authenticateToken);
 
-// Apply admin role requirement to all routes
-router.use(requireRole(['admin']));
+// Apply admin or creator role requirement to all routes
+router.use(requireRole(['admin', 'creator']));
 
 /**
  * Course CRUD Operations (Admin Only)

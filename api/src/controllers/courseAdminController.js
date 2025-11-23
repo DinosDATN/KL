@@ -81,6 +81,9 @@ class CourseAdminController {
     try {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 10;
+      const userId = req.user.id;
+      const userRole = req.user.role;
+      
       const {
         status,
         category_id,
@@ -93,10 +96,26 @@ class CourseAdminController {
         priceRange,
       } = req.query;
 
+      // If user is creator (not admin), automatically filter by their instructor_id
+      // and prevent them from viewing other creators' courses
+      let finalInstructorId = instructor_id;
+      if (userRole === 'creator') {
+        // Creator can only see their own courses
+        finalInstructorId = userId.toString();
+        
+        // Prevent creator from trying to view other creators' courses
+        if (instructor_id && instructor_id !== userId.toString()) {
+          return res.status(403).json({
+            success: false,
+            message: 'You can only view your own courses',
+          });
+        }
+      }
+
       const filters = {
         status,
         category_id,
-        instructor_id,
+        instructor_id: finalInstructorId,
         level,
         is_premium,
         is_deleted,
@@ -131,12 +150,22 @@ class CourseAdminController {
   async getCourseByIdForAdmin(req, res) {
     try {
       const { id } = req.params;
+      const userId = req.user.id;
+      const userRole = req.user.role;
       const includeDeleted = req.query.include_deleted === "true";
 
       const course = await courseService.getCourseWithAssociations(
         parseInt(id),
         includeDeleted
       );
+
+      // If user is creator (not admin), ensure they can only view their own courses
+      if (userRole === 'creator' && course.instructor_id !== userId) {
+        return res.status(403).json({
+          success: false,
+          message: "You can only view your own courses",
+        });
+      }
 
       res.status(200).json({
         success: true,
