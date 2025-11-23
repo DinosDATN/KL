@@ -413,6 +413,14 @@ export const routes: Routes = [
         canActivate: [AuthGuard],
       },
       {
+        path: 'creator/profile',
+        loadComponent: () =>
+          import('./features/profile/creator-profile.component').then(
+            (m) => m.CreatorProfileComponent
+          ),
+        canActivate: [AuthGuard],
+      },
+      {
         path: 'grading-board',
         loadComponent: () =>
           import('./grading-board/grading-board.component').then(

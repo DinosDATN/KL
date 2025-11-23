@@ -451,8 +451,13 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
   updateUserMenuItems(): void {
     console.log("updateUserMenuItems user : ", this.currentUser);
     if (this.currentUser) {
+      // Determine profile link based on user role
+      const profileLink = (this.currentUser.role === 'creator' || this.currentUser.role === 'admin') 
+        ? '/creator/profile' 
+        : '/profile';
+
       const baseItems = [
-        { label: 'Hồ sơ', link: '/profile', icon: 'user' },
+        { label: 'Hồ sơ', link: profileLink, icon: 'user' },
         { label: 'Cài đặt', link: '/settings', icon: 'settings' },
       ];
 

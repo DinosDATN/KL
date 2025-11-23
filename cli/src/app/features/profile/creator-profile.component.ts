@@ -6,7 +6,7 @@ import {
   ElementRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import {
   ReactiveFormsModule,
   FormBuilder,
@@ -24,28 +24,27 @@ import {
   UpdateSettingsRequest,
   ChangePasswordRequest,
 } from '../../core/services/profile.service';
+import {
+  CreatorProfileService,
+  CreatorStatistics,
+  CreatorProfileData,
+} from '../../core/services/creator-profile.service';
 import { AuthService } from '../../core/services/auth.service';
 import {
   User,
   UserProfile,
   UserStat,
-  UserGoal,
-  Achievement,
-  UserAchievement,
-  UserActivityLog,
 } from '../../core/models/user.model';
-import { Course, CourseEnrollment } from '../../core/models/course.model';
-import { Problem, Submission } from '../../core/models/problem.model';
-// Removed mock data imports - using real data from API
+import { Course } from '../../core/models/course.model';
 
 @Component({
-  selector: 'app-profile',
+  selector: 'app-creator-profile',
   standalone: true,
   imports: [CommonModule, RouterModule, ReactiveFormsModule],
-  templateUrl: './profile.component.html',
+  templateUrl: './creator-profile.component.html',
   styleUrls: ['./profile.component.css'],
 })
-export class ProfileComponent implements OnInit, OnDestroy {
+export class CreatorProfileComponent implements OnInit, OnDestroy {
   @ViewChild('avatarFileInput') avatarFileInput!: ElementRef<HTMLInputElement>;
 
   private destroy$ = new Subject<void>();
@@ -54,22 +53,21 @@ export class ProfileComponent implements OnInit, OnDestroy {
   user: User | null = null;
   userProfile: UserProfile | null = null;
   userStat: UserStat | null = null;
-
-  // Data from API
-  userGoals: UserGoal[] = [];
-  userAchievements: UserAchievement[] = [];
-  userActivityLogs: UserActivityLog[] = [];
-  courseEnrollments: CourseEnrollment[] = [];
-  submissions: Submission[] = [];
+  creatorStatistics: CreatorStatistics | null = null;
+  courses: Course[] = [];
 
   // UI state
-  activeTab: 'overview' | 'activity' | 'achievements' | 'courses' | 'settings' =
-    'overview';
+  activeTab: 'overview' | 'courses' | 'analytics' | 'settings' = 'overview';
   editMode: 'none' | 'basic' | 'details' | 'settings' | 'password' = 'none';
   isLoading = false;
   isUploading = false;
   errorMessage = '';
   successMessage = '';
+
+  // Pagination
+  currentPage = 1;
+  totalPages = 1;
+  coursesPerPage = 10;
 
   // Forms
   basicProfileForm: FormGroup;
@@ -80,9 +78,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
   constructor(
     public themeService: ThemeService,
     private profileService: ProfileService,
+    private creatorProfileService: CreatorProfileService,
     private authService: AuthService,
-    private fb: FormBuilder,
-    private router: Router
+    private fb: FormBuilder
   ) {
     this.basicProfileForm = this.createBasicProfileForm();
     this.detailsForm = this.createDetailsForm();
@@ -95,18 +93,16 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.authService.authInitialized$.pipe(takeUntil(this.destroy$)).subscribe({
       next: (initialized) => {
         if (initialized) {
-          // Only load profile if user is authenticated
+          // Only load profile if user is authenticated and is a creator
           if (this.authService.isAuthenticated()) {
-            // Check if user is creator or admin, redirect to creator profile
             const currentUser = this.authService.getCurrentUser();
             if (currentUser && (currentUser.role === 'creator' || currentUser.role === 'admin')) {
-              this.router.navigate(['/creator/profile']);
-              return;
+              this.loadProfile();
+            } else {
+              this.errorMessage = 'Bạn cần là Creator để truy cập trang này';
             }
-            this.loadProfile();
           } else {
-            // User not authenticated, redirect to login
-            this.errorMessage = 'Please login to view your profile';
+            this.errorMessage = 'Vui lòng đăng nhập để xem profile';
           }
         }
       },
@@ -186,18 +182,43 @@ export class ProfileComponent implements OnInit, OnDestroy {
           this.userProfile = profileData.profile;
           this.userStat = profileData.stats;
 
-          // Load additional data from API response
-          this.userGoals = profileData.goals || [];
-          this.userAchievements = profileData.achievements || [];
-          this.userActivityLogs = profileData.activity_logs || [];
-          this.courseEnrollments = profileData.enrollments || [];
-          this.submissions = profileData.recent_submissions || [];
-
           this.updateForms();
+          this.loadCreatorStatistics();
+          this.loadCreatorCourses();
         },
         error: (error) => {
-          this.errorMessage = error.message || 'Failed to load profile';
+          this.errorMessage = error.message || 'Không thể tải profile';
           console.error('Error loading profile:', error);
+        },
+      });
+  }
+
+  loadCreatorStatistics(): void {
+    this.creatorProfileService
+      .getCreatorStatistics()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (stats) => {
+          this.creatorStatistics = stats;
+        },
+        error: (error) => {
+          console.error('Error loading creator statistics:', error);
+        },
+      });
+  }
+
+  loadCreatorCourses(page: number = 1): void {
+    this.creatorProfileService
+      .getCreatorCourses(page, this.coursesPerPage)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.courses = response.courses;
+          this.currentPage = response.pagination.current_page;
+          this.totalPages = response.pagination.total_pages;
+        },
+        error: (error) => {
+          console.error('Error loading creator courses:', error);
         },
       });
   }
@@ -270,7 +291,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          this.errorMessage = error.message || 'Failed to update profile';
+          this.errorMessage = error.message || 'Không thể cập nhật profile';
           if (error.errors) {
             this.setFormErrors(this.basicProfileForm, error.errors);
           }
@@ -300,8 +321,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          this.errorMessage =
-            error.message || 'Failed to update profile details';
+          this.errorMessage = error.message || 'Không thể cập nhật chi tiết profile';
           if (error.errors) {
             this.setFormErrors(this.detailsForm, error.errors);
           }
@@ -336,7 +356,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          this.errorMessage = error.message || 'Failed to update settings';
+          this.errorMessage = error.message || 'Không thể cập nhật cài đặt';
           if (error.errors) {
             this.setFormErrors(this.settingsForm, error.errors);
           }
@@ -364,56 +384,12 @@ export class ProfileComponent implements OnInit, OnDestroy {
           this.passwordForm.reset();
         },
         error: (error) => {
-          this.errorMessage = error.message || 'Failed to change password';
+          this.errorMessage = error.message || 'Không thể đổi mật khẩu';
           if (error.errors) {
             this.setFormErrors(this.passwordForm, error.errors);
           }
         },
       });
-  }
-
-  // Become creator
-  becomeCreator(): void {
-    if (
-      !confirm(
-        'Bạn có chắc chắn muốn đăng ký trở thành người sáng tạo nội dung? Bạn sẽ có thể tạo và quản lý khóa học.'
-      )
-    ) {
-      return;
-    }
-
-    this.isLoading = true;
-    this.clearMessages();
-
-    this.profileService
-      .becomeCreator()
-      .pipe(
-        takeUntil(this.destroy$),
-        finalize(() => (this.isLoading = false))
-      )
-      .subscribe({
-        next: (response) => {
-          this.successMessage =
-            response.message ||
-            'Đăng ký thành công! Bạn đã trở thành người sáng tạo nội dung.';
-          if (response.data && response.data.user) {
-            this.user = response.data.user;
-            // Update auth service to reflect new role
-            this.authService.getProfile().subscribe();
-          }
-        },
-        error: (error) => {
-          this.errorMessage =
-            error.error?.message ||
-            error.message ||
-            'Không thể đăng ký làm người sáng tạo nội dung';
-        },
-      });
-  }
-
-  // Check if user is already a creator
-  isCreator(): boolean {
-    return this.user?.role === 'creator' || this.user?.role === 'admin';
   }
 
   // Avatar upload methods
@@ -428,7 +404,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     // Validate file
     if (!this.isValidImageFile(file)) {
       this.errorMessage =
-        'Please select a valid image file (JPEG, PNG, GIF, WebP) under 5MB';
+        'Vui lòng chọn file ảnh hợp lệ (JPEG, PNG, GIF, WebP) dưới 5MB';
       return;
     }
 
@@ -466,7 +442,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          this.errorMessage = error.message || 'Failed to upload avatar';
+          this.errorMessage = error.message || 'Không thể upload avatar';
         },
       });
   }
@@ -509,55 +485,11 @@ export class ProfileComponent implements OnInit, OnDestroy {
     return num.toString();
   }
 
-  getProgressPercentage(current: number, target: number): number {
-    return Math.min((current / target) * 100, 100);
-  }
-
-  getRarityColor(rarity: string): string {
-    switch (rarity) {
-      case 'common':
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
-      case 'rare':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
-      case 'epic':
-        return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
-      case 'legendary':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
-    }
-  }
-
-  getDifficultyColor(difficulty: string): string {
-    switch (difficulty.toLowerCase()) {
-      case 'easy':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
-      case 'hard':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
-    }
-  }
-
-  getActivityIcon(type: string): string {
-    switch (type) {
-      case 'course_started':
-        return '📚';
-      case 'course_completed':
-        return '🎓';
-      case 'quiz_taken':
-        return '📝';
-      case 'problem_solved':
-        return '✅';
-      case 'badge_earned':
-        return '🏆';
-      case 'course_published':
-        return '📖';
-      default:
-        return '⚡';
-    }
+  formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(amount);
   }
 
   formatDate(dateString: string): string {
@@ -581,57 +513,26 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   setActiveTab(
-    tab: 'overview' | 'activity' | 'achievements' | 'courses' | 'settings'
+    tab: 'overview' | 'courses' | 'analytics' | 'settings'
   ): void {
     this.activeTab = tab;
   }
 
-  // Get user's completed achievements
-  getUserAchievements(): { achievement: Achievement; dateEarned: string }[] {
-    return this.userAchievements
-      .filter((ua) => ua.achievement) // Only include achievements with achievement data
-      .map((ua) => ({
-        achievement: ua.achievement as Achievement,
-        dateEarned: ua.date_earned,
-      }));
-  }
-
-  // Get user's enrolled courses with progress
-  getUserCourses(): { course: Course; enrollment: CourseEnrollment }[] {
-    return this.courseEnrollments
-      .filter((enrollment) => enrollment.course) // Only include enrollments with course data
-      .map((enrollment) => ({
-        course: enrollment.course as Course,
-        enrollment,
-      }));
-  }
-
-  // Get recent submissions
-  getRecentSubmissions(): { submission: Submission; problem: Problem }[] {
-    return this.submissions
-      .filter((submission) => submission.problem) // Only include submissions with problem data
-      .map((submission) => ({
-        submission,
-        problem: submission.problem as Problem,
-      }))
-      .sort(
-        (a, b) =>
-          new Date(b.submission.submitted_at).getTime() -
-          new Date(a.submission.submitted_at).getTime()
-      )
-      .slice(0, 5);
+  onPageChange(page: number): void {
+    this.loadCreatorCourses(page);
   }
 
   getStatusColor(status: string): string {
     switch (status) {
-      case 'accepted':
+      case 'published':
         return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
-      case 'wrong-answer':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
-      case 'time-limit-exceeded':
+      case 'draft':
         return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+      case 'archived':
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
     }
   }
 }
+

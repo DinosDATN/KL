@@ -1,0 +1,827 @@
+<div
+  class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200"
+>
+  <!-- Loading State -->
+  <div
+    *ngIf="isLoading && !user"
+    class="flex items-center justify-center min-h-screen"
+  >
+    <div
+      class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
+    ></div>
+  </div>
+
+  <!-- Profile Content -->
+  <div *ngIf="user && userProfile">
+    <!-- Header Hero -->
+    <section
+      class="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-700 dark:to-pink-800 text-white"
+    >
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
+        <div
+          class="flex flex-col md:flex-row items-start md:items-center gap-6"
+        >
+          <!-- Avatar with Upload -->
+          <div class="relative group">
+            <img
+              [src]="getAvatarUrl()"
+              [alt]="user.name"
+              class="w-24 h-24 md:w-28 md:h-28 rounded-full ring-4 ring-white/30 shadow-lg object-cover cursor-pointer transition-opacity group-hover:opacity-80"
+              (click)="onAvatarClick()"
+            />
+            <div
+              class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+              (click)="onAvatarClick()"
+            >
+              <div class="bg-black/50 rounded-full p-2">
+                <svg
+                  class="w-6 h-6 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                  ></path>
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                  ></path>
+                </svg>
+              </div>
+            </div>
+            <input
+              #avatarFileInput
+              type="file"
+              accept="image/*"
+              class="hidden"
+              (change)="onAvatarSelected($event)"
+            />
+            <!-- Upload indicator -->
+            <div
+              *ngIf="isUploading"
+              class="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full"
+            >
+              <div
+                class="animate-spin rounded-full h-6 w-6 border-b-2 border-white"
+              ></div>
+            </div>
+          </div>
+
+          <div class="flex-1">
+            <div class="flex items-center gap-3 flex-wrap">
+              <h1 class="text-2xl md:text-3xl font-bold">{{ user.name }}</h1>
+              <span
+                class="px-3 py-1 text-xs font-semibold rounded-full bg-purple-400 text-white"
+                >Creator</span
+              >
+              <span
+                class="flex items-center text-sm"
+                [ngClass]="user.is_online ? 'text-green-200' : 'text-gray-200'"
+              >
+                <span
+                  class="w-2 h-2 rounded-full mr-1"
+                  [ngClass]="user.is_online ? 'bg-green-300' : 'bg-gray-300'"
+                ></span>
+                {{ user.is_online ? "Online" : "Offline" }}
+              </span>
+            </div>
+            <p class="mt-2 text-purple-100 dark:text-purple-200">
+              {{ userProfile.bio || "Chưa có giới thiệu" }}
+            </p>
+            <div class="mt-3 flex flex-wrap gap-3 text-sm text-purple-100/90">
+              <a
+                *ngIf="userProfile.github_url"
+                [href]="userProfile.github_url"
+                target="_blank"
+                class="hover:underline"
+                >GitHub</a
+              >
+              <a
+                *ngIf="userProfile.linkedin_url"
+                [href]="userProfile.linkedin_url"
+                target="_blank"
+                class="hover:underline"
+                >LinkedIn</a
+              >
+              <a
+                *ngIf="userProfile.website_url"
+                [href]="userProfile.website_url"
+                target="_blank"
+                class="hover:underline"
+                >Website</a
+              >
+            </div>
+            <!-- Profile Completion -->
+            <div class="mt-3">
+              <div class="flex items-center gap-2 text-sm text-purple-100/90">
+                <span>Hoàn thành profile:</span>
+                <div class="flex-1 max-w-32 bg-white/20 rounded-full h-2">
+                  <div
+                    class="bg-white rounded-full h-2 transition-all"
+                    [style.width.%]="getProfileCompletion()"
+                  ></div>
+                </div>
+                <span class="font-semibold">{{ getProfileCompletion() }}%</span>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="grid grid-cols-3 gap-4 text-center w-full md:w-auto"
+            *ngIf="creatorStatistics"
+          >
+            <div class="bg-white/10 rounded-lg p-3">
+              <div class="text-xl font-bold">
+                {{ creatorStatistics.total_courses || 0 }}
+              </div>
+              <div class="text-xs opacity-80">Khóa học</div>
+            </div>
+            <div class="bg-white/10 rounded-lg p-3">
+              <div class="text-xl font-bold">
+                {{ formatNumber(creatorStatistics.total_students || 0) }}
+              </div>
+              <div class="text-xs opacity-80">Học viên</div>
+            </div>
+            <div class="bg-white/10 rounded-lg p-3">
+              <div class="text-xl font-bold">
+                {{ (creatorStatistics.average_rating || 0).toFixed(1) }}
+              </div>
+              <div class="text-xs opacity-80">Đánh giá</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tabs -->
+    <div class="bg-white dark:bg-gray-800 shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <nav class="flex gap-6 overflow-x-auto no-scrollbar" aria-label="Tabs">
+          <button
+            (click)="setActiveTab('overview')"
+            [ngClass]="
+              activeTab === 'overview'
+                ? 'border-purple-600 text-purple-600 dark:text-purple-400'
+                : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white'
+            "
+            class="py-4 border-b-2 font-medium"
+          >
+            Tổng quan
+          </button>
+          <button
+            (click)="setActiveTab('courses')"
+            [ngClass]="
+              activeTab === 'courses'
+                ? 'border-purple-600 text-purple-600 dark:text-purple-400'
+                : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white'
+            "
+            class="py-4 border-b-2 font-medium"
+          >
+            Khóa học của tôi
+          </button>
+          <button
+            (click)="setActiveTab('analytics')"
+            [ngClass]="
+              activeTab === 'analytics'
+                ? 'border-purple-600 text-purple-600 dark:text-purple-400'
+                : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white'
+            "
+            class="py-4 border-b-2 font-medium"
+          >
+            Thống kê
+          </button>
+          <button
+            (click)="setActiveTab('settings')"
+            [ngClass]="
+              activeTab === 'settings'
+                ? 'border-purple-600 text-purple-600 dark:text-purple-400'
+                : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white'
+            "
+            class="py-4 border-b-2 font-medium"
+          >
+            Cài đặt
+          </button>
+        </nav>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <section class="py-8">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Overview Tab -->
+        <div *ngIf="activeTab === 'overview'" class="space-y-8">
+          <!-- Creator Stats Cards -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4" *ngIf="creatorStatistics">
+            <div
+              class="p-4 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20"
+            >
+              <div class="text-sm text-gray-600 dark:text-gray-300">
+                Tổng khóa học
+              </div>
+              <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                {{ creatorStatistics.total_courses || 0 }}
+              </div>
+            </div>
+            <div
+              class="p-4 rounded-xl bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20"
+            >
+              <div class="text-sm text-gray-600 dark:text-gray-300">
+                Đã xuất bản
+              </div>
+              <div
+                class="text-2xl font-bold text-green-600 dark:text-green-400"
+              >
+                {{ creatorStatistics.published_courses || 0 }}
+              </div>
+            </div>
+            <div
+              class="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20"
+            >
+              <div class="text-sm text-gray-600 dark:text-gray-300">
+                Tổng học viên
+              </div>
+              <div
+                class="text-2xl font-bold text-blue-600 dark:text-blue-400"
+              >
+                {{ formatNumber(creatorStatistics.total_students || 0) }}
+              </div>
+            </div>
+            <div
+              class="p-4 rounded-xl bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20"
+            >
+              <div class="text-sm text-gray-600 dark:text-gray-300">
+                Doanh thu
+              </div>
+              <div
+                class="text-2xl font-bold text-yellow-600 dark:text-yellow-400"
+              >
+                {{ formatCurrency(creatorStatistics.total_revenue || 0) }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Stats -->
+          <div class="grid md:grid-cols-2 gap-6" *ngIf="creatorStatistics">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
+              <h3 class="text-lg font-semibold mb-4">Thống kê khóa học</h3>
+              <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-600 dark:text-gray-300">Đã xuất bản</span>
+                  <span class="font-semibold">{{ creatorStatistics.published_courses || 0 }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-600 dark:text-gray-300">Bản nháp</span>
+                  <span class="font-semibold">{{ creatorStatistics.draft_courses || 0 }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-600 dark:text-gray-300">Đã lưu trữ</span>
+                  <span class="font-semibold">{{ creatorStatistics.courses_by_status.archived || 0 }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
+              <h3 class="text-lg font-semibold mb-4">Đánh giá & Phản hồi</h3>
+              <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-600 dark:text-gray-300">Đánh giá trung bình</span>
+                  <div class="flex items-center gap-2">
+                    <span class="font-semibold">{{ (creatorStatistics.average_rating || 0).toFixed(1) }}</span>
+                    <span class="text-yellow-500">★</span>
+                  </div>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-600 dark:text-gray-300">Tổng đánh giá</span>
+                  <span class="font-semibold">{{ creatorStatistics.total_reviews || 0 }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-600 dark:text-gray-300">Tổng lượt đăng ký</span>
+                  <span class="font-semibold">{{ formatNumber(creatorStatistics.total_enrollments || 0) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Courses -->
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold">Khóa học gần đây</h3>
+              <a
+                (click)="setActiveTab('courses')"
+                class="text-purple-600 dark:text-purple-400 hover:underline text-sm cursor-pointer"
+                >Xem tất cả →</a
+              >
+            </div>
+            <div class="grid md:grid-cols-2 gap-6" *ngIf="courses.length > 0; else noCourses">
+              <div
+                *ngFor="let course of courses.slice(0, 4)"
+                class="border dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                [routerLink]="['/courses', course.id]"
+              >
+                <div class="flex items-center justify-between mb-2">
+                  <div class="font-semibold truncate flex-1">{{ course.title }}</div>
+                  <span
+                    class="text-xs px-2 py-1 rounded-full ml-2"
+                    [ngClass]="getStatusColor(course.status)"
+                    >{{ course.status }}</span
+                  >
+                </div>
+                <div class="text-sm text-gray-600 dark:text-gray-400">
+                  {{ course.students || 0 }} học viên • 
+                  {{ (course.rating || 0).toFixed(1) }} ⭐
+                </div>
+                <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  {{ formatDateTime(course.created_at) }}
+                </div>
+              </div>
+            </div>
+            <ng-template #noCourses>
+              <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+                <p>Bạn chưa có khóa học nào. Hãy tạo khóa học đầu tiên!</p>
+                <a
+                  routerLink="/admin/courses"
+                  class="mt-4 inline-block px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                  >Tạo khóa học mới</a
+                >
+              </div>
+            </ng-template>
+          </div>
+        </div>
+
+        <!-- Courses Tab -->
+        <div *ngIf="activeTab === 'courses'" class="space-y-6">
+          <div class="flex items-center justify-between">
+            <h2 class="text-2xl font-bold">Khóa học của tôi</h2>
+            <a
+              routerLink="/admin/courses"
+              class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+              >+ Tạo khóa học mới</a
+            >
+          </div>
+
+          <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6" *ngIf="courses.length > 0; else noCoursesList">
+            <div
+              *ngFor="let course of courses"
+              class="bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+              [routerLink]="['/courses', course.id]"
+            >
+              <div
+                class="h-32 bg-gradient-to-r from-purple-500 to-pink-600"
+                *ngIf="!course.thumbnail"
+              ></div>
+              <img
+                *ngIf="course.thumbnail"
+                [src]="course.thumbnail"
+                [alt]="course.title"
+                class="h-32 w-full object-cover"
+              />
+              <div class="p-6">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="font-semibold text-lg truncate">{{ course.title }}</div>
+                  <span
+                    class="text-xs px-2 py-1 rounded-full ml-2 flex-shrink-0"
+                    [ngClass]="getStatusColor(course.status)"
+                    >{{ course.status }}</span
+                  >
+                </div>
+                <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                  {{ course.students || 0 }} học viên • 
+                  {{ (course.rating || 0).toFixed(1) }} ⭐
+                </div>
+                <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                  <span>{{ formatDateTime(course.created_at) }}</span>
+                  <span
+                    *ngIf="course.is_premium"
+                    class="px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+                    >Premium</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+          <ng-template #noCoursesList>
+            <div class="text-center py-12 bg-white dark:bg-gray-800 rounded-xl shadow">
+              <p class="text-gray-500 dark:text-gray-400 mb-4">Bạn chưa có khóa học nào.</p>
+              <a
+                routerLink="/admin/courses"
+                class="inline-block px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                >Tạo khóa học đầu tiên</a
+              >
+            </div>
+          </ng-template>
+
+          <!-- Pagination -->
+          <div *ngIf="totalPages > 1" class="flex justify-center gap-2">
+            <button
+              *ngFor="let page of [].constructor(totalPages); let i = index"
+              (click)="onPageChange(i + 1)"
+              [ngClass]="
+                currentPage === i + 1
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              "
+              class="px-4 py-2 rounded-lg border dark:border-gray-700"
+            >
+              {{ i + 1 }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div *ngIf="activeTab === 'analytics' && creatorStatistics" class="space-y-6">
+          <h2 class="text-2xl font-bold">Thống kê chi tiết</h2>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
+              <h3 class="text-lg font-semibold mb-4">Tổng quan doanh thu</h3>
+              <div class="space-y-4">
+                <div>
+                  <div class="flex justify-between text-sm mb-1">
+                    <span class="text-gray-600 dark:text-gray-300">Tổng doanh thu</span>
+                  </div>
+                  <div class="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {{ formatCurrency(creatorStatistics.total_revenue || 0) }}
+                  </div>
+                </div>
+                <div>
+                  <div class="flex justify-between text-sm mb-1">
+                    <span class="text-gray-600 dark:text-gray-300">Tổng lượt đăng ký</span>
+                  </div>
+                  <div class="text-xl font-semibold">
+                    {{ formatNumber(creatorStatistics.total_enrollments || 0) }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
+              <h3 class="text-lg font-semibold mb-4">Phân tích khóa học</h3>
+              <div class="space-y-3">
+                <div class="flex justify-between">
+                  <span class="text-gray-600 dark:text-gray-300">Tổng khóa học</span>
+                  <span class="font-semibold">{{ creatorStatistics.total_courses || 0 }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600 dark:text-gray-300">Đã xuất bản</span>
+                  <span class="font-semibold text-green-600">{{ creatorStatistics.published_courses || 0 }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600 dark:text-gray-300">Bản nháp</span>
+                  <span class="font-semibold text-yellow-600">{{ creatorStatistics.draft_courses || 0 }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600 dark:text-gray-300">Đã lưu trữ</span>
+                  <span class="font-semibold text-gray-600">{{ creatorStatistics.courses_by_status.archived || 0 }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
+            <h3 class="text-lg font-semibold mb-4">Hiệu suất khóa học</h3>
+            <div class="grid md:grid-cols-3 gap-4">
+              <div class="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                  {{ formatNumber(creatorStatistics.total_students || 0) }}
+                </div>
+                <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">Tổng học viên</div>
+              </div>
+              <div class="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  {{ (creatorStatistics.average_rating || 0).toFixed(1) }}
+                </div>
+                <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">Đánh giá TB</div>
+              </div>
+              <div class="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                <div class="text-2xl font-bold text-green-600 dark:text-green-400">
+                  {{ creatorStatistics.total_reviews || 0 }}
+                </div>
+                <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">Tổng đánh giá</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div *ngIf="activeTab === 'settings'" class="space-y-6">
+          <!-- Messages -->
+          <div
+            *ngIf="errorMessage"
+            class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg"
+          >
+            {{ errorMessage }}
+          </div>
+          <div
+            *ngIf="successMessage"
+            class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-3 rounded-lg"
+          >
+            {{ successMessage }}
+          </div>
+
+          <!-- Basic Profile Information -->
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold">Thông tin cơ bản</h3>
+              <button
+                *ngIf="editMode !== 'basic'"
+                (click)="startEdit('basic')"
+                class="px-3 py-1 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+              >
+                Chỉnh sửa
+              </button>
+            </div>
+
+            <!-- View Mode -->
+            <div
+              *ngIf="editMode !== 'basic'"
+              class="grid sm:grid-cols-2 gap-4 text-sm"
+            >
+              <div class="space-y-1">
+                <div class="text-gray-500 dark:text-gray-400">Tên</div>
+                <div class="font-medium">{{ user.name }}</div>
+              </div>
+              <div class="space-y-1">
+                <div class="text-gray-500 dark:text-gray-400">Email</div>
+                <div class="font-medium">{{ user.email }}</div>
+              </div>
+            </div>
+
+            <!-- Edit Mode -->
+            <form
+              *ngIf="editMode === 'basic'"
+              [formGroup]="basicProfileForm"
+              (ngSubmit)="saveBasicProfile()"
+              class="space-y-4"
+            >
+              <div class="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >Tên</label
+                  >
+                  <input
+                    type="text"
+                    formControlName="name"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="Nhập tên của bạn"
+                  />
+                  <div
+                    *ngIf="basicProfileForm.get('name')?.errors?.['required']"
+                    class="text-red-500 text-xs mt-1"
+                  >
+                    Tên là bắt buộc
+                  </div>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >Email</label
+                  >
+                  <input
+                    type="email"
+                    formControlName="email"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="Nhập email của bạn"
+                  />
+                </div>
+              </div>
+              <div class="flex gap-2">
+                <button
+                  type="submit"
+                  [disabled]="basicProfileForm.invalid || isLoading"
+                  class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <div
+                    *ngIf="isLoading"
+                    class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"
+                  ></div>
+                  Lưu
+                </button>
+                <button
+                  type="button"
+                  (click)="cancelEdit()"
+                  class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Profile Details -->
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold">Chi tiết hồ sơ</h3>
+              <button
+                *ngIf="editMode !== 'details'"
+                (click)="startEdit('details')"
+                class="px-3 py-1 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+              >
+                Chỉnh sửa
+              </button>
+            </div>
+
+            <!-- View Mode -->
+            <div
+              *ngIf="editMode !== 'details'"
+              class="grid sm:grid-cols-2 gap-4 text-sm"
+            >
+              <div class="space-y-1">
+                <div class="text-gray-500 dark:text-gray-400">Giới thiệu</div>
+                <div class="font-medium">{{ userProfile.bio || "—" }}</div>
+              </div>
+              <div class="space-y-1">
+                <div class="text-gray-500 dark:text-gray-400">Website</div>
+                <div class="font-medium">
+                  <a
+                    *ngIf="userProfile.website_url"
+                    [href]="userProfile.website_url"
+                    target="_blank"
+                    class="text-purple-600 dark:text-purple-400 hover:underline"
+                    >{{ userProfile.website_url }}</a
+                  >
+                  <span *ngIf="!userProfile.website_url">—</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Edit Mode -->
+            <form
+              *ngIf="editMode === 'details'"
+              [formGroup]="detailsForm"
+              (ngSubmit)="saveProfileDetails()"
+              class="space-y-4"
+            >
+              <div>
+                <label
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  >Giới thiệu</label
+                >
+                <textarea
+                  formControlName="bio"
+                  rows="3"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Viết vài dòng về bản thân..."
+                ></textarea>
+              </div>
+              <div class="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >Website</label
+                  >
+                  <input
+                    type="url"
+                    formControlName="website_url"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="https://your-website.com"
+                  />
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >GitHub</label
+                  >
+                  <input
+                    type="url"
+                    formControlName="github_url"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="https://github.com/username"
+                  />
+                </div>
+              </div>
+              <div>
+                <label
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  >LinkedIn</label
+                >
+                <input
+                  type="url"
+                  formControlName="linkedin_url"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="https://linkedin.com/in/username"
+                />
+              </div>
+              <div class="flex gap-2">
+                <button
+                  type="submit"
+                  [disabled]="detailsForm.invalid || isLoading"
+                  class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <div
+                    *ngIf="isLoading"
+                    class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"
+                  ></div>
+                  Lưu
+                </button>
+                <button
+                  type="button"
+                  (click)="cancelEdit()"
+                  class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Change Password -->
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold">Đổi mật khẩu</h3>
+              <button
+                *ngIf="editMode !== 'password'"
+                (click)="startEdit('password')"
+                class="px-3 py-1 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                Đổi mật khẩu
+              </button>
+            </div>
+
+            <div
+              *ngIf="editMode !== 'password'"
+              class="text-sm text-gray-600 dark:text-gray-400"
+            >
+              Bạn có thể thay đổi mật khẩu để bảo mật tài khoản tốt hơn.
+            </div>
+
+            <!-- Password Change Form -->
+            <form
+              *ngIf="editMode === 'password'"
+              [formGroup]="passwordForm"
+              (ngSubmit)="changePassword()"
+              class="space-y-4"
+            >
+              <div>
+                <label
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  >Mật khẩu hiện tại</label
+                >
+                <input
+                  type="password"
+                  formControlName="current_password"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Nhập mật khẩu hiện tại"
+                />
+              </div>
+
+              <div class="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >Mật khẩu mới</label
+                  >
+                  <input
+                    type="password"
+                    formControlName="new_password"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="Nhập mật khẩu mới"
+                  />
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >Xác nhận mật khẩu mới</label
+                  >
+                  <input
+                    type="password"
+                    formControlName="confirm_password"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="Xác nhận mật khẩu mới"
+                  />
+                </div>
+              </div>
+
+              <div class="flex gap-2">
+                <button
+                  type="submit"
+                  [disabled]="passwordForm.invalid || isLoading"
+                  class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <div
+                    *ngIf="isLoading"
+                    class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"
+                  ></div>
+                  Đổi mật khẩu
+                </button>
+                <button
+                  type="button"
+                  (click)="cancelEdit()"
+                  class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
