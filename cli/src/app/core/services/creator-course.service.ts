@@ -263,61 +263,60 @@ export class CreatorCourseService {
    * Get creator course statistics
    */
   getCreatorCourseStatistics(): Observable<CreatorCourseStats> {
-    // Get all courses (including deleted) and non-deleted courses separately
-    return forkJoin({
-      allCourses: this.getMyCourses({ limit: 1000, is_deleted: true }),
-      activeCourses: this.getMyCourses({ limit: 1000, is_deleted: false })
-    }).pipe(
-      map(({ allCourses, activeCourses }) => {
-        const allCoursesList = allCourses.data;
-        const activeCoursesList = activeCourses.data;
-        
-        const publishedCourses = activeCoursesList.filter(c => c.status === 'published');
-        const draftCourses = activeCoursesList.filter(c => c.status === 'draft');
-        const archivedCourses = activeCoursesList.filter(c => c.status === 'archived');
-        const deletedCourses = allCoursesList.filter(c => c.is_deleted);
-
-        const totalStudents = publishedCourses.reduce((sum, c) => sum + (c.students || 0), 0);
-        const totalEnrollments = publishedCourses.reduce((sum, c) => sum + (c.students || 0), 0);
-        const totalRevenue = publishedCourses.reduce((sum, c) => {
-          const courseRevenue = (c.price || 0) * (c.students || 0);
-          return sum + courseRevenue;
-        }, 0);
-
-        const ratings = publishedCourses
-          .filter(c => c.rating && c.rating > 0)
-          .map(c => c.rating);
-        const averageRating = ratings.length > 0
-          ? ratings.reduce((a, b) => a + b, 0) / ratings.length
-          : 0;
-
-        return {
-          total_courses: activeCoursesList.length,
-          published_courses: publishedCourses.length,
-          draft_courses: draftCourses.length,
-          archived_courses: archivedCourses.length,
-          deleted_courses: deletedCourses.length,
-          total_students: totalStudents,
-          total_enrollments: totalEnrollments,
-          total_revenue: totalRevenue,
-          average_rating: Math.round(averageRating * 10) / 10,
-          total_reviews: 0 // Can be fetched from reviews API if needed
-        };
+    // Use API endpoint to get accurate statistics from database
+    return this.http.get<ApiResponse<CreatorCourseStats>>(
+      `${this.apiUrl}/creator/statistics`,
+      { withCredentials: true }
+    ).pipe(
+      map(response => {
+        if (response.success && response.data) {
+          return response.data;
+        }
+        throw new Error(response.message || 'Failed to fetch creator statistics');
       }),
       catchError(error => {
-        console.error('Error fetching creator course statistics:', error);
-        return of({
-          total_courses: 0,
-          published_courses: 0,
-          draft_courses: 0,
-          archived_courses: 0,
-          deleted_courses: 0,
-          total_students: 0,
-          total_enrollments: 0,
-          total_revenue: 0,
-          average_rating: 0,
-          total_reviews: 0
-        });
+        console.error('[CreatorCourseService] Error fetching creator statistics, using fallback:', error);
+        // Fallback to calculating from courses if API fails
+        return forkJoin({
+          allCourses: this.getMyCourses({ limit: 1000, is_deleted: true }),
+          activeCourses: this.getMyCourses({ limit: 1000, is_deleted: false })
+        }).pipe(
+          map(({ allCourses, activeCourses }) => {
+            const allCoursesList = allCourses.data;
+            const activeCoursesList = activeCourses.data;
+            
+            const publishedCourses = activeCoursesList.filter(c => c.status === 'published');
+            const draftCourses = activeCoursesList.filter(c => c.status === 'draft');
+            const archivedCourses = activeCoursesList.filter(c => c.status === 'archived');
+            const deletedCourses = allCoursesList.filter(c => c.is_deleted);
+
+            // Calculate total students from database field
+            const totalStudents = publishedCourses.reduce((sum, c) => sum + (c.students || 0), 0);
+            const totalEnrollments = publishedCourses.reduce((sum, c) => sum + (c.students || 0), 0);
+            // Calculate total revenue from database revenue field (not price * students)
+            const totalRevenue = publishedCourses.reduce((sum, c) => sum + (c.revenue || 0), 0);
+
+            const ratings = publishedCourses
+              .filter(c => c.rating && c.rating > 0)
+              .map(c => c.rating);
+            const averageRating = ratings.length > 0
+              ? ratings.reduce((a, b) => a + b, 0) / ratings.length
+              : 0;
+
+            return {
+              total_courses: activeCoursesList.length,
+              published_courses: publishedCourses.length,
+              draft_courses: draftCourses.length,
+              archived_courses: archivedCourses.length,
+              deleted_courses: deletedCourses.length,
+              total_students: totalStudents,
+              total_enrollments: totalEnrollments,
+              total_revenue: totalRevenue,
+              average_rating: Math.round(averageRating * 10) / 10,
+              total_reviews: 0
+            };
+          })
+        );
       })
     );
   }

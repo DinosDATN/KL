@@ -157,9 +157,25 @@ export class CreatorCourseManagementComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (stats) => {
           this.stats = stats;
+          this.cdr.markForCheck();
+          this.cdr.detectChanges();
         },
         error: (error) => {
-          console.error('Error loading statistics:', error);
+          console.error('[CreatorCourseManagement] Error loading statistics:', error);
+          // Set default stats on error
+          this.stats = {
+            total_courses: 0,
+            published_courses: 0,
+            draft_courses: 0,
+            archived_courses: 0,
+            deleted_courses: 0,
+            total_students: 0,
+            total_enrollments: 0,
+            total_revenue: 0,
+            average_rating: 0,
+            total_reviews: 0
+          };
+          this.cdr.detectChanges();
         },
       });
   }
@@ -448,11 +464,24 @@ export class CreatorCourseManagementComponent implements OnInit, OnDestroy {
     this.router.navigate(['/creator/courses', course.id, 'analytics']);
   }
 
-  formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(amount);
+  formatCurrency(amount: number | null | undefined): string {
+    try {
+      // Handle null, undefined, or NaN
+      if (amount === null || amount === undefined || isNaN(Number(amount))) {
+        amount = 0;
+      }
+      
+      const value = Number(amount);
+      
+      return new Intl.NumberFormat('vi-VN', {
+        style: 'currency',
+        currency: 'VND',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(value);
+    } catch (error) {
+      return '0 ₫';
+    }
   }
 
   formatDate(dateString: string): string {

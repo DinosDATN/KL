@@ -39,6 +39,9 @@ router.get('/', courseAdminController.getAllCoursesForAdmin);
 // GET /api/admin/courses/statistics - Get course statistics
 router.get('/statistics', courseAdminController.getCourseStatistics);
 
+// GET /api/admin/courses/creator/statistics - Get creator statistics (for current creator)
+router.get('/creator/statistics', courseAdminController.getCreatorStatistics);
+
 // GET /api/admin/courses/deleted - Get soft-deleted courses
 router.get('/deleted', courseAdminController.getDeletedCourses);
 

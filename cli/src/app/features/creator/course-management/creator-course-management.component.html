@@ -36,7 +36,7 @@
   </div>
 
   <!-- Statistics Cards -->
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6" *ngIf="stats">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
       <!-- Total Courses -->
       <div
@@ -55,7 +55,7 @@
               Tổng khóa học
             </p>
             <p class="text-2xl font-bold text-gray-900 dark:text-white">
-              {{ stats.total_courses }}
+              {{ stats?.total_courses ?? 0 }}
             </p>
           </div>
         </div>
@@ -80,7 +80,7 @@
               Đã xuất bản
             </p>
             <p class="text-2xl font-bold text-gray-900 dark:text-white">
-              {{ stats.published_courses }}
+              {{ stats?.published_courses ?? 0 }}
             </p>
           </div>
         </div>
@@ -103,7 +103,7 @@
               Tổng học viên
             </p>
             <p class="text-2xl font-bold text-gray-900 dark:text-white">
-              {{ stats.total_students }}
+              {{ stats?.total_students ?? 0 }}
             </p>
           </div>
         </div>
@@ -130,7 +130,9 @@
             <p
               class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white"
             >
-              {{ formatCurrency(stats.total_revenue) }}
+              {{
+                stats ? formatCurrency(stats.total_revenue) : formatCurrency(0)
+              }}
             </p>
           </div>
         </div>

@@ -1,6 +1,9 @@
 const courseService = require("../services/courseService");
 const Course = require("../models/Course");
+const CourseEnrollment = require("../models/CourseEnrollment");
+const CoursePayment = require("../models/CoursePayment");
 const { Op } = require("sequelize");
+const sequelize = require("../config/sequelize");
 
 class CourseAdminController {
   // Create a new course (Admin/Creator only)
@@ -83,7 +86,7 @@ class CourseAdminController {
       const limit = parseInt(req.query.limit) || 10;
       const userId = req.user.id;
       const userRole = req.user.role;
-      
+
       const {
         status,
         category_id,
@@ -99,15 +102,15 @@ class CourseAdminController {
       // If user is creator (not admin), automatically filter by their instructor_id
       // and prevent them from viewing other creators' courses
       let finalInstructorId = instructor_id;
-      if (userRole === 'creator') {
+      if (userRole === "creator") {
         // Creator can only see their own courses
         finalInstructorId = userId.toString();
-        
+
         // Prevent creator from trying to view other creators' courses
         if (instructor_id && instructor_id !== userId.toString()) {
           return res.status(403).json({
             success: false,
-            message: 'You can only view your own courses',
+            message: "You can only view your own courses",
           });
         }
       }
@@ -160,7 +163,7 @@ class CourseAdminController {
       );
 
       // If user is creator (not admin), ensure they can only view their own courses
-      if (userRole === 'creator' && course.instructor_id !== userId) {
+      if (userRole === "creator" && course.instructor_id !== userId) {
         return res.status(403).json({
           success: false,
           message: "You can only view your own courses",
@@ -291,7 +294,10 @@ class CourseAdminController {
           success: false,
           message: error.message,
         });
-      } else if (error.message.includes("Only admins") || error.message.includes("can only permanently delete")) {
+      } else if (
+        error.message.includes("Only admins") ||
+        error.message.includes("can only permanently delete")
+      ) {
         res.status(403).json({
           success: false,
           message: error.message,
@@ -344,7 +350,10 @@ class CourseAdminController {
           success: false,
           message: error.message,
         });
-      } else if (error.message.includes("Only admins") || error.message.includes("can only restore")) {
+      } else if (
+        error.message.includes("Only admins") ||
+        error.message.includes("can only restore")
+      ) {
         res.status(403).json({
           success: false,
           message: error.message,
@@ -607,6 +616,96 @@ class CourseAdminController {
       res.status(500).json({
         success: false,
         message: "Failed to fetch deleted courses",
+        error: error.message,
+      });
+    }
+  }
+
+  // Get creator statistics (for current creator)
+  async getCreatorStatistics(req, res) {
+    try {
+      const userId = req.user.id;
+      const userRole = req.user.role;
+
+      // Only allow creator or admin
+      if (userRole !== "creator" && userRole !== "admin") {
+        return res.status(403).json({
+          success: false,
+          message: "Access denied",
+        });
+      }
+
+      // Get all courses by this creator (including deleted for count)
+      const allCourses = await Course.findAll({
+        where: {
+          instructor_id: userId,
+        },
+        attributes: ["id", "status", "students", "price", "is_deleted"],
+      });
+
+      const activeCourses = allCourses.filter((c) => !c.is_deleted);
+      const publishedCourses = activeCourses.filter(
+        (c) => c.status === "published"
+      );
+      const draftCourses = activeCourses.filter((c) => c.status === "draft");
+      const archivedCourses = activeCourses.filter(
+        (c) => c.status === "archived"
+      );
+      const deletedCourses = allCourses.filter((c) => c.is_deleted);
+
+      // Get published course IDs
+      const publishedCourseIds = publishedCourses.map((c) => c.id);
+
+      // Calculate total students from CourseEnrollment table (total enrollment records)
+      // This represents total enrollments across all published courses
+      let totalStudents = 0;
+      if (publishedCourseIds.length > 0) {
+        totalStudents = await CourseEnrollment.count({
+          where: {
+            course_id: {
+              [Op.in]: publishedCourseIds,
+            },
+          },
+        });
+      }
+
+      // Calculate total enrollments (same as total students for consistency)
+      const totalEnrollments = totalStudents;
+
+      // Calculate total revenue = sum(students * price) for all published courses
+      let totalRevenue = 0;
+      if (publishedCourses.length > 0) {
+        totalRevenue = publishedCourses.reduce((sum, course) => {
+          const students = parseInt(course.students) || 0;
+          const price = parseFloat(course.price) || 0;
+          return sum + students * price;
+        }, 0);
+      }
+
+      // Ensure all values are numbers, not null/undefined
+      const result = {
+        total_courses: activeCourses.length || 0,
+        published_courses: publishedCourses.length || 0,
+        draft_courses: draftCourses.length || 0,
+        archived_courses: archivedCourses.length || 0,
+        deleted_courses: deletedCourses.length || 0,
+        total_students: Number(totalStudents) || 0,
+        total_enrollments: Number(totalEnrollments) || 0,
+        total_revenue: Number(totalRevenue) || 0,
+        average_rating: 0, // Can be calculated if needed
+        total_reviews: 0, // Can be calculated if needed
+      };
+
+      res.status(200).json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      console.error("Error in getCreatorStatistics:", error);
+      console.error("Error stack:", error.stack);
+      res.status(500).json({
+        success: false,
+        message: "Failed to fetch creator statistics",
         error: error.message,
       });
     }
