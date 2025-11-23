@@ -37,6 +37,20 @@
 
   <!-- Content -->
   <div *ngIf="!loading" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Search -->
+    <div *ngIf="modules.length > 0" class="mb-6">
+      <div class="relative max-w-md">
+        <input
+          type="text"
+          [(ngModel)]="searchTerm"
+          (keyup)="onSearch()"
+          placeholder="Tìm kiếm module hoặc bài học..."
+          class="w-full px-4 py-2 pl-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+        />
+        <i class="icon-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+      </div>
+    </div>
+
     <!-- Empty State -->
     <div *ngIf="modules.length === 0" class="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
       <i class="icon-book text-4xl text-gray-400 mb-4"></i>
@@ -54,9 +68,26 @@
       </button>
     </div>
 
+    <!-- No Results -->
+    <div *ngIf="modules.length > 0 && filteredModules.length === 0" class="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
+      <i class="icon-search text-4xl text-gray-400 mb-4"></i>
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+        Không tìm thấy kết quả nào
+      </h3>
+      <p class="text-gray-600 dark:text-gray-400 mb-4">
+        Thử thay đổi từ khóa tìm kiếm
+      </p>
+      <button
+        (click)="searchTerm = ''; onSearch()"
+        class="px-4 py-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
+      >
+        Xóa tìm kiếm
+      </button>
+    </div>
+
     <!-- Modules List -->
-    <div *ngIf="modules.length > 0" class="space-y-4">
-      <div *ngFor="let module of modules" class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+    <div *ngIf="filteredModules.length > 0" class="space-y-4">
+      <div *ngFor="let module of getPaginatedModules()" class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
         <!-- Module Header -->
         <div class="p-4 border-b border-gray-200 dark:border-gray-700">
           <div class="flex items-center justify-between">
@@ -148,6 +179,57 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div *ngIf="filteredModules.length > 0 && totalPages > 1" class="mt-6 flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+      <div class="text-sm text-gray-700 dark:text-gray-300">
+        Hiển thị {{ (currentPage - 1) * itemsPerPage + 1 }} đến
+        {{ Math.min(currentPage * itemsPerPage, filteredModules.length) }} trong tổng số
+        {{ filteredModules.length }} modules
+      </div>
+      <div class="flex gap-2">
+        <button
+          (click)="onPageChange(currentPage - 1)"
+          [disabled]="currentPage === 1"
+          class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          Trước
+        </button>
+        <button
+          *ngFor="let page of getPageNumbers()"
+          (click)="onPageChange(page)"
+          [ngClass]="{
+            'bg-blue-600 text-white': currentPage === page,
+            'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300': currentPage !== page
+          }"
+          class="px-3 py-2 text-sm font-medium border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+        >
+          {{ page }}
+        </button>
+        <button
+          (click)="onPageChange(currentPage + 1)"
+          [disabled]="currentPage === totalPages"
+          class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          Sau
+        </button>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <div *ngIf="filteredModules.length > 0" class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+      <div class="flex items-center justify-between text-sm">
+        <span class="text-gray-600 dark:text-gray-400">
+          Tổng số modules: <span class="font-semibold text-gray-900 dark:text-white">{{ filteredModules.length }}</span>
+          <span *ngIf="filteredModules.length !== modules.length"> / {{ modules.length }}</span>
+        </span>
+        <span class="text-gray-600 dark:text-gray-400">
+          Tổng số bài học: <span class="font-semibold text-gray-900 dark:text-white">
+            {{ getTotalLessons() }}
+          </span>
+        </span>
       </div>
     </div>
   </div>

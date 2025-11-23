@@ -41,7 +41,19 @@ export class ModuleLessonsComponent implements OnInit, OnDestroy {
   moduleId: number = 0;
   module: Module | null = null;
   lessons: Lesson[] = [];
+  filteredLessons: Lesson[] = [];
   loading = false;
+  
+  // Filters and search
+  searchTerm = '';
+  selectedType: string = 'all';
+  sortBy: 'position' | 'title' | 'duration' = 'position';
+  sortOrder: 'asc' | 'desc' = 'asc';
+  
+  // Pagination
+  currentPage = 1;
+  itemsPerPage = 10;
+  totalPages = 1;
   
   // Modal state
   showLessonModal = false;
@@ -101,6 +113,7 @@ export class ModuleLessonsComponent implements OnInit, OnDestroy {
         this.loading = false;
         if (response.success) {
           this.lessons = response.data || [];
+          this.applyFilters();
         }
       },
       error: () => {
@@ -108,6 +121,73 @@ export class ModuleLessonsComponent implements OnInit, OnDestroy {
         this.notificationService.error('Lỗi', 'Không thể tải danh sách bài học');
       }
     });
+  }
+
+  applyFilters(): void {
+    let filtered = [...this.lessons];
+
+    // Search filter
+    if (this.searchTerm.trim()) {
+      const term = this.searchTerm.toLowerCase();
+      filtered = filtered.filter(lesson =>
+        lesson.title.toLowerCase().includes(term) ||
+        (lesson.content && lesson.content.toLowerCase().includes(term))
+      );
+    }
+
+    // Type filter
+    if (this.selectedType !== 'all') {
+      filtered = filtered.filter(lesson => lesson.type === this.selectedType);
+    }
+
+    // Sort
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      switch (this.sortBy) {
+        case 'position':
+          comparison = a.position - b.position;
+          break;
+        case 'title':
+          comparison = a.title.localeCompare(b.title);
+          break;
+        case 'duration':
+          comparison = (a.duration || 0) - (b.duration || 0);
+          break;
+      }
+      return this.sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    this.filteredLessons = filtered;
+    this.totalPages = Math.ceil(filtered.length / this.itemsPerPage);
+    this.currentPage = Math.min(this.currentPage, Math.max(1, this.totalPages));
+  }
+
+  onSearch(): void {
+    this.currentPage = 1;
+    this.applyFilters();
+  }
+
+  onFilterChange(): void {
+    this.currentPage = 1;
+    this.applyFilters();
+  }
+
+  onSortChange(): void {
+    this.applyFilters();
+  }
+
+  onPageChange(page: number): void {
+    this.currentPage = page;
+  }
+
+  getPaginatedLessons(): Lesson[] {
+    const start = (this.currentPage - 1) * this.itemsPerPage;
+    const end = start + this.itemsPerPage;
+    return this.filteredLessons.slice(start, end);
+  }
+
+  getPageNumbers(): number[] {
+    return Array.from({ length: this.totalPages }, (_, i) => i + 1);
   }
 
   openCreateLessonModal(): void {
@@ -218,10 +298,23 @@ export class ModuleLessonsComponent implements OnInit, OnDestroy {
   }
 
   getTotalDuration(): number {
-    return this.lessons.reduce((sum, lesson) => sum + (lesson.duration || 0), 0);
+    return this.filteredLessons.reduce((sum, lesson) => sum + (lesson.duration || 0), 0);
+  }
+
+  getLessonTypeOptions(): { value: string; label: string }[] {
+    return [
+      { value: 'all', label: 'Tất cả' },
+      { value: 'document', label: 'Tài liệu' },
+      { value: 'video', label: 'Video' },
+      { value: 'exercise', label: 'Bài tập' },
+      { value: 'quiz', label: 'Trắc nghiệm' }
+    ];
   }
 
   goBack(): void {
     this.router.navigate(['/creator/courses', this.courseId, 'content']);
   }
+
+  // Expose Math to template
+  Math = Math;
 }

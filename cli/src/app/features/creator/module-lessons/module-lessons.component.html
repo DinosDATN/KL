@@ -37,6 +37,68 @@
 
   <!-- Content -->
   <div *ngIf="!loading" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Filters and Search -->
+    <div *ngIf="lessons.length > 0" class="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <!-- Search -->
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Tìm kiếm
+          </label>
+          <div class="relative">
+            <input
+              type="text"
+              [(ngModel)]="searchTerm"
+              (keyup.enter)="onSearch()"
+              placeholder="Tìm theo tên hoặc nội dung..."
+              class="w-full px-3 py-2 pl-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+            />
+            <i class="icon-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+          </div>
+        </div>
+
+        <!-- Type Filter -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Loại bài học
+          </label>
+          <select
+            [(ngModel)]="selectedType"
+            (change)="onFilterChange()"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+          >
+            <option *ngFor="let option of getLessonTypeOptions()" [value]="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Sort -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Sắp xếp
+          </label>
+          <div class="flex gap-2">
+            <select
+              [(ngModel)]="sortBy"
+              (change)="onSortChange()"
+              class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="position">Vị trí</option>
+              <option value="title">Tên</option>
+              <option value="duration">Thời lượng</option>
+            </select>
+            <button
+              (click)="sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'; onSortChange()"
+              class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600"
+            >
+              <i [class]="sortOrder === 'asc' ? 'icon-arrow-up' : 'icon-arrow-down'"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Empty State -->
     <div *ngIf="lessons.length === 0" class="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
       <i class="icon-book text-4xl text-gray-400 mb-4"></i>
@@ -54,10 +116,27 @@
       </button>
     </div>
 
+    <!-- No Results -->
+    <div *ngIf="lessons.length > 0 && filteredLessons.length === 0" class="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
+      <i class="icon-search text-4xl text-gray-400 mb-4"></i>
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+        Không tìm thấy bài học nào
+      </h3>
+      <p class="text-gray-600 dark:text-gray-400 mb-4">
+        Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm
+      </p>
+      <button
+        (click)="searchTerm = ''; selectedType = 'all'; onFilterChange()"
+        class="px-4 py-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
+      >
+        Xóa bộ lọc
+      </button>
+    </div>
+
     <!-- Lessons List -->
-    <div *ngIf="lessons.length > 0" class="space-y-4">
+    <div *ngIf="filteredLessons.length > 0" class="space-y-4">
       <div
-        *ngFor="let lesson of lessons"
+        *ngFor="let lesson of getPaginatedLessons()"
         class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 hover:shadow-md transition-shadow"
       >
         <div class="flex items-start justify-between">
@@ -116,11 +195,47 @@
       </div>
     </div>
 
+    <!-- Pagination -->
+    <div *ngIf="filteredLessons.length > 0 && totalPages > 1" class="mt-6 flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+      <div class="text-sm text-gray-700 dark:text-gray-300">
+        Hiển thị {{ (currentPage - 1) * itemsPerPage + 1 }} đến
+        {{ Math.min(currentPage * itemsPerPage, filteredLessons.length) }} trong tổng số
+        {{ filteredLessons.length }} bài học
+      </div>
+      <div class="flex gap-2">
+        <button
+          (click)="onPageChange(currentPage - 1)"
+          [disabled]="currentPage === 1"
+          class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Trước
+        </button>
+        <button
+          *ngFor="let page of getPageNumbers()"
+          (click)="onPageChange(page)"
+          [ngClass]="{
+            'bg-blue-600 text-white': currentPage === page,
+            'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300': currentPage !== page
+          }"
+          class="px-3 py-2 text-sm font-medium border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+        >
+          {{ page }}
+        </button>
+        <button
+          (click)="onPageChange(currentPage + 1)"
+          [disabled]="currentPage === totalPages"
+          class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Sau
+        </button>
+      </div>
+    </div>
+
     <!-- Summary -->
-    <div *ngIf="lessons.length > 0" class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+    <div *ngIf="filteredLessons.length > 0" class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
       <div class="flex items-center justify-between text-sm">
         <span class="text-gray-600 dark:text-gray-400">
-          Tổng số bài học: <span class="font-semibold text-gray-900 dark:text-white">{{ lessons.length }}</span>
+          Hiển thị: <span class="font-semibold text-gray-900 dark:text-white">{{ filteredLessons.length }}</span> / {{ lessons.length }} bài học
         </span>
         <span class="text-gray-600 dark:text-gray-400">
           Tổng thời lượng: <span class="font-semibold text-gray-900 dark:text-white">

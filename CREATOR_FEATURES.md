@@ -84,10 +84,21 @@ cli/src/app/
 
 ### Quản lý Nội dung
 1. **Giao diện trực quan**: Modules có thể mở rộng/thu gọn
-2. **Modal forms**: Form tạo/sửa module và lesson trong modal
-3. **Validation**: Kiểm tra dữ liệu trước khi lưu
-4. **Thông báo**: Toast notifications cho mọi hành động
-5. **Responsive**: Hoạt động tốt trên mobile và desktop
+2. **Tìm kiếm**: Tìm kiếm module và bài học theo tên
+3. **Phân trang**: Hiển thị 5 modules mỗi trang
+4. **Thống kê**: Hiển thị tổng số modules và bài học
+5. **Modal forms**: Form tạo/sửa module và lesson trong modal
+6. **Validation**: Kiểm tra dữ liệu trước khi lưu
+7. **Thông báo**: Toast notifications cho mọi hành động
+8. **Responsive**: Hoạt động tốt trên mobile và desktop
+
+### Quản lý Lessons
+1. **Tìm kiếm**: Tìm kiếm bài học theo tên hoặc nội dung
+2. **Lọc theo loại**: Lọc bài học theo loại (Tài liệu, Video, Bài tập, Trắc nghiệm)
+3. **Sắp xếp**: Sắp xếp theo vị trí, tên, hoặc thời lượng (tăng/giảm dần)
+4. **Phân trang**: Hiển thị 10 bài học mỗi trang
+5. **Thống kê**: Hiển thị số lượng bài học và tổng thời lượng
+6. **Empty states**: Thông báo khi không có dữ liệu hoặc không tìm thấy kết quả
 
 ### Loại Bài học
 - **Tài liệu**: Nội dung văn bản, markdown

@@ -44,7 +44,16 @@ export class CourseContentComponent implements OnInit, OnDestroy {
   courseId: number = 0;
   course: any = null;
   modules: CourseModule[] = [];
+  filteredModules: CourseModule[] = [];
   loading = false;
+  
+  // Search
+  searchTerm = '';
+  
+  // Pagination
+  currentPage = 1;
+  itemsPerPage = 5;
+  totalPages = 1;
   
   // Modal states
   showModuleModal = false;
@@ -121,12 +130,50 @@ export class CourseContentComponent implements OnInit, OnDestroy {
               this.loadModuleLessons(module.id);
             }
           });
+          this.applySearch();
         }
       },
       error: () => {
         this.notificationService.error('Lỗi', 'Không thể tải danh sách module');
       }
     });
+  }
+
+  applySearch(): void {
+    if (!this.searchTerm.trim()) {
+      this.filteredModules = [...this.modules];
+    } else {
+      const term = this.searchTerm.toLowerCase();
+      this.filteredModules = this.modules.filter(module =>
+        module.title.toLowerCase().includes(term) ||
+        (module.lessons && module.lessons.some(lesson =>
+          lesson.title.toLowerCase().includes(term)
+        ))
+      );
+    }
+    
+    this.totalPages = Math.ceil(this.filteredModules.length / this.itemsPerPage);
+    this.currentPage = Math.min(this.currentPage, Math.max(1, this.totalPages));
+  }
+
+  onSearch(): void {
+    this.currentPage = 1;
+    this.applySearch();
+  }
+
+  onPageChange(page: number): void {
+    this.currentPage = page;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  getPaginatedModules(): CourseModule[] {
+    const start = (this.currentPage - 1) * this.itemsPerPage;
+    const end = start + this.itemsPerPage;
+    return this.filteredModules.slice(start, end);
+  }
+
+  getPageNumbers(): number[] {
+    return Array.from({ length: this.totalPages }, (_, i) => i + 1);
   }
 
   loadModuleLessons(moduleId: number): void {
@@ -331,7 +378,14 @@ export class CourseContentComponent implements OnInit, OnDestroy {
     return icons[type] || 'icon-file';
   }
 
+  getTotalLessons(): number {
+    return this.filteredModules.reduce((sum, module) => sum + (module.lessons?.length || 0), 0);
+  }
+
   goBack(): void {
     this.router.navigate(['/creator/courses']);
   }
+
+  // Expose Math to template
+  Math = Math;
 }
