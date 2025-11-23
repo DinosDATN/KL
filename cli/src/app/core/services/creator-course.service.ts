@@ -279,4 +279,61 @@ export class CreatorCourseService {
   uploadVideo(file: File): Observable<ApiResponse<{ file_url: string; file_name: string; file_size: number; type: string }>> {
     return this.adminCourseService.uploadVideo(file);
   }
+
+  /**
+   * Get course students (enrolled users)
+   */
+  getCourseStudents(
+    courseId: number,
+    page: number = 1,
+    limit: number = 10,
+    search: string = '',
+    status: string = ''
+  ): Observable<PaginatedResponse<any>> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('limit', limit.toString());
+    
+    if (search) {
+      params = params.set('search', search);
+    }
+    
+    if (status) {
+      params = params.set('status', status);
+    }
+
+    return this.http.get<any>(
+      `${environment.apiUrl}/course-content/courses/${courseId}/students`,
+      { params, withCredentials: true }
+    ).pipe(
+      map((response: any) => {
+        if (response.success) {
+          return {
+            success: true,
+            data: response.data || [],
+            pagination: response.pagination || {
+              current_page: page,
+              total_pages: 1,
+              total_items: 0,
+              items_per_page: limit
+            }
+          };
+        }
+        throw new Error(response.message || 'Failed to fetch course students');
+      }),
+      catchError(error => {
+        console.error('Error fetching course students:', error);
+        return of({
+          success: false,
+          data: [],
+          pagination: {
+            current_page: page,
+            total_pages: 0,
+            total_items: 0,
+            items_per_page: limit
+          }
+        });
+      })
+    );
+  }
 }

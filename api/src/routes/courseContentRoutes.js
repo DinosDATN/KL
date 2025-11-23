@@ -99,6 +99,9 @@ router.get('/dashboard', authenticateToken, courseContentController.getLearningD
 // GET /api/v1/course-content/courses/:course_id/enrollment-stats - Get enrollment statistics (instructors/admins)
 router.get('/courses/:course_id/enrollment-stats', authenticateToken, courseContentController.getCourseEnrollmentStats);
 
+// GET /api/v1/course-content/courses/:course_id/students - Get course students (instructors/admins)
+router.get('/courses/:course_id/students', authenticateToken, courseContentController.getCourseStudents);
+
 // GET /api/v1/course-content/courses/:course_id/review-analytics - Get review analytics (instructors/admins)
 router.get('/courses/:course_id/review-analytics', authenticateToken, courseContentController.getCourseReviewAnalytics);
 

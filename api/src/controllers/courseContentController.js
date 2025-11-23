@@ -1279,6 +1279,97 @@ class CourseContentController {
     }
   }
 
+  // Get course students (enrolled users) - for creator/admin
+  async getCourseStudents(req, res) {
+    try {
+      const { course_id } = req.params;
+      const userRole = req.user.role;
+      const userId = req.user.id;
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const offset = (page - 1) * limit;
+      const search = req.query.search || '';
+      const status = req.query.status || '';
+
+      // Check if user has access
+      if (userRole !== 'admin') {
+        const course = await Course.findByPk(course_id);
+        if (!course || course.instructor_id !== userId) {
+          return res.status(403).json({
+            success: false,
+            message: 'Access denied. You can only view students for your own courses.'
+          });
+        }
+      }
+
+      // Build where clause
+      const whereClause = { course_id: course_id };
+      if (status) {
+        whereClause.status = status;
+      }
+
+      // Build user search condition
+      const userWhereClause = {};
+      if (search) {
+        userWhereClause[Op.or] = [
+          { name: { [Op.like]: `%${search}%` } },
+          { email: { [Op.like]: `%${search}%` } }
+        ];
+      }
+
+      // Get enrollments with user info
+      const { count, rows: enrollments } = await CourseEnrollment.findAndCountAll({
+        where: whereClause,
+        include: [{
+          model: User,
+          as: 'User',
+          attributes: ['id', 'name', 'email', 'avatar_url', 'created_at'],
+          where: Object.keys(userWhereClause).length > 0 ? userWhereClause : undefined
+        }],
+        limit,
+        offset,
+        order: [['created_at', 'DESC']]
+      });
+
+      res.status(200).json({
+        success: true,
+        data: enrollments.map(enrollment => ({
+          id: enrollment.id,
+          user_id: enrollment.user_id,
+          course_id: enrollment.course_id,
+          progress: enrollment.progress,
+          status: enrollment.status,
+          start_date: enrollment.start_date,
+          completion_date: enrollment.completion_date,
+          rating: enrollment.rating,
+          enrollment_type: enrollment.enrollment_type,
+          created_at: enrollment.created_at,
+          updated_at: enrollment.updated_at,
+          user: enrollment.User ? {
+            id: enrollment.User.id,
+            name: enrollment.User.name,
+            email: enrollment.User.email,
+            avatar_url: enrollment.User.avatar_url,
+            created_at: enrollment.User.created_at
+          } : null
+        })),
+        pagination: {
+          current_page: page,
+          total_pages: Math.ceil(count / limit),
+          total_items: count,
+          items_per_page: limit
+        }
+      });
+    } catch (error) {
+      console.error('Error getting course students:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get course students',
+        error: error.message
+      });
+    }
+  }
+
   // Validate course structure
   async validateCourseStructure(req, res) {
     try {

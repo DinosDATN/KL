@@ -347,6 +347,10 @@ export class CreatorCourseManagementComponent implements OnInit, OnDestroy {
     this.router.navigate(['/courses', course.id]);
   }
 
+  manageStudents(course: CreatorCourse): void {
+    this.router.navigate(['/creator/courses', course.id, 'students']);
+  }
+
   editCourse(course: CreatorCourse): void {
     this.openEditModal(course);
   }
