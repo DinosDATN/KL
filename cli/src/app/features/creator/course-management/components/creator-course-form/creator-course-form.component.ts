@@ -83,7 +83,7 @@ export class CreatorCourseFormComponent implements OnInit, OnChanges {
       console.error('Error in CreatorCourseFormComponent constructor:', error);
       // Tạo form rỗng nếu có lỗi để tránh crash
       try {
-        this.courseForm = this.fb.group({
+        const fallbackForm = this.fb.group({
           title: [''],
           description: [''],
           category_id: [null],
@@ -98,6 +98,16 @@ export class CreatorCourseFormComponent implements OnInit, OnChanges {
           thumbnail: [''],
           modules: this.fb.array([]),
         });
+        
+        // Add value change listeners for price calculation
+        fallbackForm.get('original_price')?.valueChanges.subscribe(() => {
+          this.calculatePrice();
+        });
+        fallbackForm.get('discount')?.valueChanges.subscribe(() => {
+          this.calculatePrice();
+        });
+        
+        this.courseForm = fallbackForm;
       } catch (e) {
         console.error('Failed to create fallback form:', e);
       }
@@ -111,6 +121,9 @@ export class CreatorCourseFormComponent implements OnInit, OnChanges {
 
       if (this.course && this.isEdit) {
         this.populateForm(this.course);
+      } else {
+        // Calculate initial price even for new courses
+        this.calculatePrice();
       }
     } catch (error) {
       console.error('Error in CreatorCourseFormComponent ngOnInit:', error);
@@ -126,6 +139,18 @@ export class CreatorCourseFormComponent implements OnInit, OnChanges {
   }
 
   private populateForm(course: CreatorCourse): void {
+    // Calculate original_price from price and discount if original_price is not available
+    let originalPrice = course.original_price || 0;
+    const discount = course.discount || 0;
+    const price = course.price || 0;
+    
+    // If original_price is not set but price and discount are, calculate original_price
+    if (!originalPrice && price > 0 && discount > 0) {
+      originalPrice = Math.round(price / (1 - discount / 100));
+    } else if (!originalPrice) {
+      originalPrice = price;
+    }
+
     // Patch form with course data
     this.courseForm.patchValue({
       title: course.title || '',
@@ -133,14 +158,17 @@ export class CreatorCourseFormComponent implements OnInit, OnChanges {
       category_id: course.category_id || null,
       level: course.level || 'Beginner',
       duration: course.duration || 0,
-      price: course.price || 0,
-      original_price: course.original_price || course.price || 0,
-      discount: course.discount || 0,
+      original_price: originalPrice,
+      discount: discount,
+      price: price, // Will be recalculated by calculatePrice()
       is_premium: course.is_premium || false,
       is_free: course.is_free !== undefined ? course.is_free : !course.is_premium,
       status: course.status || 'draft',
       thumbnail: course.thumbnail || '',
     });
+
+    // Recalculate price to ensure consistency
+    this.calculatePrice();
 
     // Hiển thị ảnh hiện tại nếu có
     if (course.thumbnail) {
@@ -171,13 +199,13 @@ export class CreatorCourseFormComponent implements OnInit, OnChanges {
   }
 
   private createForm(): FormGroup {
-    return this.fb.group({
+    const form = this.fb.group({
       title: ['', [Validators.required, Validators.maxLength(255)]],
       description: [''],
       category_id: [null, Validators.required],
       level: ['Beginner', Validators.required],
       duration: [0, [Validators.min(0)]],
-      price: [0, [Validators.min(0)]],
+      price: [0, [Validators.min(0)]], // Calculated field, read-only
       original_price: [0, [Validators.min(0)]],
       discount: [0, [Validators.min(0), Validators.max(100)]],
       is_premium: [false],
@@ -186,6 +214,29 @@ export class CreatorCourseFormComponent implements OnInit, OnChanges {
       thumbnail: [''],
       modules: this.fb.array([]),
     });
+
+    // Calculate price automatically when original_price or discount changes
+    form.get('original_price')?.valueChanges.subscribe(() => {
+      this.calculatePrice();
+    });
+
+    form.get('discount')?.valueChanges.subscribe(() => {
+      this.calculatePrice();
+    });
+
+    return form;
+  }
+
+  private calculatePrice(): void {
+    const originalPrice = parseFloat(this.courseForm.get('original_price')?.value) || 0;
+    const discount = parseFloat(this.courseForm.get('discount')?.value) || 0;
+    
+    // Calculate price = original_price * (1 - discount/100)
+    const calculatedPrice = originalPrice * (1 - discount / 100);
+    
+    // Update price field (rounded to 2 decimal places, then converted to integer for VND)
+    const finalPrice = Math.round(calculatedPrice);
+    this.courseForm.patchValue({ price: finalPrice }, { emitEvent: false });
   }
 
   get modulesFormArray(): FormArray {
@@ -350,13 +401,17 @@ export class CreatorCourseFormComponent implements OnInit, OnChanges {
         ? formValue.is_free
         : !formValue.is_premium;
 
-    // Ensure price is always a valid non-negative integer
-    // If course is free or price is null/undefined, set to 0
-    let price = formValue.price;
-    if (isFree || price === null || price === undefined || isNaN(price)) {
-      price = 0;
-    }
-    price = Math.max(0, Math.floor(Number(price))); // Ensure non-negative integer
+    // Get original_price and discount
+    const originalPrice = parseFloat(formValue.original_price) || 0;
+    const discount = parseFloat(formValue.discount) || 0;
+
+    // Calculate price from original_price and discount
+    // price = original_price * (1 - discount/100)
+    let calculatedPrice = originalPrice * (1 - discount / 100);
+    calculatedPrice = Math.max(0, Math.round(calculatedPrice)); // Ensure non-negative integer
+
+    // If course is free, set price to 0
+    const finalPrice = isFree ? 0 : calculatedPrice;
 
     // Prepare course data (instructor_id will be set automatically by CreatorCourseService)
     const courseData: any = {
@@ -365,9 +420,9 @@ export class CreatorCourseFormComponent implements OnInit, OnChanges {
       category_id: formValue.category_id,
       level: formValue.level,
       duration: formValue.duration || 0,
-      price: price,
-      original_price: formValue.original_price || price || 0,
-      discount: formValue.discount || 0,
+      price: finalPrice,
+      original_price: originalPrice,
+      discount: discount,
       is_premium: formValue.is_premium || false,
       is_free: isFree,
       status: formValue.status,

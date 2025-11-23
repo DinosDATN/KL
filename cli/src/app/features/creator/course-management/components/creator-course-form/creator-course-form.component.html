@@ -180,18 +180,18 @@
             </h3>
           </div>
 
-          <!-- Price -->
+          <!-- Original Price -->
           <div>
             <label
-              for="price"
+              for="original_price"
               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
             >
-              Giá (VNĐ)
+              Giá gốc (VNĐ)
             </label>
             <input
               type="number"
-              id="price"
-              formControlName="price"
+              id="original_price"
+              formControlName="original_price"
               min="0"
               step="1000"
               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
@@ -217,6 +217,27 @@
               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               placeholder="0"
             />
+          </div>
+
+          <!-- Calculated Price (Read-only) -->
+          <div>
+            <label
+              for="price"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              Giá sau giảm (VNĐ)
+            </label>
+            <input
+              type="number"
+              id="price"
+              formControlName="price"
+              readonly
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 cursor-not-allowed"
+              placeholder="0"
+            />
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Giá này được tính tự động từ giá gốc và phần trăm giảm giá
+            </p>
           </div>
 
           <!-- Course Settings -->
