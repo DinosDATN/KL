@@ -352,7 +352,13 @@ export class CreatorCourseManagementComponent implements OnInit, OnDestroy {
   }
 
   manageContent(course: CreatorCourse): void {
-    this.router.navigate(['/creator/courses', course.id, 'content']);
+    console.log('Navigating to content management for course:', course.id);
+    const url = ['/creator/courses', course.id, 'content'];
+    console.log('Navigation URL:', url);
+    this.router.navigate(url).then(
+      (success) => console.log('Navigation success:', success),
+      (error) => console.error('Navigation error:', error)
+    );
   }
 
   viewAnalytics(course: CreatorCourse): void {
