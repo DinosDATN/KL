@@ -421,6 +421,14 @@ export const routes: Routes = [
         canActivate: [AuthGuard],
       },
       {
+        path: 'creator/courses/:courseId/modules/:moduleId/lessons',
+        loadComponent: () =>
+          import(
+            './features/creator/module-lessons/module-lessons.component'
+          ).then((m) => m.ModuleLessonsComponent),
+        canActivate: [AuthGuard],
+      },
+      {
         path: 'creator/courses/:id/content',
         loadComponent: () =>
           import(
