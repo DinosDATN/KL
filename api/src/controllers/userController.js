@@ -572,44 +572,59 @@ const userController = {
         profile = await UserProfile.create({ user_id: userId });
       }
 
-      // Validate URLs if provided
+      // Validate URLs if provided (only if not empty after trim)
+      // Updated pattern to support localhost, IP addresses, and domain names
       const urlPattern =
-        /^https?:\/\/[\w\-]+(\.[\w\-]+)+([\w\-\.,@?^=%&:/~\+#]*[\w\-\@?^=%&/~\+#])?$/;
+        /^https?:\/\/(localhost(:\d+)?|[\w\-]+(\.[\w\-]+)+|(\d{1,3}\.){3}\d{1,3}(:\d+)?)(\/[\w\-\.,@?^=%&:/~\+#]*)?$/;
 
-      if (website_url && !urlPattern.test(website_url)) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid website URL format",
-          errors: { website_url: "Please provide a valid URL" },
-        });
+      // Helper function to check if value is not empty
+      const isNotEmpty = (value) => {
+        return value !== undefined && value !== null && String(value).trim() !== '';
+      };
+
+      if (isNotEmpty(website_url)) {
+        const trimmedUrl = String(website_url).trim();
+        if (!urlPattern.test(trimmedUrl)) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid website URL format",
+            errors: { website_url: "Please provide a valid URL (must start with http:// or https://)" },
+          });
+        }
       }
 
-      if (
-        github_url &&
-        (!urlPattern.test(github_url) || !github_url.includes("github.com"))
-      ) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid GitHub URL format",
-          errors: { github_url: "Please provide a valid GitHub URL" },
-        });
+      if (isNotEmpty(github_url)) {
+        const trimmedUrl = String(github_url).trim();
+        if (!urlPattern.test(trimmedUrl) || !trimmedUrl.includes("github.com")) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid GitHub URL format",
+            errors: { github_url: "Please provide a valid GitHub URL (must include github.com)" },
+          });
+        }
       }
 
-      if (
-        linkedin_url &&
-        (!urlPattern.test(linkedin_url) ||
-          !linkedin_url.includes("linkedin.com"))
-      ) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid LinkedIn URL format",
-          errors: { linkedin_url: "Please provide a valid LinkedIn URL" },
-        });
+      if (isNotEmpty(linkedin_url)) {
+        const trimmedUrl = String(linkedin_url).trim();
+        if (!urlPattern.test(trimmedUrl) || !trimmedUrl.includes("linkedin.com")) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid LinkedIn URL format",
+            errors: { linkedin_url: "Please provide a valid LinkedIn URL (must include linkedin.com)" },
+          });
+        }
       }
 
-      // Validate birthday
-      if (birthday) {
-        const birthDate = new Date(birthday);
+      // Validate birthday (only if provided and not empty)
+      if (birthday && birthday.trim()) {
+        const birthDate = new Date(birthday.trim());
+        if (isNaN(birthDate.getTime())) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid birthday format",
+            errors: { birthday: "Please provide a valid date" },
+          });
+        }
         const today = new Date();
         const age = today.getFullYear() - birthDate.getFullYear();
 
@@ -622,25 +637,45 @@ const userController = {
         }
       }
 
-      // Validate phone number (basic pattern)
-      if (phone && !/^[+]?[1-9]\d{1,14}$/.test(phone.replace(/\s/g, ""))) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid phone number format",
-          errors: { phone: "Please provide a valid phone number" },
-        });
+      // Validate phone number (only if provided and not empty)
+      if (phone && phone.trim()) {
+        const phoneCleaned = phone.replace(/\s/g, "");
+        if (!/^[+]?[1-9]\d{1,14}$/.test(phoneCleaned)) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid phone number format",
+            errors: { phone: "Please provide a valid phone number" },
+          });
+        }
+      }
+      
+      // Validate gender (only if provided and not empty)
+      if (isNotEmpty(gender)) {
+        const genderValue = String(gender).trim();
+        if (!['male', 'female', 'other'].includes(genderValue)) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid gender value",
+            errors: { gender: "Gender must be one of: male, female, other" },
+          });
+        }
       }
 
-      // Update profile
+      // Update profile (only set fields that are provided and not empty strings)
       const updateData = {};
-      if (bio !== undefined) updateData.bio = bio;
-      if (birthday !== undefined) updateData.birthday = birthday;
-      if (gender !== undefined) updateData.gender = gender;
-      if (phone !== undefined) updateData.phone = phone;
-      if (address !== undefined) updateData.address = address;
-      if (website_url !== undefined) updateData.website_url = website_url;
-      if (github_url !== undefined) updateData.github_url = github_url;
-      if (linkedin_url !== undefined) updateData.linkedin_url = linkedin_url;
+      if (isNotEmpty(bio)) updateData.bio = String(bio).trim();
+      if (isNotEmpty(birthday)) updateData.birthday = String(birthday).trim();
+      if (isNotEmpty(gender)) {
+        const genderValue = String(gender).trim();
+        if (['male', 'female', 'other'].includes(genderValue)) {
+          updateData.gender = genderValue;
+        }
+      }
+      if (isNotEmpty(phone)) updateData.phone = String(phone).trim();
+      if (isNotEmpty(address)) updateData.address = String(address).trim();
+      if (isNotEmpty(website_url)) updateData.website_url = String(website_url).trim();
+      if (isNotEmpty(github_url)) updateData.github_url = String(github_url).trim();
+      if (isNotEmpty(linkedin_url)) updateData.linkedin_url = String(linkedin_url).trim();
 
       await profile.update(updateData);
 

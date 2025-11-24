@@ -264,16 +264,22 @@ export class ProfileComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (response) => {
-          this.successMessage = response.message;
+          this.successMessage = response.message || 'Cập nhật profile thành công!';
           this.editMode = 'none';
           if (response.data) {
             this.user = response.data.user;
           }
+          // Reload profile to get latest data
+          this.loadProfile();
         },
         error: (error) => {
-          this.errorMessage = error.message || 'Failed to update profile';
-          if (error.errors) {
-            this.setFormErrors(this.basicProfileForm, error.errors);
+          console.error('Error updating profile:', error);
+          this.errorMessage =
+            error.error?.message ||
+            error.message ||
+            'Không thể cập nhật profile. Vui lòng thử lại.';
+          if (error.error?.errors) {
+            this.setFormErrors(this.basicProfileForm, error.error.errors);
           }
         },
       });
@@ -282,7 +288,37 @@ export class ProfileComponent implements OnInit, OnDestroy {
   saveProfileDetails(): void {
     if (this.detailsForm.invalid) return;
 
-    const formData: UpdateProfileDetailsRequest = this.detailsForm.value;
+    const formValue = this.detailsForm.value;
+    // Filter out empty strings and convert to undefined/null for optional fields
+    // Helper function to clean string values
+    const cleanStringValue = (value: any): string | undefined => {
+      if (!value || typeof value !== 'string') return undefined;
+      const trimmed = value.trim();
+      return trimmed === '' ? undefined : trimmed;
+    };
+    
+    // Helper function to clean gender value (must be one of the allowed values)
+    const cleanGenderValue = (value: any): 'male' | 'female' | 'other' | undefined => {
+      if (!value || typeof value !== 'string') return undefined;
+      const trimmed = value.trim();
+      if (trimmed === '') return undefined;
+      if (trimmed === 'male' || trimmed === 'female' || trimmed === 'other') {
+        return trimmed;
+      }
+      return undefined;
+    };
+    
+    const formData: UpdateProfileDetailsRequest = {
+      bio: cleanStringValue(formValue.bio),
+      birthday: cleanStringValue(formValue.birthday),
+      gender: cleanGenderValue(formValue.gender),
+      phone: cleanStringValue(formValue.phone),
+      address: cleanStringValue(formValue.address),
+      website_url: cleanStringValue(formValue.website_url),
+      github_url: cleanStringValue(formValue.github_url),
+      linkedin_url: cleanStringValue(formValue.linkedin_url),
+    };
+    
     this.isLoading = true;
     this.clearMessages();
 
@@ -294,18 +330,44 @@ export class ProfileComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (response) => {
-          this.successMessage = response.message;
+          this.successMessage = response.message || 'Cập nhật thông tin chi tiết thành công!';
           this.editMode = 'none';
           if (response.data) {
             this.userProfile = response.data.profile;
           }
+          // Reload profile to get latest data
+          this.loadProfile();
         },
         error: (error) => {
-          this.errorMessage =
-            error.message || 'Failed to update profile details';
-          if (error.errors) {
-            this.setFormErrors(this.detailsForm, error.errors);
+          console.error('Error updating profile details:', error);
+          console.error('Error response:', error.error);
+          console.error('Request data sent:', formData);
+          
+          // Extract error message
+          let errorMsg = 'Không thể cập nhật thông tin chi tiết. Vui lòng thử lại.';
+          
+          if (error.error) {
+            if (error.error.message) {
+              errorMsg = error.error.message;
+            } else if (error.error.error) {
+              errorMsg = error.error.error;
+            }
+            
+            // Add field-specific errors if available
+            if (error.error.errors) {
+              const fieldErrors = Object.keys(error.error.errors)
+                .map(key => `${key}: ${error.error.errors[key]}`)
+                .join(', ');
+              if (fieldErrors) {
+                errorMsg += ` (${fieldErrors})`;
+              }
+              this.setFormErrors(this.detailsForm, error.error.errors);
+            }
+          } else if (error.message) {
+            errorMsg = error.message;
           }
+          
+          this.errorMessage = errorMsg;
         },
       });
   }
@@ -325,7 +387,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (response) => {
-          this.successMessage = response.message;
+          this.successMessage = response.message || 'Cập nhật cài đặt thành công!';
           this.editMode = 'none';
           if (response.data) {
             this.userProfile = response.data.profile;
@@ -335,11 +397,18 @@ export class ProfileComponent implements OnInit, OnDestroy {
           if (formData.theme_mode && formData.theme_mode !== 'system') {
             this.themeService.setTheme(formData.theme_mode as 'light' | 'dark');
           }
+          
+          // Reload profile to get latest data
+          this.loadProfile();
         },
         error: (error) => {
-          this.errorMessage = error.message || 'Failed to update settings';
-          if (error.errors) {
-            this.setFormErrors(this.settingsForm, error.errors);
+          console.error('Error updating settings:', error);
+          this.errorMessage =
+            error.error?.message ||
+            error.message ||
+            'Không thể cập nhật cài đặt. Vui lòng thử lại.';
+          if (error.error?.errors) {
+            this.setFormErrors(this.settingsForm, error.error.errors);
           }
         },
       });

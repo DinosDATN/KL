@@ -72,15 +72,19 @@ export class ProfileService {
    * Get current user's profile data
    */
   getProfile(): Observable<ProfileData> {
-    return this.http.get<ApiResponse<ProfileData>>(`${this.apiUrl}/me`).pipe(
-      map((response) => {
-        if (response.success && response.data) {
-          this.profileDataSubject.next(response.data);
-          return response.data;
-        }
-        throw new Error(response.message || 'Failed to fetch profile');
+    return this.http
+      .get<ApiResponse<ProfileData>>(`${this.apiUrl}/me`, {
+        withCredentials: true,
       })
-    );
+      .pipe(
+        map((response) => {
+          if (response.success && response.data) {
+            this.profileDataSubject.next(response.data);
+            return response.data;
+          }
+          throw new Error(response.message || 'Failed to fetch profile');
+        })
+      );
   }
 
   /**
@@ -90,7 +94,9 @@ export class ProfileService {
     data: UpdateProfileRequest
   ): Observable<ApiResponse<{ user: User }>> {
     return this.http
-      .put<ApiResponse<{ user: User }>>(`${this.apiUrl}/basic`, data)
+      .put<ApiResponse<{ user: User }>>(`${this.apiUrl}/basic`, data, {
+        withCredentials: true,
+      })
       .pipe(
         tap((response) => {
           if (response.success && response.data) {
@@ -116,7 +122,8 @@ export class ProfileService {
     return this.http
       .put<ApiResponse<{ profile: UserProfile }>>(
         `${this.apiUrl}/details`,
-        data
+        data,
+        { withCredentials: true }
       )
       .pipe(
         tap((response) => {
@@ -143,7 +150,8 @@ export class ProfileService {
     return this.http
       .put<ApiResponse<{ profile: UserProfile }>>(
         `${this.apiUrl}/settings`,
-        data
+        data,
+        { withCredentials: true }
       )
       .pipe(
         tap((response) => {
