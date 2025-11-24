@@ -80,7 +80,7 @@ export class ChatAIService {
     return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  // Main chat functionality
+  // Main chat functionality with streaming
   askQuestion(question: string): Observable<ChatAIMessage> {
     if (!question.trim()) {
       return throwError('Câu hỏi không thể để trống');
@@ -95,39 +95,115 @@ export class ChatAIService {
     };
     this.addMessage(userMessage);
 
-    // Add typing indicator
-    this.addTypingIndicator();
+    // Remove typing indicator if exists
+    this.removeTypingIndicator();
     this.isLoadingSubject.next(true);
+
+    // Create AI message placeholder for streaming
+    const aiMessageId = this.generateMessageId();
+    const aiMessage: ChatAIMessage = {
+      id: aiMessageId,
+      text: '',
+      isUser: false,
+      timestamp: new Date()
+    };
+    this.addMessage(aiMessage);
 
     const request: ChatAIRequest = { question: question.trim() };
 
-    return this.http.post<ChatAIResponse>(`${this.apiUrl}/ask`, request).pipe(
-      timeout(this.requestTimeout),
-      retry(1),
-      map(response => {
-        this.removeTypingIndicator();
-        this.isLoadingSubject.next(false);
+    // Use streaming endpoint
+    return new Observable<ChatAIMessage>(observer => {
+      const eventSource = new EventSource(
+        `${this.apiUrl}/ask-stream?question=${encodeURIComponent(question.trim())}`
+      );
 
-        if (response.success && response.data) {
-          const aiMessage: ChatAIMessage = {
-            id: this.generateMessageId(),
-            text: response.data.answer,
-            isUser: false,
-            timestamp: new Date()
-          };
-          this.addMessage(aiMessage);
-
-          return aiMessage;
-        } else {
-          throw new Error(response.message || 'Không thể xử lý câu hỏi của bạn');
+      // Use POST with fetch for better control
+      fetch(`${this.apiUrl}/ask-stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request)
+      }).then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
-      }),
-      catchError(error => {
-        this.removeTypingIndicator();
+
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        if (!reader) {
+          throw new Error('Response body is not readable');
+        }
+
+        const processStream = () => {
+          reader.read().then(({ done, value }) => {
+            if (done) {
+              this.isLoadingSubject.next(false);
+              observer.next(aiMessage);
+              observer.complete();
+              return;
+            }
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                try {
+                  const data = JSON.parse(line.substring(6));
+                  
+                  if (data.type === 'chunk' && data.content) {
+                    // Update message with new chunk
+                    const currentMessages = this.messagesSubject.value;
+                    const messageIndex = currentMessages.findIndex(m => m.id === aiMessageId);
+                    
+                    if (messageIndex !== -1) {
+                      currentMessages[messageIndex].text += data.content;
+                      // Create new array to trigger change detection
+                      this.messagesSubject.next([...currentMessages]);
+                    }
+                  } else if (data.type === 'done') {
+                    this.isLoadingSubject.next(false);
+                    observer.next(aiMessage);
+                    observer.complete();
+                    return;
+                  } else if (data.type === 'error') {
+                    this.isLoadingSubject.next(false);
+                    const errorMessage = data.content || 'Có lỗi xảy ra';
+                    const currentMessages = this.messagesSubject.value;
+                    const messageIndex = currentMessages.findIndex(m => m.id === aiMessageId);
+                    
+                    if (messageIndex !== -1) {
+                      currentMessages[messageIndex].text = `❌ ${errorMessage}`;
+                      this.messagesSubject.next([...currentMessages]);
+                    }
+                    observer.error(new Error(errorMessage));
+                    return;
+                  }
+                } catch (e) {
+                  console.error('Error parsing SSE data:', e);
+                }
+              }
+            }
+
+            processStream();
+          }).catch(error => {
+            this.isLoadingSubject.next(false);
+            this.handleError(error);
+            observer.error(error);
+          });
+        };
+
+        processStream();
+      }).catch(error => {
         this.isLoadingSubject.next(false);
-        return this.handleError(error);
-      })
-    );
+        this.handleError(error);
+        observer.error(error);
+      });
+    });
   }
 
   // Clear chat history

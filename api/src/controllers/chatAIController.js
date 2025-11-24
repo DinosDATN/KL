@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { Readable } = require('stream');
 
 /**
  * ChatAI Controller - Xử lý các request liên quan đến ChatAI
@@ -233,8 +234,111 @@ const getQuickQuestions = async (req, res) => {
   }
 };
 
+/**
+ * Gửi câu hỏi cho AI và nhận streaming response
+ * POST /api/v1/chat-ai/ask-stream
+ */
+const askAIStream = async (req, res) => {
+  try {
+    const { question } = req.body;
+
+    // Validation
+    if (!question || typeof question !== 'string' || question.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Câu hỏi không được để trống',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Kiểm tra độ dài câu hỏi (giới hạn 1000 ký tự)
+    if (question.length > 1000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Câu hỏi không được vượt quá 1000 ký tự',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Log request để monitoring
+    console.log(`[ChatAI] Received streaming question: ${question.substring(0, 100)}${question.length > 100 ? '...' : ''}`);
+
+    // Set headers cho Server-Sent Events
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no'); // Disable buffering for nginx
+
+    // Gọi Python AI service với streaming
+    try {
+      const response = await axios.post(
+        `${PYTHON_AI_API_URL}/ask-stream`,
+        { question: question.trim() },
+        {
+          responseType: 'stream',
+          timeout: 60000, // 60 seconds timeout cho streaming
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      // Forward streaming từ Python service
+      response.data.on('data', (chunk) => {
+        res.write(chunk);
+      });
+
+      response.data.on('end', () => {
+        res.end();
+        console.log(`[ChatAI] Streaming completed`);
+      });
+
+      response.data.on('error', (error) => {
+        console.error('[ChatAI] Streaming error:', error);
+        const errorData = JSON.stringify({
+          type: 'error',
+          content: 'Có lỗi xảy ra khi nhận streaming response'
+        });
+        res.write(`data: ${errorData}\n\n`);
+        res.end();
+      });
+
+    } catch (error) {
+      console.error('[ChatAI] Error in streaming request:', error.message);
+
+      // Xử lý các loại lỗi khác nhau
+      let errorMessage = 'Có lỗi xảy ra khi xử lý câu hỏi của bạn. Vui lòng thử lại.';
+      
+      if (error.code === 'ECONNREFUSED') {
+        errorMessage = 'Dịch vụ ChatAI hiện tại không khả dụng. Vui lòng thử lại sau.';
+      } else if (error.code === 'ENOTFOUND') {
+        errorMessage = 'Không thể kết nối đến dịch vụ ChatAI';
+      } else if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Yêu cầu quá thời gian chờ. Vui lòng thử lại.';
+      }
+
+      const errorData = JSON.stringify({
+        type: 'error',
+        content: errorMessage
+      });
+      res.write(`data: ${errorData}\n\n`);
+      res.end();
+    }
+
+  } catch (error) {
+    console.error('[ChatAI] Error in askAIStream:', error.message);
+    const errorData = JSON.stringify({
+      type: 'error',
+      content: 'Có lỗi xảy ra. Vui lòng thử lại sau.'
+    });
+    res.write(`data: ${errorData}\n\n`);
+    res.end();
+  }
+};
+
 module.exports = {
   askAI,
+  askAIStream,
   checkHealth,
   getStats,
   getQuickQuestions

@@ -35,7 +35,7 @@ router.use(logChatAIRequest);
 
 /**
  * POST /api/v1/chat-ai/ask
- * Gửi câu hỏi cho AI và nhận phản hồi
+ * Gửi câu hỏi cho AI và nhận phản hồi (non-streaming)
  */
 router.post('/ask',
   [
@@ -49,6 +49,24 @@ router.post('/ask',
   ],
   handleValidationErrors,
   chatAIController.askAI
+);
+
+/**
+ * POST /api/v1/chat-ai/ask-stream
+ * Gửi câu hỏi cho AI và nhận streaming response
+ */
+router.post('/ask-stream',
+  [
+    // Validation rules
+    body('question')
+      .notEmpty()
+      .withMessage('Câu hỏi không được để trống')
+      .isLength({ min: 1, max: 1000 })
+      .withMessage('Câu hỏi phải từ 1-1000 ký tự')
+      .trim()
+  ],
+  handleValidationErrors,
+  chatAIController.askAIStream
 );
 
 /**

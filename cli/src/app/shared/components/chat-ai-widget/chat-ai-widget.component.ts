@@ -37,6 +37,7 @@ export class ChatAiWidgetComponent
   hasNewMessage = false;
   isMobile = false;
   isSoundEnabled = true;
+  chatSize: 'normal' | 'large' = 'normal';
 
   // Chat data
   messages: ChatAIMessage[] = [];
@@ -72,6 +73,7 @@ export class ChatAiWidgetComponent
     this.setupSubscriptions();
     this.checkHealthStatus();
     this.loadSettings();
+    this.loadChatSize();
   }
 
   ngOnDestroy(): void {
@@ -110,6 +112,17 @@ export class ChatAiWidgetComponent
     const messagesSubscription = this.chatAIService.messages$.subscribe(
       (messages) => {
         const previousLength = this.messages.length;
+        const previousLastMessage = this.messages[this.messages.length - 1];
+        const currentLastMessage = messages[messages.length - 1];
+        
+        // Check if last message text changed (streaming update)
+        const isStreamingUpdate = 
+          previousLength === messages.length &&
+          previousLastMessage &&
+          currentLastMessage &&
+          previousLastMessage.id === currentLastMessage.id &&
+          previousLastMessage.text !== currentLastMessage.text;
+        
         this.messages = messages;
         this.shouldScrollToBottom = true;
 
@@ -125,6 +138,9 @@ export class ChatAiWidgetComponent
             this.playSound('message');
             this.newMessageIds.add(newMessage.id);
           }
+        } else if (isStreamingUpdate && !currentLastMessage.isUser && !currentLastMessage.isTyping) {
+          // Scroll immediately during streaming for smoother experience
+          setTimeout(() => this.scrollToBottom(), 0);
         }
       }
     );
@@ -170,6 +186,15 @@ export class ChatAiWidgetComponent
       const soundSetting = localStorage.getItem('chat-sound-enabled');
       if (soundSetting !== null) {
         this.isSoundEnabled = soundSetting === 'true';
+      }
+    }
+  }
+
+  private loadChatSize(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      const savedSize = localStorage.getItem('chat-size');
+      if (savedSize === 'large' || savedSize === 'normal') {
+        this.chatSize = savedSize;
       }
     }
   }
@@ -465,6 +490,16 @@ export class ChatAiWidgetComponent
         this.isSoundEnabled.toString()
       );
     }
+  }
+
+  toggleChatSize(): void {
+    this.chatSize = this.chatSize === 'normal' ? 'large' : 'normal';
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem('chat-size', this.chatSize);
+    }
+    this.showToast(
+      this.chatSize === 'large' ? 'Kích thước lớn' : 'Kích thước bình thường'
+    );
   }
 
   private playSound(type: 'message' | 'send' | 'like' = 'message'): void {
