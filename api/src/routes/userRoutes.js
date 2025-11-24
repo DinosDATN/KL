@@ -35,10 +35,17 @@ router.put(
   authenticateToken,
   userController.changePassword
 ); // PUT /api/v1/users/profile/password
+// Note: become-creator endpoint has been moved to /api/v1/creator-applications
+// This endpoint is kept for backward compatibility but will redirect
 router.post(
   "/profile/become-creator",
   authenticateToken,
-  userController.becomeCreator
-); // POST /api/v1/users/profile/become-creator
+  (req, res) => {
+    res.status(410).json({
+      success: false,
+      message: "This endpoint is deprecated. Please use /api/v1/creator-applications instead",
+    });
+  }
+);
 
 module.exports = router;

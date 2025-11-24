@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
+import { Observable, BehaviorSubject, throwError } from 'rxjs';
 import { tap, map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { User, UserProfile, UserStat } from '../models/user.model';
@@ -200,24 +200,15 @@ export class ProfileService {
 
   /**
    * Request to become a content creator
+   * @deprecated Use CreatorApplicationService.submitApplication() instead
    */
   becomeCreator(): Observable<ApiResponse<{ user: User }>> {
-    return this.http
-      .post<ApiResponse<{ user: User }>>(`${this.apiUrl}/become-creator`, {})
-      .pipe(
-        tap((response) => {
-          if (response.success && response.data) {
-            // Update the current profile data with new user role
-            const currentProfile = this.profileDataSubject.value;
-            if (currentProfile) {
-              this.profileDataSubject.next({
-                ...currentProfile,
-                user: response.data.user,
-              });
-            }
-          }
-        })
-      );
+    // This method is deprecated - redirect to new creator application system
+    return throwError(() => ({
+      success: false,
+      message: 'This method is deprecated. Please use the creator application form instead.',
+      status: 410,
+    }));
   }
 
   /**

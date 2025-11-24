@@ -76,6 +76,9 @@ const Notification = require("./Notification");
 const RewardTransaction = require("./RewardTransaction");
 const RewardConfig = require("./RewardConfig");
 
+// Creator Application model
+const CreatorApplication = require("./CreatorApplication");
+
 // Define associations
 
 // Course associations
@@ -1089,6 +1092,27 @@ UserActivityLog.belongsTo(User, {
   as: "User",
 });
 
+// Creator Application associations
+CreatorApplication.belongsTo(User, {
+  foreignKey: "user_id",
+  as: "User",
+});
+
+CreatorApplication.belongsTo(User, {
+  foreignKey: "reviewed_by",
+  as: "Reviewer",
+});
+
+User.hasMany(CreatorApplication, {
+  foreignKey: "user_id",
+  as: "CreatorApplications",
+});
+
+User.hasMany(CreatorApplication, {
+  foreignKey: "reviewed_by",
+  as: "ReviewedApplications",
+});
+
 module.exports = {
   Problem,
   ProblemCategory,
@@ -1160,4 +1184,6 @@ module.exports = {
   // Reward models
   RewardTransaction,
   RewardConfig,
+  // Creator Application model
+  CreatorApplication,
 };

@@ -70,6 +70,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   isUploading = false;
   errorMessage = '';
   successMessage = '';
+  creatorApplicationError = '';
 
   // Forms
   basicProfileForm: FormGroup;
@@ -414,6 +415,38 @@ export class ProfileComponent implements OnInit, OnDestroy {
   // Check if user is already a creator
   isCreator(): boolean {
     return this.user?.role === 'creator' || this.user?.role === 'admin';
+  }
+
+  // Handle become creator button click
+  onBecomeCreatorClick(): void {
+    this.creatorApplicationError = '';
+    
+    // Check if profile is complete
+    if (!this.userProfile) {
+      this.creatorApplicationError = 'Vui lòng hoàn thành thông tin profile trước khi đăng ký trở thành Creator.';
+      return;
+    }
+
+    const requiredFields = ['bio', 'phone', 'address'];
+    const missingFields = requiredFields.filter(
+      (field) => !this.userProfile![field as keyof UserProfile]
+    );
+
+    if (missingFields.length > 0) {
+      const fieldNames: { [key: string]: string } = {
+        bio: 'tiểu sử',
+        phone: 'số điện thoại',
+        address: 'địa chỉ',
+      };
+      const missingFieldNames = missingFields
+        .map((field) => fieldNames[field] || field)
+        .join(', ');
+      this.creatorApplicationError = `Vui lòng hoàn thành thông tin profile trước: ${missingFieldNames}`;
+      return;
+    }
+
+    // Profile is complete, navigate to application page
+    this.router.navigate(['/profile/creator-application']);
   }
 
   // Avatar upload methods

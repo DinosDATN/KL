@@ -413,6 +413,14 @@ export const routes: Routes = [
         canActivate: [AuthGuard],
       },
       {
+        path: 'profile/creator-application',
+        loadComponent: () =>
+          import('./features/profile/creator-application/creator-application.component').then(
+            (m) => m.CreatorApplicationComponent
+          ),
+        canActivate: [AuthGuard],
+      },
+      {
         path: 'creator/profile',
         loadComponent: () =>
           import('./features/profile/creator-profile.component').then(

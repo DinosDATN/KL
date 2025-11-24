@@ -2,9 +2,11 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Subject, takeUntil, debounceTime, distinctUntilChanged, finalize } from 'rxjs';
 import { AdminService, AdminUser, UserFilters, PaginationInfo } from '../../../core/services/admin.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { CreatorApplicationService } from '../../../core/services/creator-application.service';
+import { CreatorApplication } from '../../../core/models/creator-application.model';
 
 @Component({
   selector: 'app-user-management',
@@ -16,11 +18,30 @@ import { NotificationService } from '../../../core/services/notification.service
 export class UserManagementComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   
+  // Tab management
+  activeTab: 'users' | 'creator-applications' = 'users';
+  
   // Data properties
   users: AdminUser[] = [];
   totalUsers = 0;
   isLoading = true;
   error: string | null = null;
+  
+  // Creator Applications data
+  creatorApplications: CreatorApplication[] = [];
+  isLoadingApplications = false;
+  applicationsError: string | null = null;
+  applicationsPagination: any = null;
+  applicationsCurrentPage = 1;
+  applicationsItemsPerPage = 10;
+  applicationsStatusFilter: 'pending' | 'approved' | 'rejected' | '' = '';
+  applicationsSearchTerm = '';
+  
+  // Creator Applications modals
+  showApplicationDetailModal = false;
+  showRejectApplicationModal = false;
+  selectedApplication: CreatorApplication | null = null;
+  rejectionForm: FormGroup;
   
   // Pagination
   currentPage = 1;
@@ -79,6 +100,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
 
   constructor(
     private adminService: AdminService,
+    private creatorApplicationService: CreatorApplicationService,
     private fb: FormBuilder,
     private notificationService: NotificationService
   ) {
@@ -106,11 +128,174 @@ export class UserManagementComponent implements OnInit, OnDestroy {
       is_active: [''],
       subscription_status: ['']
     });
+
+    this.rejectionForm = this.fb.group({
+      rejection_reason: ['', [Validators.required, Validators.minLength(10)]]
+    });
   }
 
   ngOnInit() {
     this.setupFilterSubscription();
     this.loadUsers();
+    // Load creator applications if on that tab
+    if (this.activeTab === 'creator-applications') {
+      this.loadCreatorApplications();
+    }
+  }
+  
+  onTabChange(tab: 'users' | 'creator-applications'): void {
+    this.activeTab = tab;
+    if (tab === 'creator-applications') {
+      this.loadCreatorApplications();
+    }
+  }
+  
+  // Creator Applications methods
+  loadCreatorApplications(): void {
+    this.isLoadingApplications = true;
+    this.applicationsError = null;
+
+    this.creatorApplicationService
+      .getAllApplications({
+        page: this.applicationsCurrentPage,
+        limit: this.applicationsItemsPerPage,
+        status: this.applicationsStatusFilter || undefined,
+        search: this.applicationsSearchTerm || undefined
+      })
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => (this.isLoadingApplications = false))
+      )
+      .subscribe({
+        next: (response) => {
+          this.creatorApplications = response.applications;
+          this.applicationsPagination = response.pagination;
+        },
+        error: (error) => {
+          this.applicationsError = error.error?.message || 'Không thể tải danh sách đơn đăng ký';
+          this.notificationService.error('Lỗi', this.applicationsError || undefined);
+        }
+      });
+  }
+
+  onApplicationsPageChange(page: number): void {
+    this.applicationsCurrentPage = page;
+    this.loadCreatorApplications();
+  }
+
+  onApplicationsStatusFilterChange(): void {
+    this.applicationsCurrentPage = 1;
+    this.loadCreatorApplications();
+  }
+
+  onApplicationsSearch(): void {
+    this.applicationsCurrentPage = 1;
+    this.loadCreatorApplications();
+  }
+
+  viewApplication(application: CreatorApplication): void {
+    this.selectedApplication = application;
+    this.showApplicationDetailModal = true;
+  }
+
+  closeApplicationDetailModal(): void {
+    this.showApplicationDetailModal = false;
+    this.selectedApplication = null;
+  }
+
+  approveApplication(application: CreatorApplication): void {
+    if (!confirm(`Bạn có chắc chắn muốn duyệt đơn đăng ký của ${application.User?.name}?`)) {
+      return;
+    }
+
+    this.isLoadingApplications = true;
+    this.creatorApplicationService
+      .approveApplication(application.id)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => (this.isLoadingApplications = false))
+      )
+      .subscribe({
+        next: (updatedApplication) => {
+          this.notificationService.success('Thành công', 'Đơn đăng ký đã được duyệt thành công');
+          this.loadCreatorApplications();
+          if (this.selectedApplication?.id === application.id) {
+            this.selectedApplication = updatedApplication;
+          }
+          this.closeApplicationDetailModal();
+        },
+        error: (error) => {
+          this.applicationsError = error.error?.message || 'Không thể duyệt đơn đăng ký';
+          this.notificationService.error('Lỗi', this.applicationsError || undefined);
+        }
+      });
+  }
+
+  openRejectApplicationModal(application: CreatorApplication): void {
+    this.selectedApplication = application;
+    this.rejectionForm.reset();
+    this.showRejectApplicationModal = true;
+  }
+
+  closeRejectApplicationModal(): void {
+    this.showRejectApplicationModal = false;
+    this.selectedApplication = null;
+    this.rejectionForm.reset();
+  }
+
+  rejectApplication(): void {
+    if (this.rejectionForm.invalid || !this.selectedApplication) {
+      return;
+    }
+
+    this.isLoadingApplications = true;
+    this.creatorApplicationService
+      .rejectApplication(
+        this.selectedApplication.id,
+        this.rejectionForm.value.rejection_reason
+      )
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => (this.isLoadingApplications = false))
+      )
+      .subscribe({
+        next: (updatedApplication) => {
+          this.notificationService.success('Thành công', 'Đơn đăng ký đã bị từ chối');
+          this.loadCreatorApplications();
+          this.closeRejectApplicationModal();
+          this.closeApplicationDetailModal();
+        },
+        error: (error) => {
+          this.applicationsError = error.error?.message || 'Không thể từ chối đơn đăng ký';
+          this.notificationService.error('Lỗi', this.applicationsError || undefined);
+        }
+      });
+  }
+
+  getApplicationStatusClass(status: string): string {
+    switch (status) {
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+      case 'approved':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      case 'rejected':
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+    }
+  }
+
+  getApplicationStatusText(status: string): string {
+    switch (status) {
+      case 'pending':
+        return 'Chờ duyệt';
+      case 'approved':
+        return 'Đã duyệt';
+      case 'rejected':
+        return 'Đã từ chối';
+      default:
+        return status;
+    }
   }
 
   ngOnDestroy() {

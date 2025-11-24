@@ -1,0 +1,353 @@
+<div class="p-6">
+  <!-- Header -->
+  <div class="mb-6">
+    <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+      Quản lý đơn đăng ký Creator
+    </h1>
+    <p class="text-gray-600 dark:text-gray-400">
+      Xem xét và duyệt các đơn đăng ký trở thành creator
+    </p>
+  </div>
+
+  <!-- Filters -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Trạng thái
+        </label>
+        <select
+          [(ngModel)]="statusFilter"
+          (change)="onStatusFilterChange()"
+          class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+        >
+          <option *ngFor="let option of statusOptions" [value]="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Tìm kiếm
+        </label>
+        <input
+          type="text"
+          [(ngModel)]="searchTerm"
+          (keyup.enter)="onSearch()"
+          placeholder="Tìm theo tên, email, chuyên ngành..."
+          class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+        />
+      </div>
+      <div class="flex items-end">
+        <button
+          (click)="onSearch()"
+          class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Tìm kiếm
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Applications List -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden">
+    <div *ngIf="isLoading" class="p-8 text-center">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+      <p class="mt-2 text-gray-600 dark:text-gray-400">Đang tải...</p>
+    </div>
+
+    <div *ngIf="!isLoading && error" class="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg m-4">
+      <p class="text-red-800 dark:text-red-200">{{ error }}</p>
+    </div>
+
+    <div *ngIf="!isLoading && !error && applications.length === 0" class="p-8 text-center">
+      <p class="text-gray-600 dark:text-gray-400">Không có đơn đăng ký nào</p>
+    </div>
+
+    <div *ngIf="!isLoading && !error && applications.length > 0" class="overflow-x-auto">
+      <table class="w-full">
+        <thead class="bg-gray-50 dark:bg-gray-700">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              Người dùng
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              Chuyên ngành
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              Trạng thái
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              Ngày đăng ký
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              Thao tác
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+          <tr *ngFor="let app of applications" class="hover:bg-gray-50 dark:hover:bg-gray-700">
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="flex items-center">
+                <img
+                  *ngIf="app.User?.avatar_url"
+                  [src]="app.User.avatar_url"
+                  [alt]="app.User.name"
+                  class="h-10 w-10 rounded-full mr-3"
+                />
+                <div>
+                  <div class="text-sm font-medium text-gray-900 dark:text-white">
+                    {{ app.User?.name }}
+                  </div>
+                  <div class="text-sm text-gray-500 dark:text-gray-400">
+                    {{ app.User?.email }}
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm text-gray-900 dark:text-white">{{ app.specialization }}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <span
+                class="px-2 py-1 text-xs font-semibold rounded-full"
+                [ngClass]="getStatusClass(app.status)"
+              >
+                {{ getStatusText(app.status) }}
+              </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+              {{ app.created_at | date: 'dd/MM/yyyy HH:mm' }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              <button
+                (click)="viewApplication(app)"
+                class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3"
+              >
+                Xem chi tiết
+              </button>
+              <button
+                *ngIf="app.status === 'pending'"
+                (click)="approveApplication(app)"
+                class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 mr-3"
+              >
+                Duyệt
+              </button>
+              <button
+                *ngIf="app.status === 'pending'"
+                (click)="openRejectModal(app)"
+                class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+              >
+                Từ chối
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div *ngIf="pagination && pagination.total_pages > 1" class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+      <div class="flex items-center justify-between">
+        <div class="text-sm text-gray-700 dark:text-gray-300">
+          Trang {{ pagination.current_page }} / {{ pagination.total_pages }}
+          ({{ pagination.total_items }} đơn)
+        </div>
+        <div class="flex gap-2">
+          <button
+            *ngFor="let page of [].constructor(pagination.total_pages); let i = index"
+            (click)="onPageChange(i + 1)"
+            [class.bg-blue-600]="i + 1 === pagination.current_page"
+            [class.text-white]="i + 1 === pagination.current_page"
+            class="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+          >
+            {{ i + 1 }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail Modal -->
+  <div
+    *ngIf="showDetailModal && selectedApplication"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+    (click)="closeDetailModal()"
+  >
+    <div
+      class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-bold text-gray-900 dark:text-white">
+            Chi tiết đơn đăng ký
+          </h2>
+          <button
+            (click)="closeDetailModal()"
+            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <div class="p-6 space-y-6">
+        <!-- User Info -->
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Thông tin người dùng</h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Tên</p>
+              <p class="text-gray-900 dark:text-white">{{ selectedApplication.User?.name }}</p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Email</p>
+              <p class="text-gray-900 dark:text-white">{{ selectedApplication.User?.email }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Application Details -->
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Thông tin đơn đăng ký</h3>
+          <div class="space-y-4">
+            <div>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Chuyên ngành</p>
+              <p class="text-gray-900 dark:text-white">{{ selectedApplication.specialization }}</p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Kỹ năng</p>
+              <div class="flex flex-wrap gap-2 mt-1">
+                <span
+                  *ngFor="let skill of selectedApplication.skills"
+                  class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded text-sm"
+                >
+                  {{ skill }}
+                </span>
+              </div>
+            </div>
+            <div>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Kinh nghiệm làm việc</p>
+              <div class="mt-2 space-y-2">
+                <div
+                  *ngFor="let exp of selectedApplication.work_experience"
+                  class="p-3 bg-gray-50 dark:bg-gray-700 rounded"
+                >
+                  <p class="font-medium">{{ exp.position }} tại {{ exp.company }}</p>
+                  <p class="text-sm text-gray-600 dark:text-gray-400">{{ exp.years }} năm kinh nghiệm</p>
+                </div>
+              </div>
+            </div>
+            <div>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Mô tả bản thân</p>
+              <p class="text-gray-900 dark:text-white mt-1">{{ selectedApplication.bio }}</p>
+            </div>
+            <div *ngIf="selectedApplication.teaching_experience">
+              <p class="text-sm text-gray-600 dark:text-gray-400">Kinh nghiệm giảng dạy</p>
+              <p class="text-gray-900 dark:text-white mt-1">{{ selectedApplication.teaching_experience }}</p>
+            </div>
+            <div *ngIf="selectedApplication.certificates && selectedApplication.certificates.length > 0">
+              <p class="text-sm text-gray-600 dark:text-gray-400">Chứng chỉ</p>
+              <div class="mt-2 space-y-2">
+                <div
+                  *ngFor="let cert of selectedApplication.certificates"
+                  class="p-3 bg-gray-50 dark:bg-gray-700 rounded"
+                >
+                  <p class="font-medium">{{ cert.type }}</p>
+                  <a *ngIf="cert.url" [href]="cert.url" target="_blank" class="text-blue-600 dark:text-blue-400 text-sm">
+                    {{ cert.url }}
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div *ngIf="selectedApplication.portfolio && selectedApplication.portfolio.length > 0">
+              <p class="text-sm text-gray-600 dark:text-gray-400">Portfolio</p>
+              <div class="mt-2 space-y-2">
+                <div
+                  *ngFor="let item of selectedApplication.portfolio"
+                  class="p-3 bg-gray-50 dark:bg-gray-700 rounded"
+                >
+                  <p class="font-medium">{{ item.type }}</p>
+                  <a [href]="item.url" target="_blank" class="text-blue-600 dark:text-blue-400 text-sm">
+                    {{ item.url }}
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div *ngIf="selectedApplication.status === 'pending'" class="flex gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <button
+            (click)="approveApplication(selectedApplication)"
+            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+          >
+            Duyệt đơn
+          </button>
+          <button
+            (click)="openRejectModal(selectedApplication)"
+            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+          >
+            Từ chối
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reject Modal -->
+  <div
+    *ngIf="showRejectModal"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+    (click)="closeRejectModal()"
+  >
+    <div
+      class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="p-6">
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
+          Từ chối đơn đăng ký
+        </h2>
+        <form [formGroup]="rejectionForm" (ngSubmit)="rejectApplication()">
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Lý do từ chối <span class="text-red-500">*</span>
+            </label>
+            <textarea
+              formControlName="rejection_reason"
+              rows="4"
+              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              placeholder="Nhập lý do từ chối đơn đăng ký..."
+            ></textarea>
+            <p
+              *ngIf="rejectionForm.get('rejection_reason')?.invalid && rejectionForm.get('rejection_reason')?.touched"
+              class="mt-1 text-sm text-red-600 dark:text-red-400"
+            >
+              Vui lòng nhập lý do từ chối (tối thiểu 10 ký tự)
+            </p>
+          </div>
+          <div class="flex gap-4">
+            <button
+              type="submit"
+              [disabled]="rejectionForm.invalid || isLoading"
+              class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+            >
+              Xác nhận từ chối
+            </button>
+            <button
+              type="button"
+              (click)="closeRejectModal()"
+              class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+            >
+              Hủy
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
