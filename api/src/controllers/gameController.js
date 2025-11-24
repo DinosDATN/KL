@@ -452,6 +452,73 @@ class GameController {
       });
     }
   }
+
+  /**
+   * Use hint for Sudoku game (deduct points)
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
+  async useSudokuHint(req, res) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required'
+        });
+      }
+
+      const userId = req.user.id;
+      const hintCost = 5; // Cost in points
+
+      // Check if user has enough points
+      const currentPoints = await rewardService.getUserRewardPoints(userId);
+      if (currentPoints < hintCost) {
+        return res.status(400).json({
+          success: false,
+          message: `Không đủ điểm. Bạn cần ${hintCost} điểm để sử dụng gợi ý.`,
+          data: {
+            currentPoints: currentPoints,
+            requiredPoints: hintCost,
+            insufficientPoints: hintCost - currentPoints
+          }
+        });
+      }
+
+      // Deduct points
+      const result = await rewardService.addRewardPoints(
+        userId,
+        -hintCost, // Negative points = deduction
+        'purchase',
+        {
+          referenceType: 'game',
+          referenceId: req.body.gameId || null,
+          metadata: {
+            gameType: 'sudoku',
+            hintUsed: true,
+            difficulty: req.body.difficulty || null
+          },
+          description: `Sử dụng gợi ý Sudoku (trừ ${hintCost} điểm)`
+        }
+      );
+
+      res.status(200).json({
+        success: true,
+        message: `Đã sử dụng gợi ý. Trừ ${hintCost} điểm.`,
+        data: {
+          newBalance: result.newBalance,
+          pointsDeducted: hintCost,
+          transaction: result.transaction
+        }
+      });
+    } catch (error) {
+      console.error('Error using Sudoku hint:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to use hint',
+        error: error.message
+      });
+    }
+  }
 }
 
 module.exports = new GameController();

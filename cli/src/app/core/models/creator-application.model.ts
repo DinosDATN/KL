@@ -64,4 +64,3 @@ export interface CreatorApplicationFormData {
   bio: string;
   teaching_experience?: string;
 }
-

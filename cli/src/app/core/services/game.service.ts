@@ -231,4 +231,41 @@ export class GameService {
         })
       );
   }
+
+  /**
+   * Use hint for Sudoku game (deducts points)
+   * @param gameId - Optional game ID
+   * @param difficulty - Optional difficulty level
+   */
+  useSudokuHint(gameId?: number, difficulty?: string): Observable<{
+    newBalance: number;
+    pointsDeducted: number;
+  }> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return of({
+        newBalance: 0,
+        pointsDeducted: 5,
+      });
+    }
+
+    return this.http
+      .post<ApiResponse<{
+        newBalance: number;
+        pointsDeducted: number;
+      }>>(
+        `${this.apiUrl}/games/sudoku/hint`,
+        {
+          gameId,
+          difficulty,
+        },
+        { withCredentials: true } // Send HttpOnly cookie for authentication
+      )
+      .pipe(
+        map((response) => response.data),
+        catchError((error) => {
+          console.error('Error using Sudoku hint:', error);
+          throw error;
+        })
+      );
+  }
 }

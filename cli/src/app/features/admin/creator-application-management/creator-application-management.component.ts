@@ -1,8 +1,17 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import {
+  FormsModule,
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+  Validators,
+} from '@angular/forms';
 import { Subject, takeUntil, finalize } from 'rxjs';
-import { CreatorApplicationService, PaginationInfo } from '../../../core/services/creator-application.service';
+import {
+  CreatorApplicationService,
+  PaginationInfo,
+} from '../../../core/services/creator-application.service';
 import { CreatorApplication } from '../../../core/models/creator-application.model';
 import { NotificationService } from '../../../core/services/notification.service';
 import { BaseAdminComponent } from '../base-admin.component';
@@ -16,9 +25,12 @@ import { PLATFORM_ID, Inject } from '@angular/core';
   standalone: true,
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './creator-application-management.component.html',
-  styleUrls: ['./creator-application-management.component.css']
+  styleUrls: ['./creator-application-management.component.css'],
 })
-export class CreatorApplicationManagementComponent extends BaseAdminComponent implements OnInit, OnDestroy {
+export class CreatorApplicationManagementComponent
+  extends BaseAdminComponent
+  implements OnInit, OnDestroy
+{
   private destroy$ = new Subject<void>();
 
   applications: CreatorApplication[] = [];
@@ -44,7 +56,7 @@ export class CreatorApplicationManagementComponent extends BaseAdminComponent im
     { value: '', label: 'Tất cả' },
     { value: 'pending', label: 'Chờ duyệt' },
     { value: 'approved', label: 'Đã duyệt' },
-    { value: 'rejected', label: 'Đã từ chối' }
+    { value: 'rejected', label: 'Đã từ chối' },
   ];
 
   constructor(
@@ -58,7 +70,7 @@ export class CreatorApplicationManagementComponent extends BaseAdminComponent im
   ) {
     super(authService, router, platformId);
     this.rejectionForm = this.fb.group({
-      rejection_reason: ['', [Validators.required, Validators.minLength(10)]]
+      rejection_reason: ['', [Validators.required, Validators.minLength(10)]],
     });
   }
 
@@ -80,7 +92,7 @@ export class CreatorApplicationManagementComponent extends BaseAdminComponent im
         page: this.currentPage,
         limit: this.itemsPerPage,
         status: this.statusFilter || undefined,
-        search: this.searchTerm || undefined
+        search: this.searchTerm || undefined,
       })
       .pipe(
         takeUntil(this.destroy$),
@@ -92,9 +104,10 @@ export class CreatorApplicationManagementComponent extends BaseAdminComponent im
           this.pagination = response.pagination;
         },
         error: (error) => {
-          this.error = error.error?.message || 'Không thể tải danh sách đơn đăng ký';
+          this.error =
+            error.error?.message || 'Không thể tải danh sách đơn đăng ký';
           this.notificationService.showError(this.error);
-        }
+        },
       });
   }
 
@@ -136,7 +149,7 @@ export class CreatorApplicationManagementComponent extends BaseAdminComponent im
           // Fallback to using the application from list
           this.selectedApplication = application;
           this.showDetailModal = true;
-        }
+        },
       });
   }
 
@@ -146,7 +159,11 @@ export class CreatorApplicationManagementComponent extends BaseAdminComponent im
   }
 
   approveApplication(application: CreatorApplication): void {
-    if (!confirm(`Bạn có chắc chắn muốn duyệt đơn đăng ký của ${application.User?.name}?`)) {
+    if (
+      !confirm(
+        `Bạn có chắc chắn muốn duyệt đơn đăng ký của ${application.User?.name}?`
+      )
+    ) {
       return;
     }
 
@@ -159,7 +176,9 @@ export class CreatorApplicationManagementComponent extends BaseAdminComponent im
       )
       .subscribe({
         next: (updatedApplication) => {
-          this.notificationService.showSuccess('Đơn đăng ký đã được duyệt thành công');
+          this.notificationService.showSuccess(
+            'Đơn đăng ký đã được duyệt thành công'
+          );
           this.loadApplications();
           if (this.selectedApplication?.id === application.id) {
             this.selectedApplication = updatedApplication;
@@ -169,7 +188,7 @@ export class CreatorApplicationManagementComponent extends BaseAdminComponent im
         error: (error) => {
           this.error = error.error?.message || 'Không thể duyệt đơn đăng ký';
           this.notificationService.showError(this.error);
-        }
+        },
       });
   }
 
@@ -210,7 +229,7 @@ export class CreatorApplicationManagementComponent extends BaseAdminComponent im
         error: (error) => {
           this.error = error.error?.message || 'Không thể từ chối đơn đăng ký';
           this.notificationService.showError(this.error);
-        }
+        },
       });
   }
 
@@ -246,7 +265,10 @@ export class CreatorApplicationManagementComponent extends BaseAdminComponent im
     if (Array.isArray(skills)) return skills;
     if (typeof skills === 'string') {
       // Handle comma-separated string
-      const parsed = skills.split(',').map(s => s.trim()).filter(s => s);
+      const parsed = skills
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s);
       return parsed.length > 0 ? parsed : [];
     }
     return [];
@@ -254,97 +276,100 @@ export class CreatorApplicationManagementComponent extends BaseAdminComponent im
 
   getWorkExperienceArray(workExperience: any): any[] {
     if (!workExperience) return [];
-    
+
     // If already an array, return it
     if (Array.isArray(workExperience)) {
-      return workExperience.filter(exp => exp && (exp.position || exp.company || exp.years));
+      return workExperience.filter(
+        (exp) => exp && (exp.position || exp.company || exp.years)
+      );
     }
-    
+
     // If it's a string, try to parse it
     if (typeof workExperience === 'string') {
       try {
         const parsed = JSON.parse(workExperience);
         if (Array.isArray(parsed)) {
-          return parsed.filter(exp => exp && (exp.position || exp.company || exp.years));
+          return parsed.filter(
+            (exp) => exp && (exp.position || exp.company || exp.years)
+          );
         }
       } catch (e) {
         console.warn('Failed to parse work_experience:', e);
       }
     }
-    
+
     // If it's an object (single experience), wrap it in array
     if (typeof workExperience === 'object' && workExperience !== null) {
       return [workExperience];
     }
-    
+
     return [];
   }
 
   getCertificatesArray(certificates: any): any[] {
     if (!certificates) return [];
-    
+
     // If already an array, return it
     if (Array.isArray(certificates)) {
-      return certificates.filter(cert => cert && cert.type);
+      return certificates.filter((cert) => cert && cert.type);
     }
-    
+
     // If it's a string, try to parse it
     if (typeof certificates === 'string') {
       try {
         const parsed = JSON.parse(certificates);
         if (Array.isArray(parsed)) {
-          return parsed.filter(cert => cert && cert.type);
+          return parsed.filter((cert) => cert && cert.type);
         }
       } catch (e) {
         console.warn('Failed to parse certificates:', e);
       }
     }
-    
+
     // If it's an object (single certificate), wrap it in array
     if (typeof certificates === 'object' && certificates !== null) {
       return [certificates];
     }
-    
+
     return [];
   }
 
   getPortfolioArray(portfolio: any): any[] {
     if (!portfolio) return [];
-    
+
     // If already an array, return it
     if (Array.isArray(portfolio)) {
-      return portfolio.filter(item => item && item.url);
+      return portfolio.filter((item) => item && item.url);
     }
-    
+
     // If it's a string, try to parse it
     if (typeof portfolio === 'string') {
       try {
         const parsed = JSON.parse(portfolio);
         if (Array.isArray(parsed)) {
-          return parsed.filter(item => item && item.url);
+          return parsed.filter((item) => item && item.url);
         }
       } catch (e) {
         console.warn('Failed to parse portfolio:', e);
       }
     }
-    
+
     // If it's an object (single portfolio item), wrap it in array
     if (typeof portfolio === 'object' && portfolio !== null) {
       return [portfolio];
     }
-    
+
     return [];
   }
 
   getPortfolioTypeLabel(type: string): string {
     const labels: { [key: string]: string } = {
-      'github': 'GitHub',
-      'gitlab': 'GitLab',
-      'website': 'Website cá nhân',
-      'product': 'Sản phẩm cá nhân',
-      'other': 'Khác'
+      github: 'GitHub',
+      gitlab: 'GitLab',
+      website: 'Website cá nhân',
+      product: 'Sản phẩm cá nhân',
+      other: 'Khác',
     };
     return labels[type] || type;
   }
 }
-

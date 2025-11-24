@@ -31,6 +31,13 @@ router.post(
   gameController.validateSudokuSolution
 );
 
+// Use hint for Sudoku (authenticated - deducts points)
+router.post(
+  "/sudoku/hint",
+  authenticateToken,
+  gameController.useSudokuHint
+);
+
 // Generate Sudoku puzzle (direct endpoint - must come before /:game)
 router.get("/sudoku", gameController.generateSudokuPuzzle);
 

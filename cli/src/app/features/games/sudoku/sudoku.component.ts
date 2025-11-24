@@ -12,6 +12,8 @@ import { Subject, takeUntil } from 'rxjs';
 import { GameService } from '../../../core/services/game.service';
 import { SudokuPuzzle } from '../../../core/models/game.model';
 import { ThemeService } from '../../../core/services/theme.service';
+import { NotificationService } from '../../../core/services/notification.service';
+import { UserStatsService } from '../../../core/services/user-stats.service';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
 type CellState = {
@@ -58,19 +60,46 @@ export class SudokuComponent implements OnInit, OnDestroy {
   gameLost = false; // Trạng thái thua
   errorCells: Set<string> = new Set(); // Track các ô đã sai để không đếm lại
   isPaused = false; // Trạng thái pause
+  currentPoints = 0; // Điểm thưởng hiện tại
+  hintCost = 5; // Chi phí sử dụng gợi ý
+  isLoadingHint = false; // Trạng thái đang xử lý hint
 
   private destroy$ = new Subject<void>();
 
   constructor(
     private gameService: GameService,
     public themeService: ThemeService,
+    private notificationService: NotificationService,
+    private userStatsService: UserStatsService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
-      // Component initialized
+      // Load current reward points
+      this.loadRewardPoints();
     }
+  }
+
+  /**
+   * Load current reward points
+   */
+  private loadRewardPoints(): void {
+    this.userStatsService
+      .getRewardPoints()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.currentPoints = response.data.rewardPoints || 0;
+          }
+        },
+        error: (error) => {
+          console.error('Error loading reward points:', error);
+          // Set to 0 if error, but don't block the game
+          this.currentPoints = 0;
+        },
+      });
   }
 
   ngOnDestroy(): void {
@@ -392,17 +421,94 @@ export class SudokuComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Get a hint (show one correct number)
+   * Get a hint (show one correct number) - requires payment
    */
   getHint(): void {
-    if (!this.puzzle || !this.selectedCell) return;
+    if (!this.puzzle || !this.selectedCell) {
+      this.notificationService.warning(
+        'Chưa chọn ô',
+        'Vui lòng chọn một ô để sử dụng gợi ý.'
+      );
+      return;
+    }
 
     const { row, col } = this.selectedCell;
-    if (this.grid[row][col].isGiven) return;
+    if (this.grid[row][col].isGiven) {
+      this.notificationService.info(
+        'Ô đã có sẵn',
+        'Ô này đã có số sẵn, không thể sử dụng gợi ý.'
+      );
+      return;
+    }
 
-    this.grid[row][col].value = this.puzzle.solution[row][col];
-    this.grid[row][col].isError = false;
-    this.checkGameCompletion();
+    // Check if already filled
+    if (this.grid[row][col].value !== 0) {
+      this.notificationService.info(
+        'Ô đã có giá trị',
+        'Ô này đã có giá trị, vui lòng chọn ô khác.'
+      );
+      return;
+    }
+
+    // Check if user has enough points
+    if (this.currentPoints < this.hintCost) {
+      this.notificationService.error(
+        'Không đủ điểm',
+        `Bạn cần ${this.hintCost} điểm để sử dụng gợi ý. Hiện tại bạn có ${this.currentPoints} điểm.`
+      );
+      return;
+    }
+
+    // Prevent multiple simultaneous requests
+    if (this.isLoadingHint) {
+      return;
+    }
+
+    this.isLoadingHint = true;
+
+    // Call API to deduct points
+    this.gameService
+      .useSudokuHint(this.puzzle?.gameId, this.difficulty)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (result) => {
+          // Update current points
+          this.currentPoints = result.newBalance;
+
+          // Apply hint
+          this.grid[row][col].value = this.puzzle!.solution[row][col];
+          this.grid[row][col].isError = false;
+          this.grid[row][col].isCorrect = true;
+
+          // Show success notification
+          this.notificationService.success(
+            'Đã sử dụng gợi ý',
+            `Đã trừ ${this.hintCost} điểm. Số dư còn lại: ${result.newBalance} điểm.`
+          );
+
+          // Check game completion
+          this.checkGameCompletion();
+          this.isLoadingHint = false;
+        },
+        error: (error) => {
+          console.error('Error using hint:', error);
+
+          // Show error notification
+          if (error.error?.message) {
+            this.notificationService.error(
+              'Lỗi sử dụng gợi ý',
+              error.error.message
+            );
+          } else {
+            this.notificationService.error(
+              'Lỗi sử dụng gợi ý',
+              'Không thể sử dụng gợi ý. Vui lòng thử lại sau.'
+            );
+          }
+
+          this.isLoadingHint = false;
+        },
+      });
   }
 
   /**
@@ -635,5 +741,15 @@ export class SudokuComponent implements OnInit, OnDestroy {
     }
 
     return classes.trim();
+  }
+
+  /**
+   * Get tooltip text for hint button
+   */
+  getHintTooltip(): string {
+    if (this.currentPoints < this.hintCost) {
+      return `Cần ${this.hintCost} điểm. Bạn có ${this.currentPoints} điểm.`;
+    }
+    return `Sử dụng gợi ý (trừ ${this.hintCost} điểm)`;
   }
 }

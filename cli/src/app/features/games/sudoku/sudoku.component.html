@@ -256,12 +256,30 @@
             </button>
             <button
               (click)="getHint()"
-              [disabled]="!selectedCell || gameCompleted || gameLost"
+              [disabled]="
+                !selectedCell ||
+                gameCompleted ||
+                gameLost ||
+                isLoadingHint ||
+                currentPoints < hintCost
+              "
               class="w-full py-2.5 px-4 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              [title]="getHintTooltip()"
             >
-              <span>💡</span>
-              <span>Get Hint</span>
+              <span *ngIf="!isLoadingHint">💡</span>
+              <span *ngIf="isLoadingHint" class="animate-spin">⏳</span>
+              <span>{{
+                isLoadingHint
+                  ? "Đang xử lý..."
+                  : "Get Hint (" + hintCost + " điểm)"
+              }}</span>
             </button>
+            <div
+              *ngIf="currentPoints < hintCost"
+              class="text-xs text-red-500 dark:text-red-400 mt-1 text-center"
+            >
+              Không đủ điểm (cần {{ hintCost }}, có {{ currentPoints }})
+            </div>
             <button
               (click)="clearCell()"
               [disabled]="!selectedCell || gameCompleted || gameLost"
