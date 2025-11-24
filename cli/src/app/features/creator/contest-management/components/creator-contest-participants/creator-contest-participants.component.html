@@ -1,0 +1,312 @@
+<!-- Modal Overlay -->
+<div
+  class="fixed inset-0 z-50 overflow-y-auto"
+  aria-labelledby="modal-title"
+  role="dialog"
+  aria-modal="true"
+>
+  <div
+    class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0"
+  >
+    <!-- Background overlay -->
+    <div
+      class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+      (click)="onClose()"
+    ></div>
+
+    <!-- Modal panel -->
+    <div
+      class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full"
+    >
+      <!-- Header -->
+      <div
+        class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4 border-b border-gray-200 dark:border-gray-700"
+      >
+        <div class="flex items-center justify-between">
+          <div class="flex-1">
+            <h3
+              class="text-lg font-medium leading-6 text-gray-900 dark:text-white"
+              id="modal-title"
+            >
+              Quản lý thí sinh
+            </h3>
+            <p
+              class="mt-1 text-sm text-gray-500 dark:text-gray-400"
+              *ngIf="contest"
+            >
+              {{ contest.title }} - Tổng: {{ totalItems }} thí sinh
+            </p>
+          </div>
+          <button
+            type="button"
+            (click)="onClose()"
+            class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 focus:outline-none"
+          >
+            <i class="icon-x text-2xl"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6">
+        <!-- Search and Actions -->
+        <div class="mb-4 flex flex-col sm:flex-row gap-4">
+          <div class="flex-1">
+            <div class="relative">
+              <input
+                type="text"
+                [(ngModel)]="searchTerm"
+                (keyup.enter)="onSearch()"
+                placeholder="Tìm kiếm theo tên hoặc email..."
+                class="w-full px-4 py-2 pl-10 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+              <i
+                class="icon-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              ></i>
+            </div>
+          </div>
+          <button
+            (click)="onSearch()"
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200"
+          >
+            Tìm kiếm
+          </button>
+          <button
+            (click)="exportParticipants()"
+            class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors duration-200"
+          >
+            <i class="icon-download mr-2"></i>
+            Xuất CSV
+          </button>
+        </div>
+
+        <!-- Loading State -->
+        <div *ngIf="loading" class="text-center py-12">
+          <div
+            class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"
+          ></div>
+          <p class="mt-4 text-sm text-gray-600 dark:text-gray-400">
+            Đang tải danh sách thí sinh...
+          </p>
+        </div>
+
+        <!-- Participants List -->
+        <div *ngIf="!loading" class="overflow-x-auto">
+          <table
+            class="min-w-full divide-y divide-gray-200 dark:divide-gray-700"
+          >
+            <thead class="bg-gray-50 dark:bg-gray-700">
+              <tr>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                >
+                  STT
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                >
+                  Thí sinh
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                >
+                  Email
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                >
+                  Ngày đăng ký
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                >
+                  Thao tác
+                </th>
+              </tr>
+            </thead>
+            <tbody
+              class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+            >
+              <tr
+                *ngIf="filteredParticipants.length === 0"
+                class="text-center"
+              >
+                <td colspan="5" class="px-6 py-8 text-sm text-gray-500">
+                  <i class="icon-users text-3xl text-gray-400 mb-2 block"></i>
+                  Không tìm thấy thí sinh nào
+                </td>
+              </tr>
+              <tr
+                *ngFor="let participant of filteredParticipants; let i = index"
+                class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white"
+                >
+                  {{ (currentPage - 1) * itemsPerPage + i + 1 }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center">
+                    <div
+                      *ngIf="participant.User?.avatar_url"
+                      class="flex-shrink-0 h-10 w-10"
+                    >
+                      <img
+                        class="h-10 w-10 rounded-full"
+                        [src]="participant.User?.avatar_url || ''"
+                        [alt]="participant.User?.name || 'User'"
+                      />
+                    </div>
+                    <div
+                      *ngIf="!participant.User?.avatar_url"
+                      class="flex-shrink-0 h-10 w-10 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center"
+                    >
+                      <span
+                        class="text-blue-600 dark:text-blue-400 font-medium text-sm"
+                      >
+                        {{
+                          (participant.User?.name?.charAt(0) || '?').toUpperCase()
+                        }}
+                      </span>
+                    </div>
+                    <div class="ml-4">
+                      <div
+                        class="text-sm font-medium text-gray-900 dark:text-white"
+                      >
+                        {{ participant.User?.name || 'N/A' }}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400"
+                >
+                  {{ participant.User?.email || 'N/A' }}
+                </td>
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400"
+                >
+                  {{ formatDate(participant.joined_at) }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                  <button
+                    *ngIf="canRemoveParticipant()"
+                    (click)="removeParticipant(participant)"
+                    [disabled]="loading"
+                    class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    title="Xóa thí sinh khỏi cuộc thi"
+                  >
+                    <i class="icon-trash"></i>
+                  </button>
+                  <span
+                    *ngIf="!canRemoveParticipant()"
+                    class="text-gray-400 dark:text-gray-500 text-xs"
+                    title="Chỉ có thể xóa thí sinh khỏi cuộc thi sắp diễn ra"
+                  >
+                    -
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div
+          *ngIf="!loading && totalPages > 1"
+          class="mt-4 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-4"
+        >
+          <div class="flex-1 flex justify-between sm:hidden">
+            <button
+              (click)="onPageChange(currentPage - 1)"
+              [disabled]="currentPage === 1"
+              class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Trước
+            </button>
+            <button
+              (click)="onPageChange(currentPage + 1)"
+              [disabled]="currentPage === totalPages"
+              class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Sau
+            </button>
+          </div>
+          <div
+            class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between"
+          >
+            <div>
+              <p class="text-sm text-gray-700 dark:text-gray-300">
+                Hiển thị
+                <span class="font-medium">{{
+                  totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0
+                }}</span>
+                đến
+                <span class="font-medium">{{
+                  totalItems > 0
+                    ? getMinValue(currentPage * itemsPerPage, totalItems)
+                    : 0
+                }}</span>
+                trong tổng số
+                <span class="font-medium">{{ totalItems }}</span> thí sinh
+              </p>
+            </div>
+            <div>
+              <nav
+                class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                aria-label="Pagination"
+              >
+                <button
+                  (click)="onPageChange(currentPage - 1)"
+                  [disabled]="currentPage === 1"
+                  class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <i class="icon-chevron-left"></i>
+                </button>
+                <button
+                  *ngFor="let page of getPageNumbers()"
+                  (click)="onPageChange(page)"
+                  [ngClass]="{
+                    'z-10 bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-600 dark:text-blue-400':
+                      currentPage === page,
+                    'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700':
+                      currentPage !== page
+                  }"
+                  class="relative inline-flex items-center px-4 py-2 border text-sm font-medium"
+                >
+                  {{ page }}
+                </button>
+                <button
+                  (click)="onPageChange(currentPage + 1)"
+                  [disabled]="currentPage === totalPages"
+                  class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <i class="icon-chevron-right"></i>
+                </button>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div
+        class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-200 dark:border-gray-600"
+      >
+        <button
+          type="button"
+          (click)="onClose()"
+          class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
+        >
+          Đóng
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+

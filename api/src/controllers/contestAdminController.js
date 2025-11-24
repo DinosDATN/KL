@@ -1149,6 +1149,71 @@ class ContestAdminController {
     }
   }
 
+  // Remove participant from contest (Admin/Creator only)
+  async removeParticipantFromContest(req, res) {
+    try {
+      const { id, user_id } = req.params;
+      const userId = req.user.id;
+      const userRole = req.user.role;
+
+      // Find the contest
+      const contest = await Contest.findByPk(id);
+
+      if (!contest) {
+        return res.status(404).json({
+          success: false,
+          message: "Contest not found",
+        });
+      }
+
+      // Authorization check - Admin or contest creator can remove participants
+      if (userRole !== "admin" && contest.created_by !== userId) {
+        return res.status(403).json({
+          success: false,
+          message:
+            "You can only remove participants from your own contests unless you are an admin",
+        });
+      }
+
+      // Find the participant registration
+      const participant = await UserContest.findOne({
+        where: { contest_id: id, user_id: user_id },
+      });
+
+      if (!participant) {
+        return res.status(404).json({
+          success: false,
+          message: "Participant not found in this contest",
+        });
+      }
+
+      // Check contest status - allow removal from upcoming contests, but warn for active/completed
+      const status = contest.getStatus();
+      if (status === "active") {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Cannot remove participants from active contests. Consider waiting until the contest ends.",
+        });
+      }
+
+      // Remove participant
+      await participant.destroy();
+
+      res.status(200).json({
+        success: true,
+        message: "Participant removed from contest successfully",
+      });
+    } catch (error) {
+      console.error("Error in removeParticipantFromContest:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to remove participant from contest",
+        error: error.message,
+      });
+    }
+  }
+
   // Bulk update contests (Admin only)
   async bulkUpdateContests(req, res) {
     try {

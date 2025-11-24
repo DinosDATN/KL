@@ -156,6 +156,14 @@ export class ContestService {
     return this.http.get<ApiResponse<UserContest[]>>(`${this.apiUrl}/${contestId}/participants`, { params });
   }
 
+  // Remove participant from contest (Admin/Creator only)
+  removeParticipantFromContest(contestId: number, userId: number): Observable<ApiResponse<void>> {
+    return this.http.delete<ApiResponse<void>>(
+      `${environment.apiUrl}/admin/contests/${contestId}/participants/${userId}`,
+      { withCredentials: true }
+    );
+  }
+
   // Get active contests
   getActiveContests(): Observable<ApiResponse<Contest[]>> {
     return this.http.get<ApiResponse<Contest[]>>(`${this.apiUrl}/active`);

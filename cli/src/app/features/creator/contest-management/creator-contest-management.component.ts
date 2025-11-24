@@ -21,6 +21,7 @@ import { NotificationService } from '../../../core/services/notification.service
 import { AuthService } from '../../../core/services/auth.service';
 import { isPlatformBrowser } from '@angular/common';
 import { CreatorContestFormComponent } from './components/creator-contest-form/creator-contest-form.component';
+import { CreatorContestParticipantsComponent } from './components/creator-contest-participants/creator-contest-participants.component';
 
 interface ContestStats {
   total_contests: number;
@@ -39,6 +40,7 @@ interface ContestStats {
     RouterModule,
     FormsModule,
     CreatorContestFormComponent,
+    CreatorContestParticipantsComponent,
   ],
   templateUrl: './creator-contest-management.component.html',
   styleUrls: ['./creator-contest-management.component.css'],
@@ -54,7 +56,9 @@ export class CreatorContestManagementComponent implements OnInit, OnDestroy {
   // UI State
   activeTab: 'all' | 'active' | 'upcoming' | 'completed' = 'all';
   showCreateModal = false;
+  showParticipantsModal = false;
   editingContest: Contest | null = null;
+  managingParticipantsContest: Contest | null = null;
 
   // Pagination
   currentPage = 1;
@@ -365,6 +369,21 @@ export class CreatorContestManagementComponent implements OnInit, OnDestroy {
 
   viewLeaderboard(contest: Contest): void {
     this.router.navigate(['/contests', contest.id, 'leaderboard']);
+  }
+
+  manageParticipants(contest: Contest): void {
+    this.managingParticipantsContest = contest;
+    this.showParticipantsModal = true;
+  }
+
+  closeParticipantsModal(): void {
+    this.showParticipantsModal = false;
+    this.managingParticipantsContest = null;
+  }
+
+  onParticipantsUpdated(): void {
+    this.loadContests();
+    this.loadStatistics();
   }
 
   formatDate(dateString: string): string {

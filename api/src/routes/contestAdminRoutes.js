@@ -52,11 +52,14 @@ router.post('/:id/problems', contestAdminController.addProblemToContest);
 router.delete('/:id/problems/:problem_id', contestAdminController.removeProblemFromContest);
 
 /**
- * Contest Participant Management (Admin Only)
+ * Contest Participant Management (Admin/Creator)
  */
 
 // GET /api/admin/contests/:id/participants - Get contest participants
-router.get('/:id/participants', requireRole(['admin']), contestAdminController.getContestParticipants);
+router.get('/:id/participants', contestAdminController.getContestParticipants);
+
+// DELETE /api/admin/contests/:id/participants/:user_id - Remove participant from contest
+router.delete('/:id/participants/:user_id', contestAdminController.removeParticipantFromContest);
 
 /**
  * Bulk Operations (Admin Only)
