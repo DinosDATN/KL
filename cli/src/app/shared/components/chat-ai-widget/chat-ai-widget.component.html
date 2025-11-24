@@ -132,21 +132,6 @@
     <!-- Chat Messages Area -->
     <div class="chat-messages" #messagesContainer>
       <div class="messages-container">
-        <!-- Welcome/Quick Questions -->
-        <div class="quick-questions" *ngIf="messages.length <= 1">
-          <p class="quick-title">💡 Hỏi nhanh:</p>
-          <div class="quick-buttons">
-            <button
-              class="quick-btn"
-              *ngFor="let question of quickQuestions; trackBy: trackByQuestion"
-              (click)="askQuickQuestion(question)"
-              [disabled]="isLoading"
-            >
-              <span>{{ question }}</span>
-            </button>
-          </div>
-        </div>
-
         <!-- Chat Messages -->
         <div
           class="message"

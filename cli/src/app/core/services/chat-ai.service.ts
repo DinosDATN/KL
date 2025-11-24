@@ -117,18 +117,6 @@ export class ChatAIService {
           };
           this.addMessage(aiMessage);
 
-          // Add suggestions if available
-          if (response.data.suggestions && response.data.suggestions.length > 0) {
-            const suggestionsText = `\n\n💡 Gợi ý câu hỏi:\n${response.data.suggestions.map(s => `• ${s}`).join('\n')}`;
-            const suggestionMessage: ChatAIMessage = {
-              id: this.generateMessageId(),
-              text: suggestionsText,
-              isUser: false,
-              timestamp: new Date()
-            };
-            this.addMessage(suggestionMessage);
-          }
-
           return aiMessage;
         } else {
           throw new Error(response.message || 'Không thể xử lý câu hỏi của bạn');
@@ -140,27 +128,6 @@ export class ChatAIService {
         return this.handleError(error);
       })
     );
-  }
-
-  // Quick actions
-  askQuickQuestion(predefinedQuestion: string): void {
-    this.askQuestion(predefinedQuestion).subscribe({
-      next: () => {},
-      error: (error) => {
-        console.error('Quick question error:', error);
-      }
-    });
-  }
-
-  // Predefined quick questions
-  getQuickQuestions(): string[] {
-    return [
-      'Có những khóa học nào?',
-      'Bài tập dễ để luyện tập?',
-      'Tài liệu học lập trình có gì?',
-      'Cuộc thi nào đang diễn ra?',
-      'Thống kê hệ thống'
-    ];
   }
 
   // Clear chat history

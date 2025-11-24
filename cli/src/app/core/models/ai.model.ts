@@ -34,14 +34,7 @@ export interface ChatAIRequest {
 
 export interface ChatAIResponseData {
   answer: string;
-  data_source: 'database' | 'ai_general';
-  query_info?: {
-    intent: string;
-    query_types: string[];
-    filters_applied: any;
-  } | null;
-  suggestions?: string[];
-  raw_data?: any;
+  data_source: 'ai';
 }
 
 export interface ChatAIResponse {

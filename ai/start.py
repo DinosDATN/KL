@@ -30,20 +30,11 @@ def main():
     print(f"🔍 Debug Mode: {debug}")
     print("=" * 60)
     
-    # Check if OpenAI API key is configured
-    if not os.getenv("OPENAI_API_KEY"):
-        print("⚠️  WARNING: OPENAI_API_KEY is not set!")
-        print("   Please set your OpenAI API key in the .env file")
-        print("   Copy .env.example to .env and update the values")
-        print("=" * 60)
-    
-    # Check database configuration
-    db_config_vars = ["DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME"]
-    missing_db_vars = [var for var in db_config_vars if not os.getenv(var)]
-    
-    if missing_db_vars:
-        print(f"⚠️  WARNING: Missing database configuration: {', '.join(missing_db_vars)}")
-        print("   Please configure database settings in the .env file")
+    # Check if OpenRouter API key is configured
+    if not os.getenv("OPENROUTER_API_KEY"):
+        print("⚠️  WARNING: OPENROUTER_API_KEY is not set!")
+        print("   Please set your OpenRouter API key in the .env file")
+        print("   Get your API key from: https://openrouter.ai/keys")
         print("=" * 60)
     
     print("🚀 Starting server...")

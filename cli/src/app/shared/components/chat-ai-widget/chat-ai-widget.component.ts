@@ -41,7 +41,6 @@ export class ChatAiWidgetComponent
   // Chat data
   messages: ChatAIMessage[] = [];
   currentMessage = '';
-  quickQuestions: string[] = [];
   likedMessages = new Set<string>();
   newMessageIds = new Set<string>();
 
@@ -71,7 +70,6 @@ export class ChatAiWidgetComponent
   ngOnInit(): void {
     this.detectMobile();
     this.setupSubscriptions();
-    this.loadQuickQuestions();
     this.checkHealthStatus();
     this.loadSettings();
   }
@@ -156,10 +154,6 @@ export class ChatAiWidgetComponent
     );
   }
 
-  private loadQuickQuestions(): void {
-    this.quickQuestions = this.chatAIService.getQuickQuestions();
-  }
-
   private checkHealthStatus(): void {
     this.chatAIService.checkHealth().subscribe({
       next: (response) => {
@@ -210,10 +204,6 @@ export class ChatAiWidgetComponent
         console.error('Failed to send message:', error);
       },
     });
-  }
-
-  askQuickQuestion(question: string): void {
-    this.chatAIService.askQuickQuestion(question);
   }
 
   clearChat(): void {
@@ -391,10 +381,6 @@ export class ChatAiWidgetComponent
 
   trackByMessage(index: number, message: ChatAIMessage): string {
     return message.id;
-  }
-
-  trackByQuestion(index: number, question: string): string {
-    return question;
   }
 
   private downloadFile(
