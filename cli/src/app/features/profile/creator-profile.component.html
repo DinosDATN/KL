@@ -309,90 +309,191 @@
             </div>
           </div>
 
-          <!-- Quick Stats -->
-          <div class="grid md:grid-cols-2 gap-6" *ngIf="creatorStatistics">
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-              <h3 class="text-lg font-semibold mb-4">Thống kê khóa học</h3>
-              <div class="space-y-3">
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-600 dark:text-gray-300">Đã xuất bản</span>
-                  <span class="font-semibold">{{ creatorStatistics.published_courses || 0 }}</span>
-                </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-600 dark:text-gray-300">Bản nháp</span>
-                  <span class="font-semibold">{{ creatorStatistics.draft_courses || 0 }}</span>
-                </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-600 dark:text-gray-300">Đã lưu trữ</span>
-                  <span class="font-semibold">{{ creatorStatistics.courses_by_status.archived || 0 }}</span>
-                </div>
+          <!-- Contest Stats Cards -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div
+              class="p-4 rounded-xl bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20"
+            >
+              <div class="text-sm text-gray-600 dark:text-gray-300">Tổng cuộc thi</div>
+              <div class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                {{ contestStats.total }}
               </div>
             </div>
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-              <h3 class="text-lg font-semibold mb-4">Đánh giá & Phản hồi</h3>
-              <div class="space-y-3">
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-600 dark:text-gray-300">Đánh giá trung bình</span>
-                  <div class="flex items-center gap-2">
-                    <span class="font-semibold">{{ (creatorStatistics.average_rating || 0).toFixed(1) }}</span>
-                    <span class="text-yellow-500">★</span>
-                  </div>
-                </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-600 dark:text-gray-300">Tổng đánh giá</span>
-                  <span class="font-semibold">{{ creatorStatistics.total_reviews || 0 }}</span>
-                </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-600 dark:text-gray-300">Tổng lượt đăng ký</span>
-                  <span class="font-semibold">{{ formatNumber(creatorStatistics.total_enrollments || 0) }}</span>
-                </div>
+            <div
+              class="p-4 rounded-xl bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20"
+            >
+              <div class="text-sm text-gray-600 dark:text-gray-300">Đang diễn ra</div>
+              <div class="text-2xl font-bold text-green-600 dark:text-green-400">
+                {{ contestStats.active }}
+              </div>
+            </div>
+            <div
+              class="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20"
+            >
+              <div class="text-sm text-gray-600 dark:text-gray-300">Sắp diễn ra</div>
+              <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {{ contestStats.upcoming }}
+              </div>
+            </div>
+            <div
+              class="p-4 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20"
+            >
+              <div class="text-sm text-gray-600 dark:text-gray-300">Đã kết thúc</div>
+              <div class="text-2xl font-bold text-gray-600 dark:text-gray-400">
+                {{ contestStats.completed }}
               </div>
             </div>
           </div>
 
-          <!-- Recent Courses -->
-          <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-lg font-semibold">Khóa học gần đây</h3>
-              <a
-                (click)="setActiveTab('courses')"
-                class="text-purple-600 dark:text-purple-400 hover:underline text-sm cursor-pointer"
-                >Xem tất cả →</a
-              >
-            </div>
-            <div class="grid md:grid-cols-2 gap-6" *ngIf="courses.length > 0; else noCourses">
-              <div
-                *ngFor="let course of courses.slice(0, 4)"
-                class="border dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                [routerLink]="['/courses', course.id]"
-              >
-                <div class="flex items-center justify-between mb-2">
-                  <div class="font-semibold truncate flex-1">{{ course.title }}</div>
-                  <span
-                    class="text-xs px-2 py-1 rounded-full ml-2"
-                    [ngClass]="getStatusColor(course.status)"
-                    >{{ course.status }}</span
-                  >
-                </div>
-                <div class="text-sm text-gray-600 dark:text-gray-400">
-                  {{ course.students || 0 }} học viên • 
-                  {{ (course.rating || 0).toFixed(1) }} ⭐
-                </div>
-                <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                  {{ formatDateTime(course.created_at) }}
-                </div>
-              </div>
-            </div>
-            <ng-template #noCourses>
-              <div class="text-center py-8 text-gray-500 dark:text-gray-400">
-                <p>Bạn chưa có khóa học nào. Hãy tạo khóa học đầu tiên!</p>
+          <!-- Courses and Contests Overview - Side by Side -->
+          <div class="grid md:grid-cols-2 gap-6">
+            <!-- Recent Courses - Left Side -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold">Khóa học gần đây</h3>
                 <a
-                  routerLink="/creator/courses"
-                  class="mt-4 inline-block px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-                  >Tạo khóa học mới</a
+                  (click)="setActiveTab('courses')"
+                  class="text-purple-600 dark:text-purple-400 hover:underline text-sm cursor-pointer"
+                  >Xem tất cả →</a
                 >
               </div>
-            </ng-template>
+
+              <!-- Course Statistics - Integrated -->
+              <div class="grid grid-cols-2 gap-4 mb-4" *ngIf="creatorStatistics">
+                <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                  <h4 class="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Thống kê khóa học</h4>
+                  <div class="space-y-1.5 text-xs">
+                    <div class="flex justify-between items-center">
+                      <span class="text-gray-600 dark:text-gray-300">Đã xuất bản</span>
+                      <span class="font-semibold">{{ creatorStatistics.published_courses || 0 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                      <span class="text-gray-600 dark:text-gray-300">Bản nháp</span>
+                      <span class="font-semibold">{{ creatorStatistics.draft_courses || 0 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                      <span class="text-gray-600 dark:text-gray-300">Đã lưu trữ</span>
+                      <span class="font-semibold">{{ creatorStatistics.courses_by_status.archived || 0 }}</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                  <h4 class="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Đánh giá & Phản hồi</h4>
+                  <div class="space-y-1.5 text-xs">
+                    <div class="flex justify-between items-center">
+                      <span class="text-gray-600 dark:text-gray-300">Đánh giá TB</span>
+                      <div class="flex items-center gap-1">
+                        <span class="font-semibold">{{ (creatorStatistics.average_rating || 0).toFixed(1) }}</span>
+                        <span class="text-yellow-500">★</span>
+                      </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                      <span class="text-gray-600 dark:text-gray-300">Tổng đánh giá</span>
+                      <span class="font-semibold">{{ creatorStatistics.total_reviews || 0 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                      <span class="text-gray-600 dark:text-gray-300">Tổng đăng ký</span>
+                      <span class="font-semibold">{{ formatNumber(creatorStatistics.total_enrollments || 0) }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-3" *ngIf="courses.length > 0; else noCourses">
+                <div
+                  *ngFor="let course of courses.slice(0, 4)"
+                  class="border dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                  [routerLink]="['/courses', course.id]"
+                >
+                  <div class="flex items-center justify-between mb-2">
+                    <div class="font-semibold truncate flex-1">{{ course.title }}</div>
+                    <span
+                      class="text-xs px-2 py-1 rounded-full ml-2 flex-shrink-0"
+                      [ngClass]="getStatusColor(course.status)"
+                      >{{ course.status }}</span
+                    >
+                  </div>
+                  <div class="text-sm text-gray-600 dark:text-gray-400">
+                    {{ course.students || 0 }} học viên • 
+                    {{ (course.rating || 0).toFixed(1) }} ⭐
+                  </div>
+                  <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    {{ formatDateTime(course.created_at) }}
+                  </div>
+                </div>
+              </div>
+              <ng-template #noCourses>
+                <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <p class="mb-4">Bạn chưa có khóa học nào. Hãy tạo khóa học đầu tiên!</p>
+                  <a
+                    routerLink="/creator/courses"
+                    class="inline-block px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                    >Tạo khóa học mới</a
+                  >
+                </div>
+              </ng-template>
+            </div>
+
+            <!-- Contest Overview - Right Side -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold">Tổng quan cuộc thi</h3>
+                <a
+                  routerLink="/creator/contests"
+                  class="text-purple-600 dark:text-purple-400 hover:underline text-sm cursor-pointer"
+                  >Quản lý cuộc thi →</a
+                >
+              </div>
+
+              <!-- Recent Contests -->
+              <div *ngIf="contests.length > 0; else noContests">
+                <h4 class="text-sm font-semibold mb-3">Cuộc thi gần đây</h4>
+                <div class="space-y-2">
+                  <div
+                    *ngFor="let contest of contests.slice(0, 4)"
+                    class="border dark:border-gray-700 rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer"
+                    [routerLink]="['/contests', contest.id]"
+                  >
+                    <div class="flex items-start justify-between mb-2">
+                      <div class="flex-1 min-w-0">
+                        <div class="font-semibold text-sm text-gray-900 dark:text-white mb-1 truncate">
+                          {{ contest.title }}
+                        </div>
+                        <div class="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">
+                          {{ contest.description || 'Không có mô tả' }}
+                        </div>
+                      </div>
+                      <span
+                        class="text-xs px-2 py-1 rounded-full ml-2 flex-shrink-0"
+                        [ngClass]="getContestStatusColor(contest.status)"
+                        >{{ getContestStatusText(contest.status) }}</span
+                      >
+                    </div>
+                    <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-2 flex-wrap">
+                      <span>
+                        <i class="icon-calendar mr-1"></i>
+                        {{ formatDate(contest.start_time) }}
+                      </span>
+                      <span *ngIf="contest.participant_count">
+                        <i class="icon-users mr-1"></i>
+                        {{ contest.participant_count }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <ng-template #noContests>
+                <div class="text-center py-6 text-gray-500 dark:text-gray-400">
+                  <i class="icon-trophy text-3xl mb-3 block opacity-50"></i>
+                  <p class="mb-3 text-sm">Bạn chưa tạo cuộc thi nào.</p>
+                  <a
+                    routerLink="/creator/contests"
+                    class="inline-block px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 text-sm"
+                    >Tạo cuộc thi mới</a
+                  >
+                </div>
+              </ng-template>
+            </div>
           </div>
         </div>
 

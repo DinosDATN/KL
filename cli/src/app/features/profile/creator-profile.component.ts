@@ -36,6 +36,8 @@ import {
   UserStat,
 } from '../../core/models/user.model';
 import { Course } from '../../core/models/course.model';
+import { Contest } from '../../core/models/contest.model';
+import { ContestService } from '../../core/services/contest.service';
 
 @Component({
   selector: 'app-creator-profile',
@@ -55,6 +57,14 @@ export class CreatorProfileComponent implements OnInit, OnDestroy {
   userStat: UserStat | null = null;
   creatorStatistics: CreatorStatistics | null = null;
   courses: Course[] = [];
+  contests: Contest[] = [];
+  contestStats = {
+    total: 0,
+    active: 0,
+    upcoming: 0,
+    completed: 0,
+    totalParticipants: 0,
+  };
 
   // UI state
   activeTab: 'overview' | 'courses' | 'analytics' | 'settings' = 'overview';
@@ -80,6 +90,7 @@ export class CreatorProfileComponent implements OnInit, OnDestroy {
     private profileService: ProfileService,
     private creatorProfileService: CreatorProfileService,
     private authService: AuthService,
+    private contestService: ContestService,
     private fb: FormBuilder
   ) {
     this.basicProfileForm = this.createBasicProfileForm();
@@ -185,6 +196,7 @@ export class CreatorProfileComponent implements OnInit, OnDestroy {
           this.updateForms();
           this.loadCreatorStatistics();
           this.loadCreatorCourses();
+          this.loadCreatorContests();
         },
         error: (error) => {
           this.errorMessage = error.message || 'Không thể tải profile';
@@ -221,6 +233,39 @@ export class CreatorProfileComponent implements OnInit, OnDestroy {
           console.error('Error loading creator courses:', error);
         },
       });
+  }
+
+  loadCreatorContests(): void {
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) return;
+
+    this.contestService
+      .getAllContests(1, 100, { created_by: currentUser.id })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.contests = response.data;
+            this.calculateContestStats();
+          }
+        },
+        error: (error) => {
+          console.error('Error loading creator contests:', error);
+        },
+      });
+  }
+
+  calculateContestStats(): void {
+    this.contestStats = {
+      total: this.contests.length,
+      active: this.contests.filter((c) => c.status === 'active').length,
+      upcoming: this.contests.filter((c) => c.status === 'upcoming').length,
+      completed: this.contests.filter((c) => c.status === 'completed').length,
+      totalParticipants: this.contests.reduce(
+        (sum, c) => sum + (c.participant_count || 0),
+        0
+      ),
+    };
   }
 
   private updateForms(): void {
@@ -532,6 +577,23 @@ export class CreatorProfileComponent implements OnInit, OnDestroy {
         return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+    }
+  }
+
+  getContestStatusColor(status?: string): string {
+    return this.contestService.getContestStatusColor(status);
+  }
+
+  getContestStatusText(status?: string): string {
+    switch (status) {
+      case 'active':
+        return 'Đang diễn ra';
+      case 'upcoming':
+        return 'Sắp diễn ra';
+      case 'completed':
+        return 'Đã kết thúc';
+      default:
+        return 'Không xác định';
     }
   }
 }
