@@ -68,7 +68,7 @@ export class CreatorApplicationManagementComponent
     public themeService: ThemeService,
     @Inject(PLATFORM_ID) platformId: Object
   ) {
-    super(authService, router, platformId);
+    super(platformId, authService, router);
     this.rejectionForm = this.fb.group({
       rejection_reason: ['', [Validators.required, Validators.minLength(10)]],
     });
@@ -106,7 +106,7 @@ export class CreatorApplicationManagementComponent
         error: (error) => {
           this.error =
             error.error?.message || 'Không thể tải danh sách đơn đăng ký';
-          this.notificationService.showError(this.error);
+          this.notificationService.error('Lỗi', this.error || undefined);
         },
       });
   }
@@ -176,7 +176,8 @@ export class CreatorApplicationManagementComponent
       )
       .subscribe({
         next: (updatedApplication) => {
-          this.notificationService.showSuccess(
+          this.notificationService.success(
+            'Thành công',
             'Đơn đăng ký đã được duyệt thành công'
           );
           this.loadApplications();
@@ -187,7 +188,7 @@ export class CreatorApplicationManagementComponent
         },
         error: (error) => {
           this.error = error.error?.message || 'Không thể duyệt đơn đăng ký';
-          this.notificationService.showError(this.error);
+          this.notificationService.error('Lỗi', this.error || undefined);
         },
       });
   }
@@ -221,14 +222,17 @@ export class CreatorApplicationManagementComponent
       )
       .subscribe({
         next: (updatedApplication) => {
-          this.notificationService.showSuccess('Đơn đăng ký đã bị từ chối');
+          this.notificationService.success(
+            'Thành công',
+            'Đơn đăng ký đã bị từ chối'
+          );
           this.loadApplications();
           this.closeRejectModal();
           this.closeDetailModal();
         },
         error: (error) => {
           this.error = error.error?.message || 'Không thể từ chối đơn đăng ký';
-          this.notificationService.showError(this.error);
+          this.notificationService.error('Lỗi', this.error || undefined);
         },
       });
   }
