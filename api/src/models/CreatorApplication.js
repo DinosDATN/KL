@@ -122,6 +122,47 @@ const CreatorApplication = sequelize.define(
         },
       },
     ],
+    hooks: {
+      afterFind: (instances) => {
+        // Ensure JSON fields are properly parsed
+        const parseInstances = (instance) => {
+          if (!instance) return;
+          
+          // Parse work_experience if it's a string
+          if (instance.work_experience && typeof instance.work_experience === 'string') {
+            try {
+              instance.work_experience = JSON.parse(instance.work_experience);
+            } catch (e) {
+              console.warn('Failed to parse work_experience:', e);
+            }
+          }
+          
+          // Parse certificates if it's a string
+          if (instance.certificates && typeof instance.certificates === 'string') {
+            try {
+              instance.certificates = JSON.parse(instance.certificates);
+            } catch (e) {
+              console.warn('Failed to parse certificates:', e);
+            }
+          }
+          
+          // Parse portfolio if it's a string
+          if (instance.portfolio && typeof instance.portfolio === 'string') {
+            try {
+              instance.portfolio = JSON.parse(instance.portfolio);
+            } catch (e) {
+              console.warn('Failed to parse portfolio:', e);
+            }
+          }
+        };
+        
+        if (Array.isArray(instances)) {
+          instances.forEach(parseInstances);
+        } else {
+          parseInstances(instances);
+        }
+      }
+    }
   }
 );
 

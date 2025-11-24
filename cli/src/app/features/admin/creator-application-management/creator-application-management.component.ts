@@ -114,8 +114,30 @@ export class CreatorApplicationManagementComponent extends BaseAdminComponent im
   }
 
   viewApplication(application: CreatorApplication): void {
-    this.selectedApplication = application;
-    this.showDetailModal = true;
+    // Load full application details to ensure all data is properly parsed
+    this.isLoading = true;
+    this.creatorApplicationService
+      .getApplicationById(application.id)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => (this.isLoading = false))
+      )
+      .subscribe({
+        next: (fullApplication) => {
+          this.selectedApplication = fullApplication;
+          this.showDetailModal = true;
+          console.log('Application details loaded:', fullApplication);
+          console.log('Work experience:', fullApplication.work_experience);
+          console.log('Certificates:', fullApplication.certificates);
+          console.log('Portfolio:', fullApplication.portfolio);
+        },
+        error: (error) => {
+          console.error('Error loading application details:', error);
+          // Fallback to using the application from list
+          this.selectedApplication = application;
+          this.showDetailModal = true;
+        }
+      });
   }
 
   closeDetailModal(): void {
@@ -216,6 +238,113 @@ export class CreatorApplicationManagementComponent extends BaseAdminComponent im
       default:
         return status;
     }
+  }
+
+  // Helper methods to parse data correctly
+  getSkillsArray(skills: any): string[] {
+    if (!skills) return [];
+    if (Array.isArray(skills)) return skills;
+    if (typeof skills === 'string') {
+      // Handle comma-separated string
+      const parsed = skills.split(',').map(s => s.trim()).filter(s => s);
+      return parsed.length > 0 ? parsed : [];
+    }
+    return [];
+  }
+
+  getWorkExperienceArray(workExperience: any): any[] {
+    if (!workExperience) return [];
+    
+    // If already an array, return it
+    if (Array.isArray(workExperience)) {
+      return workExperience.filter(exp => exp && (exp.position || exp.company || exp.years));
+    }
+    
+    // If it's a string, try to parse it
+    if (typeof workExperience === 'string') {
+      try {
+        const parsed = JSON.parse(workExperience);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(exp => exp && (exp.position || exp.company || exp.years));
+        }
+      } catch (e) {
+        console.warn('Failed to parse work_experience:', e);
+      }
+    }
+    
+    // If it's an object (single experience), wrap it in array
+    if (typeof workExperience === 'object' && workExperience !== null) {
+      return [workExperience];
+    }
+    
+    return [];
+  }
+
+  getCertificatesArray(certificates: any): any[] {
+    if (!certificates) return [];
+    
+    // If already an array, return it
+    if (Array.isArray(certificates)) {
+      return certificates.filter(cert => cert && cert.type);
+    }
+    
+    // If it's a string, try to parse it
+    if (typeof certificates === 'string') {
+      try {
+        const parsed = JSON.parse(certificates);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(cert => cert && cert.type);
+        }
+      } catch (e) {
+        console.warn('Failed to parse certificates:', e);
+      }
+    }
+    
+    // If it's an object (single certificate), wrap it in array
+    if (typeof certificates === 'object' && certificates !== null) {
+      return [certificates];
+    }
+    
+    return [];
+  }
+
+  getPortfolioArray(portfolio: any): any[] {
+    if (!portfolio) return [];
+    
+    // If already an array, return it
+    if (Array.isArray(portfolio)) {
+      return portfolio.filter(item => item && item.url);
+    }
+    
+    // If it's a string, try to parse it
+    if (typeof portfolio === 'string') {
+      try {
+        const parsed = JSON.parse(portfolio);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(item => item && item.url);
+        }
+      } catch (e) {
+        console.warn('Failed to parse portfolio:', e);
+      }
+    }
+    
+    // If it's an object (single portfolio item), wrap it in array
+    if (typeof portfolio === 'object' && portfolio !== null) {
+      return [portfolio];
+    }
+    
+    return [];
+  }
+
+  getPortfolioTypeLabel(type: string): string {
+    const labels: { [key: string]: string } = {
+      'github': 'GitHub',
+      'gitlab': 'GitLab',
+      'website': 'Website cá nhân',
+      'product': 'Sản phẩm cá nhân',
+      'other': 'Khác'
+    };
+    return labels[type] || type;
   }
 }
 

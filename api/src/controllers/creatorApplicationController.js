@@ -357,6 +357,7 @@ class CreatorApplicationController {
               {
                 model: UserProfile,
                 as: "Profile",
+                attributes: ["bio", "phone", "address", "website_url", "github_url", "linkedin_url", "birthday", "gender"],
                 required: false,
               },
             ],

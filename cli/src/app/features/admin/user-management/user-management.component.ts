@@ -194,8 +194,26 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   }
 
   viewApplication(application: CreatorApplication): void {
-    this.selectedApplication = application;
-    this.showApplicationDetailModal = true;
+    // Load full application details to ensure all data is properly parsed
+    this.isLoadingApplications = true;
+    this.creatorApplicationService
+      .getApplicationById(application.id)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => (this.isLoadingApplications = false))
+      )
+      .subscribe({
+        next: (fullApplication) => {
+          this.selectedApplication = fullApplication;
+          this.showApplicationDetailModal = true;
+        },
+        error: (error) => {
+          console.error('Error loading application details:', error);
+          // Fallback to using the application from list
+          this.selectedApplication = application;
+          this.showApplicationDetailModal = true;
+        }
+      });
   }
 
   closeApplicationDetailModal(): void {
@@ -295,6 +313,107 @@ export class UserManagementComponent implements OnInit, OnDestroy {
         return 'Đã từ chối';
       default:
         return status;
+    }
+  }
+
+  // Helper methods to parse data correctly
+  getSkillsArray(skills: any): string[] {
+    if (!skills) return [];
+    if (Array.isArray(skills)) return skills;
+    if (typeof skills === 'string') {
+      const parsed = skills.split(',').map(s => s.trim()).filter(s => s);
+      return parsed.length > 0 ? parsed : [];
+    }
+    return [];
+  }
+
+  getWorkExperienceArray(workExperience: any): any[] {
+    if (!workExperience) return [];
+    if (Array.isArray(workExperience)) {
+      return workExperience.filter(exp => exp && (exp.position || exp.company || exp.years));
+    }
+    if (typeof workExperience === 'string') {
+      try {
+        const parsed = JSON.parse(workExperience);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(exp => exp && (exp.position || exp.company || exp.years));
+        }
+      } catch (e) {
+        console.warn('Failed to parse work_experience:', e);
+      }
+    }
+    if (typeof workExperience === 'object' && workExperience !== null) {
+      return [workExperience];
+    }
+    return [];
+  }
+
+  getCertificatesArray(certificates: any): any[] {
+    if (!certificates) return [];
+    if (Array.isArray(certificates)) {
+      return certificates.filter(cert => cert && cert.type);
+    }
+    if (typeof certificates === 'string') {
+      try {
+        const parsed = JSON.parse(certificates);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(cert => cert && cert.type);
+        }
+      } catch (e) {
+        console.warn('Failed to parse certificates:', e);
+      }
+    }
+    if (typeof certificates === 'object' && certificates !== null) {
+      return [certificates];
+    }
+    return [];
+  }
+
+  getPortfolioArray(portfolio: any): any[] {
+    if (!portfolio) return [];
+    if (Array.isArray(portfolio)) {
+      return portfolio.filter(item => item && item.url);
+    }
+    if (typeof portfolio === 'string') {
+      try {
+        const parsed = JSON.parse(portfolio);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(item => item && item.url);
+        }
+      } catch (e) {
+        console.warn('Failed to parse portfolio:', e);
+      }
+    }
+    if (typeof portfolio === 'object' && portfolio !== null) {
+      return [portfolio];
+    }
+    return [];
+  }
+
+  getPortfolioTypeLabel(type: string): string {
+    const labels: { [key: string]: string } = {
+      'github': 'GitHub',
+      'gitlab': 'GitLab',
+      'website': 'Website',
+      'product': 'Sản phẩm',
+      'other': 'Khác'
+    };
+    return labels[type] || type;
+  }
+
+  calculateAge(birthday: string | undefined): number | null {
+    if (!birthday) return null;
+    try {
+      const birthDate = new Date(birthday);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      return age;
+    } catch {
+      return null;
     }
   }
 

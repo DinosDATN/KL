@@ -20,6 +20,16 @@ export interface CreatorApplication {
     email: string;
     avatar_url?: string;
     role: 'user' | 'creator' | 'admin';
+    Profile?: {
+      bio?: string;
+      phone?: string;
+      address?: string;
+      website_url?: string;
+      github_url?: string;
+      linkedin_url?: string;
+      birthday?: string;
+      gender?: 'male' | 'female' | 'other';
+    };
   };
   Reviewer?: {
     id: number;
