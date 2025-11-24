@@ -13,6 +13,7 @@ import { ContestStatsComponent } from './components/contest-stats/contest-stats.
 import { BulkActionsComponent } from './components/bulk-actions/bulk-actions.component';
 import { ContestFormComponent } from './components/contest-form/contest-form.component';
 import { ContestProblemsComponent } from './components/contest-problems/contest-problems.component';
+import { ContestParticipantsComponent } from './components/contest-participants/contest-participants.component';
 import { NotificationService } from '../../../core/services/notification.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Router } from '@angular/router';
@@ -31,6 +32,7 @@ import { BaseAdminComponent } from '../base-admin.component';
     BulkActionsComponent,
     ContestFormComponent,
     ContestProblemsComponent,
+    ContestParticipantsComponent,
   ],
   templateUrl: './contest-management.component.html',
   styleUrl: './contest-management.component.css',
@@ -47,8 +49,10 @@ export class ContestManagementComponent extends BaseAdminComponent implements On
   showBulkActions = false;
   isFormModalOpen = false;
   isProblemsModalOpen = false;
+  isParticipantsModalOpen = false;
   editingContest: AdminContest | null = null;
   managingProblemsContest: AdminContest | null = null;
+  managingParticipantsContest: AdminContest | null = null;
 
   // Pagination
   currentPage = 1;
@@ -378,6 +382,20 @@ export class ContestManagementComponent extends BaseAdminComponent implements On
   onCloseProblemsModal(): void {
     this.isProblemsModalOpen = false;
     this.managingProblemsContest = null;
+  }
+
+  onManageParticipants(contest: AdminContest): void {
+    this.managingParticipantsContest = contest;
+    this.isParticipantsModalOpen = true;
+  }
+
+  onParticipantsUpdated(): void {
+    this.loadContests();
+  }
+
+  onCloseParticipantsModal(): void {
+    this.isParticipantsModalOpen = false;
+    this.managingParticipantsContest = null;
   }
 
   onExport(format: 'json' | 'csv'): void {

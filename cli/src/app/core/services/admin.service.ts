@@ -1385,15 +1385,33 @@ export class AdminService {
 
   getContestParticipants(
     contestId: number,
-    page: number = 1,
-    limit: number = 10
+    filters: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      sortBy?: 'joined_at' | 'name' | 'email';
+      sortOrder?: 'ASC' | 'DESC';
+    } = {}
   ): Observable<{
     participants: ContestParticipant[];
     pagination: PaginationInfo;
   }> {
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('limit', limit.toString());
+    let params = new HttpParams();
+
+    const page = filters.page || 1;
+    const limit = filters.limit || 10;
+
+    params = params.set('page', page.toString()).set('limit', limit.toString());
+
+    if (filters.search) {
+      params = params.set('search', filters.search);
+    }
+    if (filters.sortBy) {
+      params = params.set('sortBy', filters.sortBy);
+    }
+    if (filters.sortOrder) {
+      params = params.set('sortOrder', filters.sortOrder);
+    }
 
     return this.http
       .get<ApiResponse<ContestParticipant[]>>(
@@ -1404,6 +1422,23 @@ export class AdminService {
         map((response) => ({
           participants: response.data || [],
           pagination: response.pagination!,
+        })),
+        catchError(this.handleError)
+      );
+  }
+
+  removeParticipantFromContest(
+    contestId: number,
+    userId: number
+  ): Observable<{ message: string }> {
+    return this.http
+      .delete<ApiResponse<{ message: string }>>(
+        `${this.apiUrl}/contests/${contestId}/participants/${userId}`,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => ({
+          message: response.message || 'Participant removed successfully',
         })),
         catchError(this.handleError)
       );

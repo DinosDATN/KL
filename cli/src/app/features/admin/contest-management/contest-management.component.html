@@ -176,6 +176,7 @@
       (restoreContest)="onRestoreContest($event)"
       (permanentlyDeleteContest)="onPermanentlyDeleteContest($event)"
       (manageProblems)="onManageProblems($event)"
+      (manageParticipants)="onManageParticipants($event)"
       (sortChange)="onSortChange($event)"
       (pageChange)="onPageChange($event)"
     ></app-contest-list>
@@ -198,4 +199,12 @@
     (close)="onCloseProblemsModal()"
     (problemsUpdated)="onProblemsUpdated()"
   ></app-contest-problems>
+
+  <!-- Contest Participants Management Modal -->
+  <app-contest-participants
+    *ngIf="isParticipantsModalOpen && managingParticipantsContest"
+    [contest]="managingParticipantsContest"
+    (close)="onCloseParticipantsModal()"
+    (participantsUpdated)="onParticipantsUpdated()"
+  ></app-contest-participants>
 </div>

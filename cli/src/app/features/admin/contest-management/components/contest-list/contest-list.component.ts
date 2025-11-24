@@ -34,6 +34,7 @@ export class ContestListComponent implements OnChanges {
   @Output() restoreContest = new EventEmitter<number>();
   @Output() permanentlyDeleteContest = new EventEmitter<number>();
   @Output() manageProblems = new EventEmitter<AdminContest>();
+  @Output() manageParticipants = new EventEmitter<AdminContest>();
   @Output() sortChange = new EventEmitter<{
     sortBy: string;
     order: 'asc' | 'desc';
@@ -94,6 +95,10 @@ export class ContestListComponent implements OnChanges {
 
   onManageProblems(contest: AdminContest): void {
     this.manageProblems.emit(contest);
+  }
+
+  onManageParticipants(contest: AdminContest): void {
+    this.manageParticipants.emit(contest);
   }
 
   formatDate(dateString: string): string {
