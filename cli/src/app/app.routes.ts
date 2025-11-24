@@ -461,6 +461,14 @@ export const routes: Routes = [
         canActivate: [AuthGuard],
       },
       {
+        path: 'creator/contests',
+        loadComponent: () =>
+          import(
+            './features/creator/contest-management/creator-contest-management.component'
+          ).then((m) => m.CreatorContestManagementComponent),
+        canActivate: [AuthGuard],
+      },
+      {
         path: 'grading-board',
         loadComponent: () =>
           import('./grading-board/grading-board.component').then(

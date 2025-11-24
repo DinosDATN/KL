@@ -85,8 +85,12 @@ export class ProblemManagementComponent extends BaseAdminComponent implements On
 
   ngOnInit(): void {
     this.runInBrowser(() => {
-      if (this.checkAdminAccess()) {
+      // Allow both admin and creator to access
+      const user = this.authService.getCurrentUser();
+      if (user && (user.role === 'admin' || user.role === 'creator')) {
         this.loadInitialData();
+      } else {
+        this.router.navigate(['/']);
       }
     });
   }
@@ -109,10 +113,19 @@ export class ProblemManagementComponent extends BaseAdminComponent implements On
     this.loading = true;
     this.error = null;
 
+    // Get current user to check role
+    const currentUser = this.authService.getCurrentUser();
+    
     const filtersWithDeletedFlag: ProblemFilters = {
       ...this.filters,
       is_deleted: this.activeTab === 'deleted' ? true : false
     };
+
+    // If user is creator (not admin), only show problems created by them
+    if (currentUser && currentUser.role === 'creator') {
+      filtersWithDeletedFlag.created_by = currentUser.id;
+    }
+    // Admin can see all problems (no filter by created_by unless explicitly set in filters)
 
     const service = this.activeTab === 'deleted'
       ? this.adminService.getDeletedProblems(filtersWithDeletedFlag)
@@ -132,6 +145,12 @@ export class ProblemManagementComponent extends BaseAdminComponent implements On
           this.totalItems = response.pagination.total_items;
           this.itemsPerPage = response.pagination.items_per_page;
           console.log('Problems loaded:', this.problems.length);
+          
+          // If creator, recalculate stats from loaded problems
+          const currentUser = this.authService.getCurrentUser();
+          if (currentUser && currentUser.role === 'creator') {
+            this.calculateStatsFromProblems();
+          }
         },
         error: (error) => {
           console.error('Error loading problems:', error);
@@ -146,20 +165,93 @@ export class ProblemManagementComponent extends BaseAdminComponent implements On
       return;
     }
 
-    this.adminService.getProblemStatistics()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (stats) => {
-          this.stats = stats;
-        },
-        error: (error) => {
-          console.error('Error loading statistics:', error);
-          if (error.status === 401) {
-            this.notificationService.error('Session expired', 'Please login again.');
-            this.router.navigate(['/auth/login']);
+    // Get current user to check role
+    const currentUser = this.authService.getCurrentUser();
+    
+    // If creator, calculate stats from filtered problems
+    // Otherwise, get full statistics
+    if (currentUser && currentUser.role === 'creator') {
+      // For creator, calculate stats from their problems
+      // We'll calculate this after problems are loaded
+      this.calculateStatsFromProblems();
+    } else {
+      // For admin, get full statistics
+      this.adminService.getProblemStatistics()
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (stats) => {
+            this.stats = stats;
+          },
+          error: (error) => {
+            console.error('Error loading statistics:', error);
+            if (error.status === 401) {
+              this.notificationService.error('Session expired', 'Please login again.');
+              this.router.navigate(['/auth/login']);
+            }
           }
+        });
+    }
+  }
+
+  private calculateStatsFromProblems(): void {
+    // Calculate stats from the loaded problems
+    // This will be called after problems are loaded
+    const activeProblems = this.problems.filter(p => !p.is_deleted);
+    const deletedProblems = this.problems.filter(p => p.is_deleted);
+    
+    // Count by difficulty
+    const difficultyCounts = {
+      Easy: activeProblems.filter(p => p.difficulty === 'Easy').length,
+      Medium: activeProblems.filter(p => p.difficulty === 'Medium').length,
+      Hard: activeProblems.filter(p => p.difficulty === 'Hard').length
+    };
+
+    // Count by category
+    const categoryMap = new Map<number, { category: { id: number; name: string }; count: number }>();
+    activeProblems.forEach(problem => {
+      if (problem.Category) {
+        const categoryId = problem.Category.id;
+        if (categoryMap.has(categoryId)) {
+          categoryMap.get(categoryId)!.count++;
+        } else {
+          categoryMap.set(categoryId, {
+            category: {
+              id: categoryId,
+              name: problem.Category.name
+            },
+            count: 1
+          });
         }
-      });
+      }
+    });
+
+    // Calculate total submissions and solved
+    const totalSubmissions = activeProblems.reduce((sum, p) => sum + (p.total_submissions || 0), 0);
+    const totalSolved = activeProblems.reduce((sum, p) => sum + (p.solved_count || 0), 0);
+    const averageAcceptance = totalSubmissions > 0 
+      ? ((totalSolved / totalSubmissions) * 100).toFixed(2) + '%'
+      : '0%';
+
+    const stats: ProblemStats = {
+      totalProblems: this.problems.length,
+      publishedProblems: activeProblems.length,
+      deletedProblems: deletedProblems.length,
+      problemsByDifficulty: [
+        { difficulty: 'Easy', count: difficultyCounts.Easy },
+        { difficulty: 'Medium', count: difficultyCounts.Medium },
+        { difficulty: 'Hard', count: difficultyCounts.Hard }
+      ],
+      problemsByCategory: Array.from(categoryMap.values()),
+      totalSubmissions: totalSubmissions,
+      totalSolved: totalSolved,
+      averageAcceptance: averageAcceptance,
+      popularProblems: activeProblems.filter(p => p.is_popular).length,
+      newProblems: activeProblems.filter(p => p.is_new).length,
+      premiumProblems: activeProblems.filter(p => p.is_premium).length,
+      growthRate: 0 // Can't calculate growth rate from current data
+    };
+
+    this.stats = stats;
   }
 
   onTabChange(tab: 'all' | 'deleted' | 'create'): void {

@@ -125,7 +125,6 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
         )
         .subscribe((user) => {
           this.currentUser = user; // Keep for legacy compatibility
-          this.updateUserMenuItems();
 
           if (user) {
             this.subscribeToNotifications();
@@ -273,11 +272,40 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     return flatItems;
   }
 
-  userMenuItems: MenuItem[] = [
-    { label: 'Hồ sơ', link: '/profile', icon: 'user' },
-    { label: 'Cài đặt', link: '/settings', icon: 'settings' },
-    { label: 'Đăng xuất', link: '/logout', icon: 'log-out' },
-  ];
+  get userMenuItems(): MenuItem[] {
+    const currentUser = this.authService.getCurrentUser();
+    
+    // Determine profile link based on user role
+    const profileLink = (currentUser?.role === 'creator' || currentUser?.role === 'admin') 
+      ? '/creator/profile' 
+      : '/profile';
+
+    const items: MenuItem[] = [
+      { label: 'Hồ sơ', link: profileLink, icon: 'user' },
+    ];
+
+    // Add creator/admin specific items
+    if (currentUser && (currentUser.role === 'creator' || currentUser.role === 'admin')) {
+      items.push(
+        { label: 'Quản lý khóa học', link: '/creator/courses', icon: 'book' },
+        { label: 'Quản lý cuộc thi', link: '/creator/contests', icon: 'trophy' }
+      );
+    }
+
+    // Add admin panel for admin
+    if (currentUser?.role === 'admin') {
+      items.push(
+        { label: 'Admin Panel', link: '/admin/dashboard', icon: 'settings' }
+      );
+    }
+
+    items.push(
+      { label: 'Cài đặt', link: '/settings', icon: 'settings' },
+      { label: 'Đăng xuất', link: '/logout', icon: 'log-out', action: 'logout' }
+    );
+
+    return items;
+  }
 
   toggleMenu(): void {
     this.isMenuOpen = !this.isMenuOpen;
@@ -448,53 +476,6 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     });
   }
 
-  updateUserMenuItems(): void {
-    console.log("updateUserMenuItems user : ", this.currentUser);
-    if (this.currentUser) {
-      // Determine profile link based on user role
-      const profileLink = (this.currentUser.role === 'creator' || this.currentUser.role === 'admin') 
-        ? '/creator/profile' 
-        : '/profile';
-
-      const baseItems = [
-        { label: 'Hồ sơ', link: profileLink, icon: 'user' },
-      ];
-
-      // Add "Khóa học" menu for creator role
-      if (this.currentUser?.role === 'creator') {
-        baseItems.push({
-          label: 'Khóa học',
-          link: '/creator/courses',
-          icon: 'book',
-        });
-      }
-
-      // Add admin menu if user is admin
-      if (this.currentUser?.role === 'admin') {
-        baseItems.splice(1, 0, {
-          label: 'Admin Panel',
-          link: '/admin/dashboard',
-          icon: 'settings',
-        });
-      }
-
-      baseItems.push({ label: 'Cài đặt', link: '/settings', icon: 'settings' });
-
-      baseItems.push({
-        label: 'Đăng xuất',
-        link: '#',
-        icon: 'log-out',
-        action: 'logout',
-      } as MenuItem);
-
-      this.userMenuItems = baseItems;
-    } else {
-      this.userMenuItems = [
-        { label: 'Đăng nhập', link: '/auth/login', icon: 'log-in' },
-        { label: 'Đăng ký', link: '/auth/register', icon: 'user-plus' },
-      ];
-    }
-  }
 
   onUserMenuItemClick(item: MenuItem): void {
     if (item.action === 'logout') {

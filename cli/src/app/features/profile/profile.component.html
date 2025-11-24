@@ -228,6 +228,52 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Overview Tab -->
         <div *ngIf="activeTab === 'overview'" class="space-y-8">
+          <!-- Quick Actions for Creator/Admin -->
+          <div
+            *ngIf="user && (user.role === 'creator' || user.role === 'admin')"
+            class="mb-6 bg-white dark:bg-gray-800 rounded-xl shadow p-6"
+          >
+            <h3 class="text-lg font-semibold mb-4">Quản lý nội dung</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <a
+                routerLink="/creator/courses"
+                class="flex items-center gap-3 p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                <div
+                  class="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center"
+                >
+                  <i class="icon-book text-blue-600 dark:text-blue-400"></i>
+                </div>
+                <div>
+                  <div class="font-medium text-gray-900 dark:text-white">
+                    Quản lý khóa học
+                  </div>
+                  <div class="text-sm text-gray-500 dark:text-gray-400">
+                    Tạo và quản lý khóa học
+                  </div>
+                </div>
+              </a>
+              <a
+                routerLink="/creator/contests"
+                class="flex items-center gap-3 p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                <div
+                  class="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg flex items-center justify-center"
+                >
+                  <i class="icon-trophy text-yellow-600 dark:text-yellow-400"></i>
+                </div>
+                <div>
+                  <div class="font-medium text-gray-900 dark:text-white">
+                    Quản lý cuộc thi
+                  </div>
+                  <div class="text-sm text-gray-500 dark:text-gray-400">
+                    Tạo và quản lý cuộc thi
+                  </div>
+                </div>
+              </a>
+            </div>
+          </div>
+
           <!-- Stats Cards -->
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div

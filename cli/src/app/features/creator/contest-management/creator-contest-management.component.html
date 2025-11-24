@@ -1,0 +1,475 @@
+<!-- Creator Contest Management Page -->
+<div
+  class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200"
+>
+  <!-- Header -->
+  <div
+    class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-200"
+  >
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div
+        class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6"
+      >
+        <!-- Title -->
+        <div class="min-w-0 flex-1">
+          <h1
+            class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1 sm:mb-2"
+          >
+            Quản lý cuộc thi
+          </h1>
+          <p class="text-sm sm:text-base text-gray-600 dark:text-gray-400">
+            Tạo, chỉnh sửa và quản lý các cuộc thi của bạn
+          </p>
+        </div>
+
+        <!-- Create Contest Button -->
+        <button
+          type="button"
+          (click)="openCreateModal($event)"
+          class="px-4 sm:px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base font-medium rounded-lg transition-colors duration-200"
+        >
+          <i class="icon-plus mr-1 sm:mr-2"></i>
+          <span>Tạo cuộc thi mới</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      <!-- Total Contests -->
+      <div
+        class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 border border-gray-200 dark:border-gray-700"
+      >
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div
+              class="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center"
+            >
+              <i class="icon-trophy text-blue-600 dark:text-blue-400"></i>
+            </div>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">
+              Tổng cuộc thi
+            </p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">
+              {{ stats?.total_contests ?? 0 }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Contests -->
+      <div
+        class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 border border-gray-200 dark:border-gray-700"
+      >
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div
+              class="w-8 h-8 sm:w-10 sm:h-10 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center"
+            >
+              <i
+                class="icon-play-circle text-green-600 dark:text-green-400"
+              ></i>
+            </div>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">
+              Đang diễn ra
+            </p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">
+              {{ stats?.active_contests ?? 0 }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upcoming Contests -->
+      <div
+        class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 border border-gray-200 dark:border-gray-700"
+      >
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div
+              class="w-8 h-8 sm:w-10 sm:h-10 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg flex items-center justify-center"
+            >
+              <i
+                class="icon-clock text-yellow-600 dark:text-yellow-400"
+              ></i>
+            </div>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">
+              Sắp diễn ra
+            </p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">
+              {{ stats?.upcoming_contests ?? 0 }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Completed Contests -->
+      <div
+        class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 border border-gray-200 dark:border-gray-700"
+      >
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div
+              class="w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center"
+            >
+              <i class="icon-check-circle text-gray-600 dark:text-gray-400"></i>
+            </div>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">
+              Đã kết thúc
+            </p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">
+              {{ stats?.completed_contests ?? 0 }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Total Participants -->
+      <div
+        class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 border border-gray-200 dark:border-gray-700"
+      >
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div
+              class="w-8 h-8 sm:w-10 sm:h-10 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center"
+            >
+              <i class="icon-users text-purple-600 dark:text-purple-400"></i>
+            </div>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">
+              Tổng người tham gia
+            </p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">
+              {{ stats?.total_participants ?? 0 }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Total Problems -->
+      <div
+        class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 border border-gray-200 dark:border-gray-700"
+      >
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div
+              class="w-8 h-8 sm:w-10 sm:h-10 bg-indigo-100 dark:bg-indigo-900/20 rounded-lg flex items-center justify-center"
+            >
+              <i class="icon-file-text text-indigo-600 dark:text-indigo-400"></i>
+            </div>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">
+              Tổng bài tập
+            </p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">
+              {{ stats?.total_problems ?? 0 }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+    <!-- Tabs -->
+    <div class="mb-4 sm:mb-6 overflow-x-auto">
+      <nav class="flex space-x-4 sm:space-x-8 min-w-max" aria-label="Tabs">
+        <button
+          (click)="onTabChange('all')"
+          [ngClass]="{
+            'border-blue-500 text-blue-600 dark:text-blue-400':
+              activeTab === 'all',
+            'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600':
+              activeTab !== 'all'
+          }"
+          class="whitespace-nowrap py-2 px-1 sm:px-2 border-b-2 font-medium text-xs sm:text-sm transition-colors duration-200"
+        >
+          Tất cả
+          <span
+            *ngIf="stats"
+            class="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded-full"
+          >
+            {{ stats.total_contests }}
+          </span>
+        </button>
+
+        <button
+          (click)="onTabChange('active')"
+          [ngClass]="{
+            'border-green-500 text-green-600 dark:text-green-400':
+              activeTab === 'active',
+            'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600':
+              activeTab !== 'active'
+          }"
+          class="whitespace-nowrap py-2 px-1 sm:px-2 border-b-2 font-medium text-xs sm:text-sm transition-colors duration-200"
+        >
+          Đang diễn ra
+          <span
+            *ngIf="stats"
+            class="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded-full"
+          >
+            {{ stats.active_contests }}
+          </span>
+        </button>
+
+        <button
+          (click)="onTabChange('upcoming')"
+          [ngClass]="{
+            'border-yellow-500 text-yellow-600 dark:text-yellow-400':
+              activeTab === 'upcoming',
+            'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600':
+              activeTab !== 'upcoming'
+          }"
+          class="whitespace-nowrap py-2 px-1 sm:px-2 border-b-2 font-medium text-xs sm:text-sm transition-colors duration-200"
+        >
+          Sắp diễn ra
+          <span
+            *ngIf="stats"
+            class="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded-full"
+          >
+            {{ stats.upcoming_contests }}
+          </span>
+        </button>
+
+        <button
+          (click)="onTabChange('completed')"
+          [ngClass]="{
+            'border-gray-500 text-gray-600 dark:text-gray-400':
+              activeTab === 'completed',
+            'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600':
+              activeTab !== 'completed'
+          }"
+          class="whitespace-nowrap py-2 px-1 sm:px-2 border-b-2 font-medium text-xs sm:text-sm transition-colors duration-200"
+        >
+          Đã kết thúc
+          <span
+            *ngIf="stats"
+            class="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded-full"
+          >
+            {{ stats.completed_contests }}
+          </span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="mb-4 sm:mb-6 flex flex-col sm:flex-row gap-4">
+      <!-- Search -->
+      <div class="flex-1">
+        <div class="relative">
+          <input
+            type="text"
+            [(ngModel)]="searchTerm"
+            (keyup.enter)="onSearch()"
+            placeholder="Tìm kiếm cuộc thi..."
+            class="w-full px-4 py-2 pl-10 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+          <i
+            class="icon-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+          ></i>
+        </div>
+      </div>
+
+      <!-- Search Button -->
+      <button
+        (click)="onSearch()"
+        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200"
+      >
+        Tìm kiếm
+      </button>
+    </div>
+
+    <!-- Error Message -->
+    <div
+      *ngIf="error"
+      class="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg"
+    >
+      <p class="text-sm text-red-800 dark:text-red-400">{{ error }}</p>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading && contests.length === 0" class="text-center py-12">
+      <div
+        class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"
+      ></div>
+      <p class="mt-4 text-sm text-gray-600 dark:text-gray-400">Đang tải...</p>
+    </div>
+
+    <!-- Contests List -->
+    <div *ngIf="!loading || contests.length > 0" class="space-y-4">
+      <div
+        *ngIf="filteredContests.length === 0"
+        class="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+      >
+        <i class="icon-trophy text-4xl text-gray-400 mb-4"></i>
+        <p class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+          Chưa có cuộc thi nào
+        </p>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Bắt đầu tạo cuộc thi đầu tiên của bạn
+        </p>
+        <button
+          (click)="openCreateModal()"
+          class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200"
+        >
+          <i class="icon-plus mr-2"></i>
+          Tạo cuộc thi mới
+        </button>
+      </div>
+
+      <!-- Contest Cards -->
+      <div
+        *ngFor="let contest of filteredContests"
+        class="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 p-4 sm:p-6 hover:shadow-md transition-shadow duration-200"
+      >
+        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <!-- Contest Info -->
+          <div class="flex-1">
+            <div class="flex items-start justify-between mb-2">
+              <h3
+                class="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-2"
+              >
+                {{ contest.title }}
+              </h3>
+              <span
+                [ngClass]="getStatusColor(contest.status)"
+                class="px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ml-2"
+              >
+                {{ getStatusLabel(contest.status) }}
+              </span>
+            </div>
+
+            <p
+              *ngIf="contest.description"
+              class="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2"
+            >
+              {{ contest.description }}
+            </p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+              <div>
+                <span class="text-gray-500 dark:text-gray-400">Bắt đầu:</span>
+                <span class="ml-2 text-gray-900 dark:text-white">
+                  {{ formatDate(contest.start_time) }}
+                </span>
+              </div>
+              <div>
+                <span class="text-gray-500 dark:text-gray-400">Kết thúc:</span>
+                <span class="ml-2 text-gray-900 dark:text-white">
+                  {{ formatDate(contest.end_time) }}
+                </span>
+              </div>
+              <div>
+                <span class="text-gray-500 dark:text-gray-400">Bài tập:</span>
+                <span class="ml-2 text-gray-900 dark:text-white">
+                  {{ contest.problem_count || 0 }}
+                </span>
+              </div>
+              <div>
+                <span class="text-gray-500 dark:text-gray-400">Người tham gia:</span>
+                <span class="ml-2 text-gray-900 dark:text-white">
+                  {{ contest.participant_count || 0 }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <button
+              (click)="viewContest(contest)"
+              class="px-3 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 border border-blue-600 dark:border-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+            >
+              <i class="icon-eye mr-1"></i>
+              Xem
+            </button>
+            <button
+              *ngIf="contest.status === 'upcoming'"
+              (click)="editContest(contest)"
+              class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              <i class="icon-edit mr-1"></i>
+              Sửa
+            </button>
+            <button
+              (click)="viewLeaderboard(contest)"
+              class="px-3 py-2 text-sm font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 border border-purple-600 dark:border-purple-400 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+            >
+              <i class="icon-bar-chart mr-1"></i>
+              Bảng xếp hạng
+            </button>
+            <button
+              *ngIf="contest.status === 'upcoming'"
+              (click)="onDeleteContest(contest)"
+              class="px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 border border-red-600 dark:border-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+            >
+              <i class="icon-trash mr-1"></i>
+              Xóa
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div
+      *ngIf="totalPages > 1"
+      class="mt-6 flex items-center justify-center gap-2"
+    >
+      <button
+        (click)="onPageChange(currentPage - 1)"
+        [disabled]="currentPage === 1"
+        class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      >
+        Trước
+      </button>
+
+      <div class="flex gap-1">
+        <button
+          *ngFor="let page of getPageNumbers()"
+          (click)="onPageChange(page)"
+          [ngClass]="{
+            'bg-blue-600 text-white border-blue-600': currentPage === page,
+            'text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700':
+              currentPage !== page
+          }"
+          class="px-3 py-2 text-sm font-medium border rounded-lg transition-colors"
+        >
+          {{ page }}
+        </button>
+      </div>
+
+      <button
+        (click)="onPageChange(currentPage + 1)"
+        [disabled]="currentPage === totalPages"
+        class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      >
+        Sau
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Contest Form Modal -->
+<app-creator-contest-form
+  *ngIf="showCreateModal"
+  [contest]="editingContest"
+  [isEdit]="!!editingContest"
+  (contestCreated)="onContestCreated($event)"
+  (contestUpdated)="onContestUpdated($event)"
+  (close)="closeModal()"
+></app-creator-contest-form>
+
