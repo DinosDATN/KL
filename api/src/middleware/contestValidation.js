@@ -65,14 +65,28 @@ const validateContestCreation = [
     .optional()
     .custom((value) => {
       if (typeof value === 'object') {
-        if (!value.id || !Number.isInteger(parseInt(value.id))) {
+        // Support both 'id' and 'problem_id' fields
+        const problemId = value.id || value.problem_id;
+        if (!problemId || isNaN(parseInt(problemId))) {
           throw new Error('Each problem must have a valid ID');
         }
-        if (value.score !== undefined && (!Number.isInteger(value.score) || value.score < 0 || value.score > 1000)) {
+        // Support both 'score' and 'points' fields
+        const score = value.score !== undefined ? value.score : value.points;
+        if (score !== undefined && (isNaN(parseInt(score)) || parseInt(score) < 0 || parseInt(score) > 1000)) {
           throw new Error('Problem score must be between 0 and 1000');
         }
-      } else if (!Number.isInteger(parseInt(value))) {
-        throw new Error('Problem IDs must be valid integers');
+      } else if (typeof value === 'number') {
+        // Allow plain number
+        if (!Number.isInteger(value) || value <= 0) {
+          throw new Error('Problem IDs must be valid positive integers');
+        }
+      } else if (typeof value === 'string') {
+        // Allow string that can be parsed to integer
+        if (isNaN(parseInt(value)) || parseInt(value) <= 0) {
+          throw new Error('Problem IDs must be valid positive integers');
+        }
+      } else {
+        throw new Error('Problem IDs must be valid integers or objects with id and score/points');
       }
       return true;
     }),

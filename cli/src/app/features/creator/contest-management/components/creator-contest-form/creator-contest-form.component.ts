@@ -69,7 +69,6 @@ export class CreatorContestFormComponent implements OnInit, OnChanges {
         this.loadingProblems = false;
       },
       error: (error) => {
-        console.error('Failed to load problems:', error);
         this.loadingProblems = false;
       },
     });
@@ -131,30 +130,90 @@ export class CreatorContestFormComponent implements OnInit, OnChanges {
 
     const formValue = this.contestForm.value;
 
-    // Convert datetime-local format to ISO string
-    const startTime = new Date(formValue.start_time).toISOString();
-    const endTime = new Date(formValue.end_time).toISOString();
+    // Validate datetime fields exist
+    if (!formValue.start_time) {
+      this.error = 'Thời gian bắt đầu là bắt buộc';
+      this.loading = false;
+      this.notificationService.error('Lỗi', this.error);
+      return;
+    }
 
-    // Validate that end time is after start time
-    if (new Date(endTime) <= new Date(startTime)) {
-      this.error = 'Thời gian kết thúc phải sau thời gian bắt đầu';
+    if (!formValue.end_time) {
+      this.error = 'Thời gian kết thúc là bắt buộc';
+      this.loading = false;
+      this.notificationService.error('Lỗi', this.error);
+      return;
+    }
+
+    // Convert datetime-local format to ISO string
+    let startTime: string;
+    let endTime: string;
+    
+    try {
+      const startDate = new Date(formValue.start_time);
+      const endDate = new Date(formValue.end_time);
+
+      // Check if dates are valid
+      if (isNaN(startDate.getTime())) {
+        this.error = 'Định dạng thời gian bắt đầu không hợp lệ';
+        this.loading = false;
+        this.notificationService.error('Lỗi', this.error);
+        return;
+      }
+
+      if (isNaN(endDate.getTime())) {
+        this.error = 'Định dạng thời gian kết thúc không hợp lệ';
+        this.loading = false;
+        this.notificationService.error('Lỗi', this.error);
+        return;
+      }
+
+      // Check that start time is in the future
+      const now = new Date();
+      if (startDate <= now) {
+        this.error = 'Thời gian bắt đầu phải trong tương lai';
+        this.loading = false;
+        this.notificationService.error('Lỗi', this.error);
+        return;
+      }
+
+      // Validate that end time is after start time
+      if (endDate <= startDate) {
+        this.error = 'Thời gian kết thúc phải sau thời gian bắt đầu';
+        this.loading = false;
+        this.notificationService.error('Lỗi', this.error);
+        return;
+      }
+
+      startTime = startDate.toISOString();
+      endTime = endDate.toISOString();
+    } catch (error) {
+      this.error = 'Lỗi xử lý ngày/giờ. Vui lòng kiểm tra định dạng.';
       this.loading = false;
       this.notificationService.error('Lỗi', this.error);
       return;
     }
 
     const contestData: CreateContestRequest = {
-      title: formValue.title,
-      description: formValue.description,
+      title: formValue.title?.trim() || '',
+      description: formValue.description?.trim() || '',
       start_time: startTime,
       end_time: endTime,
     };
 
+    // Validate required fields
+    if (!contestData.title) {
+      this.error = 'Tiêu đề là bắt buộc';
+      this.loading = false;
+      this.notificationService.error('Lỗi', this.error);
+      return;
+    }
+
     // Add problem_ids if creating new contest and problems are selected
     if (!this.isEdit && this.selectedProblems.length > 0) {
-      contestData.problem_ids = this.selectedProblems.map(p => ({
-        id: p.id,
-        score: p.score || 100
+      contestData.problem_ids = this.selectedProblems.map((p) => ({
+        id: typeof p.id === 'number' ? p.id : parseInt(String(p.id)),
+        score: typeof p.score === 'number' ? (p.score || 100) : parseInt(String(p.score || 100))
       }));
     }
 
@@ -185,10 +244,23 @@ export class CreatorContestFormComponent implements OnInit, OnChanges {
         }
       },
       error: (error) => {
-        this.error =
-          error.error?.message || error.message || 'Không thể lưu cuộc thi';
+        // Extract detailed error message
+        let errorMessage = 'Không thể lưu cuộc thi';
+        if (error.error) {
+          if (error.error.message) {
+            errorMessage = error.error.message;
+          } else if (error.error.errors && Array.isArray(error.error.errors)) {
+            errorMessage = error.error.errors
+              .map((e: any) => e.msg || e.message)
+              .join(', ');
+          }
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        this.error = errorMessage;
         this.loading = false;
-        this.notificationService.error('Lỗi', this.error || undefined);
+        this.notificationService.error('Lỗi', errorMessage);
       },
     });
   }

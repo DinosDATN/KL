@@ -72,7 +72,6 @@ export class ContestFormComponent implements OnInit, OnChanges {
         this.loadingProblems = false;
       },
       error: (error) => {
-        console.error('Failed to load problems:', error);
         this.loadingProblems = false;
       },
     });
@@ -87,7 +86,7 @@ export class ContestFormComponent implements OnInit, OnChanges {
   private populateForm(contest: AdminContest): void {
     const startTime = new Date(contest.start_time);
     const endTime = new Date(contest.end_time);
-    
+
     // Format dates for datetime-local input (YYYY-MM-DDTHH:mm)
     const formatDateTime = (date: Date): string => {
       const year = date.getFullYear();
@@ -107,9 +106,9 @@ export class ContestFormComponent implements OnInit, OnChanges {
 
     // Populate selected problems if contest has problems
     if (contest.Problems && contest.Problems.length > 0) {
-      this.selectedProblems = contest.Problems.map(p => ({
+      this.selectedProblems = contest.Problems.map((p) => ({
         id: p.id,
-        points: p.ContestProblem?.score || 100
+        points: p.ContestProblem?.score || 100,
       }));
     }
   }
@@ -134,39 +133,105 @@ export class ContestFormComponent implements OnInit, OnChanges {
 
     const formValue = this.contestForm.value;
 
-    // Convert datetime-local format to ISO string
-    const startTime = new Date(formValue.start_time).toISOString();
-    const endTime = new Date(formValue.end_time).toISOString();
+    // Validate datetime fields exist
+    if (!formValue.start_time) {
+      this.error = 'Start time is required';
+      this.loading = false;
+      this.notificationService.error('Lỗi', this.error);
+      return;
+    }
 
-    // Validate that end time is after start time
-    if (new Date(endTime) <= new Date(startTime)) {
-      this.error = 'End time must be after start time';
+    if (!formValue.end_time) {
+      this.error = 'End time is required';
+      this.loading = false;
+      this.notificationService.error('Lỗi', this.error);
+      return;
+    }
+
+    // Convert datetime-local format to ISO string
+    let startTime: string;
+    let endTime: string;
+
+    try {
+      const startDate = new Date(formValue.start_time);
+      const endDate = new Date(formValue.end_time);
+
+      // Check if dates are valid
+      if (isNaN(startDate.getTime())) {
+        this.error = 'Invalid start time format';
+        this.loading = false;
+        this.notificationService.error('Lỗi', this.error);
+        return;
+      }
+
+      if (isNaN(endDate.getTime())) {
+        this.error = 'Invalid end time format';
+        this.loading = false;
+        this.notificationService.error('Lỗi', this.error);
+        return;
+      }
+
+      // Check that start time is in the future
+      const now = new Date();
+      if (startDate <= now) {
+        this.error = 'Start time must be in the future';
+        this.loading = false;
+        this.notificationService.error('Lỗi', this.error);
+        return;
+      }
+
+      // Validate that end time is after start time
+      if (endDate <= startDate) {
+        this.error = 'End time must be after start time';
+        this.loading = false;
+        this.notificationService.error('Lỗi', this.error);
+        return;
+      }
+
+      startTime = startDate.toISOString();
+      endTime = endDate.toISOString();
+    } catch (error) {
+      this.error = 'Error processing date/time. Please check the format.';
       this.loading = false;
       this.notificationService.error('Lỗi', this.error);
       return;
     }
 
     const contestData: any = {
-      title: formValue.title,
-      description: formValue.description,
+      title: formValue.title?.trim() || '',
+      description: formValue.description?.trim() || '',
       start_time: startTime,
       end_time: endTime,
     };
 
-    // Add problem_ids if creating new contest and problems are selected
-    if (!this.isEdit && this.selectedProblems.length > 0) {
-      contestData.problem_ids = this.selectedProblems.map(p => ({
-        id: p.id,
-        points: p.points || 100
-      }));
-      console.log('Sending contest data with problems:', contestData);
-    } else {
-      console.log('No problems selected or editing contest');
+    // Validate required fields
+    if (!contestData.title) {
+      this.error = 'Title is required';
+      this.loading = false;
+      this.notificationService.error('Lỗi', this.error);
+      return;
     }
 
-    const operation = this.isEdit && this.contest
-      ? this.adminService.updateContest(this.contest.id, contestData)
-      : this.adminService.createContest(contestData);
+    // Add problem_ids if creating new contest and problems are selected
+    if (!this.isEdit && this.selectedProblems.length > 0) {
+      contestData.problem_ids = this.selectedProblems.map((p) => {
+        const problemData: any = {
+          id: typeof p.id === 'number' ? p.id : parseInt(String(p.id)),
+        };
+        // Support both 'points' and 'score' for backend compatibility
+        const pointsValue = p.points || 100;
+        problemData.points =
+          typeof pointsValue === 'number'
+            ? pointsValue
+            : parseInt(String(pointsValue));
+        return problemData;
+      });
+    }
+
+    const operation =
+      this.isEdit && this.contest
+        ? this.adminService.updateContest(this.contest.id, contestData)
+        : this.adminService.createContest(contestData);
 
     operation.subscribe({
       next: (response) => {
@@ -186,10 +251,23 @@ export class ContestFormComponent implements OnInit, OnChanges {
         }
       },
       error: (error) => {
-        this.error =
-          error.error?.message || error.message || 'Failed to save contest';
+        // Extract detailed error message
+        let errorMessage = 'Failed to save contest';
+        if (error.error) {
+          if (error.error.message) {
+            errorMessage = error.error.message;
+          } else if (error.error.errors && Array.isArray(error.error.errors)) {
+            errorMessage = error.error.errors
+              .map((e: any) => e.msg || e.message)
+              .join(', ');
+          }
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+
+        this.error = errorMessage;
         this.loading = false;
-        this.notificationService.error('Lỗi', this.error || undefined);
+        this.notificationService.error('Lỗi', errorMessage);
       },
     });
   }
@@ -220,40 +298,42 @@ export class ContestFormComponent implements OnInit, OnChanges {
   onProblemToggle(problemId: number, event: Event): void {
     const target = event.target as HTMLInputElement;
     if (target.checked) {
-      if (!this.selectedProblems.find(p => p.id === problemId)) {
+      if (!this.selectedProblems.find((p) => p.id === problemId)) {
         this.selectedProblems.push({ id: problemId, points: 100 });
       }
     } else {
-      this.selectedProblems = this.selectedProblems.filter(p => p.id !== problemId);
+      this.selectedProblems = this.selectedProblems.filter(
+        (p) => p.id !== problemId
+      );
     }
-    console.log('Selected problems after toggle:', this.selectedProblems);
   }
 
   toggleProblemSelection(problemId: number): void {
     const isSelected = this.isProblemSelected(problemId);
     if (isSelected) {
-      this.selectedProblems = this.selectedProblems.filter(p => p.id !== problemId);
+      this.selectedProblems = this.selectedProblems.filter(
+        (p) => p.id !== problemId
+      );
     } else {
-      if (!this.selectedProblems.find(p => p.id === problemId)) {
+      if (!this.selectedProblems.find((p) => p.id === problemId)) {
         this.selectedProblems.push({ id: problemId, points: 100 });
       }
     }
-    console.log('Selected problems after toggle:', this.selectedProblems);
   }
 
   isProblemSelected(problemId: number): boolean {
-    return this.selectedProblems.some(p => p.id === problemId);
+    return this.selectedProblems.some((p) => p.id === problemId);
   }
 
   updateProblemPoints(problemId: number, points: number): void {
-    const problem = this.selectedProblems.find(p => p.id === problemId);
+    const problem = this.selectedProblems.find((p) => p.id === problemId);
     if (problem) {
       problem.points = points;
     }
   }
 
   getProblemPoints(problemId: number): number {
-    const problem = this.selectedProblems.find(p => p.id === problemId);
+    const problem = this.selectedProblems.find((p) => p.id === problemId);
     return problem?.points || 100;
   }
 
@@ -274,10 +354,11 @@ export class ContestFormComponent implements OnInit, OnChanges {
       return;
     }
     const term = this.searchProblemTerm.toLowerCase().trim();
-    this.filteredProblems = this.availableProblems.filter(p =>
-      p.title?.toLowerCase().includes(term) ||
-      p.description?.toLowerCase().includes(term) ||
-      p.id.toString().includes(term)
+    this.filteredProblems = this.availableProblems.filter(
+      (p) =>
+        p.title?.toLowerCase().includes(term) ||
+        p.description?.toLowerCase().includes(term) ||
+        p.id.toString().includes(term)
     );
   }
 
@@ -286,12 +367,13 @@ export class ContestFormComponent implements OnInit, OnChanges {
   }
 
   getProblemTitle(problemId: number): string {
-    const problem = this.availableProblems.find(p => p.id === problemId);
+    const problem = this.availableProblems.find((p) => p.id === problemId);
     return problem?.title || `Problem #${problemId}`;
   }
 
   removeSelectedProblem(problemId: number): void {
-    this.selectedProblems = this.selectedProblems.filter(p => p.id !== problemId);
+    this.selectedProblems = this.selectedProblems.filter(
+      (p) => p.id !== problemId
+    );
   }
 }
-

@@ -10,6 +10,10 @@ class ContestAdminController {
   // Create a new contest (Admin only)
   async createContest(req, res) {
     try {
+      console.log('=== CREATE CONTEST REQUEST ===');
+      console.log('Request body:', JSON.stringify(req.body, null, 2));
+      console.log('User:', req.user ? { id: req.user.id, role: req.user.role } : 'No user');
+      
       const {
         title,
         description,
@@ -20,7 +24,7 @@ class ContestAdminController {
       } = req.body;
 
       // Validate required fields
-      if (!title) {
+      if (!title || typeof title !== 'string' || title.trim().length === 0) {
         return res.status(400).json({
           success: false,
           message: "Contest title is required",
@@ -41,14 +45,48 @@ class ContestAdminController {
         });
       }
 
+      // Validate and parse datetime
+      const startTime = new Date(start_time);
+      const endTime = new Date(end_time);
+
+      if (isNaN(startTime.getTime())) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid start time format. Please use ISO 8601 format (e.g., 2024-01-15T10:00:00.000Z)",
+        });
+      }
+
+      if (isNaN(endTime.getTime())) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid end time format. Please use ISO 8601 format (e.g., 2024-01-15T12:00:00.000Z)",
+        });
+      }
+
+      // Validate time logic
+      const now = new Date();
+      if (startTime <= now) {
+        return res.status(400).json({
+          success: false,
+          message: "Start time must be in the future",
+        });
+      }
+
+      if (endTime <= startTime) {
+        return res.status(400).json({
+          success: false,
+          message: "End time must be after start time",
+        });
+      }
+
       // Use provided created_by or current user's id
       const targetCreatorId = created_by || req.user.id;
 
       const contestData = {
-        title,
-        description,
-        start_time,
-        end_time,
+        title: title.trim(),
+        description: description ? description.trim() : null,
+        start_time: startTime,
+        end_time: endTime,
         created_by: targetCreatorId,
       };
 
@@ -56,23 +94,55 @@ class ContestAdminController {
 
       // Add problems to contest if provided
       if (problem_ids && Array.isArray(problem_ids) && problem_ids.length > 0) {
-        const contestProblems = problem_ids.map((item) => {
-          if (typeof item === "object" && item.id) {
+        console.log('Processing problem_ids:', JSON.stringify(problem_ids, null, 2));
+        
+        const contestProblems = problem_ids.map((item, index) => {
+          let problemId, score;
+          
+          try {
+            if (typeof item === "object" && item !== null) {
+              // Support both {id, points} and {problem_id, score} formats
+              const idValue = item.id || item.problem_id;
+              const scoreValue = item.points !== undefined ? item.points : (item.score !== undefined ? item.score : 100);
+              
+              problemId = typeof idValue === 'number' ? idValue : parseInt(String(idValue));
+              score = typeof scoreValue === 'number' ? scoreValue : parseInt(String(scoreValue));
+            } else if (typeof item === "number") {
+              problemId = item;
+              score = 100;
+            } else if (typeof item === "string") {
+              problemId = parseInt(item);
+              score = 100;
+            } else {
+              throw new Error(`Invalid problem item format at index ${index}: ${JSON.stringify(item)}`);
+            }
+
+            if (isNaN(problemId) || problemId <= 0) {
+              throw new Error(`Invalid problem ID at index ${index}: ${problemId}`);
+            }
+
+            if (isNaN(score) || score < 0 || score > 1000) {
+              throw new Error(`Invalid problem score at index ${index}: ${score}. Score must be between 0 and 1000`);
+            }
+
+            console.log(`Problem ${index}: id=${problemId}, score=${score}`);
+            
             return {
               contest_id: contest.id,
-              problem_id: item.id,
-              score: item.points || 100,
+              problem_id: problemId,
+              score: score,
             };
-          } else {
-            return {
-              contest_id: contest.id,
-              problem_id: item,
-              score: 100,
-            };
+          } catch (err) {
+            console.error(`Error processing problem at index ${index}:`, err);
+            throw err;
           }
         });
 
+        console.log('Contest problems to create:', JSON.stringify(contestProblems, null, 2));
         await ContestProblem.bulkCreate(contestProblems);
+        console.log('Contest problems created successfully');
+      } else {
+        console.log('No problem_ids provided or empty array');
       }
 
       // Fetch contest with associations
@@ -96,6 +166,7 @@ class ContestAdminController {
         ],
       });
 
+      console.log('Contest created successfully:', createdContest.id);
       res.status(201).json({
         success: true,
         message: "Contest created successfully",
@@ -103,6 +174,27 @@ class ContestAdminController {
       });
     } catch (error) {
       console.error("Error in createContest:", error);
+      console.error("Request body:", req.body);
+      console.error("Error stack:", error.stack);
+      
+      // Handle Sequelize validation errors
+      if (error.name === 'SequelizeValidationError') {
+        const validationErrors = error.errors.map(err => err.message).join(', ');
+        return res.status(400).json({
+          success: false,
+          message: `Validation error: ${validationErrors}`,
+          errors: error.errors
+        });
+      }
+
+      // Handle Sequelize database errors
+      if (error.name === 'SequelizeDatabaseError') {
+        return res.status(400).json({
+          success: false,
+          message: `Database error: ${error.message}`,
+        });
+      }
+
       res.status(400).json({
         success: false,
         message: error.message || "Failed to create contest",

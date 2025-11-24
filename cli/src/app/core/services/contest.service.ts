@@ -62,7 +62,9 @@ export class ContestService {
 
   // Create contest
   createContest(contest: CreateContestRequest): Observable<ApiResponse<Contest>> {
-    return this.http.post<ApiResponse<Contest>>(this.apiUrl, contest);
+    return this.http.post<ApiResponse<Contest>>(this.apiUrl, contest, {
+      withCredentials: true
+    });
   }
 
   // Update contest

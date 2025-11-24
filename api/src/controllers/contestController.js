@@ -169,6 +169,10 @@ class ContestController {
   // Create a new contest (admin/creator only)
   async createContest(req, res) {
     try {
+      console.log('=== CONTEST CONTROLLER CREATE CONTEST ===');
+      console.log('Request body:', JSON.stringify(req.body, null, 2));
+      console.log('User:', req.user ? { id: req.user.id, role: req.user.role } : 'No user');
+      
       const { title, description, start_time, end_time, problem_ids } = req.body;
       const created_by = req.user.id;
 

@@ -1,5 +1,9 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import {
+  HttpClient,
+  HttpErrorResponse,
+  HttpParams,
+} from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
@@ -242,7 +246,10 @@ export interface ProblemStats {
   publishedProblems: number;
   deletedProblems: number;
   problemsByDifficulty: Array<{ difficulty: string; count: number }>;
-  problemsByCategory: Array<{ category: { id: number; name: string }; count: number }>;
+  problemsByCategory: Array<{
+    category: { id: number; name: string };
+    count: number;
+  }>;
   totalSubmissions: number;
   totalSolved: number;
   averageAcceptance: string;
@@ -379,7 +386,7 @@ export interface ContestParticipant {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class AdminService {
   private readonly apiUrl = `${environment.apiUrl}/admin`;
@@ -388,65 +395,77 @@ export class AdminService {
 
   // Dashboard APIs
   getDashboardStats(): Observable<DashboardStats> {
-    return this.http.get<ApiResponse<DashboardStats>>(
-      `${this.apiUrl}/dashboard/stats`,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<DashboardStats>>(
+        `${this.apiUrl}/dashboard/stats`,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   // User Management APIs
-  getUsers(filters: UserFilters = {}): Observable<{ users: AdminUser[], pagination: PaginationInfo }> {
+  getUsers(
+    filters: UserFilters = {}
+  ): Observable<{ users: AdminUser[]; pagination: PaginationInfo }> {
     let params = new HttpParams();
-    
-    Object.keys(filters).forEach(key => {
+
+    Object.keys(filters).forEach((key) => {
       const value = filters[key as keyof UserFilters];
       if (value !== undefined && value !== null) {
         params = params.set(key, value.toString());
       }
     });
 
-    return this.http.get<ApiResponse<{ users: AdminUser[], pagination: PaginationInfo }>>(
-      `${this.apiUrl}/users`, 
-      { params, withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<{ users: AdminUser[]; pagination: PaginationInfo }>>(
+        `${this.apiUrl}/users`,
+        { params, withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   getUserById(id: number): Observable<AdminUser> {
-    return this.http.get<ApiResponse<AdminUser>>(
-      `${this.apiUrl}/users/${id}`,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<AdminUser>>(
+        `${this.apiUrl}/users/${id}`,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   updateUserRole(userId: number, role: string): Observable<AdminUser> {
-    return this.http.patch<ApiResponse<AdminUser>>(
-      `${this.apiUrl}/users/${userId}/role`, 
-      { role },
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .patch<ApiResponse<AdminUser>>(
+        `${this.apiUrl}/users/${userId}/role`,
+        { role },
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   toggleUserStatus(userId: number, isActive: boolean): Observable<AdminUser> {
-    return this.http.patch<ApiResponse<AdminUser>>(
-      `${this.apiUrl}/users/${userId}/status`, 
-      { is_active: isActive },
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .patch<ApiResponse<AdminUser>>(
+        `${this.apiUrl}/users/${userId}/status`,
+        { is_active: isActive },
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   getUserDeletionInfo(userId: number): Observable<{
@@ -464,45 +483,54 @@ export class AdminService {
     hasRelatedData: boolean;
     warning: string | null;
   }> {
-    return this.http.get<ApiResponse<{
-      user: { id: number; name: string; email: string; role: string };
-      relatedData: {
-        courses: number;
-        problems: number;
-        enrollments: number;
-        submissions: number;
-        contestSubmissions: number;
-        reviews: number;
-        comments: number;
-      };
-      canDelete: boolean;
-      hasRelatedData: boolean;
-      warning: string | null;
-    }>>(
-      `${this.apiUrl}/users/${userId}/deletion-info`,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<
+        ApiResponse<{
+          user: { id: number; name: string; email: string; role: string };
+          relatedData: {
+            courses: number;
+            problems: number;
+            enrollments: number;
+            submissions: number;
+            contestSubmissions: number;
+            reviews: number;
+            comments: number;
+          };
+          canDelete: boolean;
+          hasRelatedData: boolean;
+          warning: string | null;
+        }>
+      >(
+        `${this.apiUrl}/users/${userId}/deletion-info`,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
-  deleteUser(userId: number, force: boolean = false): Observable<{ deletedUserId: number; deletedAt: string }> {
+  deleteUser(
+    userId: number,
+    force: boolean = false
+  ): Observable<{ deletedUserId: number; deletedAt: string }> {
     let httpParams = new HttpParams();
     if (force) {
       httpParams = httpParams.set('force', 'true');
     }
-    
-    return this.http.delete<ApiResponse<{ deletedUserId: number; deletedAt: string }>>(
-      `${this.apiUrl}/users/${userId}`,
-      { 
-        params: httpParams,
-        withCredentials: true // ✅ Send HttpOnly cookie
-      }
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+
+    return this.http
+      .delete<ApiResponse<{ deletedUserId: number; deletedAt: string }>>(
+        `${this.apiUrl}/users/${userId}`,
+        {
+          params: httpParams,
+          withCredentials: true, // ✅ Send HttpOnly cookie
+        }
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   createUser(userData: {
@@ -513,210 +541,269 @@ export class AdminService {
     is_active?: boolean;
     subscription_status?: 'free' | 'premium';
   }): Observable<AdminUser> {
-    return this.http.post<ApiResponse<AdminUser>>(
-      `${this.apiUrl}/users`,
-      userData,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .post<ApiResponse<AdminUser>>(
+        `${this.apiUrl}/users`,
+        userData,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
-  updateUser(userId: number, userData: Partial<AdminUser>): Observable<AdminUser> {
-    return this.http.put<ApiResponse<AdminUser>>(
-      `${this.apiUrl}/users/${userId}`,
-      userData,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+  updateUser(
+    userId: number,
+    userData: Partial<AdminUser>
+  ): Observable<AdminUser> {
+    return this.http
+      .put<ApiResponse<AdminUser>>(
+        `${this.apiUrl}/users/${userId}`,
+        userData,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
-  bulkUpdateUsers(userIds: number[], updateData: Partial<AdminUser>): Observable<{ updatedCount: number; totalRequested: number }> {
-    return this.http.patch<ApiResponse<{ updatedCount: number; totalRequested: number }>>(
-      `${this.apiUrl}/users/bulk/update`,
-      { user_ids: userIds, update_data: updateData },
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+  bulkUpdateUsers(
+    userIds: number[],
+    updateData: Partial<AdminUser>
+  ): Observable<{ updatedCount: number; totalRequested: number }> {
+    return this.http
+      .patch<ApiResponse<{ updatedCount: number; totalRequested: number }>>(
+        `${this.apiUrl}/users/bulk/update`,
+        { user_ids: userIds, update_data: updateData },
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
-  getUserActivityLog(userId: number, page: number = 1, limit: number = 20): Observable<{ activities: any[], pagination: PaginationInfo }> {
+  getUserActivityLog(
+    userId: number,
+    page: number = 1,
+    limit: number = 20
+  ): Observable<{ activities: any[]; pagination: PaginationInfo }> {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('limit', limit.toString());
 
-    return this.http.get<ApiResponse<{ activities: any[], pagination: PaginationInfo }>>(
-      `${this.apiUrl}/users/${userId}/activity`,
-      { params, withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<{ activities: any[]; pagination: PaginationInfo }>>(
+        `${this.apiUrl}/users/${userId}/activity`,
+        { params, withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   getUserStatistics(): Observable<any> {
-    return this.http.get<ApiResponse<any>>(
-      `${this.apiUrl}/users/statistics`,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<any>>(
+        `${this.apiUrl}/users/statistics`,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   // User Analytics APIs
-  getUserAnalyticsOverview(range: '7d' | '30d' | '90d' | '1y' = '30d'): Observable<any> {
+  getUserAnalyticsOverview(
+    range: '7d' | '30d' | '90d' | '1y' = '30d'
+  ): Observable<any> {
     const params = new HttpParams().set('range', range);
-    return this.http.get<ApiResponse<any>>(
-      `${this.apiUrl}/users/analytics/overview`,
-      { params, withCredentials: true }
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<any>>(`${this.apiUrl}/users/analytics/overview`, {
+        params,
+        withCredentials: true,
+      })
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
-  getUserEngagementMetrics(range: '7d' | '30d' | '90d' = '30d'): Observable<any> {
+  getUserEngagementMetrics(
+    range: '7d' | '30d' | '90d' = '30d'
+  ): Observable<any> {
     const params = new HttpParams().set('range', range);
-    return this.http.get<ApiResponse<any>>(
-      `${this.apiUrl}/users/analytics/engagement`,
-      { params, withCredentials: true }
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<any>>(`${this.apiUrl}/users/analytics/engagement`, {
+        params,
+        withCredentials: true,
+      })
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
-  getUserRetentionAnalysis(cohort: 'weekly' | 'monthly' = 'monthly'): Observable<any> {
+  getUserRetentionAnalysis(
+    cohort: 'weekly' | 'monthly' = 'monthly'
+  ): Observable<any> {
     const params = new HttpParams().set('cohort', cohort);
-    return this.http.get<ApiResponse<any>>(
-      `${this.apiUrl}/users/analytics/retention`,
-      { params, withCredentials: true }
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<any>>(`${this.apiUrl}/users/analytics/retention`, {
+        params,
+        withCredentials: true,
+      })
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
-  getUserBehaviorInsights(range: '7d' | '30d' | '90d' = '30d'): Observable<any> {
+  getUserBehaviorInsights(
+    range: '7d' | '30d' | '90d' = '30d'
+  ): Observable<any> {
     const params = new HttpParams().set('range', range);
-    return this.http.get<ApiResponse<any>>(
-      `${this.apiUrl}/users/analytics/behavior`,
-      { params, withCredentials: true }
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<any>>(`${this.apiUrl}/users/analytics/behavior`, {
+        params,
+        withCredentials: true,
+      })
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   getTimeBasedAnalytics(range: '7d' | '30d' | '90d' = '30d'): Observable<any> {
     const params = new HttpParams().set('range', range);
-    return this.http.get<ApiResponse<any>>(
-      `${this.apiUrl}/users/analytics/time-based`,
-      { params, withCredentials: true }
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<any>>(`${this.apiUrl}/users/analytics/time-based`, {
+        params,
+        withCredentials: true,
+      })
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   // Course Management APIs
-  getCourses(filters: CourseFilters = {}): Observable<{ courses: AdminCourse[], pagination: PaginationInfo }> {
+  getCourses(
+    filters: CourseFilters = {}
+  ): Observable<{ courses: AdminCourse[]; pagination: PaginationInfo }> {
     let params = new HttpParams();
-    
-    Object.keys(filters).forEach(key => {
+
+    Object.keys(filters).forEach((key) => {
       const value = filters[key as keyof CourseFilters];
       if (value !== undefined && value !== null) {
         params = params.set(key, value.toString());
       }
     });
 
-    return this.http.get<ApiResponse<{ courses: AdminCourse[], pagination: PaginationInfo }>>(
-      `${this.apiUrl}/courses`, 
-      { params, withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<{ courses: AdminCourse[]; pagination: PaginationInfo }>>(
+        `${this.apiUrl}/courses`,
+        { params, withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   getCourseById(id: number): Observable<AdminCourse> {
-    return this.http.get<ApiResponse<AdminCourse>>(
-      `${this.apiUrl}/courses/${id}`,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<AdminCourse>>(
+        `${this.apiUrl}/courses/${id}`,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
-  updateCourseStatus(courseId: number, status: string): Observable<AdminCourse> {
-    return this.http.patch<ApiResponse<AdminCourse>>(
-      `${this.apiUrl}/courses/${courseId}/status`, 
-      { status },
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+  updateCourseStatus(
+    courseId: number,
+    status: string
+  ): Observable<AdminCourse> {
+    return this.http
+      .patch<ApiResponse<AdminCourse>>(
+        `${this.apiUrl}/courses/${courseId}/status`,
+        { status },
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   deleteCourse(courseId: number): Observable<void> {
-    return this.http.delete<ApiResponse<void>>(
-      `${this.apiUrl}/courses/${courseId}`,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(() => void 0),
-      catchError(this.handleError)
-    );
+    return this.http
+      .delete<ApiResponse<void>>(
+        `${this.apiUrl}/courses/${courseId}`,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map(() => void 0),
+        catchError(this.handleError)
+      );
   }
 
   getCourseStatistics(): Observable<any> {
-    return this.http.get<ApiResponse<any>>(
-      `${this.apiUrl}/courses/statistics`,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<any>>(
+        `${this.apiUrl}/courses/statistics`,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   // Document Management APIs
-  getDocuments(filters: DocumentFilters = {}): Observable<{ documents: AdminDocument[], pagination: PaginationInfo }> {
+  getDocuments(
+    filters: DocumentFilters = {}
+  ): Observable<{ documents: AdminDocument[]; pagination: PaginationInfo }> {
     let params = new HttpParams();
-    
-    Object.keys(filters).forEach(key => {
+
+    Object.keys(filters).forEach((key) => {
       const value = filters[key as keyof DocumentFilters];
       if (value !== undefined && value !== null) {
         params = params.set(key, value.toString());
       }
     });
 
-    return this.http.get<ApiResponse<AdminDocument[]>>(
-      `${this.apiUrl}/documents`, 
-      { params, withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => ({
-        documents: response.data || [],
-        pagination: response.pagination!
-      })),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<AdminDocument[]>>(
+        `${this.apiUrl}/documents`,
+        { params, withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => ({
+          documents: response.data || [],
+          pagination: response.pagination!,
+        })),
+        catchError(this.handleError)
+      );
   }
 
   getDocumentById(id: number): Observable<AdminDocument> {
-    return this.http.get<ApiResponse<AdminDocument>>(
-      `${this.apiUrl}/documents/${id}`,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<AdminDocument>>(
+        `${this.apiUrl}/documents/${id}`,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   createDocument(documentData: {
@@ -729,119 +816,155 @@ export class AdminService {
     thumbnail_url?: string;
     created_by?: number;
   }): Observable<AdminDocument> {
-    return this.http.post<ApiResponse<AdminDocument>>(
-      `${this.apiUrl}/documents`,
-      documentData,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .post<ApiResponse<AdminDocument>>(
+        `${this.apiUrl}/documents`,
+        documentData,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
-  updateDocument(documentId: number, documentData: Partial<AdminDocument>): Observable<AdminDocument> {
-    return this.http.put<ApiResponse<AdminDocument>>(
-      `${this.apiUrl}/documents/${documentId}`,
-      documentData,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+  updateDocument(
+    documentId: number,
+    documentData: Partial<AdminDocument>
+  ): Observable<AdminDocument> {
+    return this.http
+      .put<ApiResponse<AdminDocument>>(
+        `${this.apiUrl}/documents/${documentId}`,
+        documentData,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   deleteDocument(documentId: number): Observable<void> {
-    return this.http.delete<ApiResponse<void>>(
-      `${this.apiUrl}/documents/${documentId}`,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(() => void 0),
-      catchError(this.handleError)
-    );
+    return this.http
+      .delete<ApiResponse<void>>(
+        `${this.apiUrl}/documents/${documentId}`,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map(() => void 0),
+        catchError(this.handleError)
+      );
   }
 
   restoreDocument(documentId: number): Observable<AdminDocument> {
-    return this.http.post<ApiResponse<AdminDocument>>(
-      `${this.apiUrl}/documents/${documentId}/restore`,
-      {},
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .post<ApiResponse<AdminDocument>>(
+        `${this.apiUrl}/documents/${documentId}/restore`,
+        {},
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   permanentlyDeleteDocument(documentId: number): Observable<void> {
-    return this.http.delete<ApiResponse<void>>(
-      `${this.apiUrl}/documents/${documentId}/permanent`,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(() => void 0),
-      catchError(this.handleError)
-    );
+    return this.http
+      .delete<ApiResponse<void>>(
+        `${this.apiUrl}/documents/${documentId}/permanent`,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map(() => void 0),
+        catchError(this.handleError)
+      );
   }
 
   getDocumentStatistics(): Observable<DocumentStats> {
-    return this.http.get<ApiResponse<DocumentStats>>(
-      `${this.apiUrl}/documents/statistics`,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<DocumentStats>>(
+        `${this.apiUrl}/documents/statistics`,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
-  getDeletedDocuments(filters: { page?: number; limit?: number } = {}): Observable<{ documents: AdminDocument[], pagination: PaginationInfo }> {
+  getDeletedDocuments(
+    filters: { page?: number; limit?: number } = {}
+  ): Observable<{ documents: AdminDocument[]; pagination: PaginationInfo }> {
     let params = new HttpParams();
     if (filters.page) params = params.set('page', filters.page.toString());
     if (filters.limit) params = params.set('limit', filters.limit.toString());
 
-    return this.http.get<ApiResponse<AdminDocument[]>>(
-      `${this.apiUrl}/documents/deleted`,
-      { params, withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => ({
-        documents: response.data || [],
-        pagination: response.pagination!
-      })),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<AdminDocument[]>>(
+        `${this.apiUrl}/documents/deleted`,
+        { params, withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => ({
+          documents: response.data || [],
+          pagination: response.pagination!,
+        })),
+        catchError(this.handleError)
+      );
   }
 
-  bulkUpdateDocuments(documentIds: number[], updateData: Partial<AdminDocument>): Observable<{ updatedCount: number; totalRequested: number }> {
-    return this.http.patch<ApiResponse<{ updatedCount: number; totalRequested: number }>>(
-      `${this.apiUrl}/documents/bulk/update`,
-      { document_ids: documentIds, update_data: updateData },
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+  bulkUpdateDocuments(
+    documentIds: number[],
+    updateData: Partial<AdminDocument>
+  ): Observable<{ updatedCount: number; totalRequested: number }> {
+    return this.http
+      .patch<ApiResponse<{ updatedCount: number; totalRequested: number }>>(
+        `${this.apiUrl}/documents/bulk/update`,
+        { document_ids: documentIds, update_data: updateData },
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
-  bulkDeleteDocuments(documentIds: number[], permanent: boolean = false): Observable<{ deletedCount: number; totalRequested: number }> {
-    return this.http.post<ApiResponse<{ deletedCount: number; totalRequested: number }>>(
-      `${this.apiUrl}/documents/bulk/delete`,
-      { document_ids: documentIds, permanent },
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+  bulkDeleteDocuments(
+    documentIds: number[],
+    permanent: boolean = false
+  ): Observable<{ deletedCount: number; totalRequested: number }> {
+    return this.http
+      .post<ApiResponse<{ deletedCount: number; totalRequested: number }>>(
+        `${this.apiUrl}/documents/bulk/delete`,
+        { document_ids: documentIds, permanent },
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
-  bulkRestoreDocuments(documentIds: number[]): Observable<{ restoredCount: number; totalRequested: number }> {
-    return this.http.post<ApiResponse<{ restoredCount: number; totalRequested: number }>>(
-      `${this.apiUrl}/documents/bulk/restore`,
-      { document_ids: documentIds },
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+  bulkRestoreDocuments(
+    documentIds: number[]
+  ): Observable<{ restoredCount: number; totalRequested: number }> {
+    return this.http
+      .post<ApiResponse<{ restoredCount: number; totalRequested: number }>>(
+        `${this.apiUrl}/documents/bulk/restore`,
+        { document_ids: documentIds },
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
-  exportDocuments(format: 'json' | 'csv' = 'json', includeDeleted: boolean = false): Observable<Blob> {
+  exportDocuments(
+    format: 'json' | 'csv' = 'json',
+    includeDeleted: boolean = false
+  ): Observable<Blob> {
     let params = new HttpParams()
       .set('format', format)
       .set('include_deleted', includeDeleted.toString());
@@ -849,46 +972,55 @@ export class AdminService {
     return this.http.get(`${this.apiUrl}/documents/export`, {
       params,
       responseType: 'blob',
-      withCredentials: true // ✅ Send HttpOnly cookie
+      withCredentials: true, // ✅ Send HttpOnly cookie
     });
   }
 
   // Problem Management APIs
-  getProblems(filters: ProblemFilters = {}): Observable<{ problems: AdminProblem[], pagination: PaginationInfo }> {
+  getProblems(
+    filters: ProblemFilters = {}
+  ): Observable<{ problems: AdminProblem[]; pagination: PaginationInfo }> {
     let params = new HttpParams();
-    
-    Object.keys(filters).forEach(key => {
+
+    Object.keys(filters).forEach((key) => {
       const value = filters[key as keyof ProblemFilters];
       if (value !== undefined && value !== null) {
         params = params.set(key, value.toString());
       }
     });
 
-    return this.http.get<ApiResponse<AdminProblem[]>>(
-      `${this.apiUrl}/problems`, 
-      { params, withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => ({
-        problems: response.data || [],
-        pagination: response.pagination!
-      })),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<AdminProblem[]>>(
+        `${this.apiUrl}/problems`,
+        { params, withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => ({
+          problems: response.data || [],
+          pagination: response.pagination!,
+        })),
+        catchError(this.handleError)
+      );
   }
 
-  getProblemById(id: number, includeDeleted: boolean = false): Observable<AdminProblem> {
+  getProblemById(
+    id: number,
+    includeDeleted: boolean = false
+  ): Observable<AdminProblem> {
     let params = new HttpParams();
     if (includeDeleted) {
       params = params.set('include_deleted', 'true');
     }
 
-    return this.http.get<ApiResponse<AdminProblem>>(
-      `${this.apiUrl}/problems/${id}`,
-      { params, withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<AdminProblem>>(
+        `${this.apiUrl}/problems/${id}`,
+        { params, withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   createProblem(problemData: {
@@ -905,228 +1037,287 @@ export class AdminService {
     test_cases?: Array<{ input: string; output: string; is_hidden?: boolean }>;
     tags?: number[];
   }): Observable<AdminProblem> {
-    return this.http.post<ApiResponse<AdminProblem>>(
-      `${this.apiUrl}/problems`,
-      problemData,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .post<ApiResponse<AdminProblem>>(
+        `${this.apiUrl}/problems`,
+        problemData,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
-  updateProblem(problemId: number, problemData: {
-    title?: string;
-    description?: string;
-    difficulty?: 'Easy' | 'Medium' | 'Hard';
-    estimated_time?: string;
-    category_id?: number;
-    is_premium?: boolean;
-    is_popular?: boolean;
-    is_new?: boolean;
-    examples?: Array<{ input: string; output: string; explanation?: string }>;
-    constraints?: Array<{ constraint: string }>;
-    starter_codes?: Array<{ language: string; code: string }>;
-    test_cases?: Array<{ input: string; output: string; is_hidden?: boolean }>;
-    tags?: number[];
-  }): Observable<AdminProblem> {
-    return this.http.put<ApiResponse<AdminProblem>>(
-      `${this.apiUrl}/problems/${problemId}`,
-      problemData,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+  updateProblem(
+    problemId: number,
+    problemData: {
+      title?: string;
+      description?: string;
+      difficulty?: 'Easy' | 'Medium' | 'Hard';
+      estimated_time?: string;
+      category_id?: number;
+      is_premium?: boolean;
+      is_popular?: boolean;
+      is_new?: boolean;
+      examples?: Array<{ input: string; output: string; explanation?: string }>;
+      constraints?: Array<{ constraint: string }>;
+      starter_codes?: Array<{ language: string; code: string }>;
+      test_cases?: Array<{
+        input: string;
+        output: string;
+        is_hidden?: boolean;
+      }>;
+      tags?: number[];
+    }
+  ): Observable<AdminProblem> {
+    return this.http
+      .put<ApiResponse<AdminProblem>>(
+        `${this.apiUrl}/problems/${problemId}`,
+        problemData,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   deleteProblem(problemId: number): Observable<void> {
-    return this.http.delete<ApiResponse<void>>(
-      `${this.apiUrl}/problems/${problemId}`,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(() => void 0),
-      catchError(this.handleError)
-    );
+    return this.http
+      .delete<ApiResponse<void>>(
+        `${this.apiUrl}/problems/${problemId}`,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map(() => void 0),
+        catchError(this.handleError)
+      );
   }
 
   restoreProblem(problemId: number): Observable<AdminProblem> {
-    return this.http.post<ApiResponse<AdminProblem>>(
-      `${this.apiUrl}/problems/${problemId}/restore`,
-      {},
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .post<ApiResponse<AdminProblem>>(
+        `${this.apiUrl}/problems/${problemId}/restore`,
+        {},
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   permanentlyDeleteProblem(problemId: number): Observable<void> {
-    return this.http.delete<ApiResponse<void>>(
-      `${this.apiUrl}/problems/${problemId}/permanent`,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(() => void 0),
-      catchError(this.handleError)
-    );
+    return this.http
+      .delete<ApiResponse<void>>(
+        `${this.apiUrl}/problems/${problemId}/permanent`,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map(() => void 0),
+        catchError(this.handleError)
+      );
   }
 
   getProblemStatistics(): Observable<ProblemStats> {
-    return this.http.get<ApiResponse<ProblemStats>>(
-      `${this.apiUrl}/problems/statistics`,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<ProblemStats>>(
+        `${this.apiUrl}/problems/statistics`,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
-  getDeletedProblems(filters: { page?: number; limit?: number } = {}): Observable<{ problems: AdminProblem[], pagination: PaginationInfo }> {
+  getDeletedProblems(
+    filters: { page?: number; limit?: number } = {}
+  ): Observable<{ problems: AdminProblem[]; pagination: PaginationInfo }> {
     let params = new HttpParams();
     if (filters.page) params = params.set('page', filters.page.toString());
     if (filters.limit) params = params.set('limit', filters.limit.toString());
     params = params.set('is_deleted', 'true');
 
-    return this.http.get<ApiResponse<AdminProblem[]>>(
-      `${this.apiUrl}/problems`,
-      { params, withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => ({
-        problems: response.data || [],
-        pagination: response.pagination!
-      })),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<AdminProblem[]>>(
+        `${this.apiUrl}/problems`,
+        { params, withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => ({
+          problems: response.data || [],
+          pagination: response.pagination!,
+        })),
+        catchError(this.handleError)
+      );
   }
 
-  bulkUpdateProblems(problemIds: number[], updateData: Partial<AdminProblem>): Observable<{ updatedCount: number; totalRequested: number }> {
-    return this.http.patch<ApiResponse<{ updatedCount: number; totalRequested: number }>>(
-      `${this.apiUrl}/problems/bulk/update`,
-      { problem_ids: problemIds, update_data: updateData },
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+  bulkUpdateProblems(
+    problemIds: number[],
+    updateData: Partial<AdminProblem>
+  ): Observable<{ updatedCount: number; totalRequested: number }> {
+    return this.http
+      .patch<ApiResponse<{ updatedCount: number; totalRequested: number }>>(
+        `${this.apiUrl}/problems/bulk/update`,
+        { problem_ids: problemIds, update_data: updateData },
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   // Problem Category Management APIs
   getProblemCategories(): Observable<ProblemCategory[]> {
-    return this.http.get<ApiResponse<ProblemCategory[]>>(
-      `${this.apiUrl}/problems/categories`,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data || []),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<ProblemCategory[]>>(
+        `${this.apiUrl}/problems/categories`,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data || []),
+        catchError(this.handleError)
+      );
   }
 
-  createProblemCategory(categoryData: { name: string; description?: string }): Observable<ProblemCategory> {
-    return this.http.post<ApiResponse<ProblemCategory>>(
-      `${this.apiUrl}/problems/categories`,
-      categoryData,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+  createProblemCategory(categoryData: {
+    name: string;
+    description?: string;
+  }): Observable<ProblemCategory> {
+    return this.http
+      .post<ApiResponse<ProblemCategory>>(
+        `${this.apiUrl}/problems/categories`,
+        categoryData,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
-  updateProblemCategory(categoryId: number, categoryData: { name: string; description?: string }): Observable<ProblemCategory> {
-    return this.http.put<ApiResponse<ProblemCategory>>(
-      `${this.apiUrl}/problems/categories/${categoryId}`,
-      categoryData,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+  updateProblemCategory(
+    categoryId: number,
+    categoryData: { name: string; description?: string }
+  ): Observable<ProblemCategory> {
+    return this.http
+      .put<ApiResponse<ProblemCategory>>(
+        `${this.apiUrl}/problems/categories/${categoryId}`,
+        categoryData,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   deleteProblemCategory(categoryId: number): Observable<void> {
-    return this.http.delete<ApiResponse<void>>(
-      `${this.apiUrl}/problems/categories/${categoryId}`,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(() => void 0),
-      catchError(this.handleError)
-    );
+    return this.http
+      .delete<ApiResponse<void>>(
+        `${this.apiUrl}/problems/categories/${categoryId}`,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map(() => void 0),
+        catchError(this.handleError)
+      );
   }
 
   // Problem Tag Management APIs
   getProblemTags(): Observable<ProblemTag[]> {
-    return this.http.get<ApiResponse<ProblemTag[]>>(
-      `${this.apiUrl}/problems/tags`,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data || []),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<ProblemTag[]>>(
+        `${this.apiUrl}/problems/tags`,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data || []),
+        catchError(this.handleError)
+      );
   }
 
   createProblemTag(tagData: { name: string }): Observable<ProblemTag> {
-    return this.http.post<ApiResponse<ProblemTag>>(
-      `${this.apiUrl}/problems/tags`,
-      tagData,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .post<ApiResponse<ProblemTag>>(
+        `${this.apiUrl}/problems/tags`,
+        tagData,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
-  updateProblemTag(tagId: number, tagData: { name: string }): Observable<ProblemTag> {
-    return this.http.put<ApiResponse<ProblemTag>>(
-      `${this.apiUrl}/problems/tags/${tagId}`,
-      tagData,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+  updateProblemTag(
+    tagId: number,
+    tagData: { name: string }
+  ): Observable<ProblemTag> {
+    return this.http
+      .put<ApiResponse<ProblemTag>>(
+        `${this.apiUrl}/problems/tags/${tagId}`,
+        tagData,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   deleteProblemTag(tagId: number): Observable<void> {
-    return this.http.delete<ApiResponse<void>>(
-      `${this.apiUrl}/problems/tags/${tagId}`,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(() => void 0),
-      catchError(this.handleError)
-    );
+    return this.http
+      .delete<ApiResponse<void>>(
+        `${this.apiUrl}/problems/tags/${tagId}`,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map(() => void 0),
+        catchError(this.handleError)
+      );
   }
 
   // Contest Management APIs
-  getContests(filters: ContestFilters = {}): Observable<{ contests: AdminContest[], pagination: PaginationInfo }> {
+  getContests(
+    filters: ContestFilters = {}
+  ): Observable<{ contests: AdminContest[]; pagination: PaginationInfo }> {
     let params = new HttpParams();
-    
-    Object.keys(filters).forEach(key => {
+
+    Object.keys(filters).forEach((key) => {
       const value = filters[key as keyof ContestFilters];
       if (value !== undefined && value !== null) {
         params = params.set(key, value.toString());
       }
     });
 
-    return this.http.get<ApiResponse<AdminContest[]>>(
-      `${this.apiUrl}/contests`, 
-      { params, withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => ({
-        contests: response.data || [],
-        pagination: response.pagination!
-      })),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<AdminContest[]>>(
+        `${this.apiUrl}/contests`,
+        { params, withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => ({
+          contests: response.data || [],
+          pagination: response.pagination!,
+        })),
+        catchError(this.handleError)
+      );
   }
 
   getContestById(id: number): Observable<AdminContest> {
-    return this.http.get<ApiResponse<AdminContest>>(
-      `${this.apiUrl}/contests/${id}`,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<AdminContest>>(
+        `${this.apiUrl}/contests/${id}`,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   createContest(contestData: {
@@ -1137,148 +1328,190 @@ export class AdminService {
     created_by?: number;
     problem_ids?: Array<number | { id: number; points: number }>;
   }): Observable<AdminContest> {
-    return this.http.post<ApiResponse<AdminContest>>(
-      `${this.apiUrl}/contests`,
-      contestData,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .post<ApiResponse<AdminContest>>(
+        `${this.apiUrl}/contests`,
+        contestData,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
-  updateContest(contestId: number, contestData: Partial<AdminContest>): Observable<AdminContest> {
-    return this.http.put<ApiResponse<AdminContest>>(
-      `${this.apiUrl}/contests/${contestId}`,
-      contestData,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+  updateContest(
+    contestId: number,
+    contestData: Partial<AdminContest>
+  ): Observable<AdminContest> {
+    return this.http
+      .put<ApiResponse<AdminContest>>(
+        `${this.apiUrl}/contests/${contestId}`,
+        contestData,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   deleteContest(contestId: number): Observable<void> {
-    return this.http.delete<ApiResponse<void>>(
-      `${this.apiUrl}/contests/${contestId}`,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(() => void 0),
-      catchError(this.handleError)
-    );
+    return this.http
+      .delete<ApiResponse<void>>(
+        `${this.apiUrl}/contests/${contestId}`,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map(() => void 0),
+        catchError(this.handleError)
+      );
   }
 
-  getContestStatistics(range: '7d' | '30d' | '90d' | 'all' = '30d'): Observable<ContestStats> {
+  getContestStatistics(
+    range: '7d' | '30d' | '90d' | 'all' = '30d'
+  ): Observable<ContestStats> {
     const params = new HttpParams().set('range', range);
-    return this.http.get<ApiResponse<ContestStats>>(
-      `${this.apiUrl}/contests/statistics`,
-      { 
+    return this.http
+      .get<ApiResponse<ContestStats>>(`${this.apiUrl}/contests/statistics`, {
         params,
-        withCredentials: true // ✅ Send HttpOnly cookie
-      }
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+        withCredentials: true, // ✅ Send HttpOnly cookie
+      })
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
-  getContestParticipants(contestId: number, page: number = 1, limit: number = 10): Observable<{ participants: ContestParticipant[], pagination: PaginationInfo }> {
+  getContestParticipants(
+    contestId: number,
+    page: number = 1,
+    limit: number = 10
+  ): Observable<{
+    participants: ContestParticipant[];
+    pagination: PaginationInfo;
+  }> {
     const params = new HttpParams()
       .set('page', page.toString())
       .set('limit', limit.toString());
 
-    return this.http.get<ApiResponse<ContestParticipant[]>>(
-      `${this.apiUrl}/contests/${contestId}/participants`,
-      { params, withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => ({
-        participants: response.data || [],
-        pagination: response.pagination!
-      })),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<ContestParticipant[]>>(
+        `${this.apiUrl}/contests/${contestId}/participants`,
+        { params, withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => ({
+          participants: response.data || [],
+          pagination: response.pagination!,
+        })),
+        catchError(this.handleError)
+      );
   }
 
-  addProblemToContest(contestId: number, problemId: number, points: number = 100): Observable<any> {
-    return this.http.post<ApiResponse<any>>(
-      `${this.apiUrl}/contests/${contestId}/problems`,
-      { problem_id: problemId, points },
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+  addProblemToContest(
+    contestId: number,
+    problemId: number,
+    points: number = 100
+  ): Observable<any> {
+    return this.http
+      .post<ApiResponse<any>>(
+        `${this.apiUrl}/contests/${contestId}/problems`,
+        { problem_id: problemId, points },
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
-  removeProblemFromContest(contestId: number, problemId: number): Observable<void> {
-    return this.http.delete<ApiResponse<void>>(
-      `${this.apiUrl}/contests/${contestId}/problems/${problemId}`,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(() => void 0),
-      catchError(this.handleError)
-    );
+  removeProblemFromContest(
+    contestId: number,
+    problemId: number
+  ): Observable<void> {
+    return this.http
+      .delete<ApiResponse<void>>(
+        `${this.apiUrl}/contests/${contestId}/problems/${problemId}`,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map(() => void 0),
+        catchError(this.handleError)
+      );
   }
 
-  bulkUpdateContests(contestIds: number[], updateData: Partial<AdminContest>): Observable<{ updatedCount: number; totalRequested: number }> {
-    return this.http.patch<ApiResponse<{ updatedCount: number; totalRequested: number }>>(
-      `${this.apiUrl}/contests/bulk/update`,
-      { contest_ids: contestIds, update_data: updateData },
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+  bulkUpdateContests(
+    contestIds: number[],
+    updateData: Partial<AdminContest>
+  ): Observable<{ updatedCount: number; totalRequested: number }> {
+    return this.http
+      .patch<ApiResponse<{ updatedCount: number; totalRequested: number }>>(
+        `${this.apiUrl}/contests/bulk/update`,
+        { contest_ids: contestIds, update_data: updateData },
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   restoreContest(contestId: number): Observable<AdminContest> {
-    return this.http.post<ApiResponse<AdminContest>>(
-      `${this.apiUrl}/contests/${contestId}/restore`,
-      {},
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .post<ApiResponse<AdminContest>>(
+        `${this.apiUrl}/contests/${contestId}/restore`,
+        {},
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   permanentlyDeleteContest(contestId: number): Observable<void> {
-    return this.http.delete<ApiResponse<void>>(
-      `${this.apiUrl}/contests/${contestId}/permanent`,
-      { withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(() => void 0),
-      catchError(this.handleError)
-    );
+    return this.http
+      .delete<ApiResponse<void>>(
+        `${this.apiUrl}/contests/${contestId}/permanent`,
+        { withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map(() => void 0),
+        catchError(this.handleError)
+      );
   }
 
-  exportContests(format: 'json' | 'csv' = 'json', includeParticipants: boolean = false): Observable<any> {
+  exportContests(
+    format: 'json' | 'csv' = 'json',
+    includeParticipants: boolean = false
+  ): Observable<any> {
     const params = new HttpParams()
       .set('format', format)
       .set('include_participants', includeParticipants.toString());
 
     if (format === 'csv') {
-      return this.http.get(
-        `${this.apiUrl}/contests/export`,
-        { 
-          params, 
-          withCredentials: true,
-          responseType: 'text'
-        } // ✅ Send HttpOnly cookie
-      ).pipe(
-        catchError(this.handleError)
-      );
+      return this.http
+        .get(
+          `${this.apiUrl}/contests/export`,
+          {
+            params,
+            withCredentials: true,
+            responseType: 'text',
+          } // ✅ Send HttpOnly cookie
+        )
+        .pipe(catchError(this.handleError));
     } else {
-      return this.http.get(
-        `${this.apiUrl}/contests/export`,
-        { 
-          params, 
-          withCredentials: true,
-          responseType: 'json'
-        } // ✅ Send HttpOnly cookie
-      ).pipe(
-        catchError(this.handleError)
-      );
+      return this.http
+        .get(
+          `${this.apiUrl}/contests/export`,
+          {
+            params,
+            withCredentials: true,
+            responseType: 'json',
+          } // ✅ Send HttpOnly cookie
+        )
+        .pipe(catchError(this.handleError));
     }
   }
 
@@ -1289,13 +1522,15 @@ export class AdminService {
       params = params.set('range', dateRange);
     }
 
-    return this.http.get<ApiResponse<any>>(
-      `${this.apiUrl}/analytics/platform`, 
-      { params, withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<any>>(
+        `${this.apiUrl}/analytics/platform`,
+        { params, withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   getUserEngagementAnalytics(dateRange?: string): Observable<any> {
@@ -1304,13 +1539,15 @@ export class AdminService {
       params = params.set('range', dateRange);
     }
 
-    return this.http.get<ApiResponse<any>>(
-      `${this.apiUrl}/analytics/engagement`, 
-      { params, withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<any>>(
+        `${this.apiUrl}/analytics/engagement`,
+        { params, withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   getRevenueReports(dateRange?: string): Observable<any> {
@@ -1319,43 +1556,51 @@ export class AdminService {
       params = params.set('range', dateRange);
     }
 
-    return this.http.get<ApiResponse<any>>(
-      `${this.apiUrl}/analytics/revenue`, 
-      { params, withCredentials: true } // ✅ Send HttpOnly cookie
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<any>>(
+        `${this.apiUrl}/analytics/revenue`,
+        { params, withCredentials: true } // ✅ Send HttpOnly cookie
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   // Export APIs
   exportUsers(format: 'csv' | 'json' = 'csv'): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/users/export?format=${format}`, {
       responseType: 'blob',
-      withCredentials: true // ✅ Send HttpOnly cookie
+      withCredentials: true, // ✅ Send HttpOnly cookie
     });
   }
 
   exportCourses(format: 'csv' | 'json' = 'csv'): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/courses/export?format=${format}`, {
       responseType: 'blob',
-      withCredentials: true // ✅ Send HttpOnly cookie
+      withCredentials: true, // ✅ Send HttpOnly cookie
     });
   }
 
   // User Report APIs
   getReportTypes(): Observable<any[]> {
-    return this.http.get<ApiResponse<any[]>>(
-      `${this.apiUrl}/users/reports/types`,
-      { withCredentials: true }
-    ).pipe(
-      map(response => response.data || []),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<any[]>>(`${this.apiUrl}/users/reports/types`, {
+        withCredentials: true,
+      })
+      .pipe(
+        map((response) => response.data || []),
+        catchError(this.handleError)
+      );
   }
 
   generateUserReport(params: {
-    type?: 'comprehensive' | 'activity' | 'registration' | 'engagement' | 'performance';
+    type?:
+      | 'comprehensive'
+      | 'activity'
+      | 'registration'
+      | 'engagement'
+      | 'performance';
     range?: '7d' | '30d' | '90d' | '1y';
     format?: 'json' | 'csv';
     startDate?: string;
@@ -1363,44 +1608,55 @@ export class AdminService {
     filters?: any;
   }): Observable<any> {
     let httpParams = new HttpParams();
-    
+
     if (params.type) httpParams = httpParams.set('type', params.type);
     if (params.range) httpParams = httpParams.set('range', params.range);
     if (params.format) httpParams = httpParams.set('format', params.format);
-    if (params.startDate) httpParams = httpParams.set('startDate', params.startDate);
+    if (params.startDate)
+      httpParams = httpParams.set('startDate', params.startDate);
     if (params.endDate) httpParams = httpParams.set('endDate', params.endDate);
     if (params.filters) {
-      Object.keys(params.filters).forEach(key => {
+      Object.keys(params.filters).forEach((key) => {
         httpParams = httpParams.set(`filters[${key}]`, params.filters[key]);
       });
     }
 
-    const options = params.format === 'csv' 
-      ? { params: httpParams, responseType: 'blob' as 'json', withCredentials: true }
-      : { params: httpParams, withCredentials: true };
+    const options =
+      params.format === 'csv'
+        ? {
+            params: httpParams,
+            responseType: 'blob' as 'json',
+            withCredentials: true,
+          }
+        : { params: httpParams, withCredentials: true };
 
-    return this.http.get<ApiResponse<any>>(
-      `${this.apiUrl}/users/reports/generate`,
-      options
-    ).pipe(
-      map(response => params.format === 'csv' ? response : response.data),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<any>>(`${this.apiUrl}/users/reports/generate`, options)
+      .pipe(
+        map((response) => (params.format === 'csv' ? response : response.data)),
+        catchError(this.handleError)
+      );
   }
 
   // Course Report APIs
   getCourseReportTypes(): Observable<any[]> {
-    return this.http.get<ApiResponse<any[]>>(
-      `${this.apiUrl}/courses/reports/types`,
-      { withCredentials: true }
-    ).pipe(
-      map(response => response.data || []),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<any[]>>(`${this.apiUrl}/courses/reports/types`, {
+        withCredentials: true,
+      })
+      .pipe(
+        map((response) => response.data || []),
+        catchError(this.handleError)
+      );
   }
 
   generateCourseReport(params: {
-    type?: 'comprehensive' | 'performance' | 'enrollment' | 'revenue' | 'reviews';
+    type?:
+      | 'comprehensive'
+      | 'performance'
+      | 'enrollment'
+      | 'revenue'
+      | 'reviews';
     range?: '7d' | '30d' | '90d' | '1y';
     format?: 'json' | 'csv';
     startDate?: string;
@@ -1408,99 +1664,119 @@ export class AdminService {
     filters?: any;
   }): Observable<any> {
     let httpParams = new HttpParams();
-    
+
     if (params.type) httpParams = httpParams.set('type', params.type);
     if (params.range) httpParams = httpParams.set('range', params.range);
     if (params.format) httpParams = httpParams.set('format', params.format);
-    if (params.startDate) httpParams = httpParams.set('startDate', params.startDate);
+    if (params.startDate)
+      httpParams = httpParams.set('startDate', params.startDate);
     if (params.endDate) httpParams = httpParams.set('endDate', params.endDate);
     if (params.filters) {
-      Object.keys(params.filters).forEach(key => {
+      Object.keys(params.filters).forEach((key) => {
         httpParams = httpParams.set(`filters[${key}]`, params.filters[key]);
       });
     }
 
-    const options = params.format === 'csv' 
-      ? { params: httpParams, responseType: 'blob' as 'json', withCredentials: true }
-      : { params: httpParams, withCredentials: true };
+    const options =
+      params.format === 'csv'
+        ? {
+            params: httpParams,
+            responseType: 'blob' as 'json',
+            withCredentials: true,
+          }
+        : { params: httpParams, withCredentials: true };
 
-    return this.http.get<ApiResponse<any>>(
-      `${this.apiUrl}/courses/reports/generate`,
-      options
-    ).pipe(
-      map(response => params.format === 'csv' ? response : response.data),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<any>>(`${this.apiUrl}/courses/reports/generate`, options)
+      .pipe(
+        map((response) => (params.format === 'csv' ? response : response.data)),
+        catchError(this.handleError)
+      );
   }
 
   // Notification Management APIs
-  getNotifications(filters: {
-    page?: number;
-    limit?: number;
-    user_id?: number;
-    type?: string;
-    is_read?: boolean;
-    search?: string;
-    start_date?: string;
-    end_date?: string;
-    sortBy?: string;
-    sortOrder?: 'ASC' | 'DESC';
-  } = {}): Observable<{ notifications: any[], pagination: PaginationInfo }> {
+  getNotifications(
+    filters: {
+      page?: number;
+      limit?: number;
+      user_id?: number;
+      type?: string;
+      is_read?: boolean;
+      search?: string;
+      start_date?: string;
+      end_date?: string;
+      sortBy?: string;
+      sortOrder?: 'ASC' | 'DESC';
+    } = {}
+  ): Observable<{ notifications: any[]; pagination: PaginationInfo }> {
     let params = new HttpParams();
-    
-    Object.keys(filters).forEach(key => {
+
+    Object.keys(filters).forEach((key) => {
       const value = filters[key as keyof typeof filters];
       if (value !== undefined && value !== null) {
         params = params.set(key, value.toString());
       }
     });
 
-    return this.http.get<ApiResponse<{ notifications: any[], totalCount: number, currentPage: number, totalPages: number, itemsPerPage: number }>>(
-      `${this.apiUrl}/notifications`, 
-      { params, withCredentials: true }
-    ).pipe(
-      map(response => {
-        const data = response.data!;
-        // Map backend response (camelCase) to frontend format (snake_case)
-        return {
-          notifications: data.notifications || [],
-          pagination: {
-            current_page: data.currentPage || 1,
-            total_pages: data.totalPages || 0,
-            total_items: data.totalCount || 0,
-            items_per_page: data.itemsPerPage || 20
-          }
-        };
-      }),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<
+        ApiResponse<{
+          notifications: any[];
+          totalCount: number;
+          currentPage: number;
+          totalPages: number;
+          itemsPerPage: number;
+        }>
+      >(`${this.apiUrl}/notifications`, { params, withCredentials: true })
+      .pipe(
+        map((response) => {
+          const data = response.data!;
+          // Map backend response (camelCase) to frontend format (snake_case)
+          return {
+            notifications: data.notifications || [],
+            pagination: {
+              current_page: data.currentPage || 1,
+              total_pages: data.totalPages || 0,
+              total_items: data.totalCount || 0,
+              items_per_page: data.itemsPerPage || 20,
+            },
+          };
+        }),
+        catchError(this.handleError)
+      );
   }
 
-  getNotificationStatistics(filters: {
-    start_date?: string;
-    end_date?: string;
-  } = {}): Observable<any> {
+  getNotificationStatistics(
+    filters: {
+      start_date?: string;
+      end_date?: string;
+    } = {}
+  ): Observable<any> {
     let params = new HttpParams();
-    if (filters.start_date) params = params.set('start_date', filters.start_date);
+    if (filters.start_date)
+      params = params.set('start_date', filters.start_date);
     if (filters.end_date) params = params.set('end_date', filters.end_date);
 
-    return this.http.get<ApiResponse<any>>(
-      `${this.apiUrl}/notifications/statistics`,
-      { params, withCredentials: true }
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<any>>(`${this.apiUrl}/notifications/statistics`, {
+        params,
+        withCredentials: true,
+      })
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   getNotificationById(notificationId: number): Observable<any> {
-    return this.http.get<ApiResponse<any>>(
-      `${this.apiUrl}/notifications/${notificationId}`,
-      { withCredentials: true }
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .get<ApiResponse<any>>(`${this.apiUrl}/notifications/${notificationId}`, {
+        withCredentials: true,
+      })
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   sendNotification(data: {
@@ -1509,15 +1785,17 @@ export class AdminService {
     title: string;
     message: string;
     data?: any;
-  }): Observable<{ notifications: any[], count: number }> {
-    return this.http.post<ApiResponse<{ notifications: any[], count: number }>>(
-      `${this.apiUrl}/notifications/send`,
-      data,
-      { withCredentials: true }
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+  }): Observable<{ notifications: any[]; count: number }> {
+    return this.http
+      .post<ApiResponse<{ notifications: any[]; count: number }>>(
+        `${this.apiUrl}/notifications/send`,
+        data,
+        { withCredentials: true }
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   sendBroadcastNotification(data: {
@@ -1531,54 +1809,67 @@ export class AdminService {
       subscription_status?: string;
     };
   }): Observable<{ count: number; userFilter: string }> {
-    return this.http.post<ApiResponse<{ count: number; userFilter: string }>>(
-      `${this.apiUrl}/notifications/broadcast`,
-      data,
-      { withCredentials: true }
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+    return this.http
+      .post<ApiResponse<{ count: number; userFilter: string }>>(
+        `${this.apiUrl}/notifications/broadcast`,
+        data,
+        { withCredentials: true }
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
-  updateNotificationStatus(notificationId: number, is_read: boolean): Observable<any> {
-    return this.http.put<ApiResponse<any>>(
-      `${this.apiUrl}/notifications/${notificationId}/status`,
-      { is_read },
-      { withCredentials: true }
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+  updateNotificationStatus(
+    notificationId: number,
+    is_read: boolean
+  ): Observable<any> {
+    return this.http
+      .put<ApiResponse<any>>(
+        `${this.apiUrl}/notifications/${notificationId}/status`,
+        { is_read },
+        { withCredentials: true }
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   deleteNotification(notificationId: number): Observable<void> {
-    return this.http.delete<ApiResponse<void>>(
-      `${this.apiUrl}/notifications/${notificationId}`,
-      { withCredentials: true }
-    ).pipe(
-      map(() => void 0),
-      catchError(this.handleError)
-    );
+    return this.http
+      .delete<ApiResponse<void>>(
+        `${this.apiUrl}/notifications/${notificationId}`,
+        { withCredentials: true }
+      )
+      .pipe(
+        map(() => void 0),
+        catchError(this.handleError)
+      );
   }
 
-  bulkDeleteNotifications(notificationIds: number[]): Observable<{ deletedCount: number; requestedCount: number }> {
-    return this.http.post<ApiResponse<{ deletedCount: number; requestedCount: number }>>(
-      `${this.apiUrl}/notifications/bulk-delete`,
-      { notification_ids: notificationIds },
-      { withCredentials: true }
-    ).pipe(
-      map(response => response.data!),
-      catchError(this.handleError)
-    );
+  bulkDeleteNotifications(
+    notificationIds: number[]
+  ): Observable<{ deletedCount: number; requestedCount: number }> {
+    return this.http
+      .post<ApiResponse<{ deletedCount: number; requestedCount: number }>>(
+        `${this.apiUrl}/notifications/bulk-delete`,
+        { notification_ids: notificationIds },
+        { withCredentials: true }
+      )
+      .pipe(
+        map((response) => response.data!),
+        catchError(this.handleError)
+      );
   }
 
   // Error handling
   private handleError = (error: HttpErrorResponse) => {
     console.error('Admin API error:', error);
-    
+
     let errorMessage = 'An unexpected error occurred';
-    
+
     if (error.error) {
       if (typeof error.error === 'string') {
         errorMessage = error.error;
@@ -1592,7 +1883,7 @@ export class AdminService {
     return throwError(() => ({
       ...error.error,
       message: errorMessage,
-      status: error.status
+      status: error.status,
     }));
   };
 }
