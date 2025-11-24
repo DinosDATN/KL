@@ -87,7 +87,25 @@ class ProblemController {
         where: { 
           id,
           is_deleted: false 
-        }
+        },
+        include: [
+          {
+            model: ProblemCategory,
+            as: 'Category',
+            attributes: ['id', 'name']
+          },
+          {
+            model: Tag,
+            as: 'Tags',
+            through: { attributes: [] }, // Exclude join table attributes
+            attributes: ['id', 'name']
+          },
+          {
+            model: ProblemConstraint,
+            as: 'Constraints',
+            attributes: ['id', 'constraint_text']
+          }
+        ]
       });
 
       if (!problem) {

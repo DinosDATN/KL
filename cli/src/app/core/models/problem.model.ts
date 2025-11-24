@@ -25,6 +25,10 @@ export interface Problem {
   is_deleted: boolean;
   created_at: string;
   updated_at?: string | null;
+  // Related data from API
+  Category?: ProblemCategory | null;
+  Tags?: Tag[] | null;
+  Constraints?: ProblemConstraint[] | null;
 }
 
 export interface Tag {

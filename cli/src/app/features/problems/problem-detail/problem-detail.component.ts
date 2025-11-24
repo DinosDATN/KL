@@ -31,6 +31,10 @@ export class ProblemDetailComponent implements OnInit, OnDestroy {
   loading = true;
   error: string | null = null;
   
+  // Category and Tags from API
+  categoryName: string = '';
+  tagNames: string[] = [];
+  
   // Contest context
   contestId: number | null = null;
   contestProblemId: number | null = null;
@@ -94,6 +98,30 @@ export class ProblemDetailComponent implements OnInit, OnDestroy {
         }
         this.problem = problem;
         
+        // Extract category and tags from API response
+        this.categoryName = problem.Category?.name || '';
+        this.tagNames = problem.Tags?.map(tag => tag.name) || [];
+        
+        // If category not in response, try to load it
+        if (!this.categoryName && problem.category_id) {
+          this.problemsService.getCategoryById(problem.category_id).subscribe({
+            next: (category) => {
+              if (category) {
+                this.categoryName = category.name;
+              }
+            }
+          });
+        }
+        
+        // If tags not in response, try to load them
+        if (this.tagNames.length === 0) {
+          this.problemsService.getProblemTags(problem.id).subscribe({
+            next: (tags) => {
+              this.tagNames = tags.map(tag => tag.name);
+            }
+          });
+        }
+        
         // Load related data
         this.loadTestCases(problem.id);
         this.loadExamples(problem.id);
@@ -152,29 +180,10 @@ export class ProblemDetailComponent implements OnInit, OnDestroy {
   }
   
   getCategoryName(): string {
-    if (!this.problem) return '';
-    
-    // Use the problems service to get category name
-    this.problemsService.getCategoryById(this.problem.category_id).subscribe({
-      next: (category) => {
-        // This will be handled reactively, but for now return a default
-      }
-    });
-    
-    // For now, provide category mapping based on category_id
-    const categoryMap: { [key: number]: string } = {
-      1: 'Array',
-      2: 'String', 
-      3: 'Linked List',
-      4: 'Tree',
-      5: 'Dynamic Programming'
-    };
-    
-    return categoryMap[this.problem?.category_id || 1] || 'Unknown';
+    return this.categoryName || 'Unknown';
   }
   
   getProblemTagNames(): string[] {
-    if (!this.problem) return [];
-    return this.problemsService.getTagNamesByProblemId(this.problem.id);
+    return this.tagNames;
   }
 }

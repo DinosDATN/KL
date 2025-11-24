@@ -356,13 +356,33 @@ class JudgeService {
 
   /**
    * Get supported languages
+   * Only returns primary languages, excluding aliases
    */
   getSupportedLanguages() {
-    return Object.keys(this.languageMap).map(lang => ({
-      id: lang,
-      name: this.getLanguageDisplayName(lang),
-      judgeId: this.languageMap[lang]
-    }));
+    // Primary languages only (exclude aliases like python3, js, c++, etc.)
+    const primaryLanguages = [
+      'python',
+      'javascript',
+      'java',
+      'cpp',
+      'c',
+      'csharp',
+      'go',
+      'rust',
+      'php',
+      'ruby',
+      'kotlin',
+      'swift',
+      'typescript'
+    ];
+    
+    return primaryLanguages
+      .filter(lang => this.languageMap[lang]) // Only include if exists in languageMap
+      .map(lang => ({
+        id: lang,
+        name: this.getLanguageDisplayName(lang),
+        judgeId: this.languageMap[lang]
+      }));
   }
 
   /**
