@@ -6,6 +6,8 @@ import {
   OnInit,
   OnDestroy,
   AfterViewInit,
+  OnChanges,
+  SimpleChanges,
   ViewChild,
   ElementRef,
   Inject,
@@ -42,7 +44,7 @@ interface AceEditor {
   templateUrl: './code-editor.component.html',
   styleUrl: './code-editor.component.css',
 })
-export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
+export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit, OnChanges {
   @ViewChild('editor', { static: true }) editorElement!: ElementRef;
 
   @Input() problem: any = null;
@@ -111,6 +113,33 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
+  ngOnChanges(changes: SimpleChanges): void {
+    // When starterCodes are loaded, update the editor
+    if (changes['starterCodes']) {
+      const previousCodes = changes['starterCodes'].previousValue || [];
+      const currentCodes = changes['starterCodes'].currentValue || [];
+      
+      // Reload starter code if:
+      // 1. Starter codes were just loaded (first change) and editor is ready
+      // 2. Starter codes changed (not first change) and editor is ready
+      if (currentCodes.length > 0 && this.editor) {
+        // Check if codes actually changed
+        const codesChanged = 
+          changes['starterCodes'].firstChange || 
+          currentCodes.length !== previousCodes.length ||
+          JSON.stringify(currentCodes) !== JSON.stringify(previousCodes);
+        
+        if (codesChanged) {
+          console.log('Starter codes changed, reloading...', currentCodes.length, 'codes available');
+          // Use setTimeout to ensure editor is fully ready
+          setTimeout(() => {
+            this.loadStarterCode();
+          }, 100);
+        }
+      }
+    }
+  }
+
   ngAfterViewInit(): void {
     if (isPlatformBrowser(this.platformId)) {
       this.waitForAceAndInitialize();
@@ -170,8 +199,16 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
         useSoftTabs: true,
       });
 
-      // Load starter code
-      this.loadStarterCode();
+      // Load starter code (will use default template if starterCodes not loaded yet)
+      // Starter code will be reloaded via ngOnChanges when starterCodes are loaded
+      if (this.starterCodes && this.starterCodes.length > 0) {
+        this.loadStarterCode();
+      } else {
+        // Use default template if starter codes not available yet
+        const defaultCode = this.getDefaultCodeTemplate(this.selectedLanguage.id);
+        this.editor.setValue(defaultCode, -1);
+        this.currentCode = defaultCode;
+      }
 
       // Listen to code changes
       this.editor.on('change', () => {
@@ -290,15 +327,57 @@ export class CodeEditorComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private loadStarterCode(): void {
-    const starterCode = this.starterCodes.find(
-      (code) => code.language === this.selectedLanguage.id
+    if (!this.editor || !this.selectedLanguage) {
+      return;
+    }
+
+    // Normalize language names for matching (case-insensitive)
+    const normalizeLanguage = (lang: string): string => {
+      return lang.toLowerCase().trim();
+    };
+
+    const currentLangId = normalizeLanguage(this.selectedLanguage.id);
+    
+    // Try to find exact match first
+    let starterCode = this.starterCodes.find(
+      (code) => normalizeLanguage(code.language) === currentLangId
     );
+
+    // If no exact match, try common language name variations
+    if (!starterCode) {
+      const languageMap: { [key: string]: string[] } = {
+        'python': ['python', 'python3', 'py'],
+        'javascript': ['javascript', 'js', 'nodejs', 'node.js'],
+        'java': ['java'],
+        'cpp': ['cpp', 'c++', 'cplusplus'],
+        'c': ['c'],
+        'csharp': ['csharp', 'c#', 'cs'],
+        'go': ['go', 'golang'],
+        'rust': ['rust'],
+        'php': ['php'],
+        'ruby': ['ruby'],
+        'kotlin': ['kotlin'],
+        'swift': ['swift'],
+        'typescript': ['typescript', 'ts']
+      };
+
+      const variations = languageMap[currentLangId] || [currentLangId];
+      
+      for (const variation of variations) {
+        starterCode = this.starterCodes.find(
+          (code) => normalizeLanguage(code.language) === variation
+        );
+        if (starterCode) break;
+      }
+    }
 
     if (this.editor) {
       if (starterCode) {
+        console.log('Loading starter code for language:', this.selectedLanguage.id, 'found:', starterCode.language);
         this.editor.setValue(starterCode.code, -1);
         this.currentCode = starterCode.code;
       } else {
+        console.log('No starter code found for language:', this.selectedLanguage.id, 'available:', this.starterCodes.map(sc => sc.language));
         // Provide a default template if no starter code is found
         const defaultCode = this.getDefaultCodeTemplate(
           this.selectedLanguage.id
