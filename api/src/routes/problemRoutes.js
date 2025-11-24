@@ -1,6 +1,7 @@
 const express = require('express');
 const problemController = require('../controllers/problemController');
 const judgeMiddleware = require('../middleware/judgeMiddleware');
+const { authenticateToken } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
@@ -89,5 +90,11 @@ router.get('/submission/:token',
 // Supported languages and health check
 router.get('/data/languages', problemController.getSupportedLanguages);
 router.get('/judge/health', problemController.checkJudgeHealth);
+
+// Problem comments
+router.get('/:id/comments', problemController.getProblemComments);
+router.post('/:id/comments', authenticateToken, problemController.createProblemComment);
+router.put('/:id/comments/:comment_id', authenticateToken, problemController.updateProblemComment);
+router.delete('/:id/comments/:comment_id', authenticateToken, problemController.deleteProblemComment);
 
 module.exports = router;

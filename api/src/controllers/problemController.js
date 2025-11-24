@@ -10,7 +10,8 @@ const {
   SubmissionCode,
   Submission,
   ProblemComment,
-  JudgeSubmission
+  JudgeSubmission,
+  User
 } = require('../models');
 const { sequelize } = require('../config/sequelize');
 const { Op } = require('sequelize');
@@ -1151,6 +1152,246 @@ class ProblemController {
       res.status(500).json({
         success: false,
         message: 'Failed to submit code with batch processing',
+        error: error.message
+      });
+    }
+  }
+
+  // ==================== COMMENT MANAGEMENT ====================
+
+  // Get all comments for a problem
+  async getProblemComments(req, res) {
+    try {
+      const { id } = req.params;
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 20;
+      const offset = (page - 1) * limit;
+
+      // Check if problem exists
+      const problem = await Problem.findOne({
+        where: { id, is_deleted: false }
+      });
+
+      if (!problem) {
+        return res.status(404).json({
+          success: false,
+          message: 'Problem not found'
+        });
+      }
+
+      // Get comments with user information
+      const { count, rows: comments } = await ProblemComment.findAndCountAll({
+        where: { problem_id: id },
+        include: [{
+          model: User,
+          as: 'User',
+          attributes: ['id', 'name', 'avatar_url', 'email']
+        }],
+        order: [['created_at', 'DESC']],
+        limit,
+        offset
+      });
+
+      res.status(200).json({
+        success: true,
+        data: comments,
+        pagination: {
+          current_page: page,
+          total_pages: Math.ceil(count / limit),
+          total_items: count,
+          items_per_page: limit
+        }
+      });
+    } catch (error) {
+      console.error('Error in getProblemComments:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch comments',
+        error: error.message
+      });
+    }
+  }
+
+  // Create a new comment
+  async createProblemComment(req, res) {
+    try {
+      const { id } = req.params;
+      const { content } = req.body;
+      const userId = req.user.id;
+
+      // Validate required fields
+      if (!content || content.trim().length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Comment content is required'
+        });
+      }
+
+      if (content.trim().length > 5000) {
+        return res.status(400).json({
+          success: false,
+          message: 'Comment content is too long (max 5000 characters)'
+        });
+      }
+
+      // Check if problem exists
+      const problem = await Problem.findOne({
+        where: { id, is_deleted: false }
+      });
+
+      if (!problem) {
+        return res.status(404).json({
+          success: false,
+          message: 'Problem not found'
+        });
+      }
+
+      // Create comment
+      const comment = await ProblemComment.create({
+        problem_id: id,
+        user_id: userId,
+        content: content.trim()
+      });
+
+      // Reload comment with user information
+      const commentWithUser = await ProblemComment.findByPk(comment.id, {
+        include: [{
+          model: User,
+          as: 'User',
+          attributes: ['id', 'name', 'avatar_url', 'email']
+        }]
+      });
+
+      res.status(201).json({
+        success: true,
+        message: 'Comment created successfully',
+        data: commentWithUser
+      });
+    } catch (error) {
+      console.error('Error in createProblemComment:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to create comment',
+        error: error.message
+      });
+    }
+  }
+
+  // Update a comment
+  async updateProblemComment(req, res) {
+    try {
+      const { id, comment_id } = req.params;
+      const { content } = req.body;
+      const userId = req.user.id;
+
+      // Validate required fields
+      if (!content || content.trim().length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Comment content is required'
+        });
+      }
+
+      if (content.trim().length > 5000) {
+        return res.status(400).json({
+          success: false,
+          message: 'Comment content is too long (max 5000 characters)'
+        });
+      }
+
+      // Find comment
+      const comment = await ProblemComment.findOne({
+        where: {
+          id: comment_id,
+          problem_id: id
+        }
+      });
+
+      if (!comment) {
+        return res.status(404).json({
+          success: false,
+          message: 'Comment not found'
+        });
+      }
+
+      // Check if user owns the comment
+      if (comment.user_id !== userId) {
+        return res.status(403).json({
+          success: false,
+          message: 'You can only update your own comments'
+        });
+      }
+
+      // Update comment
+      await comment.update({
+        content: content.trim()
+      });
+
+      // Reload comment with user information
+      const updatedComment = await ProblemComment.findByPk(comment.id, {
+        include: [{
+          model: User,
+          as: 'User',
+          attributes: ['id', 'name', 'avatar_url', 'email']
+        }]
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'Comment updated successfully',
+        data: updatedComment
+      });
+    } catch (error) {
+      console.error('Error in updateProblemComment:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update comment',
+        error: error.message
+      });
+    }
+  }
+
+  // Delete a comment
+  async deleteProblemComment(req, res) {
+    try {
+      const { id, comment_id } = req.params;
+      const userId = req.user.id;
+
+      // Find comment
+      const comment = await ProblemComment.findOne({
+        where: {
+          id: comment_id,
+          problem_id: id
+        }
+      });
+
+      if (!comment) {
+        return res.status(404).json({
+          success: false,
+          message: 'Comment not found'
+        });
+      }
+
+      // Check if user owns the comment
+      if (comment.user_id !== userId) {
+        return res.status(403).json({
+          success: false,
+          message: 'You can only delete your own comments'
+        });
+      }
+
+      // Delete comment
+      await comment.destroy();
+
+      res.status(200).json({
+        success: true,
+        message: 'Comment deleted successfully'
+      });
+    } catch (error) {
+      console.error('Error in deleteProblemComment:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to delete comment',
         error: error.message
       });
     }

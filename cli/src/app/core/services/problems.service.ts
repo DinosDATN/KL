@@ -293,8 +293,67 @@ export class ProblemsService {
 
   // Comments
   getProblemComments(problemId: number): Observable<ProblemComment[]> {
-    const comments = mockProblemComments.filter(c => c.problem_id === problemId);
-    return of(comments);
+    // Return mock data during SSR
+    if (!isPlatformBrowser(this.platformId)) {
+      const comments = mockProblemComments.filter(c => c.problem_id === problemId);
+      return of(comments);
+    }
+
+    return this.http.get<{success: boolean, data: ProblemComment[]}>(`${this.apiUrl}/problems/${problemId}/comments`, {
+      withCredentials: true
+    })
+      .pipe(
+        map(response => response.data || []),
+        catchError(error => {
+          console.error('Error fetching comments:', error);
+          const comments = mockProblemComments.filter(c => c.problem_id === problemId);
+          return of(comments);
+        })
+      );
+  }
+
+  createProblemComment(problemId: number, content: string): Observable<ProblemComment> {
+    return this.http.post<{success: boolean, data: ProblemComment, message: string}>(
+      `${this.apiUrl}/problems/${problemId}/comments`,
+      { content },
+      { withCredentials: true }
+    )
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error creating comment:', error);
+          throw error;
+        })
+      );
+  }
+
+  updateProblemComment(problemId: number, commentId: number, content: string): Observable<ProblemComment> {
+    return this.http.put<{success: boolean, data: ProblemComment, message: string}>(
+      `${this.apiUrl}/problems/${problemId}/comments/${commentId}`,
+      { content },
+      { withCredentials: true }
+    )
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error updating comment:', error);
+          throw error;
+        })
+      );
+  }
+
+  deleteProblemComment(problemId: number, commentId: number): Observable<void> {
+    return this.http.delete<{success: boolean, message: string}>(
+      `${this.apiUrl}/problems/${problemId}/comments/${commentId}`,
+      { withCredentials: true }
+    )
+      .pipe(
+        map(() => void 0),
+        catchError(error => {
+          console.error('Error deleting comment:', error);
+          throw error;
+        })
+      );
   }
 
   // Statistics

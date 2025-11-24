@@ -8,6 +8,7 @@ import { ProblemDescriptionComponent } from './components/problem-description/pr
 import { CodeEditorComponent } from './components/code-editor/code-editor.component';
 import { ExamplesComponent } from './components/examples/examples.component';
 import { ExecutionResultsComponent } from './components/execution-results/execution-results.component';
+import { ReviewsComponent } from './components/reviews/reviews.component';
 
 @Component({
   selector: 'app-problem-detail',
@@ -18,7 +19,8 @@ import { ExecutionResultsComponent } from './components/execution-results/execut
     ProblemDescriptionComponent,
     CodeEditorComponent,
     ExamplesComponent,
-    ExecutionResultsComponent
+    ExecutionResultsComponent,
+    ReviewsComponent
   ],
   templateUrl: './problem-detail.component.html',
   styleUrl: './problem-detail.component.css'
@@ -42,7 +44,7 @@ export class ProblemDetailComponent implements OnInit, OnDestroy {
   
   // Layout state
   isMobileView = false;
-  activeTab: 'description' | 'examples' = 'description';
+  activeTab: 'description' | 'examples' | 'comments' = 'description';
   
   constructor(
     private route: ActivatedRoute,
@@ -147,7 +149,7 @@ export class ProblemDetailComponent implements OnInit, OnDestroy {
     }
   }
   
-  setActiveTab(tab: 'description' | 'examples'): void {
+  setActiveTab(tab: 'description' | 'examples' | 'comments'): void {
     this.activeTab = tab;
   }
   

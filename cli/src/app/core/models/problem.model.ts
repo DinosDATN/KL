@@ -105,6 +105,12 @@ export interface ProblemComment {
   content: string;
   created_at: string;
   updated_at?: string | null;
+  User?: {
+    id: number;
+    name: string;
+    avatar_url?: string | null;
+    email: string;
+  };
 }
 
 export interface TestCase {
