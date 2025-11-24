@@ -71,8 +71,16 @@ const CourseReview = sequelize.define('CourseReview', {
 
 // Class methods
 CourseReview.findByCourse = function(courseId) {
+  // Access User model through sequelize.model() to avoid circular dependency
+  // This works because all models are registered before associations are set up
+  const User = sequelize.model('User');
   return this.findAll({
     where: { course_id: courseId },
+    include: User ? [{
+      model: User,
+      as: 'User',
+      attributes: ['id', 'name', 'avatar_url', 'email']
+    }] : [],
     order: [['helpful', 'DESC'], ['created_at', 'DESC']]
   });
 };

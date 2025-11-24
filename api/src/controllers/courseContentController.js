@@ -982,7 +982,7 @@ class CourseContentController {
       if (!enrollment) {
         return res.status(403).json({
           success: false,
-          message: 'You must be enrolled in the course to leave a review'
+          message: 'Bạn cần đăng ký khóa học trước khi có thể đánh giá. Chỉ những học viên đã tham gia khóa học mới có thể để lại đánh giá.'
         });
       }
 
@@ -999,14 +999,25 @@ class CourseContentController {
         returning: true
       });
 
+      // Reload review with User information
+      const reviewWithUser = await CourseReview.findByPk(review.id, {
+        include: [{
+          model: User,
+          as: 'User',
+          attributes: ['id', 'name', 'avatar_url', 'email']
+        }]
+      });
+
       // Update course rating
-      const { average_rating } = await CourseReview.getAverageRating(course_id);
+      const { average_rating, review_count } = await CourseReview.getAverageRating(course_id);
       await Course.update({ rating: average_rating }, { where: { id: course_id } });
 
       res.status(created ? 201 : 200).json({
         success: true,
         message: created ? 'Review created successfully' : 'Review updated successfully',
-        data: review
+        data: reviewWithUser || review,
+        average_rating,
+        review_count
       });
     } catch (error) {
       console.error('Error in createOrUpdateReview:', error);

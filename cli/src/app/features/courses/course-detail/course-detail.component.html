@@ -281,6 +281,182 @@
               </div>
             </div>
           </div>
+          
+          <!-- Reviews Section -->
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div class="flex items-center justify-between mb-6">
+              <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+                Đánh giá khóa học
+              </h2>
+              <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2">
+                  <div class="flex items-center">
+                    <span *ngFor="let star of generateStarsArray(5); let i = index" 
+                          class="text-yellow-400 text-xl">
+                      {{ i < Math.floor(getAverageRating()) ? '⭐' : '☆' }}
+                    </span>
+                  </div>
+                  <span class="text-lg font-semibold text-gray-900 dark:text-white">
+                    {{ getAverageRating().toFixed(1) }}
+                  </span>
+                  <span class="text-sm text-gray-500 dark:text-gray-400">
+                    ({{ courseReviews.length }} đánh giá)
+                  </span>
+                </div>
+                <!-- Only show review button if user is authenticated and enrolled -->
+                <button 
+                  *ngIf="isAuthenticated && isEnrolled"
+                  (click)="toggleReviewForm()"
+                  class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium">
+                  {{ hasUserReviewed() ? 'Sửa đánh giá' : 'Viết đánh giá' }}
+                </button>
+                <!-- Show message for non-enrolled users -->
+                <div *ngIf="!isAuthenticated || !isEnrolled" class="text-sm text-gray-500 dark:text-gray-400 italic">
+                  <span *ngIf="!isAuthenticated">Đăng nhập để đánh giá</span>
+                  <span *ngIf="isAuthenticated && !isEnrolled">Đăng ký khóa học để đánh giá</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Enrollment Required Message -->
+            <div *ngIf="isAuthenticated && !isEnrolled && !showReviewForm" 
+                 class="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <div class="flex items-center gap-3">
+                <div class="flex-shrink-0">
+                  <i class="icon-info text-blue-600 dark:text-blue-400 text-xl"></i>
+                </div>
+                <div class="flex-1">
+                  <p class="text-sm text-blue-800 dark:text-blue-300 font-medium mb-1">
+                    Bạn cần đăng ký khóa học để có thể đánh giá
+                  </p>
+                  <p class="text-xs text-blue-600 dark:text-blue-400">
+                    Chỉ những học viên đã tham gia khóa học mới có thể để lại đánh giá và nhận xét.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Review Form -->
+            <div *ngIf="showReviewForm && isAuthenticated && isEnrolled" 
+                 class="mb-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                {{ hasUserReviewed() ? 'Sửa đánh giá của bạn' : 'Viết đánh giá' }}
+              </h3>
+              
+              <!-- Star Rating -->
+              <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Đánh giá của bạn
+                </label>
+                <div class="flex items-center gap-2">
+                  <button 
+                    *ngFor="let star of generateStarsArray(5); let i = index"
+                    type="button"
+                    (click)="setRating(i + 1)"
+                    class="text-3xl transition-transform hover:scale-110"
+                    [class.text-yellow-400]="i < reviewRating"
+                    [class.text-gray-300]="i >= reviewRating">
+                    {{ i < reviewRating ? '⭐' : '☆' }}
+                  </button>
+                  <span *ngIf="reviewRating > 0" class="ml-2 text-sm text-gray-600 dark:text-gray-400">
+                    {{ reviewRating }} sao
+                  </span>
+                </div>
+              </div>
+              
+              <!-- Comment Textarea -->
+              <div class="mb-4">
+                <label for="reviewComment" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Nhận xét (tùy chọn)
+                </label>
+                <textarea
+                  id="reviewComment"
+                  [(ngModel)]="reviewComment"
+                  rows="4"
+                  placeholder="Chia sẻ trải nghiệm của bạn về khóa học này..."
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </textarea>
+              </div>
+              
+              <!-- Form Actions -->
+              <div class="flex items-center gap-3">
+                <button
+                  (click)="submitReview()"
+                  [disabled]="isSubmittingReview || reviewRating < 1"
+                  class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium">
+                  <span *ngIf="!isSubmittingReview">{{ hasUserReviewed() ? 'Cập nhật đánh giá' : 'Gửi đánh giá' }}</span>
+                  <span *ngIf="isSubmittingReview">Đang gửi...</span>
+                </button>
+                <button
+                  (click)="showReviewForm = false"
+                  [disabled]="isSubmittingReview"
+                  class="px-4 py-2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium">
+                  Hủy
+                </button>
+              </div>
+            </div>
+            
+            <!-- Reviews List -->
+            <div class="space-y-6">
+              <div *ngFor="let review of courseReviews" 
+                   class="border-b border-gray-200 dark:border-gray-700 pb-6 last:border-0 last:pb-0">
+                <div class="flex items-start gap-4">
+                  <!-- User Avatar -->
+                  <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center flex-shrink-0">
+                    <i class="icon-user text-blue-600 dark:text-blue-400"></i>
+                  </div>
+                  
+                  <!-- Review Content -->
+                  <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-2">
+                      <span class="font-semibold text-gray-900 dark:text-white">
+                        {{ review.User?.name || 'Người dùng #' + review.user_id }}
+                      </span>
+                      <span *ngIf="review.verified" 
+                            class="px-2 py-0.5 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-xs rounded-full">
+                        ✓ Đã mua
+                      </span>
+                    </div>
+                    
+                    <!-- Rating Stars -->
+                    <div class="flex items-center gap-2 mb-2">
+                      <div class="flex items-center">
+                        <span *ngFor="let star of generateStarsArray(5); let i = index"
+                              class="text-yellow-400">
+                          {{ i < review.rating ? '⭐' : '☆' }}
+                        </span>
+                      </div>
+                      <span class="text-sm text-gray-500 dark:text-gray-400">
+                        {{ formatDate(review.created_at) }}
+                      </span>
+                    </div>
+                    
+                    <!-- Review Comment -->
+                    <p *ngIf="review.comment" class="text-gray-700 dark:text-gray-300 mb-2">
+                      {{ review.comment }}
+                    </p>
+                    
+                    <!-- Helpful Count -->
+                    <div *ngIf="review.helpful || review.not_helpful" 
+                         class="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                      <span *ngIf="review.helpful">
+                        👍 Hữu ích ({{ review.helpful }})
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Empty State -->
+              <div *ngIf="courseReviews.length === 0" class="text-center py-8">
+                <div class="text-gray-400 dark:text-gray-500 text-4xl mb-4">⭐</div>
+                <p class="text-gray-600 dark:text-gray-400">Chưa có đánh giá nào cho khóa học này.</p>
+                <p *ngIf="isAuthenticated && isEnrolled" class="text-sm text-gray-500 dark:text-gray-500 mt-2">
+                  Hãy là người đầu tiên đánh giá khóa học này!
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
         
         <!-- Right Panel - Summary Card (1/3) -->

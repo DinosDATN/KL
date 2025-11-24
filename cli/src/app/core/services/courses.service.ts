@@ -190,6 +190,26 @@ export class CoursesService {
       );
   }
 
+  /**
+   * Submit or update a course review
+   */
+  submitReview(courseId: number, rating: number, comment?: string): Observable<any> {
+    const reviewData: any = { rating };
+    if (comment) {
+      reviewData.comment = comment;
+    }
+    
+    return this.http.post<ApiResponse<any>>(
+      `${this.apiUrl}/course-content/courses/${courseId}/reviews`,
+      reviewData,
+      { withCredentials: true } // ✅ Send HttpOnly cookie
+    ).pipe(
+      timeout(environment.apiTimeout),
+      map(response => response),
+      catchError(error => this.handleError(error, 'Failed to submit review'))
+    );
+  }
+
   // Get courses by instructor
   getCoursesByInstructor(instructorId: number, page: number = 1, limit: number = 10): Observable<PaginatedResponse<Course>> {
     const params = new HttpParams()
