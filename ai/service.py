@@ -1,17 +1,31 @@
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from openai import OpenAI
 import os
 import logging
 import json
-from typing import Dict, Any
+import httpx
+from typing import Dict, Any, Optional
 
 app = FastAPI()
+
+# Cấu hình CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Cấu hình logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Cấu hình Node.js API URL để lấy schema
+NODE_API_URL = os.getenv("NODE_API_URL", "http://localhost:3000")
 
 # 🔹 Dùng OpenRouter endpoint
 client = OpenAI(
@@ -22,39 +36,306 @@ client = OpenAI(
 class ChatRequest(BaseModel):
     question: str
 
+class FormatAnswerRequest(BaseModel):
+    question: str
+    query_result: list
+    query_info: Optional[Dict[str, Any]] = None
+
 class ChatAIService:
     """
-    Service chính xử lý chat AI - chỉ sử dụng AI để trả lời câu hỏi
+    Service chính xử lý chat AI với khả năng query database
     """
     
     def __init__(self):
-        pass
+        self.schema_cache = None
+        self.schema_cache_time = None
+    
+    def _get_database_schema(self) -> str:
+        """
+        Lấy database schema từ Node.js API
+        """
+        try:
+            # Cache schema trong 1 giờ
+            import time
+            if self.schema_cache and self.schema_cache_time:
+                if time.time() - self.schema_cache_time < 3600:
+                    logger.info("Using cached schema")
+                    return self.schema_cache
+            
+            logger.info(f"Fetching schema from: {NODE_API_URL}/api/v1/chat-ai/schema")
+            with httpx.Client(timeout=10.0) as client:
+                response = client.get(f"{NODE_API_URL}/api/v1/chat-ai/schema?format=text")
+                logger.info(f"Schema API response status: {response.status_code}")
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    schema = data.get("data", {}).get("schema", "")
+                    if schema:
+                        self.schema_cache = schema
+                        self.schema_cache_time = time.time()
+                        logger.info(f"Schema fetched successfully, length: {len(schema)} characters")
+                        return schema
+                    else:
+                        logger.warning("Schema response is empty")
+                        return ""
+                else:
+                    logger.warning(f"Failed to get schema: {response.status_code}, response: {response.text[:200]}")
+                    return ""
+        except Exception as e:
+            logger.error(f"Error getting schema: {e}", exc_info=True)
+            return ""
+    
+    def _decide_if_needs_database(self, question: str) -> bool:
+        """
+        Decision layer: Quyết định xem câu hỏi có cần query database không
+        Sử dụng keyword matching trước (nhanh hơn), sau đó mới dùng AI nếu cần
+        """
+        question_lower = question.lower()
+        
+        # Keyword matching - nhanh và chính xác cho các trường hợp phổ biến
+        strong_db_keywords = [
+            "có bao nhiêu", "thống kê", "danh sách", "liệt kê",
+            "hiển thị", "show", "list", "đếm", "count"
+        ]
+        
+        # Nếu có strong keywords, chắc chắn cần DB
+        if any(keyword in question_lower for keyword in strong_db_keywords):
+            logger.info(f"Strong DB keyword detected in: '{question}'")
+            return True
+        
+        # Kiểm tra có từ khóa về entities (khóa học, bài tập, etc.)
+        entity_keywords = [
+            "khóa học", "course", "bài tập", "problem", "tài liệu", "document",
+            "người dùng", "user", "cuộc thi", "contest", "hệ thống"
+        ]
+        
+        has_entity = any(keyword in question_lower for keyword in entity_keywords)
+        
+        # Nếu có entity keywords + các từ chỉ thị, cần DB
+        if has_entity:
+            indicator_keywords = [
+                "có", "trong", "của", "nào", "gì", "hiện tại", "hiện có",
+                "mới nhất", "cũ nhất", "nhiều nhất", "ít nhất", "top"
+            ]
+            if any(keyword in question_lower for keyword in indicator_keywords):
+                logger.info(f"Entity + indicator detected in: '{question}'")
+                return True
+        
+        # Nếu không match keyword, dùng AI để quyết định (cho các trường hợp phức tạp)
+        try:
+            decision_prompt = (
+                f"Phân tích câu hỏi sau và quyết định xem có cần query database không:\n\n"
+                f"Câu hỏi: {question}\n\n"
+                f"Các loại câu hỏi CẦN query database:\n"
+                f"- Hỏi về số lượng, thống kê (ví dụ: 'có bao nhiêu khóa học', 'thống kê người dùng')\n"
+                f"- Hỏi về danh sách, liệt kê (ví dụ: 'danh sách khóa học', 'hiển thị bài tập')\n"
+                f"- Hỏi về thông tin cụ thể từ hệ thống (ví dụ: 'khóa học nào có rating cao nhất', 'bài tập khó nhất')\n"
+                f"- Hỏi về dữ liệu thực tế trong hệ thống\n\n"
+                f"Các loại câu hỏi KHÔNG CẦN query database:\n"
+                f"- Hỏi về khái niệm, định nghĩa (ví dụ: 'Python là gì', 'thuật toán quicksort là gì')\n"
+                f"- Hỏi về cách làm, hướng dẫn (ví dụ: 'làm thế nào để học lập trình', 'cách debug code')\n"
+                f"- Hỏi về lý thuyết, kiến thức chung\n\n"
+                f"Trả lời CHỈ bằng 'YES' nếu cần query database, hoặc 'NO' nếu không cần."
+            )
+            
+            completion = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "Bạn là một hệ thống phân tích câu hỏi. Nhiệm vụ của bạn là quyết định xem câu hỏi có cần query database không. Trả lời CHỈ bằng 'YES' hoặc 'NO'."
+                    },
+                    {"role": "user", "content": decision_prompt}
+                ],
+                temperature=0.1,
+                max_tokens=10
+            )
+            
+            decision = completion.choices[0].message.content.strip().upper()
+            needs_db = decision == "YES" or "YES" in decision
+            
+            logger.info(f"AI decision for question '{question}': {'NEEDS_DB' if needs_db else 'NO_DB'} (response: {decision})")
+            return needs_db
+            
+        except Exception as e:
+            logger.error(f"Error in AI decision layer: {e}")
+            # Fallback: nếu có entity keywords thì cần DB
+            return has_entity
     
     def process_question(self, question: str) -> Dict[str, Any]:
         """
-        Xử lý câu hỏi và trả về kết quả từ AI
+        Xử lý câu hỏi với decision layer: quyết định có cần query DB không
         """
         try:
-            # Tạo prompt cho AI
+            logger.info(f"Processing question: {question}")
+            
+            # Decision layer: Kiểm tra xem có cần query database không
+            needs_database = self._decide_if_needs_database(question)
+            logger.info(f"Decision result: needs_database={needs_database} for question: '{question}'")
+            
+            if needs_database:
+                # Lấy schema và sinh SQL
+                logger.info("Fetching database schema...")
+                schema = self._get_database_schema()
+                
+                if not schema:
+                    logger.warning("Could not fetch schema, trying to generate SQL without schema...")
+                    # Thử sinh SQL với basic schema info
+                    basic_schema = (
+                        "Tables: courses (id, title, description, rating, students, status, is_deleted), "
+                        "problems (id, title, difficulty, is_deleted), "
+                        "documents (id, title, description, is_deleted), "
+                        "users (id, name, email, role, is_active)"
+                    )
+                    schema = basic_schema
+                
+                logger.info(f"Using schema, length: {len(schema)} characters")
+                sql_result = self._generate_sql(question, schema)
+                
+                if sql_result.get("sql"):
+                    logger.info(f"SQL generated successfully: {sql_result['sql']}")
+                    return {
+                        "answer": sql_result.get("fallback_answer", ""),
+                        "data_source": "ai",
+                        "requires_sql": True,
+                        "sql": sql_result["sql"],
+                        "query_info": sql_result.get("query_info", {})
+                    }
+                else:
+                    logger.warning("Could not generate SQL, using fallback answer")
+                    # Trả về fallback answer nếu có
+                    if sql_result.get("fallback_answer"):
+                        return {
+                            "answer": sql_result["fallback_answer"],
+                            "data_source": "ai",
+                            "requires_sql": False
+                        }
+            
+            # Không cần query DB hoặc không sinh được SQL, trả lời bằng AI thông thường
+            logger.info("Using standard AI response")
             prompt = (
                 f"Người dùng hỏi: {question}\n\n"
                 f"Hãy trả lời câu hỏi một cách thân thiện, chi tiết và hữu ích bằng tiếng Việt. "
                 f"Bạn là trợ lý AI hỗ trợ người học lập trình."
             )
             
-            # Gọi AI
             ai_response = self._call_ai(prompt)
             
             return {
                 "answer": ai_response,
-                "data_source": "ai"
+                "data_source": "ai",
+                "requires_sql": False
             }
             
         except Exception as e:
-            logger.error(f"Error processing question: {e}")
+            logger.error(f"Error processing question: {e}", exc_info=True)
             return {
                 "answer": "Xin lỗi, tôi gặp lỗi khi xử lý câu hỏi của bạn. Vui lòng thử lại.",
-                "error": str(e)
+                "error": str(e),
+                "requires_sql": False
+            }
+    
+    def _generate_sql(self, question: str, schema: str) -> Dict[str, Any]:
+        """
+        Sinh SQL query từ câu hỏi người dùng với schema context
+        """
+        try:
+            # Rút ngắn schema nếu quá dài (giới hạn 8000 tokens)
+            if len(schema) > 8000:
+                schema = schema[:8000] + "\n... (schema truncated)"
+            
+            system_prompt = (
+                "Bạn là một chuyên gia SQL cho MySQL database. Nhiệm vụ của bạn là phân tích câu hỏi tiếng Việt "
+                "và sinh ra câu lệnh SQL SELECT phù hợp.\n\n"
+                "QUAN TRỌNG:\n"
+                "- CHỈ sinh ra câu lệnh SELECT, KHÔNG được có các lệnh khác (INSERT, UPDATE, DELETE, DROP, etc.)\n"
+                "- Phải sử dụng đúng tên bảng và cột từ schema được cung cấp\n"
+                "- Tên bảng trong database là: courses (khóa học), problems (bài tập), documents (tài liệu), users (người dùng)\n"
+                "- Luôn thêm LIMIT để giới hạn kết quả (tối đa 100 rows)\n"
+                "- Đối với câu hỏi đếm số lượng, sử dụng COUNT(*)\n"
+                "- Đối với câu hỏi 'có bao nhiêu', trả về SELECT COUNT(*) as total FROM ...\n"
+                "- Trả về CHỈ SQL query, không có giải thích hay text khác\n"
+                "- Nếu không thể sinh SQL hợp lệ, trả về 'NO_SQL'\n\n"
+                f"DATABASE SCHEMA:\n{schema}\n\n"
+                "Ví dụ:\n"
+                "Câu hỏi: 'Có những khóa học nào?'\n"
+                "SQL: SELECT id, title, description, rating, students FROM courses WHERE is_deleted = false AND status = 'published' LIMIT 100\n\n"
+                "Câu hỏi: 'Hệ thống hiện tại có bao nhiêu khóa học?'\n"
+                "SQL: SELECT COUNT(*) as total FROM courses WHERE is_deleted = false LIMIT 100\n\n"
+                "Câu hỏi: 'Có bao nhiêu bài tập khó?'\n"
+                "SQL: SELECT COUNT(*) as total FROM problems WHERE difficulty = 'Hard' AND is_deleted = false LIMIT 100\n\n"
+            )
+            
+            user_prompt = f"Câu hỏi: {question}\n\nSQL:"
+            
+            completion = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                temperature=0.3,  # Lower temperature cho SQL generation
+                max_tokens=500
+            )
+            
+            sql_response = completion.choices[0].message.content.strip()
+            logger.info(f"Raw SQL response from GPT: {sql_response[:200]}")
+            
+            # Làm sạch SQL response
+            sql_response = sql_response.replace("```sql", "").replace("```", "").strip()
+            # Loại bỏ các dòng comment hoặc giải thích
+            lines = sql_response.split('\n')
+            sql_lines = [line for line in lines if not line.strip().startswith('--') and line.strip()]
+            sql_response = ' '.join(sql_lines).strip()
+            
+            logger.info(f"Cleaned SQL: {sql_response}")
+            
+            # Kiểm tra xem có phải SQL hợp lệ không
+            if sql_response.upper().startswith("SELECT") and "NO_SQL" not in sql_response.upper():
+                logger.info(f"Valid SQL generated: {sql_response}")
+                return {
+                    "sql": sql_response,
+                    "query_info": {
+                        "type": "select",
+                        "generated": True
+                    }
+                }
+            else:
+                logger.warning(f"Invalid SQL response: {sql_response}")
+                # Fallback: trả lời bằng AI thông thường
+                fallback_prompt = (
+                    f"Người dùng hỏi: {question}\n\n"
+                    f"Hãy trả lời câu hỏi một cách thân thiện, chi tiết và hữu ích bằng tiếng Việt. "
+                    f"Bạn là trợ lý AI hỗ trợ người học lập trình."
+                )
+                fallback_answer = self._call_ai(fallback_prompt)
+                
+                return {
+                    "sql": None,
+                    "fallback_answer": fallback_answer,
+                    "query_info": {
+                        "type": "fallback",
+                        "reason": "Could not generate valid SQL"
+                    }
+                }
+                
+        except Exception as e:
+            logger.error(f"Error generating SQL: {e}")
+            # Fallback
+            fallback_prompt = (
+                f"Người dùng hỏi: {question}\n\n"
+                f"Hãy trả lời câu hỏi một cách thân thiện, chi tiết và hữu ích bằng tiếng Việt. "
+                f"Bạn là trợ lý AI hỗ trợ người học lập trình."
+            )
+            fallback_answer = self._call_ai(fallback_prompt)
+            
+            return {
+                "sql": None,
+                "fallback_answer": fallback_answer,
+                "query_info": {
+                    "type": "fallback",
+                    "error": str(e)
+                }
             }
     
     def _call_ai(self, prompt: str) -> str:
@@ -119,6 +400,60 @@ class ChatAIService:
         except Exception as e:
             logger.error(f"Error streaming AI: {e}")
             yield "Xin lỗi, tôi gặp lỗi khi tạo phản hồi. Vui lòng thử lại."
+    
+    def format_answer_from_query(self, question: str, query_result: list, query_info: Optional[Dict[str, Any]] = None) -> str:
+        """
+        Format câu trả lời từ kết quả query database
+        """
+        try:
+            if not query_result or len(query_result) == 0:
+                return "Không tìm thấy dữ liệu phù hợp với câu hỏi của bạn."
+            
+            # Xử lý đặc biệt cho COUNT(*) queries
+            first_result = query_result[0]
+            if isinstance(first_result, dict) and 'total' in first_result:
+                # Đây là kết quả COUNT(*)
+                total = first_result.get('total', 0)
+                logger.info(f"Formatting COUNT result: total={total}")
+                
+                # Format trực tiếp cho COUNT queries
+                if 'khóa học' in question.lower() or 'course' in question.lower():
+                    return f"Hiện tại hệ thống có **{total}** khóa học."
+                elif 'bài tập' in question.lower() or 'problem' in question.lower():
+                    return f"Hiện tại hệ thống có **{total}** bài tập."
+                elif 'tài liệu' in question.lower() or 'document' in question.lower():
+                    return f"Hiện tại hệ thống có **{total}** tài liệu."
+                elif 'người dùng' in question.lower() or 'user' in question.lower():
+                    return f"Hiện tại hệ thống có **{total}** người dùng."
+                else:
+                    return f"Dựa trên dữ liệu từ hệ thống, có **{total}** kết quả."
+            
+            # Xử lý cho các queries khác (danh sách, etc.)
+            result_summary = json.dumps(query_result[:20], ensure_ascii=False, indent=2)  # Chỉ lấy 20 rows đầu
+            
+            prompt = (
+                f"Người dùng đã hỏi: {question}\n\n"
+                f"Kết quả từ database:\n{result_summary}\n\n"
+                f"Hãy trả lời câu hỏi dựa trên dữ liệu trên một cách thân thiện, chi tiết và hữu ích bằng tiếng Việt. "
+                f"Bạn là trợ lý AI hỗ trợ người học lập trình. "
+                f"Hãy trình bày thông tin một cách dễ hiểu và có cấu trúc."
+            )
+            
+            formatted_answer = self._call_ai(prompt)
+            return formatted_answer
+            
+        except Exception as e:
+            logger.error(f"Error formatting answer: {e}", exc_info=True)
+            # Fallback: format đơn giản
+            if query_result and len(query_result) > 0:
+                first_result = query_result[0]
+                if isinstance(first_result, dict) and 'total' in first_result:
+                    total = first_result.get('total', 0)
+                    return f"Hiện tại hệ thống có {total} kết quả."
+                else:
+                    return f"Dựa trên dữ liệu từ hệ thống, tìm thấy {len(query_result)} kết quả."
+            else:
+                return "Không tìm thấy dữ liệu phù hợp với câu hỏi của bạn."
 
 # Khởi tạo service
 chat_ai_service = ChatAIService()
@@ -188,6 +523,30 @@ async def ask_stream(request: ChatRequest):
         def error_response():
             yield json.dumps({"type": "error", "content": "Có lỗi xảy ra. Vui lòng thử lại sau."}, ensure_ascii=False) + "\n"
         return StreamingResponse(error_response(), media_type="text/event-stream")
+
+@app.post("/format-answer")
+async def format_answer(request: FormatAnswerRequest):
+    """
+    Format câu trả lời từ kết quả query database
+    """
+    try:
+        formatted = chat_ai_service.format_answer_from_query(
+            request.question,
+            request.query_result,
+            request.query_info
+        )
+        
+        return {
+            "answer": formatted,
+            "data_source": "database"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in format_answer endpoint: {e}")
+        return {
+            "answer": "Xin lỗi, có lỗi xảy ra khi format câu trả lời.",
+            "error": str(e)
+        }
 
 @app.get("/health")
 async def health_check():

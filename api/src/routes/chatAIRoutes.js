@@ -88,6 +88,12 @@ router.get('/stats', chatAIController.getStats);
 router.get('/quick-questions', chatAIController.getQuickQuestions);
 
 /**
+ * GET /api/v1/chat-ai/schema
+ * Lấy database schema để cung cấp cho AI service
+ */
+router.get('/schema', chatAIController.getSchema);
+
+/**
  * Rate limiting middleware (tùy chọn - có thể bật trong production)
  * Giới hạn số request để tránh spam
  */

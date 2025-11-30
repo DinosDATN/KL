@@ -1,15 +1,16 @@
 # Core dependencies
 fastapi==0.104.1
 uvicorn==0.24.0
-pydantic==2.4.2
+pydantic>=2.4.2  # Flexible version to avoid conflicts with other packages
 
 # AI/ML
-openai==1.3.0
+openai>=1.3.0  # Flexible version to avoid conflicts with llama-index
 
 # Utilities
 python-multipart==0.0.6
-typing-extensions==4.8.0
+typing-extensions>=4.8.0  # Flexible version to avoid conflicts with cryptography
 python-dotenv==1.0.0
+httpx>=0.25.0  # Flexible version to avoid conflicts - For HTTP requests to Node.js API
 
 # Optional for production
 gunicorn==21.2.0

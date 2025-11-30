@@ -1,5 +1,7 @@
 const axios = require('axios');
 const { Readable } = require('stream');
+const SQLExecutor = require('../services/sqlExecutor');
+const DatabaseSchemaService = require('../services/databaseSchemaService');
 
 /**
  * ChatAI Controller - Xử lý các request liên quan đến ChatAI
@@ -38,7 +40,9 @@ const askAI = async (req, res) => {
     // Log request để monitoring
     console.log(`[ChatAI] Received question: ${question.substring(0, 100)}${question.length > 100 ? '...' : ''}`);
 
-    // Gọi Python AI service
+    const userId = req.user?.id || null;
+
+    // Gọi Python AI service với decision layer
     const aiResponse = await axios.post(`${PYTHON_AI_API_URL}/ask`, {
       question: question.trim()
     }, {
@@ -48,24 +52,91 @@ const askAI = async (req, res) => {
       }
     });
 
+    // Log response từ Python để debug
+    console.log(`[ChatAI] Python response:`, JSON.stringify({
+      requires_sql: aiResponse.data.requires_sql,
+      has_sql: !!aiResponse.data.sql,
+      sql_preview: aiResponse.data.sql ? aiResponse.data.sql.substring(0, 100) : null,
+      data_source: aiResponse.data.data_source
+    }));
+
+    // Kiểm tra xem AI có trả về SQL không
+    let finalAnswer = aiResponse.data.answer;
+    let dataSource = aiResponse.data.data_source || 'ai_general';
+    let rawData = aiResponse.data.raw_data || null;
+    let queryInfo = aiResponse.data.query_info || null;
+
+    // Nếu AI trả về SQL, thực thi và format kết quả
+    if (aiResponse.data.requires_sql && aiResponse.data.sql) {
+      console.log(`[ChatAI] AI generated SQL, executing: ${aiResponse.data.sql}`);
+      
+      try {
+        // Thực thi SQL query
+        const queryResult = await SQLExecutor.executeQuery(aiResponse.data.sql, {
+          timeout: 10000,
+          maxRows: 100,
+          userId: userId
+        });
+
+        if (queryResult.success) {
+          // Format kết quả query
+          const formattedData = SQLExecutor.formatResult(queryResult);
+          
+          // Gửi kết quả về Python để format lại câu trả lời
+          try {
+            const formattedResponse = await axios.post(`${PYTHON_AI_API_URL}/format-answer`, {
+              question: question.trim(),
+              query_result: queryResult.data,
+              query_info: queryInfo
+            }, {
+              timeout: 15000,
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
+
+            finalAnswer = formattedResponse.data.answer || formattedData;
+            dataSource = 'database';
+            rawData = queryResult.data;
+          } catch (formatError) {
+            // Fallback: sử dụng formatted data trực tiếp
+            console.warn('[ChatAI] Error formatting answer with AI, using direct format:', formatError.message);
+            finalAnswer = `Dựa trên dữ liệu từ hệ thống:\n\n${formattedData}`;
+            dataSource = 'database';
+            rawData = queryResult.data;
+          }
+        } else {
+          // SQL execution failed, fallback to AI answer
+          console.warn('[ChatAI] SQL execution failed:', queryResult.error);
+          finalAnswer = `Xin lỗi, tôi không thể truy vấn dữ liệu lúc này. ${aiResponse.data.answer}`;
+          dataSource = 'ai_fallback';
+        }
+      } catch (sqlError) {
+        // SQL execution error, fallback to AI answer
+        console.error('[ChatAI] SQL execution error:', sqlError.message);
+        finalAnswer = `Xin lỗi, có lỗi xảy ra khi truy vấn dữ liệu. ${aiResponse.data.answer}`;
+        dataSource = 'ai_fallback';
+      }
+    }
+
     // Format response cho frontend
     const formattedResponse = {
       success: true,
       data: {
-        answer: aiResponse.data.answer,
-        data_source: aiResponse.data.data_source || 'ai_general',
-        query_info: aiResponse.data.query_info || null,
+        answer: finalAnswer,
+        data_source: dataSource,
+        query_info: queryInfo,
         suggestions: aiResponse.data.suggestions || [
           'Có những khóa học nào?',
           'Bài tập dễ để luyện tập?',
           'Tài liệu học lập trình có gì?'
         ],
-        raw_data: aiResponse.data.raw_data || null
+        raw_data: rawData
       },
       timestamp: new Date().toISOString()
     };
 
-    console.log(`[ChatAI] Response sent successfully`);
+    console.log(`[ChatAI] Response sent successfully (source: ${dataSource})`);
     return res.status(200).json(formattedResponse);
 
   } catch (error) {
@@ -263,20 +334,145 @@ const askAIStream = async (req, res) => {
     // Log request để monitoring
     console.log(`[ChatAI] Received streaming question: ${question.substring(0, 100)}${question.length > 100 ? '...' : ''}`);
 
+    const userId = req.user?.id || null;
+
     // Set headers cho Server-Sent Events
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no'); // Disable buffering for nginx
 
-    // Gọi Python AI service với streaming
     try {
+      // Bước 1: Gọi Python AI service với /ask (non-streaming) để check SQL
+      const aiResponse = await axios.post(`${PYTHON_AI_API_URL}/ask`, {
+        question: question.trim()
+      }, {
+        timeout: 30000,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log(`[ChatAI Stream] Python response:`, JSON.stringify({
+        requires_sql: aiResponse.data.requires_sql,
+        has_sql: !!aiResponse.data.sql,
+        sql_preview: aiResponse.data.sql ? aiResponse.data.sql.substring(0, 100) : null
+      }));
+
+      // Bước 2: Nếu có SQL, thực thi và stream kết quả
+      if (aiResponse.data.requires_sql && aiResponse.data.sql) {
+        console.log(`[ChatAI Stream] Executing SQL: ${aiResponse.data.sql}`);
+        
+        try {
+          // Thực thi SQL query
+          const queryResult = await SQLExecutor.executeQuery(aiResponse.data.sql, {
+            timeout: 10000,
+            maxRows: 100,
+            userId: userId
+          });
+
+          if (queryResult.success) {
+            // Format kết quả query
+            const formattedData = SQLExecutor.formatResult(queryResult);
+            
+            // Gửi kết quả về Python để format lại câu trả lời
+            try {
+              const formattedResponse = await axios.post(`${PYTHON_AI_API_URL}/format-answer`, {
+                question: question.trim(),
+                query_result: queryResult.data,
+                query_info: aiResponse.data.query_info
+              }, {
+                timeout: 15000,
+                headers: {
+                  'Content-Type': 'application/json'
+                }
+              });
+
+              const finalAnswer = formattedResponse.data.answer || formattedData;
+              
+              // Stream kết quả về frontend
+              const answerChunks = finalAnswer.split(' ');
+              for (let i = 0; i < answerChunks.length; i++) {
+                const chunk = (i === 0 ? '' : ' ') + answerChunks[i];
+                const data = JSON.stringify({
+                  type: 'chunk',
+                  content: chunk
+                }, { ensureAscii: false });
+                res.write(`data: ${data}\n\n`);
+                
+                // Small delay để tạo hiệu ứng streaming
+                await new Promise(resolve => setTimeout(resolve, 30));
+              }
+              
+              // Gửi signal kết thúc
+              res.write(`data: ${JSON.stringify({ type: 'done' }, { ensureAscii: false })}\n\n`);
+              res.end();
+              console.log(`[ChatAI Stream] SQL query completed and streamed`);
+              return;
+              
+            } catch (formatError) {
+              console.warn('[ChatAI Stream] Error formatting answer, using direct format:', formatError.message);
+              // Fallback: stream formatted data trực tiếp
+              const finalAnswer = `Dựa trên dữ liệu từ hệ thống:\n\n${formattedData}`;
+              const answerChunks = finalAnswer.split(' ');
+              for (let i = 0; i < answerChunks.length; i++) {
+                const chunk = (i === 0 ? '' : ' ') + answerChunks[i];
+                const data = JSON.stringify({
+                  type: 'chunk',
+                  content: chunk
+                }, { ensureAscii: false });
+                res.write(`data: ${data}\n\n`);
+                await new Promise(resolve => setTimeout(resolve, 30));
+              }
+              res.write(`data: ${JSON.stringify({ type: 'done' }, { ensureAscii: false })}\n\n`);
+              res.end();
+              return;
+            }
+          } else {
+            // SQL execution failed, fallback to AI answer
+            console.warn('[ChatAI Stream] SQL execution failed:', queryResult.error);
+            const fallbackAnswer = `Xin lỗi, tôi không thể truy vấn dữ liệu lúc này. ${aiResponse.data.answer}`;
+            const answerChunks = fallbackAnswer.split(' ');
+            for (let i = 0; i < answerChunks.length; i++) {
+              const chunk = (i === 0 ? '' : ' ') + answerChunks[i];
+              const data = JSON.stringify({
+                type: 'chunk',
+                content: chunk
+              }, { ensureAscii: false });
+              res.write(`data: ${data}\n\n`);
+              await new Promise(resolve => setTimeout(resolve, 30));
+            }
+            res.write(`data: ${JSON.stringify({ type: 'done' }, { ensureAscii: false })}\n\n`);
+            res.end();
+            return;
+          }
+        } catch (sqlError) {
+          console.error('[ChatAI Stream] SQL execution error:', sqlError.message);
+          const errorAnswer = `Xin lỗi, có lỗi xảy ra khi truy vấn dữ liệu. ${aiResponse.data.answer}`;
+          const answerChunks = errorAnswer.split(' ');
+          for (let i = 0; i < answerChunks.length; i++) {
+            const chunk = (i === 0 ? '' : ' ') + answerChunks[i];
+            const data = JSON.stringify({
+              type: 'chunk',
+              content: chunk
+            }, { ensureAscii: false });
+            res.write(`data: ${data}\n\n`);
+            await new Promise(resolve => setTimeout(resolve, 30));
+          }
+          res.write(`data: ${JSON.stringify({ type: 'done' }, { ensureAscii: false })}\n\n`);
+          res.end();
+          return;
+        }
+      }
+
+      // Bước 3: Nếu không có SQL, dùng streaming từ Python service
+      console.log(`[ChatAI Stream] No SQL, using Python streaming`);
       const response = await axios.post(
         `${PYTHON_AI_API_URL}/ask-stream`,
         { question: question.trim() },
         {
           responseType: 'stream',
-          timeout: 60000, // 60 seconds timeout cho streaming
+          timeout: 60000,
           headers: {
             'Content-Type': 'application/json'
           }
@@ -290,11 +486,11 @@ const askAIStream = async (req, res) => {
 
       response.data.on('end', () => {
         res.end();
-        console.log(`[ChatAI] Streaming completed`);
+        console.log(`[ChatAI Stream] Streaming completed`);
       });
 
       response.data.on('error', (error) => {
-        console.error('[ChatAI] Streaming error:', error);
+        console.error('[ChatAI Stream] Streaming error:', error);
         const errorData = JSON.stringify({
           type: 'error',
           content: 'Có lỗi xảy ra khi nhận streaming response'
@@ -336,10 +532,52 @@ const askAIStream = async (req, res) => {
   }
 };
 
+/**
+ * Lấy database schema để cung cấp cho AI service
+ * GET /api/v1/chat-ai/schema
+ */
+const getSchema = async (req, res) => {
+  try {
+    console.log(`[ChatAI] Schema requested`);
+
+    const format = req.query.format || 'text'; // 'text' or 'json'
+
+    if (format === 'json') {
+      const schema = await DatabaseSchemaService.getSchemaJSON();
+      return res.status(200).json({
+        success: true,
+        data: schema,
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      const schemaText = await DatabaseSchemaService.getSchemaDescription();
+      return res.status(200).json({
+        success: true,
+        data: {
+          schema: schemaText,
+          format: 'text'
+        },
+        timestamp: new Date().toISOString()
+      });
+    }
+
+  } catch (error) {
+    console.error('[ChatAI] Error getting schema:', error.message);
+    
+    return res.status(500).json({
+      success: false,
+      message: 'Không thể lấy database schema',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+};
+
 module.exports = {
   askAI,
   askAIStream,
   checkHealth,
   getStats,
-  getQuickQuestions
+  getQuickQuestions,
+  getSchema
 };
