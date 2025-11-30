@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const UserProfile = require("../models/UserProfile");
 const UserStats = require("../models/UserStats");
+const Level = require("../models/Level");
 const {
   UserGoal,
   Achievement,
@@ -430,12 +431,55 @@ const userController = {
         }),
       ]);
 
+      // Get level information from levels table
+      let levelInfo = null;
+      if (user.Stats) {
+        // First try to find level by user's current level in database
+        if (user.Stats.level) {
+          levelInfo = await Level.findByLevel(user.Stats.level);
+        }
+
+        // If level not found in table (e.g., level > 10), find level based on XP
+        // This gives us the level that matches the user's XP
+        if (!levelInfo && user.Stats.xp !== undefined) {
+          levelInfo = await Level.findLevelForXp(user.Stats.xp);
+        }
+
+        // If still not found, get the max level as fallback
+        if (!levelInfo) {
+          levelInfo = await Level.findOne({
+            order: [["level", "DESC"]],
+          });
+        }
+
+        // If user's level in database is higher than the level_info level,
+        // we need to calculate progress differently
+        // For now, we'll use the level_info but the frontend will handle the progress calculation
+      }
+
+      // Prepare stats with level information
+      const statsData = user.Stats
+        ? {
+            ...user.Stats.toJSON(),
+            level_info: levelInfo
+              ? {
+                  level: levelInfo.level,
+                  name: levelInfo.name,
+                  xp_required: levelInfo.xp_required,
+                  xp_to_next: levelInfo.xp_to_next,
+                  color: levelInfo.color,
+                  icon: levelInfo.icon,
+                }
+              : null,
+          }
+        : null;
+
       res.status(200).json({
         success: true,
         data: {
           user: user.toAuthJSON(),
           profile: user.Profile,
-          stats: user.Stats,
+          stats: statsData,
           goals: goals,
           achievements: userAchievements.map((ua) => ({
             id: ua.id,
@@ -579,7 +623,9 @@ const userController = {
 
       // Helper function to check if value is not empty
       const isNotEmpty = (value) => {
-        return value !== undefined && value !== null && String(value).trim() !== '';
+        return (
+          value !== undefined && value !== null && String(value).trim() !== ""
+        );
       };
 
       if (isNotEmpty(website_url)) {
@@ -588,29 +634,44 @@ const userController = {
           return res.status(400).json({
             success: false,
             message: "Invalid website URL format",
-            errors: { website_url: "Please provide a valid URL (must start with http:// or https://)" },
+            errors: {
+              website_url:
+                "Please provide a valid URL (must start with http:// or https://)",
+            },
           });
         }
       }
 
       if (isNotEmpty(github_url)) {
         const trimmedUrl = String(github_url).trim();
-        if (!urlPattern.test(trimmedUrl) || !trimmedUrl.includes("github.com")) {
+        if (
+          !urlPattern.test(trimmedUrl) ||
+          !trimmedUrl.includes("github.com")
+        ) {
           return res.status(400).json({
             success: false,
             message: "Invalid GitHub URL format",
-            errors: { github_url: "Please provide a valid GitHub URL (must include github.com)" },
+            errors: {
+              github_url:
+                "Please provide a valid GitHub URL (must include github.com)",
+            },
           });
         }
       }
 
       if (isNotEmpty(linkedin_url)) {
         const trimmedUrl = String(linkedin_url).trim();
-        if (!urlPattern.test(trimmedUrl) || !trimmedUrl.includes("linkedin.com")) {
+        if (
+          !urlPattern.test(trimmedUrl) ||
+          !trimmedUrl.includes("linkedin.com")
+        ) {
           return res.status(400).json({
             success: false,
             message: "Invalid LinkedIn URL format",
-            errors: { linkedin_url: "Please provide a valid LinkedIn URL (must include linkedin.com)" },
+            errors: {
+              linkedin_url:
+                "Please provide a valid LinkedIn URL (must include linkedin.com)",
+            },
           });
         }
       }
@@ -648,11 +709,11 @@ const userController = {
           });
         }
       }
-      
+
       // Validate gender (only if provided and not empty)
       if (isNotEmpty(gender)) {
         const genderValue = String(gender).trim();
-        if (!['male', 'female', 'other'].includes(genderValue)) {
+        if (!["male", "female", "other"].includes(genderValue)) {
           return res.status(400).json({
             success: false,
             message: "Invalid gender value",
@@ -667,15 +728,18 @@ const userController = {
       if (isNotEmpty(birthday)) updateData.birthday = String(birthday).trim();
       if (isNotEmpty(gender)) {
         const genderValue = String(gender).trim();
-        if (['male', 'female', 'other'].includes(genderValue)) {
+        if (["male", "female", "other"].includes(genderValue)) {
           updateData.gender = genderValue;
         }
       }
       if (isNotEmpty(phone)) updateData.phone = String(phone).trim();
       if (isNotEmpty(address)) updateData.address = String(address).trim();
-      if (isNotEmpty(website_url)) updateData.website_url = String(website_url).trim();
-      if (isNotEmpty(github_url)) updateData.github_url = String(github_url).trim();
-      if (isNotEmpty(linkedin_url)) updateData.linkedin_url = String(linkedin_url).trim();
+      if (isNotEmpty(website_url))
+        updateData.website_url = String(website_url).trim();
+      if (isNotEmpty(github_url))
+        updateData.github_url = String(github_url).trim();
+      if (isNotEmpty(linkedin_url))
+        updateData.linkedin_url = String(linkedin_url).trim();
 
       await profile.update(updateData);
 

@@ -485,4 +485,9 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     }
     this.closeMenus();
   }
+
+  getProgressWidth(): string {
+    const percentage = this.levelProgress?.progressPercentage ?? 0;
+    return `${percentage}%`;
+  }
 }

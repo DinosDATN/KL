@@ -37,6 +37,9 @@ import { UserStats, LevelProgress } from '../../../core/models/user-stats.model'
             [class.text-xs]="compact"
           >
             Lv {{ stats?.level || 1 }}
+            <span *ngIf="stats?.level_info?.name" class="text-[10px] font-normal opacity-75">
+              ({{ stats?.level_info?.name }})
+            </span>
           </span>
         </div>
         
@@ -66,7 +69,7 @@ import { UserStats, LevelProgress } from '../../../core/models/user-stats.model'
           >
             <div 
               class="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-300"
-              [style.width.%]="levelProgress?.progressPercentage || 0"
+              [style.width]="(levelProgress?.progressPercentage || 0) + '%'"
             ></div>
           </div>
         </div>

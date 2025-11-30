@@ -1,3 +1,12 @@
+export interface LevelInfo {
+  level: number;
+  name: string;
+  xp_required: number;
+  xp_to_next: number;
+  color: string | null;
+  icon: string | null;
+}
+
 export interface UserStats {
   id: number;
   user_id: number;
@@ -13,6 +22,7 @@ export interface UserStats {
   average_score: number;
   created_at: string;
   updated_at: string;
+  level_info?: LevelInfo | null;
 }
 
 export interface LevelProgress {
