@@ -172,7 +172,7 @@
         <div *ngIf="!loading && filteredContests.length > 0" class="space-y-6">
           
           <!-- Contest Cards Grid -->
-          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-stretch">
             <app-contest-card
               *ngFor="let contest of displayedContests; trackBy: trackByContestId"
               [contest]="contest"

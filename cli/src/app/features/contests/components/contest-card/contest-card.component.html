@@ -1,9 +1,9 @@
 <!-- Contest Card -->
-<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden transition-all duration-200 hover:shadow-xl hover:scale-105 cursor-pointer group"
+<div class="h-full flex flex-col bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden transition-all duration-200 hover:shadow-xl hover:scale-105 cursor-pointer group"
      (click)="onViewContest()">
   
   <!-- Contest Header -->
-  <div class="p-6 pb-4">
+  <div class="p-6 pb-4 flex-shrink-0">
     <!-- Status and Creator -->
     <div class="flex items-center justify-between mb-4">
       <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
@@ -16,27 +16,30 @@
            contest.status === 'completed' ? 'Đã kết thúc' : contest.status }}
       </span>
       
-      <div *ngIf="contest.Creator" class="flex items-center text-xs text-gray-500 dark:text-gray-400">
+      <div *ngIf="contest.Creator" class="flex items-center text-xs text-gray-500 dark:text-gray-400 truncate ml-2">
         <img [src]="contest.Creator.avatar_url || 'https://ui-avatars.com/api/?name=' + (contest.Creator.name | slice:0:2) + '&background=3b82f6&color=ffffff'"
              [alt]="contest.Creator.name" 
-             class="w-5 h-5 rounded-full mr-2">
-        {{ contest.Creator.name }}
+             class="w-5 h-5 rounded-full mr-2 flex-shrink-0">
+        <span class="truncate">{{ contest.Creator.name }}</span>
       </div>
     </div>
     
     <!-- Contest Title -->
-    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2 min-h-[3.5rem] flex items-start">
       {{ contest.title }}
     </h3>
     
     <!-- Contest Description -->
-    <p *ngIf="contest.description" class="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 mb-4">
+    <p *ngIf="contest.description" class="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 mb-4 min-h-[2.5rem]">
       {{ contest.description }}
+    </p>
+    <p *ngIf="!contest.description" class="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 mb-4 min-h-[2.5rem]">
+      &nbsp;
     </p>
   </div>
   
   <!-- Contest Stats -->
-  <div class="px-6 pb-4">
+  <div class="px-6 pb-4 flex-shrink-0">
     <div class="grid grid-cols-2 gap-4 text-center">
       <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
         <div class="text-lg font-bold text-gray-900 dark:text-white">
@@ -54,12 +57,12 @@
   </div>
   
   <!-- Time Information -->
-  <div class="px-6 pb-4">
+  <div class="px-6 pb-4 flex-shrink-0">
     <div class="flex items-center justify-between text-sm">
       <span class="text-gray-500 dark:text-gray-400">
         Thời gian: {{ contestService.formatDuration(contest.duration) }}
       </span>
-      <span class="font-medium" 
+      <span class="font-medium text-right" 
             [ngClass]="{
               'text-green-600 dark:text-green-400': contest.status === 'active',
               'text-blue-600 dark:text-blue-400': contest.status === 'upcoming',
@@ -79,7 +82,7 @@
   </div>
   
   <!-- Action Buttons -->
-  <div class="px-6 pb-6">
+  <div class="px-6 pb-6 mt-auto flex-shrink-0">
     <div class="flex gap-2">
       
       <!-- View Contest Button -->
