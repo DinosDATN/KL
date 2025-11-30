@@ -174,7 +174,7 @@
         </div>
         
         <!-- Empty State -->
-        <div *ngIf="!loading && filteredProblems.length === 0" class="text-center py-12">
+        <div *ngIf="!loading && dataLoaded && filteredProblems.length === 0" class="text-center py-12">
           <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8 transition-colors duration-200">
             <div class="text-gray-400 mb-4">
               <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -197,7 +197,7 @@
         </div>
         
         <!-- Problems Display -->
-        <div *ngIf="!loading && filteredProblems.length > 0" class="space-y-6">
+        <div *ngIf="!loading && dataLoaded && filteredProblems.length > 0" class="space-y-6">
           
           <!-- Card View -->
           <div *ngIf="viewMode === 'card'" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">

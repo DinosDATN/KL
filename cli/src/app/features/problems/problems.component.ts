@@ -63,6 +63,7 @@ export class ProblemsComponent implements OnInit {
   // Loading state
   loading: boolean = false;
   loadingMore: boolean = false;
+  dataLoaded: boolean = false; // Track if data has been loaded at least once
   
   // Mobile filter state
   mobileFiltersOpen: boolean = false;
@@ -97,6 +98,7 @@ export class ProblemsComponent implements OnInit {
       error: (error) => {
         console.error('Error loading problems:', error);
         this.loading = false;
+        this.dataLoaded = true; // Mark as loaded even on error to prevent showing empty state incorrectly
       }
     });
   }
@@ -140,6 +142,7 @@ export class ProblemsComponent implements OnInit {
     
     this.applyFilters();
     this.loading = false;
+    this.dataLoaded = true; // Mark data as loaded
   }
   
   onTopSearchChange(): void {

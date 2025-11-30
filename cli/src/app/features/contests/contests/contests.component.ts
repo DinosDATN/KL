@@ -41,6 +41,7 @@ export class ContestsComponent implements OnInit {
   loading: boolean = false;
   loadingMore: boolean = false;
   loadingAction: boolean = false;
+  dataLoaded: boolean = false; // Track if data has been loaded at least once
 
   // Mobile filter state
   mobileFiltersOpen: boolean = false;
@@ -75,12 +76,14 @@ export class ContestsComponent implements OnInit {
           this.totalContests = response.pagination?.total_items || response.data.length;
           this.loadQuickStats();
           this.applyFilters();
+          this.dataLoaded = true; // Mark data as loaded
         }
         this.loading = false;
       },
       error: (error) => {
         console.error('Error loading contests:', error);
         this.loading = false;
+        this.dataLoaded = true; // Mark as loaded even on error to prevent showing empty state incorrectly
       }
     });
   }
