@@ -654,18 +654,12 @@ class ProblemAdminController {
     }
   }
 
-  // Restore a soft-deleted problem (Admin only)
+  // Restore a soft-deleted problem (Admin/Creator - Creator can only restore their own problems)
   async restoreProblem(req, res) {
     try {
       const { id } = req.params;
       const userRole = req.user.role;
-
-      if (userRole !== 'admin') {
-        return res.status(403).json({
-          success: false,
-          message: 'Only admins can restore problems'
-        });
-      }
+      const userId = req.user.id; // Use req.user.id, not req.user.userId
 
       const problem = await Problem.findByPk(id);
       
@@ -673,6 +667,14 @@ class ProblemAdminController {
         return res.status(404).json({
           success: false,
           message: 'Problem not found'
+        });
+      }
+
+      // Check permissions: Admin can restore any problem, Creator can only restore their own
+      if (userRole === 'creator' && problem.created_by !== userId) {
+        return res.status(403).json({
+          success: false,
+          message: 'You can only restore your own problems'
         });
       }
 

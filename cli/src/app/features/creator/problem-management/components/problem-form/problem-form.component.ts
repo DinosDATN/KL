@@ -66,6 +66,37 @@ export class CreatorProblemFormComponent implements OnInit, OnChanges, OnDestroy
     { value: 'rust', label: 'Rust' },
   ];
 
+  /**
+   * Normalize language value to match commonLanguages values
+   * Handles variations like 'python3' -> 'python', 'c++' -> 'cpp', etc.
+   */
+  private normalizeLanguage(language: string): string {
+    if (!language) return '';
+    
+    const normalized = language.toLowerCase().trim();
+    
+    // Language mapping for common variations
+    const languageMap: { [key: string]: string } = {
+      'python': 'python',
+      'python3': 'python',
+      'py': 'python',
+      'javascript': 'javascript',
+      'js': 'javascript',
+      'nodejs': 'javascript',
+      'node.js': 'javascript',
+      'java': 'java',
+      'cpp': 'cpp',
+      'c++': 'cpp',
+      'cplusplus': 'cpp',
+      'c': 'c',
+      'go': 'go',
+      'golang': 'go',
+      'rust': 'rust',
+    };
+    
+    return languageMap[normalized] || normalized;
+  }
+
   constructor(
     private fb: FormBuilder,
     private adminService: AdminService,
@@ -149,9 +180,11 @@ export class CreatorProblemFormComponent implements OnInit, OnChanges, OnDestroy
     starterCodesArray.clear();
     if (problem.StarterCodes && problem.StarterCodes.length > 0) {
       problem.StarterCodes.forEach((code) => {
+        // Normalize language value to match commonLanguages
+        const normalizedLanguage = this.normalizeLanguage(code.language || '');
         starterCodesArray.push(
           this.fb.group({
-            language: [code.language || '', Validators.required],
+            language: [normalizedLanguage, Validators.required],
             code: [code.code || '', Validators.required],
           })
         );

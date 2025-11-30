@@ -68,8 +68,8 @@ router.delete('/:id', problemAdminController.deleteProblem);
  * Advanced Problem Management Operations (Admin Only)
  */
 
-// POST /api/admin/problems/:id/restore - Restore a soft-deleted problem
-router.post('/:id/restore', requireRole(['admin']), problemAdminController.restoreProblem);
+// POST /api/admin/problems/:id/restore - Restore a soft-deleted problem (Admin/Creator)
+router.post('/:id/restore', requireRole(['admin', 'creator']), problemAdminController.restoreProblem);
 
 // DELETE /api/admin/problems/:id/permanent - Permanently delete a problem
 router.delete('/:id/permanent', requireRole(['admin']), problemAdminController.permanentlyDeleteProblem);

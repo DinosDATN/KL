@@ -10,12 +10,25 @@ export interface Notification {
   timestamp: Date;
 }
 
+export interface ConfirmationNotification {
+  id: string;
+  type: 'info' | 'warning' | 'error';
+  title: string;
+  message?: string;
+  onConfirm: () => void;
+  onCancel?: () => void;
+  timestamp: Date;
+}
+
 @Injectable({
   providedIn: 'root',
 })
 export class NotificationService {
   private notificationsSubject = new BehaviorSubject<Notification[]>([]);
   public notifications$ = this.notificationsSubject.asObservable();
+
+  private confirmationsSubject = new BehaviorSubject<ConfirmationNotification[]>([]);
+  public confirmations$ = this.confirmationsSubject.asObservable();
 
   private generateId(): string {
     return Math.random().toString(36).substr(2, 9);
@@ -137,5 +150,39 @@ export class NotificationService {
       'Lỗi validation',
       error || 'Code không hợp lệ. Vui lòng kiểm tra lại syntax.'
     );
+  }
+
+  // Confirmation methods
+  confirm(
+    title: string,
+    message: string,
+    onConfirm: () => void,
+    onCancel?: () => void,
+    type: 'info' | 'warning' | 'error' = 'warning'
+  ): void {
+    const confirmation: ConfirmationNotification = {
+      id: this.generateId(),
+      type,
+      title,
+      message,
+      onConfirm,
+      onCancel,
+      timestamp: new Date(),
+    };
+
+    const currentConfirmations = this.confirmationsSubject.value;
+    this.confirmationsSubject.next([confirmation, ...currentConfirmations]);
+  }
+
+  removeConfirmation(id: string): void {
+    const currentConfirmations = this.confirmationsSubject.value;
+    const filteredConfirmations = currentConfirmations.filter(
+      (c) => c.id !== id
+    );
+    this.confirmationsSubject.next(filteredConfirmations);
+  }
+
+  clearConfirmations(): void {
+    this.confirmationsSubject.next([]);
   }
 }

@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { Subject } from 'rxjs';
+import { Subject, forkJoin } from 'rxjs';
 import { takeUntil, finalize } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import {
@@ -33,6 +33,7 @@ export class CreatorProblemManagementComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   problems: AdminProblem[] = [];
+  allProblems: AdminProblem[] = []; // Store all problems (deleted + non-deleted) for stats calculation
   stats: ProblemStats | null = null;
   selectedProblems: number[] = [];
   loading = false;
@@ -129,6 +130,7 @@ export class CreatorProblemManagementComponent implements OnInit, OnDestroy {
 
     this.loading = true;
     this.error = null;
+    this.problems = []; // Reset problems when starting to load to prevent showing old data
 
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
@@ -153,14 +155,15 @@ export class CreatorProblemManagementComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (response) => {
-          this.problems = response.problems || [];
-          this.currentPage = response.pagination.current_page;
-          this.totalPages = response.pagination.total_pages;
-          this.totalItems = response.pagination.total_items;
-          this.itemsPerPage = response.pagination.items_per_page;
+          this.problems = Array.isArray(response.problems) ? response.problems : [];
+          this.currentPage = response.pagination?.current_page || 1;
+          this.totalPages = response.pagination?.total_pages || 1;
+          this.totalItems = response.pagination?.total_items || 0;
+          this.itemsPerPage = response.pagination?.items_per_page || 10;
           this.calculateStatsFromProblems();
         },
         error: (error) => {
+          this.problems = []; // Ensure it's always an array even on error
           this.error = error.message || 'Không thể tải danh sách bài tập';
           this.notificationService.error('Lỗi', this.error || undefined);
         },
@@ -168,13 +171,66 @@ export class CreatorProblemManagementComponent implements OnInit, OnDestroy {
   }
 
   loadStats(): void {
-    // For creator, stats are calculated from their problems
-    this.calculateStatsFromProblems();
+    // For creator, load all problems (deleted + non-deleted) to calculate accurate stats
+    if (!this.isBrowser) {
+      return;
+    }
+
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) {
+      return;
+    }
+
+    // Load both deleted and non-deleted problems separately, then combine
+    const baseFilters: ProblemFilters = {
+      created_by: currentUser.id,
+      page: 1,
+      limit: 1000, // Load a large number to get all problems for stats
+    };
+
+    // Load non-deleted problems
+    const nonDeletedFilters: ProblemFilters = {
+      ...baseFilters,
+      is_deleted: false,
+    };
+
+    // Load deleted problems
+    const deletedFilters: ProblemFilters = {
+      ...baseFilters,
+      is_deleted: true,
+    };
+
+    // Use forkJoin to load both in parallel
+    forkJoin({
+      nonDeleted: this.adminService.getProblems(nonDeletedFilters),
+      deleted: this.adminService.getDeletedProblems(deletedFilters)
+    })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (results: {
+          nonDeleted: { problems: AdminProblem[]; pagination: any };
+          deleted: { problems: AdminProblem[]; pagination: any };
+        }) => {
+          // Combine both arrays
+          this.allProblems = [
+            ...(results.nonDeleted.problems || []),
+            ...(results.deleted.problems || [])
+          ];
+          this.calculateStatsFromProblems();
+        },
+        error: (error: any) => {
+          console.error('Error loading stats:', error);
+          // Fallback to using current problems if stats load fails
+          this.calculateStatsFromProblems();
+        }
+      });
   }
 
   private calculateStatsFromProblems(): void {
-    const activeProblems = this.problems.filter(p => !p.is_deleted);
-    const deletedProblems = this.problems.filter(p => p.is_deleted);
+    // Use allProblems for stats calculation if available, otherwise fallback to problems
+    const problemsForStats = this.allProblems.length > 0 ? this.allProblems : this.problems;
+    const activeProblems = problemsForStats.filter(p => !p.is_deleted);
+    const deletedProblems = problemsForStats.filter(p => p.is_deleted);
     
     const difficultyCounts = {
       Easy: activeProblems.filter(p => p.difficulty === 'Easy').length,
@@ -207,7 +263,7 @@ export class CreatorProblemManagementComponent implements OnInit, OnDestroy {
       : '0%';
 
     this.stats = {
-      totalProblems: this.problems.length,
+      totalProblems: problemsForStats.length,
       publishedProblems: activeProblems.length,
       deletedProblems: deletedProblems.length,
       problemsByDifficulty: [
@@ -373,77 +429,94 @@ export class CreatorProblemManagementComponent implements OnInit, OnDestroy {
   }
 
   deleteProblem(problemId: number): void {
-    this.notificationService.info(
+    // Use confirmation toast instead of confirm()
+    this.notificationService.confirm(
       'Xác nhận xóa',
       'Bạn có chắc chắn muốn xóa bài tập này?',
-      0
+      () => {
+        // User confirmed
+        this.adminService.deleteProblem(problemId)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: () => {
+              this.notificationService.success('Thành công', 'Xóa bài tập thành công');
+              // Reload problems to update the list
+              // If on 'all' tab, the deleted problem will disappear
+              // If on 'deleted' tab, the newly deleted problem will appear
+              const currentUser = this.authService.getCurrentUser();
+              this.filters = {
+                ...this.filters,
+                is_deleted: this.activeTab === 'deleted' ? true : false,
+                page: 1,
+                created_by: currentUser?.id,
+              };
+              this.currentPage = 1;
+              this.loadProblems();
+              this.loadStats();
+            },
+            error: (error) => {
+              this.notificationService.error('Lỗi', error.message || 'Không thể xóa bài tập');
+            }
+          });
+      }
     );
-    // Note: In production, replace with proper confirmation dialog
-    if (!confirm('Bạn có chắc chắn muốn xóa bài tập này?')) {
-      return;
-    }
-
-    this.adminService.deleteProblem(problemId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.notificationService.success('Thành công', 'Xóa bài tập thành công');
-          this.loadProblems();
-          this.loadStats();
-        },
-        error: (error) => {
-          this.notificationService.error('Lỗi', error.message || 'Không thể xóa bài tập');
-        }
-      });
   }
 
   restoreProblem(problemId: number): void {
-    if (!confirm('Bạn có chắc chắn muốn khôi phục bài tập này?')) {
-      return;
-    }
-
-    this.adminService.restoreProblem(problemId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.notificationService.success('Thành công', 'Khôi phục bài tập thành công');
-          if (this.activeTab === 'deleted') {
-            this.activeTab = 'all';
-            const currentUser = this.authService.getCurrentUser();
-            this.filters = {
-              ...this.filters,
-              is_deleted: false,
-              page: 1,
-              created_by: currentUser?.id,
-            };
-            this.currentPage = 1;
-          }
-          this.loadProblems();
-          this.loadStats();
-        },
-        error: (error) => {
-          this.notificationService.error('Lỗi', error.message || 'Không thể khôi phục bài tập');
-        }
-      });
+    this.notificationService.confirm(
+      'Xác nhận khôi phục',
+      'Bạn có chắc chắn muốn khôi phục bài tập này?',
+      () => {
+        // User confirmed
+        this.adminService.restoreProblem(problemId)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: () => {
+              this.notificationService.success('Thành công', 'Khôi phục bài tập thành công');
+              if (this.activeTab === 'deleted') {
+                this.activeTab = 'all';
+                const currentUser = this.authService.getCurrentUser();
+                this.filters = {
+                  ...this.filters,
+                  is_deleted: false,
+                  page: 1,
+                  created_by: currentUser?.id,
+                };
+                this.currentPage = 1;
+              }
+              this.loadProblems();
+              this.loadStats();
+            },
+            error: (error) => {
+              this.notificationService.error('Lỗi', error.message || 'Không thể khôi phục bài tập');
+            }
+          });
+      }
+    );
   }
 
   permanentlyDeleteProblem(problemId: number): void {
-    if (!confirm('Bạn có chắc chắn muốn xóa vĩnh viễn bài tập này? Hành động này không thể hoàn tác.')) {
-      return;
-    }
-
-    this.adminService.permanentlyDeleteProblem(problemId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.notificationService.success('Thành công', 'Đã xóa vĩnh viễn bài tập');
-          this.loadProblems();
-          this.loadStats();
-        },
-        error: (error) => {
-          this.notificationService.error('Lỗi', error.message || 'Không thể xóa vĩnh viễn bài tập');
-        }
-      });
+    this.notificationService.confirm(
+      'Xác nhận xóa vĩnh viễn',
+      'Bạn có chắc chắn muốn xóa vĩnh viễn bài tập này? Hành động này không thể hoàn tác.',
+      () => {
+        // User confirmed
+        this.adminService.permanentlyDeleteProblem(problemId)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: () => {
+              this.notificationService.success('Thành công', 'Đã xóa vĩnh viễn bài tập');
+              this.loadProblems();
+              this.loadStats();
+            },
+            error: (error) => {
+              this.notificationService.error('Lỗi', error.message || 'Không thể xóa vĩnh viễn bài tập');
+            }
+          });
+      },
+      undefined,
+      'error'
+    );
   }
 
   onBulkDelete(): void {
@@ -456,27 +529,32 @@ export class CreatorProblemManagementComponent implements OnInit, OnDestroy {
       ? `Bạn có chắc chắn muốn XÓA VĨNH VIỄN ${this.selectedProblems.length} bài tập? Hành động này không thể hoàn tác.`
       : `Bạn có chắc chắn muốn xóa ${this.selectedProblems.length} bài tập?`;
 
-    if (!confirm(message)) {
-      return;
-    }
+    this.notificationService.confirm(
+      isPermanent ? 'Xác nhận xóa vĩnh viễn' : 'Xác nhận xóa',
+      message,
+      () => {
+        // User confirmed
+        const deletePromises = this.selectedProblems.map(id => 
+          isPermanent 
+            ? this.adminService.permanentlyDeleteProblem(id).toPromise()
+            : this.adminService.deleteProblem(id).toPromise()
+        );
 
-    const deletePromises = this.selectedProblems.map(id => 
-      isPermanent 
-        ? this.adminService.permanentlyDeleteProblem(id).toPromise()
-        : this.adminService.deleteProblem(id).toPromise()
+        Promise.all(deletePromises)
+          .then(() => {
+            this.notificationService.success('Thành công', `Đã xóa ${this.selectedProblems.length} bài tập thành công`);
+            this.selectedProblems = [];
+            this.showBulkActions = false;
+            this.loadProblems();
+            this.loadStats();
+          })
+          .catch((error) => {
+            this.notificationService.error('Lỗi', error.message || 'Không thể xóa bài tập');
+          });
+      },
+      undefined,
+      isPermanent ? 'error' : 'warning'
     );
-
-    Promise.all(deletePromises)
-      .then(() => {
-        this.notificationService.success('Thành công', `Đã xóa ${this.selectedProblems.length} bài tập thành công`);
-        this.selectedProblems = [];
-        this.showBulkActions = false;
-        this.loadProblems();
-        this.loadStats();
-      })
-      .catch((error) => {
-        this.notificationService.error('Lỗi', error.message || 'Không thể xóa bài tập');
-      });
   }
 
   onBulkRestore(): void {
@@ -484,36 +562,39 @@ export class CreatorProblemManagementComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (!confirm(`Bạn có chắc chắn muốn khôi phục ${this.selectedProblems.length} bài tập?`)) {
-      return;
-    }
+    this.notificationService.confirm(
+      'Xác nhận khôi phục',
+      `Bạn có chắc chắn muốn khôi phục ${this.selectedProblems.length} bài tập?`,
+      () => {
+        // User confirmed
+        const restorePromises = this.selectedProblems.map(id => 
+          this.adminService.restoreProblem(id).toPromise()
+        );
 
-    const restorePromises = this.selectedProblems.map(id => 
-      this.adminService.restoreProblem(id).toPromise()
+        Promise.all(restorePromises)
+          .then(() => {
+            this.notificationService.success('Thành công', `Đã khôi phục ${this.selectedProblems.length} bài tập thành công`);
+            this.selectedProblems = [];
+            this.showBulkActions = false;
+            if (this.activeTab === 'deleted') {
+              this.activeTab = 'all';
+              const currentUser = this.authService.getCurrentUser();
+              this.filters = {
+                ...this.filters,
+                is_deleted: false,
+                page: 1,
+                created_by: currentUser?.id,
+              };
+              this.currentPage = 1;
+            }
+            this.loadProblems();
+            this.loadStats();
+          })
+          .catch((error) => {
+            this.notificationService.error('Lỗi', error.message || 'Không thể khôi phục bài tập');
+          });
+      }
     );
-
-    Promise.all(restorePromises)
-      .then(() => {
-        this.notificationService.success('Thành công', `Đã khôi phục ${this.selectedProblems.length} bài tập thành công`);
-        this.selectedProblems = [];
-        this.showBulkActions = false;
-        if (this.activeTab === 'deleted') {
-          this.activeTab = 'all';
-          const currentUser = this.authService.getCurrentUser();
-          this.filters = {
-            ...this.filters,
-            is_deleted: false,
-            page: 1,
-            created_by: currentUser?.id,
-          };
-          this.currentPage = 1;
-        }
-        this.loadProblems();
-        this.loadStats();
-      })
-      .catch((error) => {
-        this.notificationService.error('Lỗi', error.message || 'Không thể khôi phục bài tập');
-      });
   }
 
   formatDate(dateString: string): string {
