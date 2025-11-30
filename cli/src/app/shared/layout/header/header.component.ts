@@ -288,7 +288,8 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     if (currentUser && (currentUser.role === 'creator' || currentUser.role === 'admin')) {
       items.push(
         { label: 'Quản lý khóa học', link: '/creator/courses', icon: 'book' },
-        { label: 'Quản lý cuộc thi', link: '/creator/contests', icon: 'trophy' }
+        { label: 'Quản lý cuộc thi', link: '/creator/contests', icon: 'trophy' },
+        { label: 'Quản lý bài tập', link: '/creator/problems', icon: 'file-text' }
       );
     }
 

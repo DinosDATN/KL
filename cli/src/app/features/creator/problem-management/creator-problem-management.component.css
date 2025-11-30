@@ -1,0 +1,32 @@
+/* Creator Problem Management Component Styles */
+
+/* Additional custom styles if needed */
+.problem-table {
+  min-width: 100%;
+}
+
+.problem-table th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Transition effects */
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Dark mode support is handled via Tailwind classes */

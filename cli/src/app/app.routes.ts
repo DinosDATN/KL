@@ -477,6 +477,14 @@ export const routes: Routes = [
         canActivate: [AuthGuard],
       },
       {
+        path: 'creator/problems',
+        loadComponent: () =>
+          import(
+            './features/creator/problem-management/creator-problem-management.component'
+          ).then((m) => m.CreatorProblemManagementComponent),
+        canActivate: [AuthGuard],
+      },
+      {
         path: 'grading-board',
         loadComponent: () =>
           import('./grading-board/grading-board.component').then(

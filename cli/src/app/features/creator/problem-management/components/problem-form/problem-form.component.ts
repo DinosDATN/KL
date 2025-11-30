@@ -20,20 +20,20 @@ import {
   AdminService,
   ProblemCategory,
   ProblemTag,
-} from '../../../../../core/services/admin.service';
-import { NotificationService } from '../../../../../core/services/notification.service';
+} from '../../../../../../core/services/admin.service';
+import { NotificationService } from '../../../../../../core/services/notification.service';
 import { Subject } from 'rxjs';
 import { takeUntil, finalize } from 'rxjs/operators';
 import { OnDestroy } from '@angular/core';
 
 @Component({
-  selector: 'app-problem-form',
+  selector: 'app-creator-problem-form',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './problem-form.component.html',
   styleUrl: './problem-form.component.css',
 })
-export class ProblemFormComponent implements OnInit, OnChanges, OnDestroy {
+export class CreatorProblemFormComponent implements OnInit, OnChanges, OnDestroy {
   @Input() problem: AdminProblem | null = null;
   @Input() isEdit = false;
   @Output() problemCreated = new EventEmitter<AdminProblem>();
@@ -51,9 +51,9 @@ export class ProblemFormComponent implements OnInit, OnChanges, OnDestroy {
   loadingTags = false;
 
   difficulties = [
-    { value: 'Easy', label: 'Easy' },
-    { value: 'Medium', label: 'Medium' },
-    { value: 'Hard', label: 'Hard' },
+    { value: 'Easy', label: 'Dễ' },
+    { value: 'Medium', label: 'Trung bình' },
+    { value: 'Hard', label: 'Khó' },
   ];
 
   commonLanguages = [
@@ -163,11 +163,7 @@ export class ProblemFormComponent implements OnInit, OnChanges, OnDestroy {
     testCasesArray.clear();
     if (problem.TestCases && problem.TestCases.length > 0) {
       problem.TestCases.forEach((testCase) => {
-        // Handle both output/expected_output and is_hidden/is_sample
         const output = testCase.output || testCase.expected_output || '';
-        // is_sample: true means visible (not hidden), false means hidden
-        // is_hidden: true means hidden, false means visible
-        // If is_hidden is undefined, derive from is_sample
         const isHidden = testCase.is_hidden !== undefined 
           ? testCase.is_hidden 
           : (testCase.is_sample !== undefined ? !testCase.is_sample : false);
@@ -198,15 +194,16 @@ export class ProblemFormComponent implements OnInit, OnChanges, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (categories) => {
-          this.categories = categories || [];
+          this.categories = categories;
           this.loadingCategories = false;
         },
         error: (error) => {
           console.error('Failed to load categories:', error);
-          this.categories = [];
           this.loadingCategories = false;
-          // Don't show error notification, just log it
-          // Categories are optional for form submission
+          this.notificationService.error(
+            'Lỗi',
+            'Không thể tải danh mục bài tập'
+          );
         },
       });
   }
@@ -218,15 +215,13 @@ export class ProblemFormComponent implements OnInit, OnChanges, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (tags) => {
-          this.tags = tags || [];
+          this.tags = tags;
           this.loadingTags = false;
         },
         error: (error) => {
           console.error('Failed to load tags:', error);
-          this.tags = [];
           this.loadingTags = false;
-          // Don't show error notification, just log it
-          // Tags are optional for form submission
+          this.notificationService.error('Lỗi', 'Không thể tải thẻ');
         },
       });
   }
@@ -330,12 +325,10 @@ export class ProblemFormComponent implements OnInit, OnChanges, OnDestroy {
     let newTags: number[];
 
     if (checkbox.checked) {
-      // Add tag
       newTags = Array.isArray(selectedTags)
         ? [...selectedTags, tagId]
         : [tagId];
     } else {
-      // Remove tag
       newTags = Array.isArray(selectedTags)
         ? selectedTags.filter((id: number) => id !== tagId)
         : [];
@@ -348,17 +341,17 @@ export class ProblemFormComponent implements OnInit, OnChanges, OnDestroy {
     if (this.problemForm.invalid) {
       this.problemForm.markAllAsTouched();
       this.notificationService.error(
-        'Validation Error',
-        'Please fill in all required fields'
+        'Lỗi xác thực',
+        'Vui lòng điền đầy đủ các trường bắt buộc'
       );
       return;
     }
+
     this.loading = true;
     this.error = null;
 
     const formValue = this.problemForm.value;
 
-    // Prepare examples
     const examples =
       this.examplesFormArray.length > 0
         ? this.examplesFormArray.value.map((ex: any) => ({
@@ -368,7 +361,6 @@ export class ProblemFormComponent implements OnInit, OnChanges, OnDestroy {
           }))
         : undefined;
 
-    // Prepare constraints - always send array even if empty
     const constraints =
       this.constraintsFormArray.length > 0
         ? this.constraintsFormArray.value
@@ -380,7 +372,6 @@ export class ProblemFormComponent implements OnInit, OnChanges, OnDestroy {
             }))
         : [];
 
-    // Prepare starter codes
     const starter_codes =
       this.starterCodesFormArray.length > 0
         ? this.starterCodesFormArray.value.map((sc: any) => ({
@@ -389,7 +380,6 @@ export class ProblemFormComponent implements OnInit, OnChanges, OnDestroy {
           }))
         : undefined;
 
-    // Prepare test cases
     const test_cases =
       this.testCasesFormArray.length > 0
         ? this.testCasesFormArray.value.map((tc: any) => ({
@@ -399,7 +389,6 @@ export class ProblemFormComponent implements OnInit, OnChanges, OnDestroy {
           }))
         : undefined;
 
-    // Convert category_id to number if it's a string
     const categoryId = typeof formValue.category_id === 'string' 
       ? parseInt(formValue.category_id, 10) 
       : formValue.category_id;
@@ -432,10 +421,10 @@ export class ProblemFormComponent implements OnInit, OnChanges, OnDestroy {
       .subscribe({
         next: (problem) => {
           this.notificationService.success(
-            'Success',
+            'Thành công',
             this.isEdit
-              ? 'Problem updated successfully'
-              : 'Problem created successfully'
+              ? 'Cập nhật bài tập thành công'
+              : 'Tạo bài tập thành công'
           );
           if (this.isEdit) {
             this.problemUpdated.emit(problem);
@@ -448,8 +437,8 @@ export class ProblemFormComponent implements OnInit, OnChanges, OnDestroy {
           this.error =
             error.error?.message ||
             error.message ||
-            'Failed to save problem';
-          this.notificationService.error('Error', this.error || 'Failed to save problem');
+            'Không thể lưu bài tập';
+          this.notificationService.error('Lỗi', this.error);
         },
       });
   }
@@ -458,4 +447,3 @@ export class ProblemFormComponent implements OnInit, OnChanges, OnDestroy {
     this.close.emit();
   }
 }
-

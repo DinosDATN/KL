@@ -24,11 +24,11 @@ router.get('/', problemAdminController.getAllProblemsForAdmin);
 router.get('/statistics', requireRole(['admin']), problemAdminController.getProblemStatistics);
 
 /**
- * Problem Category Management (Admin Only) - Must be before /:id route
+ * Problem Category Management (Admin/Creator) - Must be before /:id route
  */
 
 // GET /api/admin/problems/categories - Get all problem categories
-router.get('/categories', requireRole(['admin']), problemAdminController.getAllProblemCategories);
+router.get('/categories', requireRole(['admin', 'creator']), problemAdminController.getAllProblemCategories);
 
 // POST /api/admin/problems/categories - Create a new problem category
 router.post('/categories', requireRole(['admin']), problemAdminController.createProblemCategory);
@@ -40,11 +40,11 @@ router.put('/categories/:id', requireRole(['admin']), problemAdminController.upd
 router.delete('/categories/:id', requireRole(['admin']), problemAdminController.deleteProblemCategory);
 
 /**
- * Tag Management (Admin Only) - Must be before /:id route
+ * Tag Management (Admin/Creator) - Must be before /:id route
  */
 
 // GET /api/admin/problems/tags - Get all tags
-router.get('/tags', requireRole(['admin']), problemAdminController.getAllTags);
+router.get('/tags', requireRole(['admin', 'creator']), problemAdminController.getAllTags);
 
 // POST /api/admin/problems/tags - Create a new tag
 router.post('/tags', requireRole(['admin']), problemAdminController.createTag);

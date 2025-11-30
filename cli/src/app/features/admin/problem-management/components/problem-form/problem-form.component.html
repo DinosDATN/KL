@@ -533,19 +533,6 @@
           </div>
         </div>
 
-        <!-- Debug: Form Validation Status -->
-        <div *ngIf="true" class="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded text-xs">
-          <p><strong>Form Valid:</strong> {{ problemForm.valid }}</p>
-          <p><strong>Form Invalid:</strong> {{ problemForm.invalid }}</p>
-          <p><strong>Form Errors:</strong> {{ problemForm.errors | json }}</p>
-          <p><strong>Title Value:</strong> {{ problemForm.get('title')?.value }}</p>
-          <p><strong>Title Errors:</strong> {{ problemForm.get('title')?.errors | json }}</p>
-          <p><strong>Category Value:</strong> {{ problemForm.get('category_id')?.value }}</p>
-          <p><strong>Category Errors:</strong> {{ problemForm.get('category_id')?.errors | json }}</p>
-          <p><strong>Difficulty Value:</strong> {{ problemForm.get('difficulty')?.value }}</p>
-          <p><strong>Difficulty Errors:</strong> {{ problemForm.get('difficulty')?.errors | json }}</p>
-        </div>
-
         <!-- Form Actions -->
         <div
           class="flex items-center justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700"
