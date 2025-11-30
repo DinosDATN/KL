@@ -9,6 +9,7 @@ import {
 } from '../../../core/models/course-module.model';
 import { User } from '../../../core/models/user.model';
 import { CoursesService } from '../../../core/services/courses.service';
+import { NotificationService } from '../../../core/services/notification.service';
 import { LessonViewerComponent } from '../components/lesson-viewer/lesson-viewer.component';
 
 @Component({
@@ -43,7 +44,8 @@ export class LessonLearningComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private coursesService: CoursesService
+    private coursesService: CoursesService,
+    private notificationService: NotificationService
   ) {}
 
   ngOnInit(): void {
@@ -244,14 +246,20 @@ export class LessonLearningComponent implements OnInit, OnDestroy {
           this.saveProgressToLocalStorage();
           
           // Show success message
-          alert(`Hoàn thành bài học! Tiến độ: ${this.enrollment.progress}%`);
+          this.notificationService.success(
+            'Hoàn thành bài học',
+            `Bạn đã hoàn thành bài học! Tiến độ: ${this.enrollment.progress}%`
+          );
           
           // Reset timer for next lesson
           this.lessonStartTime = Date.now();
         },
         error: (error) => {
           console.error('Failed to complete lesson:', error);
-          alert('Không thể đánh dấu hoàn thành: ' + (error.error?.message || error.message));
+          this.notificationService.error(
+            'Lỗi đánh dấu hoàn thành',
+            error.error?.message || error.message || 'Không thể đánh dấu hoàn thành bài học. Vui lòng thử lại.'
+          );
         }
       });
   }

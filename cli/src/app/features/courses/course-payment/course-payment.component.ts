@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { CoursesService } from '../../../core/services/courses.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ThemeService } from '../../../core/services/theme.service';
+import { NotificationService } from '../../../core/services/notification.service';
 
 @Component({
   selector: 'app-course-payment',
@@ -42,7 +43,8 @@ export class CoursePaymentComponent implements OnInit {
     private router: Router,
     private coursesService: CoursesService,
     private authService: AuthService,
-    public themeService: ThemeService
+    public themeService: ThemeService,
+    private notificationService: NotificationService
   ) {}
 
   ngOnInit(): void {
@@ -145,7 +147,10 @@ export class CoursePaymentComponent implements OnInit {
             this.showBankTransferInfo(response.data);
           } else {
             // Thanh toán thành công trực tiếp
-            alert('Thanh toán thành công!');
+            this.notificationService.success(
+              'Thanh toán thành công',
+              'Bạn đã thanh toán khóa học thành công!'
+            );
             this.router.navigate([response.data.redirectUrl || `/courses/${this.courseId}/learn`]);
           }
         }

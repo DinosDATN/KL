@@ -10,9 +10,9 @@ import { trigger, transition, style, animate, query, stagger } from '@angular/an
   imports: [CommonModule],
   template: `
     <!-- Notification Toast Container -->
-    <!-- Đổi vị trí sang góc dưới bên phải -->
+    <!-- Vị trí góc trên bên phải -->
     <div 
-      class="fixed bottom-4 right-4 z-50 space-y-3 p-2 w-[400px] max-w-full"
+      class="fixed top-4 right-4 z-50 space-y-3 p-2 w-[400px] max-w-full"
       @notificationList>
       <div
         *ngFor="let notification of notifications; trackBy: trackByNotification"
@@ -119,7 +119,7 @@ import { trigger, transition, style, animate, query, stagger } from '@angular/an
     trigger('notificationList', [
       transition('* => *', [ // Transition cho mọi sự thay đổi trong danh sách
         query(':enter', [
-          style({ opacity: 0, transform: 'translateY(100%)' }),
+          style({ opacity: 0, transform: 'translateY(-100%)' }),
           stagger(50, [
             animate('300ms cubic-bezier(.35, 0, .25, 1)', style({ opacity: 1, transform: 'translateY(0)' }))
           ])

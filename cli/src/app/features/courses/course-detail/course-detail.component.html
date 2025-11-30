@@ -204,7 +204,7 @@
               <div class="space-y-4">
                 <div *ngFor="let module of courseModules; let moduleIndex = index" 
                      class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                  <div class="p-4 bg-gray-50 dark:bg-gray-750 border-b border-gray-200 dark:border-gray-700">
+                  <div class="p-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
                       Chương {{ moduleIndex + 1 }}: {{ module.title }}
                     </h3>
@@ -562,8 +562,8 @@
                 <!-- Already Enrolled Button -->
                 <button 
                   *ngIf="isEnrolled"
-                  (click)="startLearning()"
-                  class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 focus:ring-4 focus:ring-green-500/25 focus:outline-none shadow-lg">
+                  disabled
+                  class="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 shadow-lg opacity-75 cursor-not-allowed">
                   <i class="fas fa-check-circle"></i> Bạn đã đăng ký khóa học
                 </button>
                 

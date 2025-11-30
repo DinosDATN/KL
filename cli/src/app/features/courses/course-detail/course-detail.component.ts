@@ -8,6 +8,7 @@ import { CourseModule, CourseLesson, CourseReview } from '../../../core/models/c
 import { User } from '../../../core/models/user.model';
 import { CoursesService } from '../../../core/services/courses.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { NotificationService } from '../../../core/services/notification.service';
 import { CourseCardComponent } from '../components/course-card/course-card.component';
 import { LessonViewerComponent } from '../components/lesson-viewer/lesson-viewer.component';
 
@@ -51,7 +52,8 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private coursesService: CoursesService,
-    private authService: AuthService
+    private authService: AuthService,
+    private notificationService: NotificationService
   ) {}
 
   ngOnInit(): void {
@@ -148,9 +150,11 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
     const coursePrice = this.course.price || this.course.original_price || 0;
     if (coursePrice > 0) {
       // Hiển thị thông báo và chuyển đến trang thanh toán
-      if (confirm(`Khóa học này có phí ${this.formatPrice(coursePrice)}. Bạn có muốn tiếp tục thanh toán?`)) {
-        this.router.navigate(['/courses', this.course.id, 'payment']);
-      }
+      this.notificationService.info(
+        'Khóa học có phí',
+        `Khóa học này có phí ${this.formatPrice(coursePrice)}. Đang chuyển đến trang thanh toán...`
+      );
+      this.router.navigate(['/courses', this.course.id, 'payment']);
       return;
     }
 
@@ -160,7 +164,10 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
       next: (response: any) => {
         this.isEnrolled = true;
         this.isEnrolling = false;
-        alert('Đăng ký khóa học thành công! Bây giờ bạn có thể đánh giá khóa học.');
+        this.notificationService.success(
+          'Đăng ký thành công',
+          'Bạn đã đăng ký khóa học thành công! Bây giờ bạn có thể đánh giá khóa học.'
+        );
         // Optionally show review form after enrollment
         // this.showReviewForm = true;
         this.startLearning();
@@ -174,7 +181,10 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
           this.isEnrolled = true;
           this.startLearning();
         } else {
-          alert('Đăng ký thất bại: ' + error.message);
+          this.notificationService.error(
+            'Đăng ký thất bại',
+            error.message || 'Có lỗi xảy ra khi đăng ký khóa học. Vui lòng thử lại.'
+          );
         }
       }
     });
@@ -260,10 +270,11 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
     
     if (!this.isEnrolled) {
       // Show a more helpful message
-      const message = 'Chỉ những học viên đã đăng ký khóa học mới có thể đánh giá. Bạn có muốn đăng ký khóa học ngay bây giờ không?';
-      if (confirm(message)) {
-        this.onEnrollClick();
-      }
+      this.notificationService.info(
+        'Cần đăng ký khóa học',
+        'Chỉ những học viên đã đăng ký khóa học mới có thể đánh giá. Vui lòng đăng ký khóa học trước.'
+      );
+      this.onEnrollClick();
       return;
     }
     
@@ -276,12 +287,18 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
 
   submitReview(): void {
     if (!this.course || !this.isAuthenticated || !this.isEnrolled) {
-      alert('Bạn cần đăng ký khóa học trước khi đánh giá!');
+      this.notificationService.warning(
+        'Cần đăng ký khóa học',
+        'Bạn cần đăng ký khóa học trước khi đánh giá!'
+      );
       return;
     }
 
     if (this.reviewRating < 1 || this.reviewRating > 5) {
-      alert('Vui lòng chọn số sao đánh giá từ 1 đến 5!');
+      this.notificationService.warning(
+        'Đánh giá không hợp lệ',
+        'Vui lòng chọn số sao đánh giá từ 1 đến 5!'
+      );
       return;
     }
 
@@ -336,7 +353,10 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
         
         // Show success message
         const message = response.message || 'Đánh giá của bạn đã được gửi thành công!';
-        alert(message);
+        this.notificationService.success(
+          'Đánh giá thành công',
+          message
+        );
       },
       error: (error: any) => {
         this.isSubmittingReview = false;
@@ -354,7 +374,10 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
           errorMessage = error.message;
         }
         
-        alert(errorMessage);
+        this.notificationService.error(
+          'Lỗi đánh giá',
+          errorMessage
+        );
       }
     });
   }
