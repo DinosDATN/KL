@@ -350,11 +350,12 @@ class CourseController {
     }
   }
   
-  // Get course modules (requires enrollment)
+  // Get course modules (requires enrollment, except for admin/creator)
   async getCourseModules(req, res) {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const userRole = req.user?.role;
       
       // Verify course exists
       const course = await Course.findOne({
@@ -372,8 +373,12 @@ class CourseController {
         });
       }
 
-      // Check enrollment if user is authenticated
-      if (userId) {
+      // Admin and course creator can access without enrollment
+      const isAdmin = userRole === 'admin';
+      const isCreator = userRole === 'creator' && course.instructor_id === userId;
+
+      // Check enrollment if user is authenticated and not admin/creator
+      if (userId && !isAdmin && !isCreator) {
         const enrollment = await CourseEnrollment.findOne({
           where: { user_id: userId, course_id: id }
         });
@@ -402,11 +407,12 @@ class CourseController {
     }
   }
   
-  // Get course lessons (requires enrollment)
+  // Get course lessons (requires enrollment, except for admin/creator)
   async getCourseLessons(req, res) {
     try {
       const { id } = req.params;
       const userId = req.user?.id;
+      const userRole = req.user?.role;
       
       // Verify course exists
       const course = await Course.findOne({
@@ -424,8 +430,12 @@ class CourseController {
         });
       }
 
-      // Check enrollment if user is authenticated
-      if (userId) {
+      // Admin and course creator can access without enrollment
+      const isAdmin = userRole === 'admin';
+      const isCreator = userRole === 'creator' && course.instructor_id === userId;
+
+      // Check enrollment if user is authenticated and not admin/creator
+      if (userId && !isAdmin && !isCreator) {
         const enrollment = await CourseEnrollment.findOne({
           where: { user_id: userId, course_id: id }
         });
