@@ -144,14 +144,16 @@ export class DocumentsComponent implements OnInit {
     }
     
     // Topic filter
-    if (this.filters.selectedTopic !== null) {
-      filtered = filtered.filter(doc => doc.topic_id === this.filters.selectedTopic);
+    if (this.filters.selectedTopic !== null && this.filters.selectedTopic !== undefined) {
+      const selectedTopicId = Number(this.filters.selectedTopic);
+      filtered = filtered.filter(doc => Number(doc.topic_id) === selectedTopicId);
     }
     
     // Category filter
-    if (this.filters.selectedCategory !== null) {
+    if (this.filters.selectedCategory !== null && this.filters.selectedCategory !== undefined) {
+      const selectedCategoryId = Number(this.filters.selectedCategory);
       const documentsInCategory = this.categoryLinks
-        .filter(link => link.category_id === this.filters.selectedCategory)
+        .filter(link => Number(link.category_id) === selectedCategoryId)
         .map(link => link.document_id);
       filtered = filtered.filter(doc => documentsInCategory.includes(doc.id));
     }

@@ -78,7 +78,17 @@ export class DocumentFiltersComponent {
   }
   
   onFilterChange(): void {
-    this.filtersChange.emit({ ...this.filters });
+    // Normalize filter values to ensure correct types
+    const normalizedFilters: DocumentFilters = {
+      ...this.filters,
+      selectedTopic: this.filters.selectedTopic !== null && this.filters.selectedTopic !== undefined 
+        ? Number(this.filters.selectedTopic) 
+        : null,
+      selectedCategory: this.filters.selectedCategory !== null && this.filters.selectedCategory !== undefined 
+        ? Number(this.filters.selectedCategory) 
+        : null
+    };
+    this.filtersChange.emit(normalizedFilters);
   }
   
   onClearFilters(): void {
