@@ -638,6 +638,28 @@ class ProblemController {
                   if (rewardResult) {
                     console.log(`Awarded ${rewardResult.transaction.points} points to user ${userId} for solving problem ${id}`);
                   }
+
+                  // Award 20 XP for completing the exercise
+                  try {
+                    await rewardService.addXP(
+                      userId,
+                      20,
+                      'problem_solved',
+                      {
+                        referenceType: 'problem',
+                        referenceId: id,
+                        metadata: {
+                          difficulty: problem.difficulty,
+                          language: language
+                        },
+                        description: `Hoàn thành bài tập: ${problem.title || `Problem ${id}`}`
+                      }
+                    );
+                    console.log(`Awarded 20 XP to user ${userId} for solving problem ${id}`);
+                  } catch (xpError) {
+                    console.error('Error awarding XP:', xpError);
+                    // Don't fail the request if XP fails
+                  }
                 }
               }
             } catch (rewardError) {
@@ -1143,6 +1165,28 @@ class ProblemController {
 
                   if (rewardResult) {
                     console.log(`Awarded ${rewardResult.transaction.points} points to user ${userId} for solving problem ${id}`);
+                  }
+
+                  // Award 20 XP for completing the exercise
+                  try {
+                    await rewardService.addXP(
+                      userId,
+                      20,
+                      'problem_solved',
+                      {
+                        referenceType: 'problem',
+                        referenceId: id,
+                        metadata: {
+                          difficulty: problem.difficulty,
+                          language: language
+                        },
+                        description: `Hoàn thành bài tập: ${problem.title || `Problem ${id}`}`
+                      }
+                    );
+                    console.log(`Awarded 20 XP to user ${userId} for solving problem ${id}`);
+                  } catch (xpError) {
+                    console.error('Error awarding XP:', xpError);
+                    // Don't fail the request if XP fails
                   }
                 }
               }

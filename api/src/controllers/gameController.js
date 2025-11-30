@@ -250,54 +250,111 @@ class GameController {
       // Validate solution
       const isValid = sudokuService.validateSolution(solution);
 
-      // If user is authenticated and solution is valid, save progress as new record
-      if (isValid && req.user && gameId && levelId) {
+      // Variables to track rewards
+      let xpAwarded = 0;
+      let rewardPointsAwarded = 0;
+      let newXP = null;
+      let newRewardPoints = null;
+
+      // Debug logging
+      console.log('[validateSudokuSolution] Debug info:', {
+        isValid,
+        hasUser: !!req.user,
+        userId: req.user?.id,
+        gameId,
+        levelId,
+        timeSpent
+      });
+
+      // If user is authenticated and solution is valid, award XP and save progress
+      if (isValid && req.user) {
         try {
           const userId = req.user.id;
           const timeSpentSeconds = timeSpent || 0;
 
-          // Calculate score based on time and difficulty
-          let score = 1000; // Base score
-          if (timeSpentSeconds > 0) {
-            // Reduce score based on time (more time = lower score)
-            score = Math.max(100, score - Math.floor(timeSpentSeconds / 10));
+          // Award 20 XP for completing Sudoku (always award if user is authenticated and solution is valid)
+          // This works even without gameId/levelId
+          try {
+            const xpResult = await rewardService.addXP(
+              userId,
+              20,
+              'sudoku_completed',
+              {
+                referenceType: gameId ? 'game' : null,
+                referenceId: gameId || null,
+                metadata: {
+                  levelId: levelId || null,
+                  difficulty: 'unknown',
+                  timeSpent: timeSpentSeconds,
+                  gameId: gameId || null
+                },
+                description: `Hoàn thành Sudoku`
+              }
+            );
+            xpAwarded = 20;
+            newXP = xpResult.xp;
+            console.log(`[validateSudokuSolution] ✅ Awarded ${xpAwarded} XP to user ${userId}. New XP: ${newXP}`);
+          } catch (xpError) {
+            console.error("[validateSudokuSolution] ❌ Error awarding XP:", xpError);
+            // Don't fail the request if XP fails
           }
 
-          // Always create a new record for each completion
-          await UserGameProcess.create({
-            user_id: userId,
-            game_id: gameId,
-            level_id: levelId,
-            status: "completed",
-            score: score,
-            time_spent: timeSpentSeconds,
-            completed_at: new Date(),
-          });
-
-          // Get game level to determine difficulty
-          const gameLevel = await GameLevel.findByPk(levelId);
-          if (gameLevel) {
-            // Award reward points for completing Sudoku
-            try {
-              const rewardResult = await rewardService.rewardSudokuCompleted(
-                userId,
-                gameId,
-                levelId,
-                gameLevel.difficulty,
-                timeSpentSeconds
-              );
-              
-              if (rewardResult) {
-                console.log(`Awarded ${rewardResult.transaction.points} points to user ${userId} for completing Sudoku`);
-              }
-            } catch (rewardError) {
-              console.error("Error awarding reward points:", rewardError);
-              // Don't fail the request if reward fails
+          // If gameId and levelId are provided, save progress and award reward points
+          if (gameId && levelId) {
+            // Calculate score based on time and difficulty
+            let score = 1000; // Base score
+            if (timeSpentSeconds > 0) {
+              // Reduce score based on time (more time = lower score)
+              score = Math.max(100, score - Math.floor(timeSpentSeconds / 10));
             }
+
+            // Always create a new record for each completion
+            await UserGameProcess.create({
+              user_id: userId,
+              game_id: gameId,
+              level_id: levelId,
+              status: "completed",
+              score: score,
+              time_spent: timeSpentSeconds,
+              completed_at: new Date(),
+            });
+
+            // Get game level to determine difficulty
+            const gameLevel = await GameLevel.findByPk(levelId);
+            if (gameLevel) {
+              // Award reward points for completing Sudoku
+              try {
+                const rewardResult = await rewardService.rewardSudokuCompleted(
+                  userId,
+                  gameId,
+                  levelId,
+                  gameLevel.difficulty,
+                  timeSpentSeconds
+                );
+                
+                if (rewardResult) {
+                  rewardPointsAwarded = rewardResult.transaction.points;
+                  newRewardPoints = rewardResult.newBalance;
+                  console.log(`[validateSudokuSolution] ✅ Awarded ${rewardPointsAwarded} reward points to user ${userId}. New balance: ${newRewardPoints}`);
+                }
+              } catch (rewardError) {
+                console.error("[validateSudokuSolution] ❌ Error awarding reward points:", rewardError);
+                // Don't fail the request if reward fails
+              }
+            }
+          } else {
+            console.log(`[validateSudokuSolution] ⚠️ gameId or levelId missing. gameId: ${gameId}, levelId: ${levelId}. XP still awarded.`);
           }
         } catch (progressError) {
-          console.error("Error saving game progress:", progressError);
+          console.error("[validateSudokuSolution] ❌ Error saving game progress:", progressError);
           // Don't fail the request if progress saving fails
+        }
+      } else {
+        if (!isValid) {
+          console.log('[validateSudokuSolution] ⚠️ Solution is invalid, no rewards awarded');
+        }
+        if (!req.user) {
+          console.log('[validateSudokuSolution] ⚠️ User not authenticated, no rewards awarded');
         }
       }
 
@@ -306,6 +363,12 @@ class GameController {
         data: {
           isValid,
           message: isValid ? "Solution is valid" : "Solution is invalid",
+          rewards: isValid && req.user ? {
+            xpAwarded,
+            rewardPointsAwarded,
+            newXP,
+            newRewardPoints
+          } : null,
         },
       });
     } catch (error) {

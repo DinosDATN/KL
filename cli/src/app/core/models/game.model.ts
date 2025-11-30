@@ -65,6 +65,12 @@ export interface SudokuValidationRequest {
 export interface SudokuValidationResult {
   isValid: boolean;
   message: string;
+  rewards?: {
+    xpAwarded: number;
+    rewardPointsAwarded: number;
+    newXP: number | null;
+    newRewardPoints: number | null;
+  } | null;
 }
 
 export interface GameSession {

@@ -165,7 +165,8 @@ export class GameService {
     return this.http
       .post<ApiResponse<SudokuValidationResult>>(
         `${this.apiUrl}/games/sudoku/validate`,
-        request
+        request,
+        { withCredentials: true } // Send HttpOnly cookie for authentication
       )
       .pipe(
         map((response) => response.data),

@@ -112,8 +112,14 @@ const requireRole = (roles) => {
 // Optional authentication - doesn't fail if no token provided
 const optionalAuth = async (req, res, next) => {
   try {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+    // ✅ Try to get token from cookie first (HttpOnly) - same as authenticateToken
+    let token = req.cookies?.auth_token;
+    
+    // ⚠️ Fallback to Authorization header for backward compatibility
+    if (!token) {
+      const authHeader = req.headers['authorization'];
+      token = authHeader && authHeader.split(' ')[1]; // Bearer <token>
+    }
 
     if (!token) {
       req.user = null;

@@ -254,6 +254,57 @@ class RewardService {
 
     return existing !== null;
   }
+
+  /**
+   * Thêm điểm kinh nghiệm (XP) cho người dùng
+   * @param {number} userId - ID người dùng
+   * @param {number} xp - Số điểm XP cần thêm (mặc định 20)
+   * @param {string} source - Nguồn XP (ví dụ: 'problem_solved', 'sudoku_completed')
+   * @param {Object} options - Tùy chọn bổ sung
+   * @returns {Object} UserStats sau khi cập nhật
+   */
+  async addXP(userId, xp = 20, source = 'unknown', options = {}) {
+    const {
+      referenceType = null,
+      referenceId = null,
+      metadata = null,
+      description = null
+    } = options;
+
+    const transaction = await sequelize.transaction();
+
+    try {
+      // Tìm hoặc tạo user_stats
+      let userStats = await UserStats.findOne({
+        where: { user_id: userId },
+        transaction
+      });
+
+      if (!userStats) {
+        // Tạo user_stats nếu chưa có
+        userStats = await UserStats.create({
+          user_id: userId,
+          xp: xp
+        }, { transaction });
+      } else {
+        // Cập nhật XP
+        const newXP = Math.max(0, (userStats.xp || 0) + xp);
+        await userStats.update({
+          xp: newXP
+        }, { transaction });
+      }
+
+      await transaction.commit();
+
+      // Log để debug
+      console.log(`Added ${xp} XP to user ${userId} from ${source}. New XP: ${userStats.xp}`);
+
+      return userStats;
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
+  }
 }
 
 module.exports = new RewardService();

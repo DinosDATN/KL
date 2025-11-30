@@ -389,18 +389,82 @@ export class SudokuComponent implements OnInit, OnDestroy {
       timeSpent: this.elapsedTime,
     };
 
+    console.log('[Sudoku] Validating solution with request:', validationRequest);
+
     this.gameService
       .validateSudokuSolution(validationRequest)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (result) => {
+          console.log('[Sudoku] Validation result:', result);
+          
           if (result.isValid) {
             this.gameCompleted = true;
             this.clearTimer();
+
+            // Show success notification
+            this.notificationService.success(
+              'Chúc mừng!',
+              'Bạn đã hoàn thành Sudoku thành công!'
+            );
+
+            // Handle rewards (XP and reward points)
+            if (result.rewards) {
+              const { xpAwarded, rewardPointsAwarded, newXP, newRewardPoints } = result.rewards;
+
+              console.log('[Sudoku] Rewards received:', {
+                xpAwarded,
+                rewardPointsAwarded,
+                newXP,
+                newRewardPoints
+              });
+
+              // Show XP notification
+              if (xpAwarded > 0) {
+                this.notificationService.success(
+                  'Nhận điểm kinh nghiệm!',
+                  `Bạn đã nhận được ${xpAwarded} XP!${newXP !== null ? ` Tổng XP: ${newXP}` : ''}`
+                );
+              } else {
+                console.warn('[Sudoku] ⚠️ XP was not awarded. This might be an error.');
+              }
+
+              // Show reward points notification if awarded
+              if (rewardPointsAwarded > 0) {
+                this.notificationService.info(
+                  'Nhận điểm thưởng!',
+                  `Bạn đã nhận được ${rewardPointsAwarded} điểm thưởng!${newRewardPoints !== null ? ` Tổng điểm: ${newRewardPoints}` : ''}`
+                );
+              }
+
+              // Refresh user stats to update UI in realtime (always refresh if rewards object exists)
+              console.log('[Sudoku] Refreshing user stats...');
+              this.userStatsService.loadUserStats().subscribe({
+                next: () => {
+                  console.log('[Sudoku] ✅ User stats refreshed successfully');
+                },
+                error: (error) => {
+                  console.error('[Sudoku] ❌ Error refreshing user stats:', error);
+                }
+              });
+            } else {
+              console.warn('[Sudoku] ⚠️ No rewards in response. User may not be authenticated or solution validation failed.');
+              // Only show notification if user is definitely not logged in
+              // (If user is logged in but no rewards, it's likely an error, so don't show confusing message)
+            }
+          } else {
+            this.notificationService.error(
+              'Giải pháp không đúng',
+              'Vui lòng kiểm tra lại giải pháp của bạn.'
+            );
           }
         },
         error: (error) => {
-          console.error('Error validating solution:', error);
+          console.error('[Sudoku] ❌ Error validating solution:', error);
+          this.notificationService.error(
+            'Lỗi xác thực',
+            'Không thể xác thực giải pháp. Vui lòng thử lại.'
+          );
         },
       });
   }
