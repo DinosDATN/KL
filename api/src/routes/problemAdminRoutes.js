@@ -71,8 +71,8 @@ router.delete('/:id', problemAdminController.deleteProblem);
 // POST /api/admin/problems/:id/restore - Restore a soft-deleted problem (Admin/Creator)
 router.post('/:id/restore', requireRole(['admin', 'creator']), problemAdminController.restoreProblem);
 
-// DELETE /api/admin/problems/:id/permanent - Permanently delete a problem
-router.delete('/:id/permanent', requireRole(['admin']), problemAdminController.permanentlyDeleteProblem);
+// DELETE /api/admin/problems/:id/permanent - Permanently delete a problem (Admin/Creator)
+router.delete('/:id/permanent', requireRole(['admin', 'creator']), problemAdminController.permanentlyDeleteProblem);
 
 /**
  * Bulk Operations (Admin Only)
