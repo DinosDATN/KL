@@ -244,7 +244,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
       ],
     },
     {
-      label: 'Gamification',
+      label: 'Trò chơi',
       icon: 'game',
       children: [{ label: 'Sudoku', link: '/games/sudoku', icon: 'grid' }],
     },

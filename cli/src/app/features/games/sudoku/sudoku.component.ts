@@ -144,7 +144,7 @@ export class SudokuComponent implements OnInit, OnDestroy {
         },
         error: (error) => {
           console.error('Error loading puzzle:', error);
-          this.error = 'Failed to load puzzle. Please try again.';
+          this.error = 'Không thể tải câu đố. Vui lòng thử lại.';
           this.loading = false;
         },
       });
