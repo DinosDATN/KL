@@ -13,7 +13,8 @@ router.post('/login', authController.login);           // POST /api/v1/auth/logi
 router.get('/google', 
   passport.authenticate('google', { 
     scope: ['profile', 'email'],
-    session: false 
+    session: false,
+    prompt: 'select_account' // Force account selection every time
   })
 ); // GET /api/v1/auth/google
 
@@ -28,10 +29,13 @@ router.get('/google/callback',
 router.get('/google/failure', authController.googleFailure); // GET /api/v1/auth/google/failure
 
 // GitHub OAuth routes
+// Note: GitHub OAuth doesn't support a prompt parameter like Google does.
+// To select a different GitHub account, users need to log out of GitHub first
+// or use an incognito/private browsing window.
 router.get('/github', 
   passport.authenticate('github', { 
     scope: ['user:email', 'read:user'],
-    session: false 
+    session: false
   })
 ); // GET /api/v1/auth/github
 

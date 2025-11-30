@@ -12,7 +12,7 @@ const generateToken = (userId) => {
   return jwt.sign(
     { userId },
     secret,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    { expiresIn: process.env.JWT_EXPIRES_IN || '30d' }
   );
 };
 
@@ -85,7 +85,7 @@ const authController = {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days (1 month)
         path: '/'
       });
 
@@ -193,7 +193,7 @@ const authController = {
         httpOnly: true,        // Cannot be accessed by JavaScript
         secure: process.env.NODE_ENV === 'production', // HTTPS only in production
         sameSite: 'lax',       // CSRF protection (changed from 'strict' for OAuth compatibility)
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days (1 month)
         path: '/'
       });
 
@@ -313,7 +313,7 @@ const authController = {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days (1 month)
         path: '/',
         domain: process.env.NODE_ENV === 'production' ? process.env.COOKIE_DOMAIN : undefined
       });
@@ -371,7 +371,7 @@ const authController = {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days (1 month)
         path: '/',
         domain: process.env.NODE_ENV === 'production' ? process.env.COOKIE_DOMAIN : undefined
       });
