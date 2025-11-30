@@ -28,8 +28,14 @@ export interface ChatAIMessage {
   isTyping?: boolean;
 }
 
+export interface ChatAIConversationMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export interface ChatAIRequest {
   question: string;
+  conversation_history?: ChatAIConversationMessage[];
 }
 
 export interface ChatAIResponseData {

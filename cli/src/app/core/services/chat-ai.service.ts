@@ -3,7 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, BehaviorSubject, throwError } from 'rxjs';
 import { catchError, map, timeout, retry } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
-import { ChatAIRequest, ChatAIResponse, ChatAIMessage, ChatAIHealthStatus, ChatAIStats } from '../models/ai.model';
+import { ChatAIRequest, ChatAIResponse, ChatAIMessage, ChatAIHealthStatus, ChatAIStats, ChatAIConversationMessage } from '../models/ai.model';
 
 @Injectable({
   providedIn: 'root'
@@ -86,6 +86,30 @@ export class ChatAIService {
       return throwError('Câu hỏi không thể để trống');
     }
 
+    // Lấy conversation history TRƯỚC KHI thêm user message mới
+    // Để conversation history chỉ bao gồm các messages đã có response
+    const currentMessagesBefore = this.messagesSubject.value
+      .filter(m => !m.isTyping && m.id !== 'typing' && m.text && m.text.trim().length > 0)
+      .slice(-20); // Chỉ lấy 20 messages gần nhất
+    
+    const conversationHistory: ChatAIConversationMessage[] = currentMessagesBefore.map(msg => ({
+      role: (msg.isUser ? 'user' : 'assistant') as 'user' | 'assistant',
+      content: msg.text.trim()
+    })).filter(msg => msg.content.length > 0);
+    
+    console.log(`[ChatAI] ===== CONVERSATION HISTORY DEBUG =====`);
+    console.log(`[ChatAI] Total messages in state: ${this.messagesSubject.value.length}`);
+    console.log(`[ChatAI] Filtered messages: ${currentMessagesBefore.length}`);
+    console.log(`[ChatAI] Prepared conversation history: ${conversationHistory.length} messages`);
+    if (conversationHistory.length > 0) {
+      console.log(`[ChatAI] First message:`, JSON.stringify(conversationHistory[0]));
+      console.log(`[ChatAI] Last message:`, JSON.stringify(conversationHistory[conversationHistory.length - 1]));
+      console.log(`[ChatAI] All messages:`, JSON.stringify(conversationHistory, null, 2));
+    } else {
+      console.log(`[ChatAI] WARNING: No conversation history prepared!`);
+    }
+    console.log(`[ChatAI] ========================================`);
+
     // Add user message
     const userMessage: ChatAIMessage = {
       id: this.generateMessageId(),
@@ -109,15 +133,20 @@ export class ChatAIService {
     };
     this.addMessage(aiMessage);
 
-    const request: ChatAIRequest = { question: question.trim() };
+    const request: ChatAIRequest = { 
+      question: question.trim(),
+      conversation_history: conversationHistory.length > 0 ? conversationHistory : undefined
+    };
 
-    // Use streaming endpoint
+    // Use streaming endpoint với POST để gửi conversation_history
     return new Observable<ChatAIMessage>(observer => {
-      const eventSource = new EventSource(
-        `${this.apiUrl}/ask-stream?question=${encodeURIComponent(question.trim())}`
-      );
-
-      // Use POST with fetch for better control
+      // Log request payload để debug
+      console.log(`[ChatAI] ===== SENDING REQUEST =====`);
+      console.log(`[ChatAI] Question: "${request.question}"`);
+      console.log(`[ChatAI] Conversation history: ${conversationHistory.length} messages`);
+      console.log(`[ChatAI] Full request payload:`, JSON.stringify(request, null, 2));
+      console.log(`[ChatAI] ============================`);
+      
       fetch(`${this.apiUrl}/ask-stream`, {
         method: 'POST',
         headers: {

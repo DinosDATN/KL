@@ -7,7 +7,7 @@ import os
 import logging
 import json
 import httpx
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 app = FastAPI()
 
@@ -33,13 +33,19 @@ client = OpenAI(
     api_key=os.getenv("OPENROUTER_API_KEY")
 )
 
+class ChatMessage(BaseModel):
+    role: str  # "user" or "assistant"
+    content: str
+
 class ChatRequest(BaseModel):
     question: str
+    conversation_history: Optional[List[ChatMessage]] = None  # Lịch sử hội thoại
 
 class FormatAnswerRequest(BaseModel):
     question: str
     query_result: list
     query_info: Optional[Dict[str, Any]] = None
+    conversation_history: Optional[List[ChatMessage]] = None
 
 class ChatAIService:
     """
@@ -162,12 +168,15 @@ class ChatAIService:
             # Fallback: nếu có entity keywords thì cần DB
             return has_entity
     
-    def process_question(self, question: str) -> Dict[str, Any]:
+    def process_question(self, question: str, conversation_history: Optional[List[Dict[str, str]]] = None) -> Dict[str, Any]:
         """
         Xử lý câu hỏi với decision layer: quyết định có cần query DB không
+        conversation_history: List of messages với format [{"role": "user|assistant", "content": "..."}]
         """
         try:
             logger.info(f"Processing question: {question}")
+            if conversation_history:
+                logger.info(f"Conversation history: {len(conversation_history)} messages")
             
             # Decision layer: Kiểm tra xem có cần query database không
             needs_database = self._decide_if_needs_database(question)
@@ -190,7 +199,7 @@ class ChatAIService:
                     schema = basic_schema
                 
                 logger.info(f"Using schema, length: {len(schema)} characters")
-                sql_result = self._generate_sql(question, schema)
+                sql_result = self._generate_sql(question, schema, conversation_history)
                 
                 if sql_result.get("sql"):
                     logger.info(f"SQL generated successfully: {sql_result['sql']}")
@@ -213,13 +222,7 @@ class ChatAIService:
             
             # Không cần query DB hoặc không sinh được SQL, trả lời bằng AI thông thường
             logger.info("Using standard AI response")
-            prompt = (
-                f"Người dùng hỏi: {question}\n\n"
-                f"Hãy trả lời câu hỏi một cách thân thiện, chi tiết và hữu ích bằng tiếng Việt. "
-                f"Bạn là trợ lý AI hỗ trợ người học lập trình."
-            )
-            
-            ai_response = self._call_ai(prompt)
+            ai_response = self._call_ai_with_history(question, conversation_history)
             
             return {
                 "answer": ai_response,
@@ -235,7 +238,7 @@ class ChatAIService:
                 "requires_sql": False
             }
     
-    def _generate_sql(self, question: str, schema: str) -> Dict[str, Any]:
+    def _generate_sql(self, question: str, schema: str, conversation_history: Optional[List[Dict[str, str]]] = None) -> Dict[str, Any]:
         """
         Sinh SQL query từ câu hỏi người dùng với schema context
         """
@@ -302,13 +305,16 @@ class ChatAIService:
                 }
             else:
                 logger.warning(f"Invalid SQL response: {sql_response}")
-                # Fallback: trả lời bằng AI thông thường
-                fallback_prompt = (
-                    f"Người dùng hỏi: {question}\n\n"
-                    f"Hãy trả lời câu hỏi một cách thân thiện, chi tiết và hữu ích bằng tiếng Việt. "
-                    f"Bạn là trợ lý AI hỗ trợ người học lập trình."
-                )
-                fallback_answer = self._call_ai(fallback_prompt)
+                # Fallback: trả lời bằng AI thông thường với conversation history
+                if conversation_history:
+                    fallback_answer = self._call_ai_with_history(question, conversation_history)
+                else:
+                    fallback_prompt = (
+                        f"Người dùng hỏi: {question}\n\n"
+                        f"Hãy trả lời câu hỏi một cách thân thiện, chi tiết và hữu ích bằng tiếng Việt. "
+                        f"Bạn là trợ lý AI hỗ trợ người học lập trình."
+                    )
+                    fallback_answer = self._call_ai(fallback_prompt)
                 
                 return {
                     "sql": None,
@@ -321,13 +327,16 @@ class ChatAIService:
                 
         except Exception as e:
             logger.error(f"Error generating SQL: {e}")
-            # Fallback
-            fallback_prompt = (
-                f"Người dùng hỏi: {question}\n\n"
-                f"Hãy trả lời câu hỏi một cách thân thiện, chi tiết và hữu ích bằng tiếng Việt. "
-                f"Bạn là trợ lý AI hỗ trợ người học lập trình."
-            )
-            fallback_answer = self._call_ai(fallback_prompt)
+            # Fallback với conversation history
+            if conversation_history:
+                fallback_answer = self._call_ai_with_history(question, conversation_history)
+            else:
+                fallback_prompt = (
+                    f"Người dùng hỏi: {question}\n\n"
+                    f"Hãy trả lời câu hỏi một cách thân thiện, chi tiết và hữu ích bằng tiếng Việt. "
+                    f"Bạn là trợ lý AI hỗ trợ người học lập trình."
+                )
+                fallback_answer = self._call_ai(fallback_prompt)
             
             return {
                 "sql": None,
@@ -340,27 +349,67 @@ class ChatAIService:
     
     def _call_ai(self, prompt: str) -> str:
         """
-        Gọi AI để trả lời câu hỏi (non-streaming)
+        Gọi AI để trả lời câu hỏi (non-streaming) - backward compatible
+        """
+        return self._call_ai_with_history(prompt, None)
+    
+    def _call_ai_with_history(self, question: str, conversation_history: Optional[List[Dict[str, str]]] = None) -> str:
+        """
+        Gọi AI với conversation history
         """
         try:
+            # Build messages array
+            messages = [
+                {
+                    "role": "system", 
+                    "content": (
+                        "Bạn là trợ lý AI hỗ trợ người học lập trình, nói tiếng Việt. "
+                        "Bạn có thể trả lời các câu hỏi về lập trình, thuật toán, công nghệ, "
+                        "và các chủ đề liên quan đến học lập trình. "
+                        "Hãy trả lời một cách thân thiện, chi tiết và hữu ích. "
+                        "Nếu không biết câu trả lời chính xác, hãy đưa ra gợi ý hoặc hướng dẫn tìm hiểu thêm. "
+                        "Bạn có thể nhớ và tham khảo các câu hỏi và câu trả lời trước đó trong cuộc hội thoại."
+                    )
+                }
+            ]
+            
+            # Thêm conversation history nếu có (giới hạn 20 messages gần nhất để tránh quá dài)
+            if conversation_history and len(conversation_history) > 0:
+                logger.info(f"[_call_ai_with_history] Adding {len(conversation_history)} messages to conversation history")
+                # Chỉ lấy 20 messages gần nhất
+                recent_history = conversation_history[-20:] if len(conversation_history) > 20 else conversation_history
+                added_count = 0
+                for msg in recent_history:
+                    role = msg.get("role", "user")
+                    content = msg.get("content", "")
+                    if role in ["user", "assistant"] and content and content.strip():
+                        messages.append({
+                            "role": role,
+                            "content": content.strip()
+                        })
+                        added_count += 1
+                        logger.info(f"[_call_ai_with_history] Added message #{added_count}: {role} - {content[:100]}...")
+                logger.info(f"[_call_ai_with_history] Total messages added: {added_count}")
+            else:
+                logger.info("[_call_ai_with_history] No conversation history provided")
+            
+            # Thêm câu hỏi hiện tại
+            messages.append({
+                "role": "user",
+                "content": question
+            })
+            
+            logger.info(f"[_call_ai_with_history] Total messages sent to GPT: {len(messages)}")
+            logger.info(f"[_call_ai_with_history] Messages structure: {[{'role': m['role'], 'content_length': len(m['content'])} for m in messages]}")
+            
             completion = client.chat.completions.create(
                 model="gpt-4o-mini",
-                messages=[
-                    {
-                        "role": "system", 
-                        "content": (
-                            "Bạn là trợ lý AI hỗ trợ người học lập trình, nói tiếng Việt. "
-                            "Bạn có thể trả lời các câu hỏi về lập trình, thuật toán, công nghệ, "
-                            "và các chủ đề liên quan đến học lập trình. "
-                            "Hãy trả lời một cách thân thiện, chi tiết và hữu ích. "
-                            "Nếu không biết câu trả lời chính xác, hãy đưa ra gợi ý hoặc hướng dẫn tìm hiểu thêm."
-                        )
-                    },
-                    {"role": "user", "content": prompt}
-                ],
+                messages=messages,
                 temperature=0.7,
                 max_tokens=1000
             )
+            
+            logger.info(f"[_call_ai_with_history] GPT response received successfully")
             
             return completion.choices[0].message.content
             
@@ -370,24 +419,61 @@ class ChatAIService:
     
     def _stream_ai(self, prompt: str):
         """
-        Gọi AI với streaming response
+        Gọi AI với streaming response (backward compatible - không có history)
+        """
+        return self._stream_ai_with_history(prompt, None)
+    
+    def _stream_ai_with_history(self, question: str, conversation_history: Optional[List[Dict[str, str]]] = None):
+        """
+        Gọi AI với streaming response và conversation history
         """
         try:
+            # Build messages array
+            messages = [
+                {
+                    "role": "system", 
+                    "content": (
+                        "Bạn là trợ lý AI hỗ trợ người học lập trình, nói tiếng Việt. "
+                        "Bạn có thể trả lời các câu hỏi về lập trình, thuật toán, công nghệ, "
+                        "và các chủ đề liên quan đến học lập trình. "
+                        "Hãy trả lời một cách thân thiện, chi tiết và hữu ích. "
+                        "Nếu không biết câu trả lời chính xác, hãy đưa ra gợi ý hoặc hướng dẫn tìm hiểu thêm. "
+                        "Bạn có thể nhớ và tham khảo các câu hỏi và câu trả lời trước đó trong cuộc hội thoại."
+                    )
+                }
+            ]
+            
+            # Thêm conversation history nếu có (giới hạn 20 messages gần nhất)
+            if conversation_history and len(conversation_history) > 0:
+                logger.info(f"[_stream_ai_with_history] Adding {len(conversation_history)} messages to conversation history")
+                recent_history = conversation_history[-20:] if len(conversation_history) > 20 else conversation_history
+                added_count = 0
+                for msg in recent_history:
+                    role = msg.get("role", "user")
+                    content = msg.get("content", "")
+                    if role in ["user", "assistant"] and content and content.strip():
+                        messages.append({
+                            "role": role,
+                            "content": content.strip()
+                        })
+                        added_count += 1
+                        logger.info(f"[_stream_ai_with_history] Added message #{added_count}: {role} - {content[:100]}...")
+                logger.info(f"[_stream_ai_with_history] Total messages added: {added_count}")
+            else:
+                logger.info("[_stream_ai_with_history] No conversation history provided")
+            
+            # Thêm câu hỏi hiện tại
+            messages.append({
+                "role": "user",
+                "content": question
+            })
+            
+            logger.info(f"[_stream_ai_with_history] Total messages sent to GPT: {len(messages)}")
+            logger.info(f"[_stream_ai_with_history] Messages structure: {[{'role': m['role'], 'content_length': len(m['content'])} for m in messages]}")
+            
             stream = client.chat.completions.create(
                 model="gpt-4o-mini",
-                messages=[
-                    {
-                        "role": "system", 
-                        "content": (
-                            "Bạn là trợ lý AI hỗ trợ người học lập trình, nói tiếng Việt. "
-                            "Bạn có thể trả lời các câu hỏi về lập trình, thuật toán, công nghệ, "
-                            "và các chủ đề liên quan đến học lập trình. "
-                            "Hãy trả lời một cách thân thiện, chi tiết và hữu ích. "
-                            "Nếu không biết câu trả lời chính xác, hãy đưa ra gợi ý hoặc hướng dẫn tìm hiểu thêm."
-                        )
-                    },
-                    {"role": "user", "content": prompt}
-                ],
+                messages=messages,
                 temperature=0.7,
                 max_tokens=1000,
                 stream=True
@@ -396,12 +482,14 @@ class ChatAIService:
             for chunk in stream:
                 if chunk.choices[0].delta.content is not None:
                     yield chunk.choices[0].delta.content
+            
+            logger.info(f"[_stream_ai_with_history] Streaming completed successfully")
                     
         except Exception as e:
-            logger.error(f"Error streaming AI: {e}")
+            logger.error(f"Error streaming AI with history: {e}", exc_info=True)
             yield "Xin lỗi, tôi gặp lỗi khi tạo phản hồi. Vui lòng thử lại."
     
-    def format_answer_from_query(self, question: str, query_result: list, query_info: Optional[Dict[str, Any]] = None) -> str:
+    def format_answer_from_query(self, question: str, query_result: list, query_info: Optional[Dict[str, Any]] = None, conversation_history: Optional[List[Dict[str, str]]] = None) -> str:
         """
         Format câu trả lời từ kết quả query database
         """
@@ -431,15 +519,52 @@ class ChatAIService:
             # Xử lý cho các queries khác (danh sách, etc.)
             result_summary = json.dumps(query_result[:20], ensure_ascii=False, indent=2)  # Chỉ lấy 20 rows đầu
             
-            prompt = (
-                f"Người dùng đã hỏi: {question}\n\n"
-                f"Kết quả từ database:\n{result_summary}\n\n"
-                f"Hãy trả lời câu hỏi dựa trên dữ liệu trên một cách thân thiện, chi tiết và hữu ích bằng tiếng Việt. "
-                f"Bạn là trợ lý AI hỗ trợ người học lập trình. "
-                f"Hãy trình bày thông tin một cách dễ hiểu và có cấu trúc."
-            )
+            # Build messages với conversation history
+            messages = [
+                {
+                    "role": "system",
+                    "content": (
+                        "Bạn là trợ lý AI hỗ trợ người học lập trình, nói tiếng Việt. "
+                        "Bạn có thể nhớ và tham khảo các câu hỏi và câu trả lời trước đó trong cuộc hội thoại."
+                    )
+                }
+            ]
             
-            formatted_answer = self._call_ai(prompt)
+            # Thêm conversation history nếu có
+            if conversation_history:
+                recent_history = conversation_history[-5:] if len(conversation_history) > 5 else conversation_history
+                for msg in recent_history:
+                    role = msg.get("role", "user")
+                    content = msg.get("content", "")
+                    if role in ["user", "assistant"] and content:
+                        messages.append({
+                            "role": role,
+                            "content": content
+                        })
+            
+            # Thêm câu hỏi và kết quả query
+            messages.append({
+                "role": "user",
+                "content": (
+                    f"Người dùng đã hỏi: {question}\n\n"
+                    f"Kết quả từ database:\n{result_summary}\n\n"
+                    f"Hãy trả lời câu hỏi dựa trên dữ liệu trên một cách thân thiện, chi tiết và hữu ích bằng tiếng Việt. "
+                    f"Hãy trình bày thông tin một cách dễ hiểu và có cấu trúc."
+                )
+            })
+            
+            try:
+                completion = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=messages,
+                    temperature=0.7,
+                    max_tokens=1000
+                )
+                formatted_answer = completion.choices[0].message.content
+            except Exception as e:
+                logger.error(f"Error calling AI for formatting: {e}")
+                # Fallback
+                formatted_answer = f"Dựa trên dữ liệu từ hệ thống:\n\n{result_summary}"
             return formatted_answer
             
         except Exception as e:
@@ -472,8 +597,22 @@ async def ask(request: ChatRequest):
                 "data_source": "ai"
             }
         
+        # Lấy conversation history từ request
+        conversation_history = None
+        if hasattr(request, 'conversation_history') and request.conversation_history:
+            conversation_history = [
+                {"role": msg.role, "content": msg.content}
+                for msg in request.conversation_history
+            ]
+            logger.info(f"[/ask] Received conversation_history: {len(conversation_history)} messages")
+            if len(conversation_history) > 0:
+                logger.info(f"[/ask] First message: {conversation_history[0]}")
+                logger.info(f"[/ask] Last message: {conversation_history[-1]}")
+        else:
+            logger.info(f"[/ask] No conversation_history in request")
+        
         # Xử lý câu hỏi thông qua ChatAI service
-        result = chat_ai_service.process_question(question)
+        result = chat_ai_service.process_question(question, conversation_history)
         
         return result
         
@@ -497,13 +636,23 @@ async def ask_stream(request: ChatRequest):
                 yield json.dumps({"type": "error", "content": "Câu hỏi không được để trống"}) + "\n"
             return StreamingResponse(empty_response(), media_type="text/event-stream")
         
+        # Lấy conversation history từ request
+        conversation_history = None
+        if hasattr(request, 'conversation_history') and request.conversation_history:
+            conversation_history = [
+                {"role": msg.role, "content": msg.content}
+                for msg in request.conversation_history
+            ]
+            logger.info(f"[/ask-stream] Received conversation_history: {len(conversation_history)} messages")
+            if len(conversation_history) > 0:
+                logger.info(f"[/ask-stream] First message: {conversation_history[0]}")
+                logger.info(f"[/ask-stream] Last message: {conversation_history[-1]}")
+        else:
+            logger.info(f"[/ask-stream] No conversation_history in request")
+        
         def generate():
             try:
-                for chunk in chat_ai_service._stream_ai(
-                    f"Người dùng hỏi: {question}\n\n"
-                    f"Hãy trả lời câu hỏi một cách thân thiện, chi tiết và hữu ích bằng tiếng Việt. "
-                    f"Bạn là trợ lý AI hỗ trợ người học lập trình."
-                ):
+                for chunk in chat_ai_service._stream_ai_with_history(question, conversation_history):
                     # Gửi từng chunk dưới dạng JSON
                     data = json.dumps({"type": "chunk", "content": chunk}, ensure_ascii=False)
                     yield f"data: {data}\n\n"
@@ -530,10 +679,25 @@ async def format_answer(request: FormatAnswerRequest):
     Format câu trả lời từ kết quả query database
     """
     try:
+        # Lấy conversation history từ request
+        conversation_history = None
+        if request.conversation_history:
+            conversation_history = [
+                {"role": msg.role, "content": msg.content}
+                for msg in request.conversation_history
+            ]
+            logger.info(f"[/format-answer] Received conversation_history: {len(conversation_history)} messages")
+            if len(conversation_history) > 0:
+                logger.info(f"[/format-answer] First message: {conversation_history[0]}")
+                logger.info(f"[/format-answer] Last message: {conversation_history[-1]}")
+        else:
+            logger.info(f"[/format-answer] No conversation_history in request")
+        
         formatted = chat_ai_service.format_answer_from_query(
             request.question,
             request.query_result,
-            request.query_info
+            request.query_info,
+            conversation_history
         )
         
         return {

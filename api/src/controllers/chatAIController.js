@@ -42,10 +42,29 @@ const askAI = async (req, res) => {
 
     const userId = req.user?.id || null;
 
+    // Lấy conversation history từ request (nếu có)
+    const conversationHistory = req.body.conversation_history || null;
+    
+    console.log(`[ChatAI] Raw conversation_history from request:`, conversationHistory ? JSON.stringify(conversationHistory, null, 2) : 'null');
+    
     // Gọi Python AI service với decision layer
-    const aiResponse = await axios.post(`${PYTHON_AI_API_URL}/ask`, {
+    const requestBody = {
       question: question.trim()
-    }, {
+    };
+    
+    // Thêm conversation history nếu có
+    if (conversationHistory && Array.isArray(conversationHistory) && conversationHistory.length > 0) {
+      requestBody.conversation_history = conversationHistory.map(msg => ({
+        role: msg.role || (msg.isUser ? 'user' : 'assistant'),
+        content: msg.text || msg.content || msg.message || ''
+      })).filter(msg => msg.content.trim().length > 0);
+      
+      console.log(`[ChatAI] Processed conversation_history (${requestBody.conversation_history.length} messages):`, JSON.stringify(requestBody.conversation_history, null, 2));
+    } else {
+      console.log(`[ChatAI] No conversation history to send (received: ${conversationHistory ? 'empty array' : 'null'})`);
+    }
+    
+    const aiResponse = await axios.post(`${PYTHON_AI_API_URL}/ask`, requestBody, {
       timeout: 30000, // 30 seconds timeout
       headers: {
         'Content-Type': 'application/json'
@@ -84,11 +103,23 @@ const askAI = async (req, res) => {
           
           // Gửi kết quả về Python để format lại câu trả lời
           try {
-            const formattedResponse = await axios.post(`${PYTHON_AI_API_URL}/format-answer`, {
+            const formatRequestBody = {
               question: question.trim(),
               query_result: queryResult.data,
               query_info: queryInfo
-            }, {
+            };
+            
+            // Thêm conversation history nếu có
+            if (conversationHistory && Array.isArray(conversationHistory) && conversationHistory.length > 0) {
+              formatRequestBody.conversation_history = conversationHistory.map(msg => ({
+                role: msg.role || (msg.isUser ? 'user' : 'assistant'),
+                content: msg.text || msg.content || msg.message || ''
+              })).filter(msg => msg.content.trim().length > 0);
+              
+              console.log(`[ChatAI] Sending conversation_history to format-answer: ${formatRequestBody.conversation_history.length} messages`);
+            }
+            
+            const formattedResponse = await axios.post(`${PYTHON_AI_API_URL}/format-answer`, formatRequestBody, {
               timeout: 15000,
               headers: {
                 'Content-Type': 'application/json'
@@ -311,6 +342,10 @@ const getQuickQuestions = async (req, res) => {
  */
 const askAIStream = async (req, res) => {
   try {
+    // Log toàn bộ request body để debug
+    console.log(`[ChatAI Stream] Full request body keys:`, Object.keys(req.body || {}));
+    console.log(`[ChatAI Stream] Request body:`, JSON.stringify(req.body, null, 2));
+    
     const { question } = req.body;
 
     // Validation
@@ -343,10 +378,33 @@ const askAIStream = async (req, res) => {
     res.setHeader('X-Accel-Buffering', 'no'); // Disable buffering for nginx
 
     try {
+      // Lấy conversation history từ request (nếu có)
+      const conversationHistory = req.body.conversation_history || null;
+      
+      console.log(`[ChatAI Stream] Conversation history received: ${conversationHistory ? conversationHistory.length : 0} messages`);
+      if (conversationHistory && conversationHistory.length > 0) {
+        console.log(`[ChatAI Stream] First message: ${JSON.stringify(conversationHistory[0])}`);
+        console.log(`[ChatAI Stream] Last message: ${JSON.stringify(conversationHistory[conversationHistory.length - 1])}`);
+      }
+      
       // Bước 1: Gọi Python AI service với /ask (non-streaming) để check SQL
-      const aiResponse = await axios.post(`${PYTHON_AI_API_URL}/ask`, {
+      const requestBody = {
         question: question.trim()
-      }, {
+      };
+      
+      // Thêm conversation history nếu có
+      if (conversationHistory && Array.isArray(conversationHistory) && conversationHistory.length > 0) {
+        requestBody.conversation_history = conversationHistory.map(msg => ({
+          role: msg.role || (msg.isUser ? 'user' : 'assistant'),
+          content: msg.text || msg.content || msg.message || ''
+        })).filter(msg => msg.content && msg.content.trim().length > 0);
+        
+        console.log(`[ChatAI Stream] Sending ${requestBody.conversation_history.length} messages to Python`);
+      } else {
+        console.log(`[ChatAI Stream] No conversation history to send`);
+      }
+      
+      const aiResponse = await axios.post(`${PYTHON_AI_API_URL}/ask`, requestBody, {
         timeout: 30000,
         headers: {
           'Content-Type': 'application/json'
@@ -377,11 +435,21 @@ const askAIStream = async (req, res) => {
             
             // Gửi kết quả về Python để format lại câu trả lời
             try {
-              const formattedResponse = await axios.post(`${PYTHON_AI_API_URL}/format-answer`, {
+              const formatRequestBody = {
                 question: question.trim(),
                 query_result: queryResult.data,
                 query_info: aiResponse.data.query_info
-              }, {
+              };
+              
+              // Thêm conversation history nếu có
+              if (conversationHistory && Array.isArray(conversationHistory) && conversationHistory.length > 0) {
+                formatRequestBody.conversation_history = conversationHistory.map(msg => ({
+                  role: msg.role || (msg.isUser ? 'user' : 'assistant'),
+                  content: msg.text || msg.content || msg.message || ''
+                })).filter(msg => msg.content.trim().length > 0);
+              }
+              
+              const formattedResponse = await axios.post(`${PYTHON_AI_API_URL}/format-answer`, formatRequestBody, {
                 timeout: 15000,
                 headers: {
                   'Content-Type': 'application/json'
@@ -467,9 +535,24 @@ const askAIStream = async (req, res) => {
 
       // Bước 3: Nếu không có SQL, dùng streaming từ Python service
       console.log(`[ChatAI Stream] No SQL, using Python streaming`);
+      
+      const streamRequestBody = {
+        question: question.trim()
+      };
+      
+      // Thêm conversation history nếu có
+      if (conversationHistory && Array.isArray(conversationHistory) && conversationHistory.length > 0) {
+        streamRequestBody.conversation_history = conversationHistory.map(msg => ({
+          role: msg.role || (msg.isUser ? 'user' : 'assistant'),
+          content: msg.text || msg.content || msg.message || ''
+        })).filter(msg => msg.content && msg.content.trim().length > 0);
+        
+        console.log(`[ChatAI Stream] Sending ${streamRequestBody.conversation_history.length} messages to Python streaming`);
+      }
+      
       const response = await axios.post(
         `${PYTHON_AI_API_URL}/ask-stream`,
-        { question: question.trim() },
+        streamRequestBody,
         {
           responseType: 'stream',
           timeout: 60000,
