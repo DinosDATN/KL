@@ -363,8 +363,44 @@
             </div>
           </div>
 
-          <!-- Courses and Contests Overview - Side by Side -->
-          <div class="grid md:grid-cols-2 gap-6">
+          <!-- Problem Stats Cards -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4" *ngIf="problemStats">
+            <div
+              class="p-4 rounded-xl bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20"
+            >
+              <div class="text-sm text-gray-600 dark:text-gray-300">Tổng bài tập</div>
+              <div class="text-2xl font-bold text-red-600 dark:text-red-400">
+                {{ problemStats.total || 0 }}
+              </div>
+            </div>
+            <div
+              class="p-4 rounded-xl bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20"
+            >
+              <div class="text-sm text-gray-600 dark:text-gray-300">Đã xuất bản</div>
+              <div class="text-2xl font-bold text-green-600 dark:text-green-400">
+                {{ problemStats.published || 0 }}
+              </div>
+            </div>
+            <div
+              class="p-4 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20"
+            >
+              <div class="text-sm text-gray-600 dark:text-gray-300">Đã xóa</div>
+              <div class="text-2xl font-bold text-gray-600 dark:text-gray-400">
+                {{ problemStats.deleted || 0 }}
+              </div>
+            </div>
+            <div
+              class="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20"
+            >
+              <div class="text-sm text-gray-600 dark:text-gray-300">Tổng lượt nộp</div>
+              <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {{ formatNumber(problemStats.totalSubmissions || 0) }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Courses, Contests, and Problems Overview - Three columns -->
+          <div class="grid md:grid-cols-3 gap-6">
             <!-- Recent Courses - Left Side -->
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
               <div class="flex items-center justify-between mb-4">
@@ -508,6 +544,105 @@
                     routerLink="/creator/contests"
                     class="inline-block px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 text-sm"
                     >Tạo cuộc thi mới</a
+                  >
+                </div>
+              </ng-template>
+            </div>
+
+            <!-- Problems Overview - Third Column -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold">Tổng quan bài tập</h3>
+                <a
+                  routerLink="/creator/problems"
+                  class="text-purple-600 dark:text-purple-400 hover:underline text-sm cursor-pointer"
+                  >Quản lý bài tập →</a
+                >
+              </div>
+
+              <!-- Problem Statistics - Integrated -->
+              <div class="grid grid-cols-2 gap-4 mb-4" *ngIf="problemStats">
+                <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                  <h4 class="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Thống kê bài tập</h4>
+                  <div class="space-y-1.5 text-xs">
+                    <div class="flex justify-between items-center">
+                      <span class="text-gray-600 dark:text-gray-300">Đã xuất bản</span>
+                      <span class="font-semibold">{{ problemStats.published || 0 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                      <span class="text-gray-600 dark:text-gray-300">Đã xóa</span>
+                      <span class="font-semibold">{{ problemStats.deleted || 0 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                      <span class="text-gray-600 dark:text-gray-300">Tổng số</span>
+                      <span class="font-semibold">{{ problemStats.total || 0 }}</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                  <h4 class="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Hiệu suất</h4>
+                  <div class="space-y-1.5 text-xs">
+                    <div class="flex justify-between items-center">
+                      <span class="text-gray-600 dark:text-gray-300">Tỷ lệ chấp nhận TB</span>
+                      <span class="font-semibold">{{ (problemStats.averageAcceptance || 0).toFixed(1) }}%</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                      <span class="text-gray-600 dark:text-gray-300">Tổng lượt nộp</span>
+                      <span class="font-semibold">{{ formatNumber(problemStats.totalSubmissions || 0) }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Recent Problems -->
+              <div *ngIf="problems.length > 0; else noProblems">
+                <h4 class="text-sm font-semibold mb-3">Bài tập gần đây</h4>
+                <div class="space-y-2">
+                  <div
+                    *ngFor="let problem of problems.slice(0, 4)"
+                    class="border dark:border-gray-700 rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer"
+                    [routerLink]="['/problems', problem.id]"
+                  >
+                    <div class="flex items-start justify-between mb-2">
+                      <div class="flex-1 min-w-0">
+                        <div class="font-semibold text-sm text-gray-900 dark:text-white mb-1 truncate">
+                          {{ problem.title }}
+                        </div>
+                        <div class="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">
+                          {{ problem.description || 'Không có mô tả' }}
+                        </div>
+                      </div>
+                      <span
+                        class="text-xs px-2 py-1 rounded-full ml-2 flex-shrink-0"
+                        [ngClass]="{
+                          'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200': problem.difficulty === 'Easy',
+                          'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200': problem.difficulty === 'Medium',
+                          'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200': problem.difficulty === 'Hard'
+                        }"
+                        >{{ problem.difficulty === 'Easy' ? 'Dễ' : (problem.difficulty === 'Medium' ? 'Trung bình' : 'Khó') }}</span
+                      >
+                    </div>
+                    <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-2 flex-wrap">
+                      <span *ngIf="problem.acceptance">
+                        <i class="icon-check-circle mr-1"></i>
+                        {{ problem.acceptance }}%
+                      </span>
+                      <span *ngIf="problem.total_submissions">
+                        <i class="icon-file-text mr-1"></i>
+                        {{ formatNumber(problem.total_submissions) }} lượt nộp
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <ng-template #noProblems>
+                <div class="text-center py-6 text-gray-500 dark:text-gray-400">
+                  <i class="icon-file-text text-3xl mb-3 block opacity-50"></i>
+                  <p class="mb-3 text-sm">Bạn chưa tạo bài tập nào.</p>
+                  <a
+                    routerLink="/creator/problems"
+                    class="inline-block px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
+                    >Tạo bài tập mới</a
                   >
                 </div>
               </ng-template>

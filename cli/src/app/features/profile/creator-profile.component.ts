@@ -13,7 +13,7 @@ import {
   FormGroup,
   Validators,
 } from '@angular/forms';
-import { Subject } from 'rxjs';
+import { Subject, forkJoin } from 'rxjs';
 import { takeUntil, finalize } from 'rxjs/operators';
 import { ThemeService } from '../../core/services/theme.service';
 import {
@@ -38,6 +38,7 @@ import {
 import { Course } from '../../core/models/course.model';
 import { Contest } from '../../core/models/contest.model';
 import { ContestService } from '../../core/services/contest.service';
+import { AdminService, AdminProblem } from '../../core/services/admin.service';
 
 @Component({
   selector: 'app-creator-profile',
@@ -58,12 +59,20 @@ export class CreatorProfileComponent implements OnInit, OnDestroy {
   creatorStatistics: CreatorStatistics | null = null;
   courses: Course[] = [];
   contests: Contest[] = [];
+  problems: any[] = []; // AdminProblem type
   contestStats = {
     total: 0,
     active: 0,
     upcoming: 0,
     completed: 0,
     totalParticipants: 0,
+  };
+  problemStats = {
+    total: 0,
+    published: 0,
+    deleted: 0,
+    totalSubmissions: 0,
+    averageAcceptance: 0,
   };
 
   // UI state
@@ -91,6 +100,7 @@ export class CreatorProfileComponent implements OnInit, OnDestroy {
     private creatorProfileService: CreatorProfileService,
     private authService: AuthService,
     private contestService: ContestService,
+    private adminService: AdminService,
     private fb: FormBuilder
   ) {
     this.basicProfileForm = this.createBasicProfileForm();
@@ -197,6 +207,7 @@ export class CreatorProfileComponent implements OnInit, OnDestroy {
           this.loadCreatorStatistics();
           this.loadCreatorCourses();
           this.loadCreatorContests();
+          this.loadCreatorProblems();
         },
         error: (error) => {
           this.errorMessage = error.message || 'Không thể tải profile';
@@ -265,6 +276,71 @@ export class CreatorProfileComponent implements OnInit, OnDestroy {
         (sum, c) => sum + (c.participant_count || 0),
         0
       ),
+    };
+  }
+
+  loadCreatorProblems(): void {
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) return;
+
+    // Load both deleted and non-deleted problems for accurate stats
+    const nonDeletedFilters = {
+      page: 1,
+      limit: 100,
+      created_by: currentUser.id,
+      is_deleted: false,
+    };
+
+    const deletedFilters = {
+      page: 1,
+      limit: 100,
+      created_by: currentUser.id,
+      is_deleted: true,
+    };
+
+    forkJoin({
+      nonDeleted: this.adminService.getProblems(nonDeletedFilters),
+      deleted: this.adminService.getDeletedProblems(deletedFilters)
+    })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (results: {
+          nonDeleted: { problems: AdminProblem[]; pagination: any };
+          deleted: { problems: AdminProblem[]; pagination: any };
+        }) => {
+          // Combine both arrays
+          this.problems = [
+            ...(results.nonDeleted.problems || []),
+            ...(results.deleted.problems || [])
+          ];
+          this.calculateProblemStats();
+        },
+        error: (error: any) => {
+          console.error('Error loading creator problems:', error);
+        },
+      });
+  }
+
+  calculateProblemStats(): void {
+    const activeProblems = this.problems.filter((p) => !p.is_deleted);
+    const deletedProblems = this.problems.filter((p) => p.is_deleted);
+    const totalSubmissions = activeProblems.reduce(
+      (sum, p) => sum + (p.total_submissions || 0),
+      0
+    );
+    const totalSolved = activeProblems.reduce(
+      (sum, p) => sum + (p.solved_count || 0),
+      0
+    );
+    const averageAcceptance =
+      totalSubmissions > 0 ? (totalSolved / totalSubmissions) * 100 : 0;
+
+    this.problemStats = {
+      total: this.problems.length,
+      published: activeProblems.length,
+      deleted: deletedProblems.length,
+      totalSubmissions: totalSubmissions,
+      averageAcceptance: averageAcceptance,
     };
   }
 
