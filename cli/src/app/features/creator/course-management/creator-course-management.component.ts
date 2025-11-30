@@ -109,6 +109,8 @@ export class CreatorCourseManagementComponent implements OnInit, OnDestroy {
 
     this.loading = true;
     this.error = null;
+    // Reset courses when starting to load to prevent showing old data
+    this.courses = [];
 
     const filters: CourseFilters = {
       page: this.currentPage,
@@ -135,7 +137,7 @@ export class CreatorCourseManagementComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (response) => {
-          this.courses = response.data;
+          this.courses = response.data || [];
           this.currentPage = response.pagination.current_page;
           this.totalPages = response.pagination.total_pages;
           this.totalItems = response.pagination.total_items;

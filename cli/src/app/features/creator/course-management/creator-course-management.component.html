@@ -286,30 +286,34 @@
     </div>
 
     <!-- Courses List -->
-    <div *ngIf="!loading || courses.length > 0" class="space-y-4">
-      <div
-        *ngIf="courses.length === 0"
-        class="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
-      >
-        <i class="icon-book text-4xl text-gray-400 mb-4"></i>
-        <p class="text-lg font-medium text-gray-900 dark:text-white mb-2">
-          Chưa có khóa học nào
-        </p>
-        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          Bắt đầu tạo khóa học đầu tiên của bạn
-        </p>
-        <button
-          type="button"
-          (click)="openCreateModal($event)"
-          class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200"
+    <div *ngIf="!loading" class="space-y-4">
+      <!-- Empty State -->
+      <ng-container *ngIf="courses.length === 0; else coursesList">
+        <div
+          class="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
         >
-          Tạo khóa học mới
-        </button>
-      </div>
+          <i class="icon-book text-4xl text-gray-400 mb-4"></i>
+          <p class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            Chưa có khóa học nào
+          </p>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            Bắt đầu tạo khóa học đầu tiên của bạn
+          </p>
+          <button
+            type="button"
+            (click)="openCreateModal($event)"
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200"
+          >
+            Tạo khóa học mới
+          </button>
+        </div>
+      </ng-container>
 
       <!-- Course Cards -->
-      <div
-        *ngFor="let course of courses"
+      <ng-template #coursesList>
+        <div class="space-y-4">
+          <div
+            *ngFor="let course of courses"
         class="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 p-4 sm:p-6"
       >
         <!-- Course Info -->
@@ -463,7 +467,9 @@
             </div>
           </div>
         </div>
-      </div>
+        </div>
+        </div>
+      </ng-template>
     </div>
 
     <!-- Pagination -->

@@ -309,30 +309,34 @@
     </div>
 
     <!-- Contests List -->
-    <div *ngIf="!loading || contests.length > 0" class="space-y-4">
-      <div
-        *ngIf="filteredContests.length === 0"
-        class="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
-      >
-        <i class="icon-trophy text-4xl text-gray-400 mb-4"></i>
-        <p class="text-lg font-medium text-gray-900 dark:text-white mb-2">
-          Chưa có cuộc thi nào
-        </p>
-        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          Bắt đầu tạo cuộc thi đầu tiên của bạn
-        </p>
-        <button
-          (click)="openCreateModal()"
-          class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200"
+    <div *ngIf="!loading" class="space-y-4">
+      <!-- Empty State -->
+      <ng-container *ngIf="filteredContests.length === 0; else contestsList">
+        <div
+          class="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
         >
-          <i class="icon-plus mr-2"></i>
-          Tạo cuộc thi mới
-        </button>
-      </div>
+          <i class="icon-trophy text-4xl text-gray-400 mb-4"></i>
+          <p class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            Chưa có cuộc thi nào
+          </p>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            Bắt đầu tạo cuộc thi đầu tiên của bạn
+          </p>
+          <button
+            (click)="openCreateModal()"
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200"
+          >
+            <i class="icon-plus mr-2"></i>
+            Tạo cuộc thi mới
+          </button>
+        </div>
+      </ng-container>
 
       <!-- Contest Cards -->
-      <div
-        *ngFor="let contest of filteredContests"
+      <ng-template #contestsList>
+        <div class="space-y-4">
+          <div
+            *ngFor="let contest of filteredContests"
         class="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 p-4 sm:p-6 hover:shadow-md transition-shadow duration-200"
       >
         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -428,7 +432,9 @@
             </button>
           </div>
         </div>
-      </div>
+        </div>
+        </div>
+      </ng-template>
     </div>
 
     <!-- Pagination -->

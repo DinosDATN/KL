@@ -120,6 +120,8 @@ export class CreatorContestManagementComponent implements OnInit, OnDestroy {
 
     this.loading = true;
     this.error = null;
+    // Reset contests when starting to load to prevent showing old data
+    this.contests = [];
 
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
@@ -141,7 +143,7 @@ export class CreatorContestManagementComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response) => {
           if (response.success && response.data) {
-            this.contests = response.data;
+            this.contests = Array.isArray(response.data) ? response.data : [];
             if (response.pagination) {
               this.currentPage = response.pagination.current_page;
               this.totalPages = response.pagination.total_pages;
