@@ -81,8 +81,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.dashboardStats = data.dashboard;
         this.processMetricCards(data);
         this.processChartData(data);
-        this.processRecentActivity(data.dashboard.recentActivity);
-        this.systemHealth = data.dashboard.systemHealth;
         this.isLoading = false;
       },
       error: (error) => {
@@ -208,13 +206,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     };
   }
 
-  private processRecentActivity(activities: any[]) {
-    this.recentActivities = activities.slice(0, 10).map(activity => ({
-      ...activity,
-      timeAgo: this.getTimeAgo(activity.timestamp),
-      icon: this.getActivityIcon(activity.type)
-    }));
-  }
 
   // Utility methods
   private formatNumber(num: number): string {
