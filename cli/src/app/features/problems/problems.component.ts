@@ -10,6 +10,7 @@ import {
 } from '../../core/models/problem.model';
 import { ProblemsService } from '../../core/services/problems.service';
 import { ThemeService } from '../../core/services/theme.service';
+import { forkJoin } from 'rxjs';
 import { ProblemCardComponent } from './components/problem-card/problem-card.component';
 import { ProblemTableComponent } from './components/problem-table/problem-table.component';
 import { ProblemFiltersComponent, ProblemFilters } from './components/problem-filters/problem-filters.component';
@@ -92,8 +93,22 @@ export class ProblemsComponent implements OnInit {
     this.problemsService.getProblems().subscribe({
       next: (problems) => {
         this.problems = problems.filter(problem => !problem.is_deleted);
-        this.loadCategories();
-        this.loadTags();
+        // Load categories and tags in parallel, then build problemTags
+        forkJoin({
+          categories: this.problemsService.getCategories(),
+          tags: this.problemsService.getTags()
+        }).subscribe({
+          next: (data) => {
+            this.categories = data.categories;
+            this.tags = data.tags;
+            this.loadProblemTags();
+          },
+          error: (error) => {
+            console.error('Error loading categories or tags:', error);
+            // Still try to load problemTags even if categories/tags fail
+            this.loadProblemTags();
+          }
+        });
       },
       error: (error) => {
         console.error('Error loading problems:', error);
@@ -103,42 +118,49 @@ export class ProblemsComponent implements OnInit {
     });
   }
   
-  private loadCategories(): void {
-    this.problemsService.getCategories().subscribe({
-      next: (categories) => {
-        this.categories = categories;
-        this.loadProblemTags();
-      },
-      error: (error) => {
-        console.error('Error loading categories:', error);
-      }
-    });
-  }
-  
-  private loadTags(): void {
-    this.problemsService.getTags().subscribe({
-      next: (tags) => {
-        this.tags = tags;
-      },
-      error: (error) => {
-        console.error('Error loading tags:', error);
-      }
-    });
-  }
-  
   private loadProblemTags(): void {
-    // For now, we'll create problem tags based on the service's getTagNamesByProblemId method
-    // In a real app, this would come from the API
+    // Build problemTags from API response (problem.Tags) or fallback to service method
     this.problemTags = [];
     this.problems.forEach(problem => {
-      const tagNames = this.problemsService.getTagNamesByProblemId(problem.id);
-      tagNames.forEach(tagName => {
-        const tag = this.tags.find(t => t.name === tagName);
-        if (tag) {
-          this.problemTags.push({ problem_id: problem.id, tag_id: tag.id });
-        }
-      });
+      // First, try to use Tags from API response
+      if (problem.Tags && Array.isArray(problem.Tags) && problem.Tags.length > 0) {
+        problem.Tags.forEach(tag => {
+          if (tag && tag.id) {
+            this.problemTags.push({ 
+              problem_id: Number(problem.id), 
+              tag_id: Number(tag.id) 
+            });
+          }
+        });
+      } else {
+        // Fallback to service method (for mock data or when Tags not in response)
+        const tagNames = this.problemsService.getTagNamesByProblemId(problem.id);
+        tagNames.forEach(tagName => {
+          const tag = this.tags.find(t => t.name === tagName);
+          if (tag) {
+            this.problemTags.push({ 
+              problem_id: Number(problem.id), 
+              tag_id: Number(tag.id) 
+            });
+          }
+        });
+      }
     });
+    
+    // Debug: Log problemTags to verify data
+    if (this.problemTags.length > 0) {
+      console.log('ProblemTags loaded:', this.problemTags.length, 'entries');
+      console.log('Sample problemTags:', this.problemTags.slice(0, 5));
+    } else {
+      console.warn('No problemTags loaded! Problems count:', this.problems.length);
+      if (this.problems.length > 0) {
+        console.log('Sample problem:', {
+          id: this.problems[0].id,
+          title: this.problems[0].title,
+          Tags: this.problems[0].Tags
+        });
+      }
+    }
     
     this.applyFilters();
     this.loading = false;
@@ -183,11 +205,22 @@ export class ProblemsComponent implements OnInit {
     
     // Tags filter
     if (this.filters.selectedTags.length > 0) {
+      const selectedTagIds = this.filters.selectedTags.map(id => Number(id));
       filtered = filtered.filter(problem => {
+        // Get tag IDs for this problem, ensuring correct type conversion
         const problemTagIds = this.problemTags
-          .filter(pt => pt.problem_id === problem.id)
-          .map(pt => pt.tag_id);
-        return this.filters.selectedTags.some(tagId => problemTagIds.includes(tagId));
+          .filter(pt => Number(pt.problem_id) === Number(problem.id))
+          .map(pt => Number(pt.tag_id));
+        
+        // If problem has no tags and we're filtering by tags, exclude it
+        if (problemTagIds.length === 0) {
+          return false;
+        }
+        
+        // Check if any selected tag matches problem tags
+        return selectedTagIds.some(selectedTagId => {
+          return problemTagIds.includes(selectedTagId);
+        });
       });
     }
     

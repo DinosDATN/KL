@@ -58,17 +58,21 @@ export class ProblemFiltersComponent {
   }
   
   onTagToggle(tagId: number): void {
-    const index = this.filters.selectedTags.indexOf(tagId);
+    // Normalize tagId to number for consistent comparison
+    const normalizedTagId = Number(tagId);
+    const index = this.filters.selectedTags.findIndex(id => Number(id) === normalizedTagId);
     if (index > -1) {
       this.filters.selectedTags.splice(index, 1);
     } else {
-      this.filters.selectedTags.push(tagId);
+      this.filters.selectedTags.push(normalizedTagId);
     }
     this.onFilterChange();
   }
   
   isTagSelected(tagId: number): boolean {
-    return this.filters.selectedTags.includes(tagId);
+    // Normalize both values for comparison
+    const normalizedTagId = Number(tagId);
+    return this.filters.selectedTags.some(id => Number(id) === normalizedTagId);
   }
   
   onClearFilters(): void {

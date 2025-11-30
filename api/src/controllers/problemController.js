@@ -40,7 +40,21 @@ class ProblemController {
 
       const queryOptions = {
         where: whereClause,
-        order: [['likes', 'DESC'], ['acceptance', 'DESC'], ['created_at', 'DESC']]
+        order: [['likes', 'DESC'], ['acceptance', 'DESC'], ['created_at', 'DESC']],
+        include: [
+          {
+            model: ProblemCategory,
+            as: 'Category',
+            attributes: ['id', 'name']
+          },
+          {
+            model: Tag,
+            as: 'Tags',
+            through: { attributes: [] }, // Exclude join table attributes
+            attributes: ['id', 'name'],
+            required: false // Left join - don't require tags to exist
+          }
+        ]
       };
       
       // Only add limit and offset if limit is specified
