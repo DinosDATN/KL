@@ -8,3 +8,10 @@ ADD COLUMN deleted_at DATETIME NULL AFTER is_deleted;
 -- Add index for is_deleted for better query performance
 CREATE INDEX idx_contests_is_deleted ON contests(is_deleted);
 
+
+
+
+
+
+
+
