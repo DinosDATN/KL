@@ -30,6 +30,7 @@ export class ChatSidebarComponent {
   @Output() roomSelected = new EventEmitter<ChatRoom>();
   @Output() searchChanged = new EventEmitter<string>();
   @Output() createGroup = new EventEmitter<void>();
+  @Output() reloadRooms = new EventEmitter<void>();
 
 
   selectRoom(room: ChatRoom): void {

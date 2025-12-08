@@ -162,33 +162,52 @@ export class ChatService {
   // Initialize chat system
   initializeChat(): void {
     const user = this.authService.getCurrentUser();
-    const token = this.authService.getToken();
+    const isAuthenticated = this.authService.isAuthenticated();
 
-    console.log('🚀 Initializing chat system...');
-    console.log('👤 Current user:', user?.name);
-    console.log('🔑 Token available:', !!token);
-    console.log('🔐 User authenticated:', this.authService.isAuthenticated());
+    console.log('🚀 ChatService: Initializing chat system...');
+    console.log('👤 ChatService: Current user:', user?.name || 'null');
+    console.log('🔐 ChatService: User authenticated:', isAuthenticated);
+    console.log('📦 ChatService: Current rooms in state:', this.roomsSubject.value.length);
 
-    if (user && token) {
-      // Only connect socket if not already connected
-      if (!this.socketService.isConnected()) {
-        console.log('✅ Starting Socket.IO connection from chat service...');
-        this.socketService.connect(token, user);
-      } else {
-        console.log('✅ Socket already connected, skipping connection');
-      }
-      
-      this.loadUserRooms().subscribe({
-        next: (rooms) => {
-          console.log(`✅ Loaded ${rooms.length} chat rooms`);
-        },
-        error: (error) => {
-          console.error('❌ Error loading chat rooms:', error);
-        },
-      });
-    } else {
-      console.log('❌ Cannot initialize chat - missing user or token');
+    if (!user) {
+      console.error('❌ ChatService: Cannot initialize - user is null');
+      console.log('💡 ChatService: This might be a timing issue. User should be set before calling initializeChat()');
+      return;
     }
+
+    if (!isAuthenticated) {
+      console.error('❌ ChatService: Cannot initialize - user not authenticated');
+      return;
+    }
+
+    // Note: Token is stored in HttpOnly cookie, so we don't need to pass it explicitly
+    // The browser will automatically send it with HTTP requests
+    console.log('ℹ️ ChatService: Token is in HttpOnly cookie (will be sent automatically with requests)');
+
+    // Only connect socket if not already connected
+    // For socket connection, we need to get token from cookie or use a different auth method
+    if (!this.socketService.isConnected()) {
+      console.log('✅ ChatService: Starting Socket.IO connection...');
+      // Socket will use cookie-based auth or we need to implement a different method
+      // For now, try to connect without explicit token
+      const token = this.authService.getToken(); // This might return null, but socket might use cookies
+      this.socketService.connect(token || '', user);
+    } else {
+      console.log('✅ ChatService: Socket already connected, skipping connection');
+    }
+    
+    // Always reload rooms from API to ensure fresh data
+    console.log('🔄 ChatService: Loading rooms from API...');
+    this.loadUserRooms().subscribe({
+      next: (rooms) => {
+        console.log(`✅ ChatService: Loaded ${rooms.length} chat rooms from API`);
+        console.log('📦 ChatService: Rooms in state after load:', this.roomsSubject.value.length);
+      },
+      error: (error) => {
+        console.error('❌ ChatService: Error loading chat rooms:', error);
+        console.error('Error details:', error.message, error.status);
+      },
+    });
   }
 
   // DEPRECATED: Do not use this method!
@@ -204,14 +223,22 @@ export class ChatService {
 
   // API Methods
   loadUserRooms(): Observable<ChatRoom[]> {
+    console.log('📡 ChatService: Loading user rooms from API...');
     return this.http
       .get<{ success: boolean; data: ChatRoom[] }>(`${this.apiUrl}/chat/rooms`)
       .pipe(
-        map((response) => response.data),
+        map((response) => {
+          console.log('✅ ChatService: Received rooms from API:', response.data.length);
+          return response.data;
+        }),
         tap((rooms) => {
+          console.log('📦 ChatService: Updating roomsSubject with', rooms.length, 'rooms');
           this.roomsSubject.next(rooms);
           // Join all rooms via socket
-          rooms.forEach((room) => this.socketService.joinRoom(room.id));
+          rooms.forEach((room) => {
+            console.log('🚪 ChatService: Joining room via socket:', room.id, room.name);
+            this.socketService.joinRoom(room.id);
+          });
         })
       );
   }

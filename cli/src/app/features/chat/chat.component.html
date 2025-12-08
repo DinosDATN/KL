@@ -64,7 +64,7 @@
         <app-chat-sidebar [rooms]="getFilteredRooms()" [currentUser]="currentUser!" [selectedRoom]="selectedRoom"
           [searchTerm]="searchTerm" [onlineUsers]="onlineUsers" [getUser]="getUser.bind(this)"
           [getRoomMembers]="getRoomMembers.bind(this)" (roomSelected)="onRoomSelected($event)"
-          (createGroup)="onCreateGroup()" (searchChanged)="searchTerm = $event"></app-chat-sidebar>
+          (createGroup)="onCreateGroup()" (searchChanged)="searchTerm = $event" (reloadRooms)="onReloadRooms()"></app-chat-sidebar>
       </div>
 
       <!-- Private Chat Mode -->

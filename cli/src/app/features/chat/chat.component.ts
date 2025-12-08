@@ -98,6 +98,7 @@ export class ChatComponent implements OnInit, OnDestroy {
   searchPrivateChatTerm = '';
 
   private destroy$ = new Subject<void>();
+  private chatInitialized = false;
 
   constructor(
     public themeService: ThemeService,
@@ -106,21 +107,57 @@ export class ChatComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
-    // Wait for auth initialization before subscribing
+    console.log('🏗️ Chat: Constructor called');
+    
+    // Wait for auth initialization, then subscribe to user changes
     this.authService.authInitialized$
       .pipe(
-        filter(initialized => initialized === true),
-        take(1),
-        switchMap(() => this.authService.currentUser$),
-        takeUntil(this.destroy$)
+        filter(initialized => {
+          console.log('🔐 Chat: Auth initialized status:', initialized);
+          return initialized === true;
+        }),
+        take(1)
       )
-      .subscribe((user) => {
-        this.currentUser = user;
-        if (user) {
+      .subscribe(() => {
+        console.log('✅ Chat: Auth initialized, now subscribing to currentUser$');
+        
+        // Get current user immediately
+        const currentUser = this.authService.getCurrentUser();
+        console.log('👤 Chat: Current user from getCurrentUser():', currentUser?.name || 'null');
+        
+        if (currentUser) {
+          // User is already logged in, initialize immediately
+          this.currentUser = currentUser;
+          console.log('🔄 Chat: User found, initializing chat immediately...');
           this.initializeChat();
-        } else {
-          this.clearChatData();
         }
+        
+        // Also subscribe to future changes
+        this.authService.currentUser$
+          .pipe(takeUntil(this.destroy$))
+          .subscribe((user) => {
+            console.log('👤 Chat: Current user changed via observable:', user?.name || 'null');
+            
+            // Update current user
+            const previousUser = this.currentUser;
+            this.currentUser = user;
+            
+            if (user) {
+              // User logged in or user data updated
+              if (!previousUser || previousUser.id !== user.id) {
+                console.log('🔄 Chat: User changed, initializing chat...');
+                this.initializeChat();
+              } else {
+                console.log('ℹ️ Chat: User data updated, but same user');
+              }
+            } else {
+              // User logged out
+              if (previousUser) {
+                console.log('👋 Chat: User logged out, clearing data...');
+                this.clearChatData();
+              }
+            }
+          });
       });
   }
 
@@ -151,35 +188,47 @@ export class ChatComponent implements OnInit, OnDestroy {
     }
 
     console.log('🚀 Chat: Initializing chat system...');
+    console.log('📊 Chat: chatInitialized flag:', this.chatInitialized);
+    console.log('📊 Chat: Current rooms count:', this.chatRooms.length);
 
-    // Initialize chat service
+    // Subscribe to observables only once
+    if (!this.chatInitialized) {
+      console.log('✅ Chat: First time initialization, setting up subscriptions...');
+      this.chatInitialized = true;
+
+      // Subscribe to rooms observable - this will receive updates when rooms are loaded
+      this.chatService.rooms$
+        .pipe(takeUntil(this.destroy$))
+        .subscribe((rooms) => {
+          console.log('📦 Chat: Received rooms update:', rooms.length);
+          this.chatRooms = rooms;
+
+          // Load users and room members from the rooms data
+          this.loadUsersFromRooms(rooms);
+
+          // Auto-select first room if available and no room is selected
+          if (rooms.length > 0 && !this.selectedRoom) {
+            this.selectRoom(rooms[0]);
+          }
+        });
+
+      // Subscribe to online users
+      this.chatService.onlineUsers$
+        .pipe(takeUntil(this.destroy$))
+        .subscribe((users) => {
+          this.onlineUsers = users;
+        });
+    } else {
+      console.log('ℹ️ Chat: Already subscribed to observables, skipping subscription setup');
+    }
+
+    // Always initialize chat service to load fresh data from API
+    console.log('🔄 Chat: Calling chatService.initializeChat()...');
     this.chatService.initializeChat();
-
-    // Subscribe to rooms
-    this.chatService
-      .getRoomsForCurrentUser()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((rooms) => {
-        this.chatRooms = rooms;
-
-        // Load users and room members from the rooms data
-        this.loadUsersFromRooms(rooms);
-
-        // Auto-select first room if available and no room is selected
-        if (rooms.length > 0 && !this.selectedRoom) {
-          this.selectRoom(rooms[0]);
-        }
-      });
-
-    // Subscribe to online users
-    this.chatService.onlineUsers$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((users) => {
-        this.onlineUsers = users;
-      });
   }
 
   private clearChatData(): void {
+    console.log('🧹 Chat: Clearing chat data...');
     // Clear all chat-related data when user logs out
     this.chatRooms = [];
     this.messages = {};
@@ -187,6 +236,7 @@ export class ChatComponent implements OnInit, OnDestroy {
     this.onlineUsers = [];
     this.roomMembers = [];
     this.reactions = [];
+    this.chatInitialized = false; // Reset initialization flag
 
     // DO NOT disconnect socket here!
     // Socket disconnection is handled in app.component.ts when user logs out
@@ -740,5 +790,22 @@ export class ChatComponent implements OnInit, OnDestroy {
 
   onStartPrivateChat(friend: User): void {
     this.setChatMode('private');
+  }
+
+  onReloadRooms(): void {
+    console.log('🔄 Chat: Manual reload rooms requested');
+    if (!this.currentUser) {
+      console.warn('⚠️ Chat: Cannot reload rooms - no current user');
+      return;
+    }
+    
+    this.chatService.loadUserRooms().subscribe({
+      next: (rooms) => {
+        console.log(`✅ Chat: Manually reloaded ${rooms.length} rooms`);
+      },
+      error: (error) => {
+        console.error('❌ Chat: Error manually reloading rooms:', error);
+      }
+    });
   }
 }
