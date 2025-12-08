@@ -166,11 +166,11 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
         this.isEnrolling = false;
         this.notificationService.success(
           'Đăng ký thành công',
-          'Bạn đã đăng ký khóa học thành công! Bây giờ bạn có thể đánh giá khóa học.'
+          'Bạn đã đăng ký khóa học thành công! Bây giờ bạn có thể bắt đầu học hoặc đánh giá khóa học.'
         );
-        // Optionally show review form after enrollment
-        // this.showReviewForm = true;
-        this.startLearning();
+        // Stay on course detail page after enrollment
+        // User can click "Bắt đầu học" button to start learning
+        // this.startLearning(); // ← Removed: Don't auto-navigate to learning page
       },
       error: (error: any) => {
         this.isEnrolling = false;
@@ -179,7 +179,8 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
           this.router.navigate(['/courses', this.course?.id, 'payment']);
         } else if (error.message.includes('already enrolled')) {
           this.isEnrolled = true;
-          this.startLearning();
+          // Stay on course detail page, don't auto-navigate
+          // this.startLearning(); // ← Removed
         } else {
           this.notificationService.error(
             'Đăng ký thất bại',
