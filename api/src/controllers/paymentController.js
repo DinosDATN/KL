@@ -180,17 +180,25 @@ class PaymentController {
         }
       }
 
-      // Tạo payment record
-      const payment = await CoursePayment.create({
-        user_id: userId,
-        course_id: courseId,
-        amount: finalAmount,
-        original_amount: originalAmount,
-        discount_amount: discountAmount,
-        payment_method: paymentMethod,
-        payment_status: 'pending',
-        notes: `Payment for course: ${course.title}`
-      }, { transaction });
+      // Đối với bank_transfer, không tạo payment ngay
+      // Chỉ trả về thông tin để người dùng chuyển khoản
+      // Payment sẽ được tạo khi người dùng xác nhận đã chuyển khoản
+      
+      let payment = null;
+      
+      if (paymentMethod !== 'bank_transfer') {
+        // Tạo payment record cho các phương thức khác
+        payment = await CoursePayment.create({
+          user_id: userId,
+          course_id: courseId,
+          amount: finalAmount,
+          original_amount: originalAmount,
+          discount_amount: discountAmount,
+          payment_method: paymentMethod,
+          payment_status: 'pending',
+          notes: `Payment for course: ${course.title}`
+        }, { transaction });
+      }
 
       await transaction.commit();
 
@@ -227,6 +235,9 @@ class PaymentController {
         });
 
         let bankInfo;
+        // Tạo một reference ID tạm thời (không phải payment ID)
+        const tempRef = `TEMP_${courseId}_${userId}_${Date.now()}`;
+        
         if (creatorBankAccount && creatorBankAccount.is_verified) {
           // Sử dụng tài khoản của creator
           bankInfo = {
@@ -235,8 +246,8 @@ class PaymentController {
             accountName: creatorBankAccount.account_name,
             branch: creatorBankAccount.branch,
             amount: finalAmount,
-            content: `THANHTOAN ${payment.id} ${userId}`,
-            qrCode: `https://img.vietqr.io/image/${creatorBankAccount.bank_name.split(' ')[0]}-${creatorBankAccount.account_number}-compact2.png?amount=${finalAmount}&addInfo=THANHTOAN%20${payment.id}%20${userId}`
+            content: `KHOAHOC ${courseId} USER ${userId}`,
+            qrCode: `https://img.vietqr.io/image/${creatorBankAccount.bank_name.split(' ')[0]}-${creatorBankAccount.account_number}-compact2.png?amount=${finalAmount}&addInfo=KHOAHOC%20${courseId}%20USER%20${userId}`
           };
         } else {
           // Sử dụng tài khoản mặc định của hệ thống
@@ -245,8 +256,8 @@ class PaymentController {
             accountNumber: '123456789',
             accountName: 'CONG TY TNHH GIAO DUC TRUC TUYEN',
             amount: finalAmount,
-            content: `THANHTOAN ${payment.id} ${userId}`,
-            qrCode: `https://img.vietqr.io/image/ACB-123456789-compact2.png?amount=${finalAmount}&addInfo=THANHTOAN%20${payment.id}%20${userId}`,
+            content: `KHOAHOC ${courseId} USER ${userId}`,
+            qrCode: `https://img.vietqr.io/image/ACB-123456789-compact2.png?amount=${finalAmount}&addInfo=KHOAHOC%20${courseId}%20USER%20${userId}`,
             note: 'Creator chưa cập nhật thông tin tài khoản ngân hàng'
           };
         }
@@ -255,10 +266,15 @@ class PaymentController {
           success: true,
           message: 'Vui lòng chuyển khoản theo thông tin bên dưới',
           data: {
-            paymentId: payment.id,
+            courseId,
+            userId,
+            amount: finalAmount,
+            originalAmount,
+            discountAmount,
+            couponCode: coupon ? coupon.code : null,
             paymentMethod: 'bank_transfer',
             bankInfo,
-            note: 'Sau khi chuyển khoản, vui lòng chờ 5-10 phút để hệ thống xác nhận thanh toán.'
+            note: 'Sau khi chuyển khoản, vui lòng click "Đã chuyển khoản" để thông báo cho giảng viên.'
           }
         });
       } else {
@@ -665,6 +681,289 @@ class PaymentController {
     } catch (error) {
       await transaction.rollback();
       console.error('Error in confirmBankTransfer:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Lỗi khi xác nhận thanh toán',
+        error: error.message
+      });
+    }
+  }
+
+  /**
+   * Người dùng xác nhận đã chuyển khoản
+   */
+  async confirmBankTransferByUser(req, res) {
+    const transaction = await sequelize.transaction();
+    
+    try {
+      const { courseId } = req.params;
+      const { amount, originalAmount, discountAmount, couponCode } = req.body;
+      const userId = req.user.id;
+
+      // Kiểm tra khóa học
+      const course = await Course.findOne({
+        where: { id: courseId, status: 'published', is_deleted: false },
+        transaction
+      });
+
+      if (!course) {
+        await transaction.rollback();
+        return res.status(404).json({
+          success: false,
+          message: 'Khóa học không tồn tại'
+        });
+      }
+
+      // Kiểm tra đã có payment pending chưa
+      const existingPayment = await CoursePayment.findOne({
+        where: { 
+          user_id: userId, 
+          course_id: courseId,
+          payment_method: 'bank_transfer',
+          payment_status: 'pending'
+        },
+        transaction
+      });
+
+      if (existingPayment) {
+        await transaction.rollback();
+        return res.status(400).json({
+          success: false,
+          message: 'Bạn đã có một thanh toán đang chờ xác nhận cho khóa học này'
+        });
+      }
+
+      // Kiểm tra đã đăng ký chưa
+      const existingEnrollment = await CourseEnrollment.findOne({
+        where: { user_id: userId, course_id: courseId },
+        transaction
+      });
+
+      if (existingEnrollment) {
+        await transaction.rollback();
+        return res.status(400).json({
+          success: false,
+          message: 'Bạn đã đăng ký khóa học này rồi'
+        });
+      }
+
+      // Tạo payment record
+      const payment = await CoursePayment.create({
+        user_id: userId,
+        course_id: courseId,
+        amount: amount,
+        original_amount: originalAmount,
+        discount_amount: discountAmount,
+        payment_method: 'bank_transfer',
+        payment_status: 'pending',
+        notes: `User confirmed bank transfer for course: ${course.title}`
+      }, { transaction });
+
+      // Lưu coupon usage nếu có
+      if (couponCode && discountAmount > 0) {
+        const coupon = await CourseCoupon.findByCode(couponCode);
+        if (coupon) {
+          await CouponUsage.create({
+            coupon_id: coupon.id,
+            user_id: userId,
+            payment_id: payment.id,
+            discount_amount: discountAmount
+          }, { transaction });
+
+          await coupon.incrementUsage();
+        }
+      }
+
+      await transaction.commit();
+
+      // TODO: Gửi notification cho creator
+      // await createNotification({
+      //   user_id: course.instructor_id,
+      //   type: 'new_payment',
+      //   title: 'Thanh toán mới',
+      //   message: `Có thanh toán mới cho khóa học "${course.title}"`
+      // });
+
+      res.status(201).json({
+        success: true,
+        message: 'Đã ghi nhận thanh toán của bạn. Vui lòng chờ giảng viên xác nhận.',
+        data: {
+          paymentId: payment.id,
+          status: payment.payment_status
+        }
+      });
+    } catch (error) {
+      await transaction.rollback();
+      console.error('Error in confirmBankTransferByUser:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Lỗi khi xác nhận chuyển khoản',
+        error: error.message
+      });
+    }
+  }
+
+  /**
+   * Creator: Lấy danh sách thanh toán của khóa học mình
+   */
+  async getCreatorPayments(req, res) {
+    try {
+      const creatorId = req.user.id;
+      const { status, courseId } = req.query;
+
+      const User = require('../models/User');
+
+      // Build where clause
+      const whereClause = {
+        payment_method: 'bank_transfer'
+      };
+
+      if (status) {
+        whereClause.payment_status = status;
+      }
+
+      // Lấy payments của các khóa học thuộc creator
+      const payments = await CoursePayment.findAll({
+        where: whereClause,
+        include: [
+          {
+            model: Course,
+            as: 'Course',
+            where: { 
+              instructor_id: creatorId,
+              ...(courseId && { id: courseId })
+            },
+            attributes: ['id', 'title', 'thumbnail', 'price']
+          },
+          {
+            model: User,
+            as: 'User',
+            attributes: ['id', 'name', 'email', 'avatar_url']
+          }
+        ],
+        order: [['created_at', 'DESC']]
+      });
+
+      res.status(200).json({
+        success: true,
+        data: payments
+      });
+    } catch (error) {
+      console.error('Error in getCreatorPayments:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Lỗi khi lấy danh sách thanh toán',
+        error: error.message
+      });
+    }
+  }
+
+  /**
+   * Creator: Xác nhận thanh toán chuyển khoản
+   */
+  async creatorConfirmPayment(req, res) {
+    const transaction = await sequelize.transaction();
+    
+    try {
+      const { paymentId } = req.params;
+      const { transactionId, notes } = req.body;
+      const creatorId = req.user.id;
+
+      const payment = await CoursePayment.findByPk(paymentId, { 
+        include: [{
+          model: Course,
+          as: 'Course',
+          attributes: ['id', 'instructor_id', 'title']
+        }],
+        transaction 
+      });
+      
+      if (!payment) {
+        await transaction.rollback();
+        return res.status(404).json({
+          success: false,
+          message: 'Không tìm thấy thông tin thanh toán'
+        });
+      }
+
+      // Kiểm tra creator có phải là instructor của khóa học không
+      if (payment.Course.instructor_id !== creatorId) {
+        await transaction.rollback();
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn không có quyền xác nhận thanh toán này'
+        });
+      }
+
+      if (payment.payment_status === 'completed') {
+        await transaction.rollback();
+        return res.status(400).json({
+          success: false,
+          message: 'Thanh toán đã được xác nhận trước đó'
+        });
+      }
+
+      if (payment.payment_method !== 'bank_transfer') {
+        await transaction.rollback();
+        return res.status(400).json({
+          success: false,
+          message: 'Chỉ có thể xác nhận thanh toán chuyển khoản'
+        });
+      }
+
+      // Cập nhật payment
+      await payment.markAsCompleted(
+        transactionId || `BANK_${Date.now()}`,
+        'bank_transfer',
+        { confirmedBy: creatorId, confirmedByRole: 'creator', notes }
+      );
+
+      // Kiểm tra enrollment đã tồn tại chưa
+      let enrollment = await CourseEnrollment.findOne({
+        where: { payment_id: paymentId },
+        transaction
+      });
+
+      if (!enrollment) {
+        // Tạo enrollment mới
+        enrollment = await CourseEnrollment.create({
+          user_id: payment.user_id,
+          course_id: payment.course_id,
+          payment_id: payment.id,
+          enrollment_type: 'paid',
+          progress: 0,
+          status: 'not-started',
+          start_date: new Date()
+        }, { transaction });
+
+        // Cập nhật số lượng học viên
+        await Course.increment('students', { 
+          where: { id: payment.course_id },
+          transaction 
+        });
+      }
+
+      // TODO: Gửi notification cho học viên
+      // await createNotification({
+      //   user_id: payment.user_id,
+      //   type: 'payment_confirmed',
+      //   title: 'Thanh toán đã được xác nhận',
+      //   message: `Thanh toán cho khóa học "${payment.Course.title}" đã được xác nhận. Bạn có thể bắt đầu học ngay!`
+      // });
+
+      await transaction.commit();
+
+      res.status(200).json({
+        success: true,
+        message: 'Xác nhận thanh toán thành công',
+        data: {
+          payment,
+          enrollment
+        }
+      });
+    } catch (error) {
+      await transaction.rollback();
+      console.error('Error in creatorConfirmPayment:', error);
       res.status(500).json({
         success: false,
         message: 'Lỗi khi xác nhận thanh toán',

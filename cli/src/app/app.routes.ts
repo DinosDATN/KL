@@ -500,6 +500,14 @@ export const routes: Routes = [
         canActivate: [AuthGuard],
       },
       {
+        path: 'creator/payments',
+        loadComponent: () =>
+          import(
+            './features/creator/payments/creator-payments.component'
+          ).then((m) => m.CreatorPaymentsComponent),
+        canActivate: [AuthGuard],
+      },
+      {
         path: 'grading-board',
         loadComponent: () =>
           import('./grading-board/grading-board.component').then(

@@ -107,13 +107,14 @@
     </div>
 
     <div class="actions">
-      <button class="btn-secondary" (click)="goBack()">
+      <button class="btn-secondary" (click)="goBack()" [disabled]="isConfirming">
         <i class="fas fa-arrow-left"></i>
         Quay lại
       </button>
-      <button class="btn-primary" (click)="goBack()">
+      <button class="btn-primary" (click)="confirmBankTransfer()" [disabled]="isConfirming">
         <i class="fas fa-check"></i>
-        Đã chuyển khoản
+        <span *ngIf="!isConfirming">Đã chuyển khoản</span>
+        <span *ngIf="isConfirming">Đang xử lý...</span>
       </button>
     </div>
   </div>

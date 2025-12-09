@@ -165,8 +165,18 @@ export class CoursePaymentComponent implements OnInit {
 
   showBankTransferInfo(data: any): void {
     // Chuyển đến trang hiển thị thông tin chuyển khoản
-    this.router.navigate(['/payment/bank-transfer', data.paymentId], {
-      state: { bankInfo: data.bankInfo, note: data.note }
+    // Không còn paymentId vì chưa tạo payment
+    this.router.navigate(['/payment/bank-transfer', this.courseId], {
+      state: { 
+        courseId: data.courseId,
+        userId: data.userId,
+        amount: data.amount,
+        originalAmount: data.originalAmount,
+        discountAmount: data.discountAmount,
+        couponCode: data.couponCode,
+        bankInfo: data.bankInfo, 
+        note: data.note 
+      }
     });
   }
 

@@ -1,0 +1,248 @@
+<div class="creator-payments-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1>Quản lý Thanh toán</h1>
+      <p class="subtitle">Xác nhận thanh toán từ học viên</p>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Đang tải danh sách...</p>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="errorMessage" class="error-message">
+    <i class="icon">⚠️</i>
+    {{ errorMessage }}
+  </div>
+
+  <!-- Content -->
+  <div *ngIf="!isLoading" class="content">
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon total">📊</div>
+        <div class="stat-content">
+          <div class="stat-value">{{ payments.length }}</div>
+          <div class="stat-label">Tổng thanh toán</div>
+        </div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-icon pending">⏳</div>
+        <div class="stat-content">
+          <div class="stat-value">{{ getTotalPending() }}</div>
+          <div class="stat-label">Chờ xác nhận</div>
+        </div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-icon completed">✅</div>
+        <div class="stat-content">
+          <div class="stat-value">{{ getTotalCompleted() }}</div>
+          <div class="stat-label">Đã xác nhận</div>
+        </div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-icon revenue">💰</div>
+        <div class="stat-content">
+          <div class="stat-value">{{ formatCurrency(getTotalAmount()) }}</div>
+          <div class="stat-label">Tổng doanh thu</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="filters-section">
+      <div class="filter-group">
+        <label for="filterStatus">Trạng thái:</label>
+        <select 
+          id="filterStatus" 
+          [(ngModel)]="filterStatus" 
+          (change)="onFilterChange()"
+          class="filter-select">
+          <option value="all">Tất cả</option>
+          <option value="pending">Chờ xác nhận</option>
+          <option value="completed">Đã xác nhận</option>
+        </select>
+      </div>
+
+      <div class="search-group">
+        <input 
+          type="text" 
+          [(ngModel)]="searchQuery" 
+          (input)="onSearchChange()"
+          placeholder="Tìm kiếm theo tên, email, khóa học..."
+          class="search-input">
+        <span class="search-icon">🔍</span>
+      </div>
+    </div>
+
+    <!-- Payments Table -->
+    <div class="table-container">
+      <table class="payments-table" *ngIf="filteredPayments.length > 0">
+        <thead>
+          <tr>
+            <th>Học viên</th>
+            <th>Khóa học</th>
+            <th>Số tiền</th>
+            <th>Trạng thái</th>
+            <th>Ngày tạo</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let payment of getPaginatedPayments()">
+            <td>
+              <div class="user-info">
+                <div class="user-name">{{ payment.User?.name }}</div>
+                <div class="user-email">{{ payment.User?.email }}</div>
+              </div>
+            </td>
+            <td>
+              <div class="course-title">{{ payment.Course?.title }}</div>
+            </td>
+            <td>
+              <div class="amount">{{ formatCurrency(payment.amount) }}</div>
+            </td>
+            <td>
+              <span class="status-badge" [ngClass]="getStatusBadgeClass(payment.payment_status)">
+                {{ getStatusText(payment.payment_status) }}
+              </span>
+            </td>
+            <td>
+              <div class="date">{{ formatDate(payment.created_at) }}</div>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button 
+                  *ngIf="payment.payment_status === 'pending'"
+                  (click)="openConfirmModal(payment)"
+                  [disabled]="isProcessing"
+                  class="btn btn-success btn-sm"
+                  title="Xác nhận thanh toán">
+                  ✓ Xác nhận
+                </button>
+                <span *ngIf="payment.payment_status === 'completed'" class="completed-text">
+                  Đã xác nhận
+                </span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Empty State -->
+      <div *ngIf="filteredPayments.length === 0" class="empty-state">
+        <div class="empty-icon">💳</div>
+        <h3>Không có thanh toán nào</h3>
+        <p>Chưa có thanh toán nào phù hợp với bộ lọc của bạn.</p>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="filteredPayments.length > itemsPerPage">
+      <button 
+        (click)="previousPage()" 
+        [disabled]="currentPage === 1"
+        class="pagination-btn">
+        ← Trước
+      </button>
+      
+      <div class="pagination-pages">
+        <button 
+          *ngFor="let page of getPageNumbers()"
+          (click)="goToPage(page)"
+          [class.active]="page === currentPage"
+          class="pagination-page">
+          {{ page }}
+        </button>
+      </div>
+      
+      <button 
+        (click)="nextPage()" 
+        [disabled]="currentPage === totalPages"
+        class="pagination-btn">
+        Sau →
+      </button>
+    </div>
+
+    <!-- Info -->
+    <div class="info-text">
+      Hiển thị {{ getDisplayRange() }} 
+      trong tổng số {{ filteredPayments.length }} thanh toán
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="modal-overlay" *ngIf="showConfirmModal" (click)="closeConfirmModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Xác nhận thanh toán</h2>
+      <button class="close-btn" (click)="closeConfirmModal()">×</button>
+    </div>
+    
+    <div class="modal-body" *ngIf="selectedPayment">
+      <div class="payment-info">
+        <div class="info-row">
+          <span class="info-label">Học viên:</span>
+          <span class="info-value">{{ selectedPayment.User?.name }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Khóa học:</span>
+          <span class="info-value">{{ selectedPayment.Course?.title }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Số tiền:</span>
+          <span class="info-value">{{ formatCurrency(selectedPayment.amount) }}</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="transactionId">Mã giao dịch (tùy chọn)</label>
+        <input 
+          type="text" 
+          id="transactionId"
+          [(ngModel)]="transactionId"
+          class="form-control"
+          placeholder="Nhập mã giao dịch nếu có">
+      </div>
+
+      <div class="form-group">
+        <label for="confirmNotes">Ghi chú (tùy chọn)</label>
+        <textarea 
+          id="confirmNotes"
+          [(ngModel)]="confirmNotes"
+          class="form-control"
+          rows="3"
+          placeholder="Nhập ghi chú nếu cần"></textarea>
+      </div>
+
+      <div class="warning-box">
+        <i class="icon">⚠️</i>
+        <p>Sau khi xác nhận, học viên sẽ có thể truy cập khóa học ngay lập tức.</p>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button 
+        class="btn btn-secondary" 
+        (click)="closeConfirmModal()"
+        [disabled]="isProcessing">
+        Hủy
+      </button>
+      <button 
+        class="btn btn-primary" 
+        (click)="confirmPayment()"
+        [disabled]="isProcessing">
+        <span *ngIf="!isProcessing">Xác nhận</span>
+        <span *ngIf="isProcessing">Đang xử lý...</span>
+      </button>
+    </div>
+  </div>
+</div>

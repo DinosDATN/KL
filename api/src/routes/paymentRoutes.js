@@ -30,7 +30,16 @@ router.post('/payments/:paymentId/refund', paymentController.requestRefund);
 // VNPay callback (không cần auth vì từ VNPay gọi về)
 router.get('/vnpay-return', paymentController.vnpayReturn);
 
+// Người dùng xác nhận đã chuyển khoản
+router.post('/courses/:courseId/confirm-bank-transfer', paymentController.confirmBankTransferByUser);
+
 // Xác nhận thanh toán chuyển khoản (Admin only)
 router.post('/payments/:paymentId/confirm-bank-transfer', paymentController.confirmBankTransfer);
+
+// Creator: Lấy danh sách thanh toán của khóa học mình
+router.get('/creator/payments', paymentController.getCreatorPayments);
+
+// Creator: Xác nhận thanh toán
+router.post('/creator/payments/:paymentId/confirm', paymentController.creatorConfirmPayment);
 
 module.exports = router;

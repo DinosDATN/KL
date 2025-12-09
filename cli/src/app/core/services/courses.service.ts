@@ -493,4 +493,53 @@ export class CoursesService {
       catchError(error => this.handleError(error, 'Failed to process VNPay return'))
     );
   }
+
+  /**
+   * Creator: Get payments for creator's courses
+   */
+  getCreatorPayments(status?: string): Observable<any> {
+    const params: any = {};
+    if (status) {
+      params.status = status;
+    }
+
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/payments/creator/payments`,
+      { params, withCredentials: true }
+    ).pipe(
+      timeout(environment.apiTimeout),
+      map(response => response),
+      catchError(error => this.handleError(error, 'Failed to get creator payments'))
+    );
+  }
+
+  /**
+   * Creator: Confirm payment
+   */
+  creatorConfirmPayment(paymentId: number, data: { transactionId?: string; notes?: string }): Observable<any> {
+    return this.http.post<ApiResponse<any>>(
+      `${this.apiUrl}/payments/creator/payments/${paymentId}/confirm`,
+      data,
+      { withCredentials: true }
+    ).pipe(
+      timeout(environment.apiTimeout),
+      map(response => response),
+      catchError(error => this.handleError(error, 'Failed to confirm payment'))
+    );
+  }
+
+  /**
+   * User: Confirm bank transfer
+   */
+  confirmBankTransferByUser(courseId: number, data: { amount: number; originalAmount: number; discountAmount: number; couponCode?: string }): Observable<any> {
+    return this.http.post<ApiResponse<any>>(
+      `${this.apiUrl}/payments/courses/${courseId}/confirm-bank-transfer`,
+      data,
+      { withCredentials: true }
+    ).pipe(
+      timeout(environment.apiTimeout),
+      map(response => response),
+      catchError(error => this.handleError(error, 'Failed to confirm bank transfer'))
+    );
+  }
 }
