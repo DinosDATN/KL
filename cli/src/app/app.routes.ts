@@ -524,10 +524,16 @@ export const routes: Routes = [
       {
         path: 'grading-board',
         loadComponent: () =>
-          import('./grading-board/grading-board.component').then(
+          import('./features/grading-board/grading-board.component').then(
             (m) => m.GradingBoardComponent
           ),
-        canActivate: [AuthGuard],
+      },
+      {
+        path: 'grading-board/:id',
+        loadComponent: () =>
+          import('./features/grading-board/submission-detail.component').then(
+            (m) => m.SubmissionDetailComponent
+          ),
       },
       {
         path: 'chat',

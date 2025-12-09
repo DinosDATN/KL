@@ -1,0 +1,122 @@
+<div class="submission-detail-container">
+  <!-- Header -->
+  <div class="header">
+    <button (click)="goBack()" class="btn-back">
+      <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+      </svg>
+      Quay lại
+    </button>
+    <h1>Chi tiết bài nộp #{{ submission?.id }}</h1>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Đang tải dữ liệu...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="error-state">
+    <svg class="error-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <p>{{ error }}</p>
+    <button (click)="loadSubmissionDetail(submission?.id || 0)" class="btn btn-primary">Thử lại</button>
+  </div>
+
+  <!-- Submission Details -->
+  <div *ngIf="submission && !loading && !error" class="content">
+    <!-- Overview Card -->
+    <div class="card overview-card">
+      <h2 class="card-title">Tổng quan</h2>
+      <div class="overview-grid">
+        <div class="overview-item">
+          <span class="label">Trạng thái</span>
+          <span [class]="'status-badge ' + getStatusClass(submission.status)">
+            {{ getStatusLabel(submission.status) }}
+          </span>
+        </div>
+        <div class="overview-item">
+          <span class="label">Ngôn ngữ</span>
+          <span class="value">{{ submission.language.toUpperCase() }}</span>
+        </div>
+        <div class="overview-item">
+          <span class="label">Thời gian thực thi</span>
+          <span class="value">
+            {{ submission.exec_time !== null ? submission.exec_time + 'ms' : '-' }}
+          </span>
+        </div>
+        <div class="overview-item">
+          <span class="label">Bộ nhớ sử dụng</span>
+          <span class="value">
+            {{ submission.memory_used !== null ? (submission.memory_used / 1024).toFixed(2) + 'MB' : '-' }}
+          </span>
+        </div>
+        <div class="overview-item">
+          <span class="label">Điểm số</span>
+          <span class="value score-value">{{ submission.score }} điểm</span>
+        </div>
+        <div class="overview-item">
+          <span class="label">Thời gian nộp</span>
+          <span class="value">{{ formatDate(submission.submitted_at) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Problem Info Card -->
+    <div class="card problem-card">
+      <h2 class="card-title">Thông tin bài tập</h2>
+      <div class="problem-info">
+        <div class="problem-header">
+          <h3 class="problem-title">{{ submission.Problem.title }}</h3>
+          <span [class]="'difficulty-badge ' + getDifficultyClass(submission.Problem.difficulty)">
+            {{ getDifficultyLabel(submission.Problem.difficulty) }}
+          </span>
+        </div>
+        <div class="problem-meta">
+          <span class="meta-item">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+            </svg>
+            ID: {{ submission.Problem.id }}
+          </span>
+          <span class="meta-item" *ngIf="submission.Problem.Category">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+            </svg>
+            {{ submission.Problem.Category.name }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- User Info Card -->
+    <div class="card user-card">
+      <h2 class="card-title">Người nộp bài</h2>
+      <div class="user-info">
+        <img 
+          [src]="submission.User.avatar_url || 'assets/default-avatar.png'" 
+          [alt]="submission.User.name"
+          class="user-avatar"
+        />
+        <div class="user-details">
+          <h3 class="user-name">{{ submission.User.name }}</h3>
+          <p class="user-email">{{ submission.User.email }}</p>
+          <p class="user-id">ID: {{ submission.User.id }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Source Code Card -->
+    <div *ngIf="submission.Code" class="card code-card">
+      <h2 class="card-title">Mã nguồn</h2>
+      <pre class="source-code"><code>{{ submission.Code.source_code }}</code></pre>
+    </div>
+
+    <!-- No Code Message -->
+    <div *ngIf="!submission.Code" class="card info-card">
+      <p>Mã nguồn không khả dụng</p>
+    </div>
+  </div>
+</div>

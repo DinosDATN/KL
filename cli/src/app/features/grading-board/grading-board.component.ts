@@ -1,11 +1,10 @@
 import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../../environments/environment';
-import { AuthService } from '../../../core/services/auth.service';
-import { BaseAdminComponent } from '../base-admin.component';
+import { environment } from '../../../environments/environment';
+import { AuthService } from '../../core/services/auth.service';
 
 interface Submission {
   id: number;
@@ -48,10 +47,11 @@ interface PaginationInfo {
   templateUrl: './grading-board.component.html',
   styleUrls: ['./grading-board.component.css']
 })
-export class GradingBoardComponent extends BaseAdminComponent implements OnInit {
+export class GradingBoardComponent implements OnInit {
   submissions: Submission[] = [];
   loading = false;
   error: string | null = null;
+  isBrowser: boolean;
 
   // Filters
   filters = {
@@ -78,21 +78,17 @@ export class GradingBoardComponent extends BaseAdminComponent implements OnInit 
 
   constructor(
     @Inject(PLATFORM_ID) platformId: Object,
-    authService: AuthService,
-    router: Router,
+    private authService: AuthService,
+    private router: Router,
     private http: HttpClient
   ) {
-    super(platformId, authService, router);
+    this.isBrowser = isPlatformBrowser(platformId);
   }
 
   ngOnInit() {
-    if (!this.checkAdminAccess()) {
-      return;
-    }
-
-    this.runInBrowser(() => {
+    if (this.isBrowser) {
       this.loadSubmissions();
-    });
+    }
   }
 
   loadSubmissions() {
@@ -163,7 +159,7 @@ export class GradingBoardComponent extends BaseAdminComponent implements OnInit 
   }
 
   viewSubmissionDetails(submissionId: number) {
-    this.router.navigate(['/admin/grading-board', submissionId]);
+    this.router.navigate(['/grading-board', submissionId]);
   }
 
   getStatusClass(status: string): string {
