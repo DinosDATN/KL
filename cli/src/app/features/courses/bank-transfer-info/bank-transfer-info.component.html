@@ -9,14 +9,16 @@
     </div>
 
     <div class="bank-info-section" *ngIf="bankInfo">
-      <!-- QR Code -->
-      <div class="qr-code-wrapper">
-        <img [src]="bankInfo.qrCode" alt="QR Code" class="qr-code">
-        <p class="qr-hint">Quét mã QR để chuyển khoản nhanh</p>
-      </div>
+      <!-- Two Column Layout -->
+      <div class="two-column-layout">
+        <!-- QR Code - Left Side -->
+        <div class="qr-code-wrapper">
+          <img [src]="bankInfo.qrCode" alt="QR Code" class="qr-code">
+          <p class="qr-hint">Quét mã QR để chuyển khoản nhanh</p>
+        </div>
 
-      <!-- Bank Details -->
-      <div class="bank-details">
+        <!-- Bank Details - Right Side -->
+        <div class="bank-details">
         <div class="detail-row">
           <div class="detail-label">
             <i class="fas fa-university"></i>
@@ -81,6 +83,7 @@
             </button>
           </div>
         </div>
+      </div>
       </div>
 
       <!-- Important Notes -->
