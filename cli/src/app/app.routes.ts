@@ -168,6 +168,13 @@ export const routes: Routes = [
           ).then((m) => m.CouponManagementComponent),
       },
       {
+        path: 'bank-accounts',
+        loadComponent: () =>
+          import(
+            './features/admin/bank-accounts/bank-accounts-admin.component'
+          ).then((m) => m.BankAccountsAdminComponent),
+      },
+      {
         path: 'reports',
         loadComponent: () =>
           import(
