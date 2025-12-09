@@ -1,0 +1,225 @@
+<div class="grading-board-container">
+  <div class="header">
+    <h1>Bảng Chấm Bài</h1>
+    <p class="subtitle">Xem tất cả các bài nộp của học viên</p>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section">
+    <div class="filters-grid">
+      <div class="filter-group">
+        <label>Trạng thái</label>
+        <select [(ngModel)]="filters.status" (change)="applyFilters()" class="filter-select">
+          <option value="">Tất cả</option>
+          <option *ngFor="let status of statusOptions" [value]="status">
+            {{ getStatusLabel(status) }}
+          </option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Ngôn ngữ</label>
+        <select [(ngModel)]="filters.language" (change)="applyFilters()" class="filter-select">
+          <option value="">Tất cả</option>
+          <option *ngFor="let lang of languageOptions" [value]="lang">
+            {{ lang.toUpperCase() }}
+          </option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>ID Bài tập</label>
+        <input 
+          type="number" 
+          [(ngModel)]="filters.problem_id" 
+          placeholder="Nhập ID bài tập"
+          class="filter-input"
+        />
+      </div>
+
+      <div class="filter-group">
+        <label>ID Người dùng</label>
+        <input 
+          type="number" 
+          [(ngModel)]="filters.user_id" 
+          placeholder="Nhập ID người dùng"
+          class="filter-input"
+        />
+      </div>
+    </div>
+
+    <div class="filter-actions">
+      <button (click)="applyFilters()" class="btn btn-primary">
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+        </svg>
+        Lọc
+      </button>
+      <button (click)="resetFilters()" class="btn btn-secondary">
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        Đặt lại
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Đang tải dữ liệu...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="error-state">
+    <svg class="error-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <p>{{ error }}</p>
+    <button (click)="loadSubmissions()" class="btn btn-primary">Thử lại</button>
+  </div>
+
+  <!-- Submissions Table -->
+  <div *ngIf="!loading && !error" class="table-container">
+    <div class="table-info">
+      <p>Tổng số: <strong>{{ pagination.total_items }}</strong> bài nộp</p>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="submissions-table">
+        <thead>
+          <tr>
+            <th (click)="changeSort('id')" class="sortable">
+              ID
+              <span class="sort-icon" *ngIf="filters.sort_by === 'id'">
+                {{ filters.sort_order === 'ASC' ? '↑' : '↓' }}
+              </span>
+            </th>
+            <th (click)="changeSort('problem_id')" class="sortable">
+              Bài tập
+              <span class="sort-icon" *ngIf="filters.sort_by === 'problem_id'">
+                {{ filters.sort_order === 'ASC' ? '↑' : '↓' }}
+              </span>
+            </th>
+            <th>Người nộp</th>
+            <th (click)="changeSort('submitted_at')" class="sortable">
+              Thời gian nộp
+              <span class="sort-icon" *ngIf="filters.sort_by === 'submitted_at'">
+                {{ filters.sort_order === 'ASC' ? '↑' : '↓' }}
+              </span>
+            </th>
+            <th>Ngôn ngữ</th>
+            <th (click)="changeSort('status')" class="sortable">
+              Trạng thái
+              <span class="sort-icon" *ngIf="filters.sort_by === 'status'">
+                {{ filters.sort_order === 'ASC' ? '↑' : '↓' }}
+              </span>
+            </th>
+            <th>Điểm</th>
+            <th>Thời gian</th>
+            <th>Bộ nhớ</th>
+            <th>Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let submission of submissions" class="submission-row">
+            <td class="id-cell">{{ submission.id }}</td>
+            <td class="problem-cell">
+              <div class="problem-info">
+                <span class="problem-title">{{ submission.Problem.title }}</span>
+                <span [class]="'difficulty-badge ' + getDifficultyClass(submission.Problem.difficulty)">
+                  {{ getDifficultyLabel(submission.Problem.difficulty) }}
+                </span>
+              </div>
+            </td>
+            <td class="user-cell">
+              <div class="user-info">
+                <img 
+                  [src]="submission.User.avatar_url || 'assets/default-avatar.png'" 
+                  [alt]="submission.User.name"
+                  class="user-avatar"
+                />
+                <div class="user-details">
+                  <span class="user-name">{{ submission.User.name }}</span>
+                  <span class="user-email">{{ submission.User.email }}</span>
+                </div>
+              </div>
+            </td>
+            <td class="date-cell">{{ formatDate(submission.submitted_at) }}</td>
+            <td class="language-cell">
+              <span class="language-badge">{{ submission.language.toUpperCase() }}</span>
+            </td>
+            <td class="status-cell">
+              <span [class]="'status-badge ' + getStatusClass(submission.status)">
+                {{ getStatusLabel(submission.status) }}
+              </span>
+            </td>
+            <td class="test-cases-cell">
+              <span class="score-badge">{{ submission.score }} điểm</span>
+            </td>
+            <td class="execution-cell">
+              <span *ngIf="submission.exec_time !== null">
+                {{ submission.exec_time }}ms
+              </span>
+              <span *ngIf="submission.exec_time === null">-</span>
+            </td>
+            <td class="memory-cell">
+              <span *ngIf="submission.memory_used !== null">
+                {{ (submission.memory_used / 1024).toFixed(2) }}MB
+              </span>
+              <span *ngIf="submission.memory_used === null">-</span>
+            </td>
+            <td class="actions-cell">
+              <button 
+                (click)="viewSubmissionDetails(submission.id)" 
+                class="btn-view"
+                title="Xem chi tiết"
+              >
+                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="submissions.length === 0" class="empty-state">
+      <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      <p>Không tìm thấy bài nộp nào</p>
+    </div>
+
+    <!-- Pagination -->
+    <div *ngIf="submissions.length > 0" class="pagination">
+      <button 
+        (click)="changePage(pagination.current_page - 1)" 
+        [disabled]="pagination.current_page === 1"
+        class="pagination-btn"
+      >
+        Trước
+      </button>
+
+      <button 
+        *ngFor="let page of getPageNumbers()"
+        (click)="changePage(page)"
+        [class.active]="page === pagination.current_page"
+        class="pagination-btn"
+      >
+        {{ page }}
+      </button>
+
+      <button 
+        (click)="changePage(pagination.current_page + 1)" 
+        [disabled]="pagination.current_page === pagination.total_pages"
+        class="pagination-btn"
+      >
+        Sau
+      </button>
+    </div>
+  </div>
+</div>

@@ -265,6 +265,20 @@ export const routes: Routes = [
             './features/admin/system-backups/system-backups.component'
           ).then((m) => m.SystemBackupsComponent),
       },
+      {
+        path: 'grading-board',
+        loadComponent: () =>
+          import(
+            './features/admin/grading-board/grading-board.component'
+          ).then((m) => m.GradingBoardComponent),
+      },
+      {
+        path: 'grading-board/:id',
+        loadComponent: () =>
+          import(
+            './features/admin/grading-board/submission-detail.component'
+          ).then((m) => m.SubmissionDetailComponent),
+      },
     ],
   },
   // Main layout routes
