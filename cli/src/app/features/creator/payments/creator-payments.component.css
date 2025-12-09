@@ -309,13 +309,13 @@
 }
 
 .btn-secondary {
-  background-color: var(--background-secondary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
+  background-color: #f8f9fa;
+  color: #212529;
+  border: 1px solid #dee2e6;
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background-color: var(--border-color);
+  background-color: #e9ecef;
 }
 
 .completed-text {
@@ -421,7 +421,7 @@
 }
 
 .modal-content {
-  background: var(--card-background);
+  background: #ffffff;
   border-radius: 12px;
   max-width: 500px;
   width: 100%;
@@ -432,16 +432,17 @@
 
 .modal-header {
   padding: 1.5rem;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid #dee2e6;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background: #ffffff;
 }
 
 .modal-header h2 {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: #212529;
   margin: 0;
 }
 
@@ -469,10 +470,11 @@
 
 .modal-body {
   padding: 1.5rem;
+  background: #ffffff;
 }
 
 .payment-info {
-  background: var(--background-secondary);
+  background: #f8f9fa;
   padding: 1.5rem;
   border-radius: 8px;
   margin-bottom: 1.5rem;
@@ -485,7 +487,7 @@
   justify-content: space-between;
   align-items: flex-start;
   padding: 0.75rem 0;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid #dee2e6;
   gap: 1rem;
   width: 100%;
 }
@@ -501,14 +503,14 @@
 
 .info-label {
   font-weight: 600;
-  color: var(--text-secondary);
+  color: #6c757d;
   flex-shrink: 0;
   min-width: 100px;
   font-size: 0.95rem;
 }
 
 .info-value {
-  color: var(--text-primary);
+  color: #212529;
   font-weight: 500;
   text-align: right;
   word-break: break-word;
@@ -523,18 +525,18 @@
 .form-group label {
   display: block;
   font-weight: 600;
-  color: var(--text-primary);
+  color: #212529;
   margin-bottom: 0.5rem;
 }
 
 .form-control {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid var(--border-color);
+  border: 1px solid #dee2e6;
   border-radius: 6px;
   font-size: 1rem;
-  background: var(--input-background);
-  color: var(--text-primary);
+  background: #ffffff;
+  color: #212529;
   transition: border-color 0.3s;
 }
 
@@ -565,10 +567,11 @@
 
 .modal-footer {
   padding: 1.5rem;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid #dee2e6;
   display: flex;
   gap: 1rem;
   justify-content: flex-end;
+  background: #ffffff;
 }
 
 /* Responsive */
