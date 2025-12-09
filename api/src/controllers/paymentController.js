@@ -217,21 +217,47 @@ class PaymentController {
           }
         });
       } else if (paymentMethod === 'bank_transfer') {
-        // Chuyển khoản ngân hàng - trả về thông tin tài khoản
+        // Chuyển khoản ngân hàng - lấy thông tin tài khoản của creator
+        const CreatorBankAccount = require('../models/CreatorBankAccount');
+        const creatorBankAccount = await CreatorBankAccount.findOne({
+          where: { 
+            user_id: course.instructor_id,
+            is_active: true
+          }
+        });
+
+        let bankInfo;
+        if (creatorBankAccount && creatorBankAccount.is_verified) {
+          // Sử dụng tài khoản của creator
+          bankInfo = {
+            bankName: creatorBankAccount.bank_name,
+            accountNumber: creatorBankAccount.account_number,
+            accountName: creatorBankAccount.account_name,
+            branch: creatorBankAccount.branch,
+            amount: finalAmount,
+            content: `THANHTOAN ${payment.id} ${userId}`,
+            qrCode: `https://img.vietqr.io/image/${creatorBankAccount.bank_name.split(' ')[0]}-${creatorBankAccount.account_number}-compact2.png?amount=${finalAmount}&addInfo=THANHTOAN%20${payment.id}%20${userId}`
+          };
+        } else {
+          // Sử dụng tài khoản mặc định của hệ thống
+          bankInfo = {
+            bankName: 'Ngân hàng TMCP Á Châu (ACB)',
+            accountNumber: '123456789',
+            accountName: 'CONG TY TNHH GIAO DUC TRUC TUYEN',
+            amount: finalAmount,
+            content: `THANHTOAN ${payment.id} ${userId}`,
+            qrCode: `https://img.vietqr.io/image/ACB-123456789-compact2.png?amount=${finalAmount}&addInfo=THANHTOAN%20${payment.id}%20${userId}`,
+            note: 'Creator chưa cập nhật thông tin tài khoản ngân hàng'
+          };
+        }
+
         return res.status(200).json({
           success: true,
           message: 'Vui lòng chuyển khoản theo thông tin bên dưới',
           data: {
             paymentId: payment.id,
             paymentMethod: 'bank_transfer',
-            bankInfo: {
-              bankName: 'Ngân hàng TMCP Á Châu (ACB)',
-              accountNumber: '123456789',
-              accountName: 'CONG TY TNHH GIAO DUC TRUC TUYEN',
-              amount: finalAmount,
-              content: `THANHTOAN ${payment.id} ${userId}`,
-              qrCode: `https://img.vietqr.io/image/ACB-123456789-compact2.png?amount=${finalAmount}&addInfo=THANHTOAN%20${payment.id}%20${userId}`
-            },
+            bankInfo,
             note: 'Sau khi chuyển khoản, vui lòng chờ 5-10 phút để hệ thống xác nhận thanh toán.'
           }
         });

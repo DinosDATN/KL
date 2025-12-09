@@ -1,0 +1,157 @@
+<div class="bank-account-container">
+  <div class="page-header">
+    <h1>Quản lý tài khoản ngân hàng</h1>
+    <p class="subtitle">Cập nhật thông tin tài khoản ngân hàng để nhận thanh toán từ học viên</p>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Đang tải thông tin...</p>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="errorMessage" class="error-message">
+    <i class="icon">⚠️</i>
+    {{ errorMessage }}
+  </div>
+
+  <!-- Bank Account Form -->
+  <div *ngIf="!isLoading" class="bank-account-card">
+    <!-- Verification Status -->
+    <div *ngIf="hasExistingAccount && !isEditing" class="verification-status">
+      <div class="status-badge" [class.verified]="bankAccount.is_verified" [class.pending]="!bankAccount.is_verified">
+        <i class="icon">{{ bankAccount.is_verified ? '✓' : '⏳' }}</i>
+        <span>{{ bankAccount.is_verified ? 'Đã xác thực' : 'Chờ xác thực' }}</span>
+      </div>
+      <p class="status-note" *ngIf="!bankAccount.is_verified">
+        Tài khoản của bạn đang chờ admin xác thực. Trong thời gian này, học viên sẽ thanh toán vào tài khoản mặc định của hệ thống.
+      </p>
+    </div>
+
+    <!-- View Mode -->
+    <div *ngIf="!isEditing && hasExistingAccount" class="view-mode">
+      <div class="info-group">
+        <label>Ngân hàng</label>
+        <p class="info-value">{{ bankAccount.bank_name }}</p>
+      </div>
+
+      <div class="info-group">
+        <label>Số tài khoản</label>
+        <p class="info-value">{{ maskAccountNumber(bankAccount.account_number) }}</p>
+      </div>
+
+      <div class="info-group">
+        <label>Tên chủ tài khoản</label>
+        <p class="info-value">{{ bankAccount.account_name }}</p>
+      </div>
+
+      <div class="info-group" *ngIf="bankAccount.branch">
+        <label>Chi nhánh</label>
+        <p class="info-value">{{ bankAccount.branch }}</p>
+      </div>
+
+      <div class="info-group" *ngIf="bankAccount.notes">
+        <label>Ghi chú</label>
+        <p class="info-value">{{ bankAccount.notes }}</p>
+      </div>
+
+      <div class="action-buttons">
+        <button class="btn btn-primary" (click)="enableEdit()">
+          <i class="icon">✏️</i> Chỉnh sửa
+        </button>
+        <button class="btn btn-danger" (click)="deleteBankAccount()">
+          <i class="icon">🗑️</i> Xóa
+        </button>
+      </div>
+    </div>
+
+    <!-- Edit Mode -->
+    <form *ngIf="isEditing" (ngSubmit)="saveBankAccount()" class="edit-mode">
+      <div class="form-group">
+        <label for="bank_name">Ngân hàng <span class="required">*</span></label>
+        <select 
+          id="bank_name" 
+          [(ngModel)]="bankAccount.bank_name" 
+          name="bank_name"
+          class="form-control"
+          required>
+          <option value="">-- Chọn ngân hàng --</option>
+          <option *ngFor="let bank of popularBanks" [value]="bank">{{ bank }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="account_number">Số tài khoản <span class="required">*</span></label>
+        <input 
+          type="text" 
+          id="account_number" 
+          [(ngModel)]="bankAccount.account_number" 
+          name="account_number"
+          class="form-control"
+          placeholder="Nhập số tài khoản"
+          required>
+      </div>
+
+      <div class="form-group">
+        <label for="account_name">Tên chủ tài khoản <span class="required">*</span></label>
+        <input 
+          type="text" 
+          id="account_name" 
+          [(ngModel)]="bankAccount.account_name" 
+          name="account_name"
+          class="form-control"
+          placeholder="Nhập tên chủ tài khoản (viết hoa, không dấu)"
+          required>
+        <small class="form-hint">Ví dụ: NGUYEN VAN A</small>
+      </div>
+
+      <div class="form-group">
+        <label for="branch">Chi nhánh</label>
+        <input 
+          type="text" 
+          id="branch" 
+          [(ngModel)]="bankAccount.branch" 
+          name="branch"
+          class="form-control"
+          placeholder="Nhập tên chi nhánh (không bắt buộc)">
+      </div>
+
+      <div class="form-group">
+        <label for="notes">Ghi chú</label>
+        <textarea 
+          id="notes" 
+          [(ngModel)]="bankAccount.notes" 
+          name="notes"
+          class="form-control"
+          rows="3"
+          placeholder="Ghi chú thêm (không bắt buộc)"></textarea>
+      </div>
+
+      <div class="action-buttons">
+        <button type="submit" class="btn btn-primary" [disabled]="isSaving">
+          <span *ngIf="!isSaving">
+            <i class="icon">💾</i> {{ hasExistingAccount ? 'Cập nhật' : 'Lưu' }}
+          </span>
+          <span *ngIf="isSaving">
+            <i class="icon spinner-small">⏳</i> Đang lưu...
+          </span>
+        </button>
+        <button type="button" class="btn btn-secondary" (click)="cancelEdit()" [disabled]="isSaving">
+          Hủy
+        </button>
+      </div>
+    </form>
+
+    <!-- Info Box -->
+    <div class="info-box">
+      <h3>📌 Lưu ý quan trọng</h3>
+      <ul>
+        <li>Thông tin tài khoản ngân hàng sẽ được sử dụng để nhận thanh toán từ học viên đăng ký khóa học của bạn.</li>
+        <li>Vui lòng cung cấp thông tin chính xác để tránh sai sót trong quá trình thanh toán.</li>
+        <li>Tài khoản cần được admin xác thực trước khi có thể sử dụng.</li>
+        <li>Nếu chưa được xác thực, học viên sẽ thanh toán vào tài khoản mặc định của hệ thống.</li>
+      </ul>
+    </div>
+  </div>
+</div>

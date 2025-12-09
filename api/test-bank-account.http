@@ -1,0 +1,86 @@
+### Test Creator Bank Account APIs
+### Yêu cầu: Đăng nhập với tài khoản creator trước
+
+@baseUrl = http://localhost:3000/api/v1
+@token = YOUR_JWT_TOKEN_HERE
+
+### 1. Lấy thông tin tài khoản ngân hàng của mình (Creator)
+GET {{baseUrl}}/creator-bank-accounts/my-bank-account
+Authorization: Bearer {{token}}
+
+### 2. Tạo/Cập nhật tài khoản ngân hàng (Creator)
+POST {{baseUrl}}/creator-bank-accounts/my-bank-account
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "bank_name": "Techcombank",
+  "account_number": "19036512345678",
+  "account_name": "NGUYEN VAN A",
+  "branch": "Chi nhánh Hà Nội",
+  "notes": "Tài khoản chính để nhận thanh toán"
+}
+
+### 3. Cập nhật tài khoản ngân hàng (Creator)
+PUT {{baseUrl}}/creator-bank-accounts/my-bank-account
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "bank_name": "Vietcombank",
+  "account_number": "0123456789",
+  "account_name": "TRAN THI B",
+  "branch": "Chi nhánh TP.HCM"
+}
+
+### 4. Xóa tài khoản ngân hàng (Creator)
+DELETE {{baseUrl}}/creator-bank-accounts/my-bank-account
+Authorization: Bearer {{token}}
+
+### 5. Lấy thông tin tài khoản ngân hàng theo courseId (Public)
+GET {{baseUrl}}/creator-bank-accounts/courses/1/bank-account
+
+### 6. Admin: Lấy danh sách tất cả tài khoản ngân hàng
+GET {{baseUrl}}/creator-bank-accounts/admin/bank-accounts
+Authorization: Bearer {{token}}
+
+### 7. Admin: Lấy danh sách tài khoản chưa xác thực
+GET {{baseUrl}}/creator-bank-accounts/admin/bank-accounts?is_verified=false
+Authorization: Bearer {{token}}
+
+### 8. Admin: Xác thực tài khoản ngân hàng
+PATCH {{baseUrl}}/creator-bank-accounts/admin/bank-accounts/1/verify
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "is_verified": true
+}
+
+### 9. Admin: Hủy xác thực tài khoản ngân hàng
+PATCH {{baseUrl}}/creator-bank-accounts/admin/bank-accounts/1/verify
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "is_verified": false
+}
+
+### 10. Test Payment Flow - Tạo payment intent
+POST {{baseUrl}}/payments/courses/1/payment-intent
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "couponCode": ""
+}
+
+### 11. Test Payment Flow - Process payment với bank transfer
+POST {{baseUrl}}/payments/courses/1/process-payment
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "paymentMethod": "bank_transfer",
+  "couponCode": ""
+}

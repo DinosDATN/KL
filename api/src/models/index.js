@@ -79,6 +79,9 @@ const RewardConfig = require("./RewardConfig");
 // Creator Application model
 const CreatorApplication = require("./CreatorApplication");
 
+// Creator Bank Account model
+const CreatorBankAccount = require("./CreatorBankAccount");
+
 // Define associations
 
 // Course associations
@@ -1113,6 +1116,17 @@ User.hasMany(CreatorApplication, {
   as: "ReviewedApplications",
 });
 
+// Creator Bank Account associations
+User.hasOne(CreatorBankAccount, {
+  foreignKey: "user_id",
+  as: "BankAccount",
+});
+
+CreatorBankAccount.belongsTo(User, {
+  foreignKey: "user_id",
+  as: "User",
+});
+
 module.exports = {
   Problem,
   ProblemCategory,
@@ -1186,4 +1200,6 @@ module.exports = {
   RewardConfig,
   // Creator Application model
   CreatorApplication,
+  // Creator Bank Account model
+  CreatorBankAccount,
 };

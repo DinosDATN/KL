@@ -421,6 +421,14 @@ export const routes: Routes = [
         canActivate: [AuthGuard],
       },
       {
+        path: 'profile/bank-account',
+        loadComponent: () =>
+          import('./features/profile/bank-account/bank-account.component').then(
+            (m) => m.BankAccountComponent
+          ),
+        canActivate: [AuthGuard],
+      },
+      {
         path: 'creator/profile',
         loadComponent: () =>
           import('./features/profile/creator-profile.component').then(
