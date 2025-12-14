@@ -1,50 +1,50 @@
 version: "3.8"
 
 services:
-  api:
-    build: .
-    container_name: backend_api
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    environment:
-      NODE_ENV: development
-      PORT: 3000
-      API_PREFIX: /api/v1
-      CLIENT_URL: http://localhost:4200
-      # Database configuration
-      DB_HOST: mysql
-      DB_PORT: 3306
-      DB_NAME: lfysdb
-      DB_USER: api_user
-      DB_PASSWORD: api_password
-      # Judge0 configuration
-    volumes:
-      - ./uploads:/app/uploads
-      - .:/app
-      - /app/node_modules
-    depends_on:
-      - mysql
-    networks:
-      - api_network
+  # api:
+  #   build: .
+  #   container_name: backend_api
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     NODE_ENV: development
+  #     PORT: 3000
+  #     API_PREFIX: /api/v1
+  #     CLIENT_URL: http://localhost:4200
+  #     # Database configuration
+  #     DB_HOST: mysql
+  #     DB_PORT: 3306
+  #     DB_NAME: lfysdb
+  #     DB_USER: api_user
+  #     DB_PASSWORD: api_password
+  #     # Judge0 configuration
+  #   volumes:
+  #     - ./uploads:/app/uploads
+  #     - .:/app
+  #     - /app/node_modules
+  #   depends_on:
+  #     - mysql
+  #   networks:
+  #     - api_network
 
-  ai:
-    build: ../ai
-    container_name: ai_service
-    restart: unless-stopped
-    ports:
-      - "8000:8000"
-    environment:
-      - HOST=0.0.0.0
-      - PORT=8000
-      - DEBUG=True
-    env_file:
-      - ../ai/.env
-    volumes:
-      - ../ai:/app
-      - /app/__pycache__
-    networks:
-      - api_network
+  # ai:
+  #   build: ../ai
+  #   container_name: ai_service
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8000:8000"
+  #   environment:
+  #     - HOST=0.0.0.0
+  #     - PORT=8000
+  #     - DEBUG=True
+  #   env_file:
+  #     - ../ai/.env
+  #   volumes:
+  #     - ../ai:/app
+  #     - /app/__pycache__
+  #   networks:
+  #     - api_network
 
   mysql:
     image: mariadb:10.4
