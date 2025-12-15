@@ -8,6 +8,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ThemeService } from '../../../../core/services/theme.service';
+import { ForumService, ForumCategory, ForumPost, ForumStatistics } from '../../../../core/services/forum.service';
 import { Subject, takeUntil } from 'rxjs';
 
 @Component({
@@ -26,6 +27,7 @@ export class ForumLayoutComponent implements OnInit, OnDestroy {
   get onlineMemberCount(): number {
     return this.activeMembers.filter((m) => m.isOnline).length;
   }
+  
   private destroy$ = new Subject<void>();
 
   // Outputs to parent
@@ -33,115 +35,29 @@ export class ForumLayoutComponent implements OnInit, OnDestroy {
   @Output() postClicked = new EventEmitter<number>();
   @Output() createPost = new EventEmitter<void>();
 
-  // Forum statistics
-  totalPosts = 1250;
-  totalMembers = 340;
-  todayPosts = 25;
-  onlineMembers = 42;
+  // Data from service
+  categories: ForumCategory[] = [];
+  recentPosts: ForumPost[] = [];
+  statistics: ForumStatistics | null = null;
 
-  // Featured categories
-  categories = [
-    {
-      id: 1,
-      name: 'Thảo luận chung',
-      description: 'Nơi chia sẻ ý kiến và thảo luận về các chủ đề tổng quát',
-      icon: '💬',
-      color: 'from-blue-500 to-indigo-600',
-      posts: 145,
-      lastActivity: '5 phút trước',
-      trending: true,
-    },
-    {
-      id: 2,
-      name: 'Hỏi đáp lập trình',
-      description: 'Đặt câu hỏi và nhận trợ giúp về các vấn đề lập trình',
-      icon: '❓',
-      color: 'from-green-500 to-emerald-600',
-      posts: 320,
-      lastActivity: '2 phút trước',
-      trending: true,
-    },
-    {
-      id: 3,
-      name: 'Chia sẻ dự án',
-      description: 'Khoe dự án và nhận phản hồi từ cộng đồng',
-      icon: '🚀',
-      color: 'from-purple-500 to-pink-600',
-      posts: 89,
-      lastActivity: '10 phút trước',
-      trending: false,
-    },
-    {
-      id: 4,
-      name: 'Tìm việc làm',
-      description: 'Cơ hội việc làm và thông tin tuyển dụng',
-      icon: '💼',
-      color: 'from-orange-500 to-red-600',
-      posts: 67,
-      lastActivity: '1 giờ trước',
-      trending: false,
-    },
-    {
-      id: 5,
-      name: 'Học tập & Tài liệu',
-      description: 'Chia sẻ tài liệu học tập và kinh nghiệm học',
-      icon: '📚',
-      color: 'from-cyan-500 to-blue-600',
-      posts: 201,
-      lastActivity: '30 phút trước',
-      trending: true,
-    },
-    {
-      id: 6,
-      name: 'Công nghệ mới',
-      description: 'Thảo luận về xu hướng và công nghệ mới nhất',
-      icon: '⚡',
-      color: 'from-yellow-500 to-orange-600',
-      posts: 156,
-      lastActivity: '15 phút trước',
-      trending: true,
-    },
-  ];
+  // Forum statistics (fallback values)
+  get totalPosts(): number {
+    return this.statistics?.totalPosts || 0;
+  }
+  
+  get totalMembers(): number {
+    return this.statistics?.totalMembers || 0;
+  }
+  
+  get todayPosts(): number {
+    return this.statistics?.todayPosts || 0;
+  }
+  
+  get onlineMembers(): number {
+    return this.statistics?.onlineMembers || 0;
+  }
 
-  // Recent posts
-  recentPosts = [
-    {
-      id: 1,
-      title: 'Làm thế nào để tối ưu hóa React app?',
-      author: 'Nguyễn Văn A',
-      avatar: '/assets/avatars/user1.png',
-      category: 'Hỏi đáp lập trình',
-      replies: 12,
-      views: 156,
-      lastReply: '5 phút trước',
-      pinned: false,
-      solved: true,
-    },
-    {
-      id: 2,
-      title: '[Thông báo] Quy tắc mới cho diễn đàn',
-      author: 'Admin',
-      avatar: '/assets/avatars/admin.png',
-      category: 'Thảo luận chung',
-      replies: 45,
-      views: 892,
-      lastReply: '1 giờ trước',
-      pinned: true,
-      solved: false,
-    },
-    {
-      id: 3,
-      title: 'Chia sẻ project e-commerce với Angular',
-      author: 'Trần Thị B',
-      avatar: '/assets/avatars/user2.png',
-      category: 'Chia sẻ dự án',
-      replies: 8,
-      views: 234,
-      lastReply: '2 giờ trước',
-      pinned: false,
-      solved: false,
-    },
-  ];
+
 
   // Active members
   activeMembers = [
@@ -175,14 +91,46 @@ export class ForumLayoutComponent implements OnInit, OnDestroy {
     },
   ];
 
-  constructor(public themeService: ThemeService) {}
+  constructor(
+    public themeService: ThemeService,
+    private forumService: ForumService
+  ) {}
 
   ngOnInit(): void {
+    // Subscribe to forum data
+    this.forumService.categories$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(categories => {
+        this.categories = categories;
+      });
+
+    this.forumService.statistics$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(statistics => {
+        this.statistics = statistics;
+      });
+
+    // Load recent posts
+    this.loadRecentPosts();
+
     // Subscribe to theme changes if needed
     this.themeService.theme$
       .pipe(takeUntil(this.destroy$))
       .subscribe((theme) => {
         // Handle theme changes if needed
+      });
+  }
+
+  private loadRecentPosts(): void {
+    this.forumService.getPosts({ limit: 5, sortBy: 'created_at', sortOrder: 'DESC' })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (result) => {
+          this.recentPosts = result.data;
+        },
+        error: (error) => {
+          console.error('Error loading recent posts:', error);
+        }
       });
   }
 
@@ -198,6 +146,10 @@ export class ForumLayoutComponent implements OnInit, OnDestroy {
       .join('')
       .substring(0, 2)
       .toUpperCase();
+  }
+
+  getAuthorName(author: any): string {
+    return typeof author === 'string' ? author : author?.name || '';
   }
 
   getTimeAgo(timestamp: string): string {

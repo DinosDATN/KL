@@ -49,6 +49,7 @@ const rewardRoutes = require("./routes/rewardRoutes");
 const creatorApplicationRoutes = require("./routes/creatorApplicationRoutes");
 const ragPublicDataRoutes = require("./routes/ragPublicDataRoutes");
 const contactRoutes = require("./routes/contactRoutes");
+const forumRoutes = require("./routes/forumRoutes");
 
 // Create Express app and HTTP server
 const app = express();
@@ -143,6 +144,7 @@ app.use(apiPrefix + "/rewards", rewardRoutes);
 app.use(apiPrefix + "/creator-applications", creatorApplicationRoutes);
 app.use(apiPrefix + "/rag", ragPublicDataRoutes);
 app.use(apiPrefix + "/contact", contactRoutes);
+app.use(apiPrefix + "/forum", forumRoutes);
 
 // Admin routes
 app.use(apiPrefix + "/admin/dashboard", dashboardAdminRoutes);

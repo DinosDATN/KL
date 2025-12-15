@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ThemeService } from '../../../../core/services/theme.service';
+import { ForumService, ForumPost, ForumReply } from '../../../../core/services/forum.service';
 import { Subject, takeUntil } from 'rxjs';
 
 interface PostAuthor {
@@ -69,7 +70,12 @@ export class PostDetailComponent implements OnInit, OnDestroy {
   replyingTo: number | null = null;
 
   // Post data
-  post: ForumPostDetail = {
+  post: ForumPost | null = null;
+  replies: ForumReply[] = [];
+  isLoading = true;
+  
+  // Mock post data for fallback
+  mockPost: ForumPost = {
     id: 1,
     title: 'Làm thế nào để tối ưu hóa hiệu suất React application?',
     content: `Chào mọi người!
@@ -103,10 +109,7 @@ Cảm ơn mọi người!`,
     author: {
       id: 1,
       name: 'Nguyễn Văn A',
-      reputation: 1250,
-      badge: 'Expert',
-      isOnline: true,
-      joinedAt: '2023-01-15'
+      avatar: ''
     },
     category: { id: 2, name: 'Hỏi đáp lập trình', icon: '❓' },
     tags: [
@@ -117,10 +120,14 @@ Cảm ơn mọi người!`,
     createdAt: '2024-01-15T10:30:00Z',
     views: 256,
     votes: { up: 15, down: 2, userVote: undefined },
+    replies: 3,
+    lastReply: '2 giờ trước',
+    pinned: false,
+    solved: true,
+    isQuestion: true,
     isPinned: false,
     isLocked: false,
     isSolved: true,
-    isQuestion: true,
     acceptedAnswerId: 2,
     attachments: [
       { id: 1, name: 'performance-report.png', url: '#', type: 'image/png', size: 1024000 }
@@ -218,7 +225,8 @@ Hy vọng giúp ích được!`,
 
   constructor(
     private formBuilder: FormBuilder,
-    public themeService: ThemeService
+    public themeService: ThemeService,
+    private forumService: ForumService
   ) {
     this.commentForm = this.formBuilder.group({
       content: ['', [Validators.required, Validators.minLength(10)]]
@@ -237,9 +245,50 @@ Hy vọng giúp ích được!`,
   }
 
   loadPostData(): void {
-    // Simulate API call
-    // this.postService.getPost(this.postId).subscribe(post => this.post = post);
-    // this.commentService.getComments(this.postId).subscribe(comments => this.comments = comments);
+    if (!this.postId) return;
+    
+    this.isLoading = true;
+    
+    // Load post details
+    this.forumService.getPost(this.postId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (post) => {
+          this.post = post;
+          this.isLoading = false;
+        },
+        error: (error) => {
+          console.error('Error loading post:', error);
+          this.post = this.mockPost; // Fallback to mock data
+          this.isLoading = false;
+        }
+      });
+
+    // Load replies
+    this.forumService.getReplies(this.postId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (result) => {
+          this.replies = result.data;
+        },
+        error: (error) => {
+          console.error('Error loading replies:', error);
+          // Convert comments to replies format
+          this.replies = this.comments.map(comment => ({
+            id: comment.id,
+            content: comment.content,
+            author: {
+              id: comment.author.id,
+              name: comment.author.name,
+              avatar: comment.author.avatar || ''
+            },
+            votes: comment.votes.up - comment.votes.down,
+            isSolution: comment.isAccepted || false,
+            createdAt: comment.createdAt,
+            updatedAt: comment.updatedAt || comment.createdAt
+          }));
+        }
+      });
   }
 
   getUserInitials(name: string): string {
@@ -285,8 +334,8 @@ Hy vọng giúp ích được!`,
   }
 
   vote(type: 'up' | 'down', target: 'post' | 'comment', id?: number): void {
-    if (target === 'post') {
-      const currentVote = this.post.votes.userVote;
+    if (target === 'post' && this.post) {
+      const currentVote = this.post.votes?.userVote;
       if (currentVote === type) {
         // Remove vote
         this.post.votes.userVote = undefined;
@@ -347,60 +396,68 @@ Hy vọng giúp ích được!`,
   }
 
   submitComment(): void {
-    if (this.commentForm.valid && !this.isSubmittingComment) {
+    if (this.commentForm.valid && !this.isSubmittingComment && this.postId) {
       this.isSubmittingComment = true;
       
-      const newComment: Comment = {
-        id: Math.max(...this.comments.map(c => c.id)) + 1,
+      const replyData = {
         content: this.commentForm.value.content,
-        author: {
-          id: 999,
-          name: 'Người dùng hiện tại',
-          reputation: 100,
-          isOnline: true,
-          joinedAt: '2024-01-01'
-        },
-        createdAt: new Date().toISOString(),
-        votes: { up: 0, down: 0 }
+        parentReplyId: this.replyingTo || undefined
       };
 
-      // Simulate API call
-      setTimeout(() => {
-        if (this.replyingTo) {
-          const parentComment = this.findCommentById(this.replyingTo);
-          if (parentComment) {
-            if (!parentComment.replies) {
-              parentComment.replies = [];
-            }
-            parentComment.replies.push(newComment);
-            parentComment.showReplies = true;
+      this.forumService.createReply(this.postId, replyData)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (result) => {
+            console.log('Reply created successfully:', result);
+            // Reload replies to get the new one
+            this.loadReplies();
+            this.commentForm.reset();
+            this.replyingTo = null;
+            this.isSubmittingComment = false;
+          },
+          error: (error) => {
+            console.error('Error creating reply:', error);
+            this.isSubmittingComment = false;
           }
-        } else {
-          this.comments.push(newComment);
-        }
-        
-        this.commentForm.reset();
-        this.replyingTo = null;
-        this.isSubmittingComment = false;
-      }, 1000);
+        });
     }
   }
 
+  private loadReplies(): void {
+    if (!this.postId) return;
+    
+    this.forumService.getReplies(this.postId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (result) => {
+          this.replies = result.data;
+        },
+        error: (error) => {
+          console.error('Error loading replies:', error);
+        }
+      });
+  }
+
   markAsAccepted(commentId: number): void {
+    if (!this.post) return;
     // Only post author can mark answers as accepted
     this.comments.forEach(comment => {
       comment.isAccepted = comment.id === commentId;
     });
     this.post.acceptedAnswerId = commentId;
+    this.post.solved = true;
     this.post.isSolved = true;
   }
 
   togglePin(): void {
+    if (!this.post) return;
     // Only moderators can pin posts
-    this.post.isPinned = !this.post.isPinned;
+    this.post.pinned = !this.post.pinned;
+    this.post.isPinned = this.post.pinned;
   }
 
   toggleLock(): void {
+    if (!this.post) return;
     // Only moderators can lock posts
     this.post.isLocked = !this.post.isLocked;
   }
@@ -430,5 +487,14 @@ Hy vọng giúp ích được!`,
       .replace(/^## (.*$)/gm, '<h2 class="text-lg font-semibold mt-4 mb-2">$1</h2>')
       .replace(/^# (.*$)/gm, '<h1 class="text-xl font-semibold mt-4 mb-2">$1</h1>')
       .replace(/\n/g, '<br>');
+  }
+
+  // Helper methods for template
+  getTagName(tag: any): string {
+    return typeof tag === 'string' ? tag : tag?.name || '';
+  }
+
+  getTagColor(tag: any): string {
+    return typeof tag === 'string' ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200' : (tag?.color || 'bg-gray-100 text-gray-800');
   }
 }

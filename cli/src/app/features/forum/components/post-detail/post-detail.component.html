@@ -3,49 +3,49 @@
     <div class="flex items-start justify-between">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium">
-          {{ getUserInitials(post.author.name) }}
+          {{ post?.author?.name ? getUserInitials(post?.author?.name || '') : '?' }}
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <h1 class="text-xl font-semibold text-gray-900 dark:text-white">{{ post.title }}</h1>
-            <span *ngIf="post.isPinned" class="text-yellow-500" title="Đã ghim">📌</span>
-            <span *ngIf="post.isSolved" class="text-green-500" title="Đã giải quyết">✅</span>
-            <span class="inline-flex items-center px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full">{{ post.category.name }}</span>
+            <h1 class="text-xl font-semibold text-gray-900 dark:text-white">{{ post?.title }}</h1>
+            <span *ngIf="post?.isPinned || post?.pinned" class="text-yellow-500" title="Đã ghim">📌</span>
+            <span *ngIf="post?.isSolved || post?.solved" class="text-green-500" title="Đã giải quyết">✅</span>
+            <span class="inline-flex items-center px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full">{{ post?.category?.name }}</span>
           </div>
           <div class="text-sm text-gray-500 dark:text-gray-400">
-            Đăng bởi <span class="font-medium text-gray-700 dark:text-gray-300">{{ post.author.name }}</span> • {{ formatTimeAgo(post.createdAt) }} • {{ post.views }} lượt xem
+            Đăng bởi <span class="font-medium text-gray-700 dark:text-gray-300">{{ post?.author?.name }}</span> • {{ post?.createdAt ? formatTimeAgo(post?.createdAt || '') : '' }} • {{ post?.views }} lượt xem
           </div>
         </div>
       </div>
       <div class="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
         <button class="px-3 py-1 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">Báo cáo</button>
-        <button class="px-3 py-1 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600" (click)="togglePin()">{{ post.isPinned ? 'Bỏ ghim' : 'Ghim' }}</button>
-        <button class="px-3 py-1 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600" (click)="toggleLock()">{{ post.isLocked ? 'Mở khóa' : 'Khóa' }}</button>
+        <button class="px-3 py-1 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600" (click)="togglePin()">{{ (post?.isPinned || post?.pinned) ? 'Bỏ ghim' : 'Ghim' }}</button>
+        <button class="px-3 py-1 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600" (click)="toggleLock()">{{ post?.isLocked ? 'Mở khóa' : 'Khóa' }}</button>
       </div>
     </div>
 
-    <div class="mt-4 flex flex-wrap gap-2">
-      <span *ngFor="let tag of post.tags" class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full" [class]="tag.color"># {{ tag.name }}</span>
+    <div class="mt-4 flex flex-wrap gap-2" *ngIf="post?.tags?.length">
+      <span *ngFor="let tag of post?.tags || []" class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full" [class]="getTagColor(tag)"># {{ getTagName(tag) }}</span>
     </div>
   </div>
 
   <div class="p-6 grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-6">
     <!-- Voting column -->
     <div class="flex flex-col items-center">
-      <button (click)="vote('up', 'post')" class="w-10 h-10 flex items-center justify-center rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" [class.text-blue-600]="post.votes.userVote === 'up'">▲</button>
-      <div class="text-lg font-semibold text-gray-900 dark:text-white">{{ post.votes.up - post.votes.down }}</div>
-      <button (click)="vote('down', 'post')" class="w-10 h-10 flex items-center justify-center rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" [class.text-blue-600]="post.votes.userVote === 'down'">▼</button>
+      <button (click)="vote('up', 'post')" class="w-10 h-10 flex items-center justify-center rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" [class.text-blue-600]="post?.votes?.userVote === 'up'">▲</button>
+      <div class="text-lg font-semibold text-gray-900 dark:text-white">{{ (post?.votes?.up || 0) - (post?.votes?.down || 0) }}</div>
+      <button (click)="vote('down', 'post')" class="w-10 h-10 flex items-center justify-center rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" [class.text-blue-600]="post?.votes?.userVote === 'down'">▼</button>
     </div>
 
     <!-- Post content -->
     <div>
-      <div class="prose prose-sm dark:prose-invert max-w-none" [innerHTML]="formatContent(post.content)"></div>
+      <div class="prose prose-sm dark:prose-invert max-w-none" [innerHTML]="formatContent(post?.content || '')"></div>
 
       <!-- Attachments -->
-      <div *ngIf="post.attachments?.length" class="mt-6">
+      <div *ngIf="post?.attachments?.length" class="mt-6">
         <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Tệp đính kèm</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <a *ngFor="let f of post.attachments" href="{{ f.url }}" class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600">
+          <a *ngFor="let f of post?.attachments || []" href="{{ f.url }}" class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600">
             <div class="flex items-center gap-2 text-sm">
               <span>{{ getFileIcon(f.type) }}</span>
               <span class="text-gray-700 dark:text-gray-300">{{ f.name }}</span>
@@ -92,7 +92,7 @@
               <button (click)="vote('up','comment', c.id)" class="hover:text-gray-700 dark:hover:text-gray-200" [class.text-blue-600]="c.votes.userVote==='up'">▲ {{ c.votes.up }}</button>
               <button (click)="vote('down','comment', c.id)" class="hover:text-gray-700 dark:hover:text-gray-200" [class.text-blue-600]="c.votes.userVote==='down'">▼ {{ c.votes.down }}</button>
               <button (click)="startReply(c.id)" class="hover:text-gray-700 dark:hover:text-gray-200">Trả lời</button>
-              <button *ngIf="post.isQuestion" (click)="markAsAccepted(c.id)" class="hover:text-gray-700 dark:hover:text-gray-200">Chấp nhận</button>
+              <button *ngIf="post?.isQuestion" (click)="markAsAccepted(c.id)" class="hover:text-gray-700 dark:hover:text-gray-200">Chấp nhận</button>
               <button *ngIf="c.replies?.length" (click)="toggleReplies(c.id)" class="hover:text-gray-700 dark:hover:text-gray-200">
                 {{ c.showReplies ? 'Ẩn' : 'Xem' }} {{ c.replies?.length }} trả lời
               </button>

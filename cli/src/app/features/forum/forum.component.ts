@@ -18,19 +18,11 @@ import { User } from '../../core/models/user.model';
 // Services and Data
 import { ThemeService } from '../../core/services/theme.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ForumService, CreatePostRequest } from '../../core/services/forum.service';
 // Components
 import { ForumLayoutComponent } from './components/forum-layout/forum-layout.component';
 import { PostCreatorComponent } from './components/post-creator/post-creator.component';
 import { PostDetailComponent } from './components/post-detail/post-detail.component';
-
-interface CreatePostRequest {
-  title: string;
-  content: string;
-  categoryId: number;
-  tags: number[];
-  isQuestion: boolean;
-  attachments?: File[];
-}
 
 @Component({
   selector: 'app-forum',
@@ -63,6 +55,7 @@ export class ForumComponent implements OnInit, OnDestroy {
     public themeService: ThemeService,
     public router: Router,
     private authService: AuthService,
+    private forumService: ForumService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
     // Get current user from auth service
@@ -101,12 +94,18 @@ export class ForumComponent implements OnInit, OnDestroy {
   }
 
   onPostCreated(postRequest: CreatePostRequest): void {
-    console.log('New post created:', postRequest);
-    // Here you would normally send the post to your backend service
-    // this.forumService.createPost(postRequest).subscribe(...);
-    
-    // For demo purposes, just log and close modal
-    this.closePostCreator();
+    this.forumService.createPost(postRequest).subscribe({
+      next: (result) => {
+        console.log('Post created successfully:', result);
+        this.closePostCreator();
+        // Optionally refresh the forum data
+        this.forumService.refreshData();
+      },
+      error: (error) => {
+        console.error('Error creating post:', error);
+        // Handle error (show notification, etc.)
+      }
+    });
   }
 
   viewPost(postId: number): void {

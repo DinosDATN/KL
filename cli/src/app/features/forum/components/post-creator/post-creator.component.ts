@@ -2,28 +2,13 @@ import { Component, OnInit, OnDestroy, Output, EventEmitter, Input } from '@angu
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ThemeService } from '../../../../core/services/theme.service';
+import { ForumService, ForumCategory, CreatePostRequest } from '../../../../core/services/forum.service';
 import { Subject, takeUntil } from 'rxjs';
-
-interface PostCategory {
-  id: number;
-  name: string;
-  icon: string;
-  color: string;
-}
 
 interface PostTag {
   id: number;
   name: string;
   color: string;
-}
-
-interface CreatePostRequest {
-  title: string;
-  content: string;
-  categoryId: number;
-  tags: number[];
-  isQuestion: boolean;
-  attachments?: File[];
 }
 
 @Component({
@@ -49,15 +34,8 @@ export class PostCreatorComponent implements OnInit, OnDestroy {
   currentWordCount = 0;
   maxWordCount = 5000;
 
-  // Available categories
-  categories: PostCategory[] = [
-    { id: 1, name: 'Thảo luận chung', icon: '💬', color: 'bg-blue-500' },
-    { id: 2, name: 'Hỏi đáp lập trình', icon: '❓', color: 'bg-green-500' },
-    { id: 3, name: 'Chia sẻ dự án', icon: '🚀', color: 'bg-purple-500' },
-    { id: 4, name: 'Tìm việc làm', icon: '💼', color: 'bg-orange-500' },
-    { id: 5, name: 'Học tập & Tài liệu', icon: '📚', color: 'bg-cyan-500' },
-    { id: 6, name: 'Công nghệ mới', icon: '⚡', color: 'bg-yellow-500' }
-  ];
+  // Available categories (loaded from service)
+  categories: ForumCategory[] = [];
 
   // Available tags
   availableTags: PostTag[] = [
@@ -85,7 +63,8 @@ export class PostCreatorComponent implements OnInit, OnDestroy {
 
   constructor(
     private formBuilder: FormBuilder,
-    public themeService: ThemeService
+    public themeService: ThemeService,
+    private forumService: ForumService
   ) {
     this.postForm = this.formBuilder.group({
       title: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(200)]],
@@ -96,6 +75,13 @@ export class PostCreatorComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // Load categories from service
+    this.forumService.categories$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(categories => {
+        this.categories = categories;
+      });
+
     // Subscribe to content changes for word count
     this.postForm.get('content')?.valueChanges
       .pipe(takeUntil(this.destroy$))
@@ -270,21 +256,30 @@ export class PostCreatorComponent implements OnInit, OnDestroy {
 
     const formValue = this.postForm.value;
     const postRequest: CreatePostRequest = {
+      categoryId: formValue.categoryId,
       title: formValue.title?.trim(),
       content: formValue.content?.trim(),
-      categoryId: formValue.categoryId,
-      tags: this.selectedTags.map(tag => tag.id),
       isQuestion: formValue.isQuestion || false,
-      attachments: this.selectedFiles.length > 0 ? this.selectedFiles : undefined
+      tags: this.selectedTags.map(tag => tag.name) // Use tag names instead of IDs
     };
 
-    // Simulate API call
-    setTimeout(() => {
-      this.postCreated.emit(postRequest);
-      this.resetForm();
-      this.isSubmitting = false;
-      this.closeModal.emit();
-    }, 2000);
+    // Call the real API
+    this.forumService.createPost(postRequest)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (result) => {
+          console.log('Post created successfully:', result);
+          this.postCreated.emit(postRequest);
+          this.resetForm();
+          this.isSubmitting = false;
+          this.closeModal.emit();
+        },
+        error: (error) => {
+          console.error('Error creating post:', error);
+          this.showError('Có lỗi xảy ra khi tạo bài viết. Vui lòng thử lại.');
+          this.isSubmitting = false;
+        }
+      });
   }
 
   resetForm(): void {
@@ -310,7 +305,7 @@ export class PostCreatorComponent implements OnInit, OnDestroy {
     }
   }
 
-  getCategoryById(id: number): PostCategory | undefined {
+  getCategoryById(id: number): ForumCategory | undefined {
     return this.categories.find(cat => cat.id === id);
   }
 

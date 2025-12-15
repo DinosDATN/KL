@@ -9,8 +9,8 @@ INSERT INTO course_coupons (
   discount_value, 
   min_purchase_amount,
   valid_from, 
-  valid_to, 
-  max_uses,
+  valid_until, 
+  usage_limit,
   is_active,
   created_at,
   updated_at
@@ -36,15 +36,15 @@ INSERT INTO course_coupons (
   discount_value, 
   min_purchase_amount,
   valid_from, 
-  valid_to, 
-  max_uses,
+  valid_until, 
+  usage_limit,
   is_active,
   created_at,
   updated_at
 ) VALUES (
   'SAVE50K',
   'Giảm 50,000đ cho đơn hàng từ 200,000đ',
-  'fixed',
+  'fixed_amount',
   50000.00,
   200000,
   NOW(),
@@ -64,8 +64,8 @@ INSERT INTO course_coupons (
   min_purchase_amount,
   max_discount_amount,
   valid_from, 
-  valid_to, 
-  max_uses,
+  valid_until, 
+  usage_limit,
   is_active,
   created_at,
   updated_at
@@ -92,8 +92,8 @@ INSERT INTO course_coupons (
   discount_value, 
   min_purchase_amount,
   valid_from, 
-  valid_to, 
-  max_uses,
+  valid_until, 
+  usage_limit,
   is_active,
   created_at,
   updated_at
@@ -119,15 +119,15 @@ INSERT INTO course_coupons (
   discount_value, 
   min_purchase_amount,
   valid_from, 
-  valid_to, 
-  max_uses,
+  valid_until, 
+  usage_limit,
   is_active,
   created_at,
   updated_at
 ) VALUES (
   'VIP100K',
   'Giảm 100,000đ cho khóa học từ 1,000,000đ',
-  'fixed',
+  'fixed_amount',
   100000.00,
   1000000,
   NOW(),
@@ -204,14 +204,12 @@ SET @test_course_id = LAST_INSERT_ID();
 INSERT INTO course_modules (
   course_id,
   title,
-  description,
   position,
   created_at,
   updated_at
 ) VALUES (
   @test_course_id,
   'Module 1: Giới thiệu',
-  'Module giới thiệu về khóa học',
   1,
   NOW(),
   NOW()
@@ -223,22 +221,18 @@ SET @test_module_id = LAST_INSERT_ID();
 INSERT INTO course_lessons (
   module_id,
   title,
-  description,
   type,
   content,
   duration,
   position,
-  is_preview,
   created_at,
   updated_at
 ) VALUES (
   @test_module_id,
   'Bài 1: Hướng dẫn thanh toán',
-  'Hướng dẫn cách thanh toán khóa học',
   'video',
   'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
   15,
-  1,
   1,
   NOW(),
   NOW()
@@ -253,9 +247,9 @@ SELECT
   min_purchase_amount,
   max_discount_amount,
   valid_from,
-  valid_to,
-  max_uses,
-  current_uses,
+  valid_until,
+  usage_limit,
+  used_count,
   is_active
 FROM course_coupons
 WHERE is_active = 1
