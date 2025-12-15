@@ -1,27 +1,43 @@
-# 🔒 Security Fix: User Endpoints Protection
+# 🔒 Comprehensive API Security Fix
 
 ## Vấn đề đã phát hiện
-API endpoint `/api/v1/users` đang trả về thông tin tất cả người dùng mà không cần xác thực, tạo ra lỗ hổng bảo mật nghiêm trọng.
+Nhiều API endpoints đang trả về thông tin nhạy cảm mà không cần xác thực, cho phép bất kỳ ai truy cập:
+- `/api/v1/users` - Danh sách tất cả người dùng
+- `/api/v1/courses` - Thông tin chi tiết khóa học
+- `/api/v1/problems` - Dữ liệu bài tập
+- Các endpoints khác có thể lộ thông tin
 
-## Các thay đổi đã thực hiện
+## Giải pháp toàn diện đã áp dụng
 
-### 1. Bảo vệ User Management Endpoints (`api/src/routes/userRoutes.js`)
+### 1. Origin Protection Middleware (`api/src/middleware/originMiddleware.js`)
 ```javascript
-// Trước (không an toàn):
-router.get("/", userController.getAllUsers);
-router.get("/:id", userController.getUserById);
+// Chỉ cho phép requests từ frontend domains được phép
+const allowedOrigins = [
+  'https://pdkhang.online',
+  'https://www.pdkhang.online',
+  'http://localhost:4200'
+];
+```
 
-// Sau (đã bảo vệ):
+### 2. Bảo vệ User Management Endpoints (`api/src/routes/userRoutes.js`)
+```javascript
+// Chỉ admin mới có thể truy cập:
 router.get("/", authenticateToken, requireRole('admin'), userController.getAllUsers);
 router.get("/:id", authenticateToken, requireRole('admin'), userController.getUserById);
 ```
 
-### 2. Bảo vệ Problem Submission Endpoints (`api/src/routes/problemRoutes.js`)
+### 3. Bảo vệ Course Endpoints (`api/src/routes/courseRoutes.js`)
 ```javascript
-// Thêm xác thực cho các endpoint submissions:
-router.get('/:id/submissions', authenticateToken, problemController.getProblemSubmissions);
-router.get('/dashboard/submissions', authenticateToken, problemController.getAllSubmissions);
-router.get('/dashboard/stats', authenticateToken, problemController.getSubmissionStats);
+// Sử dụng protected public endpoints:
+router.get('/', protectedPublicEndpoint, courseController.getAllCourses);
+router.get('/:id', protectedPublicEndpoint, courseController.getCourseById);
+```
+
+### 4. Bảo vệ Problem Endpoints (`api/src/routes/problemRoutes.js`)
+```javascript
+// Thêm optional auth để kiểm soát dữ liệu:
+router.get('/', optionalAuth, problemController.getAllProblems);
+router.get('/:id', optionalAuth, problemController.getProblemById);
 ```
 
 ## Cách deploy

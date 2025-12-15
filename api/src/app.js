@@ -67,14 +67,24 @@ handleConnection(io);
 
 // Middleware
 const cookieParser = require('cookie-parser');
+const { checkOrigin } = require('./middleware/originMiddleware');
 
 // ✅ CORS with credentials support for HttpOnly cookies
 app.use(cors({
-  origin: process.env.CLIENT_URL || "http://localhost:4200",
+  origin: [
+    process.env.CLIENT_URL || "http://localhost:4200",
+    "https://pdkhang.online",
+    "https://www.pdkhang.online",
+    "http://localhost:4200",
+    "http://127.0.0.1:4200"
+  ],
   credentials: true, // ✅ Important: Allow cookies to be sent
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
+
+// 🔒 Origin protection - chỉ cho phép frontend gọi API
+app.use(checkOrigin);
 
 app.use(cookieParser()); // ✅ Parse cookies
 app.use(express.json({ limit: "10mb" }));

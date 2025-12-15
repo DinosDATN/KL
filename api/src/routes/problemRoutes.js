@@ -1,20 +1,20 @@
 const express = require('express');
 const problemController = require('../controllers/problemController');
 const judgeMiddleware = require('../middleware/judgeMiddleware');
-const { authenticateToken } = require('../middleware/authMiddleware');
+const { authenticateToken, optionalAuth } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-// Problem CRUD operations
-router.get('/', problemController.getAllProblems);
+// Problem CRUD operations - add optional auth for better data
+router.get('/', optionalAuth, problemController.getAllProblems);
 router.get('/featured', problemController.getFeaturedProblems);
 router.get('/popular', problemController.getPopularProblems);
 router.get('/new', problemController.getNewProblems);
-router.get('/:id', problemController.getProblemById);
+router.get('/:id', optionalAuth, problemController.getProblemById);
 
 // Problem filtering and grouping
-router.get('/difficulty/:difficulty', problemController.getProblemsByDifficulty);
-router.get('/category/:category_id', problemController.getProblemsByCategory);
+router.get('/difficulty/:difficulty', optionalAuth, problemController.getProblemsByDifficulty);
+router.get('/category/:category_id', optionalAuth, problemController.getProblemsByCategory);
 
 // Categories and Tags
 router.get('/data/categories', problemController.getCategories);
