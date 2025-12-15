@@ -2,32 +2,32 @@
 <div class="chat-container flex bg-gray-100 dark:bg-gray-900 h-screen">
   <!-- Chat Sidebar -->
   <div [ngClass]="{
-      'w-80 flex-shrink-0 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col':
+      'desktop-sidebar flex-shrink-0 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col':
         !isMobileView,
-      'fixed inset-y-0 left-0 z-50 w-80 bg-white dark:bg-gray-800 shadow-xl transform transition-transform flex flex-col':
+      'fixed inset-y-0 left-0 z-50 w-full max-w-sm bg-white dark:bg-gray-800 shadow-xl transform transition-transform flex flex-col':
         isMobileView,
       'translate-x-0': showSidebar,
       '-translate-x-full': isMobileView && !showSidebar
     }">
     <!-- Sidebar Header with Mode Tabs -->
-    <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+    <div [ngClass]="{'p-4': !isMobileView, 'mobile-padding': isMobileView}" class="border-b border-gray-200 dark:border-gray-700">
       <div class="flex space-x-1 mb-4 bg-gray-100 dark:bg-gray-700 p-1 rounded-lg">
         <button (click)="setChatMode('groups')" [class.bg-white]="chatMode === 'groups' && !themeService.isDarkMode()"
           [class.bg-gray-800]="chatMode === 'groups' && themeService.isDarkMode()"
-          [class.text-blue-600]="chatMode === 'groups'" [class.shadow-sm]="chatMode === 'groups'" class="flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all text-center
-                 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+          [class.text-blue-600]="chatMode === 'groups'" [class.shadow-sm]="chatMode === 'groups'" 
+          [ngClass]="{'flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all text-center text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300': !isMobileView, 'flex-1 mobile-tab rounded-md transition-all text-center text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300': isMobileView}">
           Nhóm
         </button>
         <button (click)="setChatMode('private')" [class.bg-white]="chatMode === 'private' && !themeService.isDarkMode()"
           [class.bg-gray-800]="chatMode === 'private' && themeService.isDarkMode()"
-          [class.text-blue-600]="chatMode === 'private'" [class.shadow-sm]="chatMode === 'private'" class="flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all text-center
-                 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+          [class.text-blue-600]="chatMode === 'private'" [class.shadow-sm]="chatMode === 'private'" 
+          [ngClass]="{'flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all text-center text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300': !isMobileView, 'flex-1 mobile-tab rounded-md transition-all text-center text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300': isMobileView}">
           Riêng tư
         </button>
         <button (click)="setChatMode('friends')" [class.bg-white]="chatMode === 'friends' && !themeService.isDarkMode()"
           [class.bg-gray-800]="chatMode === 'friends' && themeService.isDarkMode()"
-          [class.text-blue-600]="chatMode === 'friends'" [class.shadow-sm]="chatMode === 'friends'" class="flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all text-center
-                 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+          [class.text-blue-600]="chatMode === 'friends'" [class.shadow-sm]="chatMode === 'friends'" 
+          [ngClass]="{'flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all text-center text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300': !isMobileView, 'flex-1 mobile-tab rounded-md transition-all text-center text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300': isMobileView}">
           Bạn bè
         </button>
       </div>
@@ -38,27 +38,30 @@
           [class.bg-gray-700]="friendsTab === 'list' && themeService.isDarkMode()"
           [class.text-blue-600]="friendsTab === 'list'" [class.shadow-sm]="friendsTab === 'list'" class="flex-1 px-2 py-1 text-xs font-medium rounded transition-all text-center
                  text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100">
-          Danh sách
+          <span class="hidden sm:inline">Danh sách</span>
+          <span class="sm:hidden">DS</span>
         </button>
         <button (click)="setFriendsTab('requests')"
           [class.bg-white]="friendsTab === 'requests' && !themeService.isDarkMode()"
           [class.bg-gray-700]="friendsTab === 'requests' && themeService.isDarkMode()"
           [class.text-blue-600]="friendsTab === 'requests'" [class.shadow-sm]="friendsTab === 'requests'" class="flex-1 px-2 py-1 text-xs font-medium rounded transition-all text-center
                  text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100">
-          Lời mời
+          <span class="hidden sm:inline">Lời mời</span>
+          <span class="sm:hidden">Mời</span>
         </button>
         <button (click)="setFriendsTab('search')"
           [class.bg-white]="friendsTab === 'search' && !themeService.isDarkMode()"
           [class.bg-gray-700]="friendsTab === 'search' && themeService.isDarkMode()"
           [class.text-blue-600]="friendsTab === 'search'" [class.shadow-sm]="friendsTab === 'search'" class="flex-1 px-2 py-1 text-xs font-medium rounded transition-all text-center
                  text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100">
-          Tìm kiếm
+          <span class="hidden sm:inline">Tìm kiếm</span>
+          <span class="sm:hidden">Tìm</span>
         </button>
       </div>
     </div>
 
     <!-- Sidebar Content -->
-    <div class="flex-1 overflow-hidden min-w-[355px]">
+    <div class="flex-1 overflow-hidden" [ngClass]="{'min-w-[420px]': !isMobileView, 'min-w-0': isMobileView}">
       <!-- Group Chat Sidebar -->
       <div *ngIf="chatMode === 'groups'" class="h-full">
         <app-chat-sidebar [rooms]="getFilteredRooms()" [currentUser]="currentUser!" [selectedRoom]="selectedRoom"
@@ -68,22 +71,22 @@
       </div>
 
       <!-- Private Chat Mode -->
-      <div *ngIf="chatMode === 'private'" class="h-full p-4">
+      <div *ngIf="chatMode === 'private'" class="h-full">
         <app-private-chat-sidebar [searchTerm]="searchPrivateChatTerm" (searchChanged)="searchPrivateChatTerm = $event">
         </app-private-chat-sidebar>
       </div>
 
       <!-- Friends Management -->
       <div *ngIf="chatMode === 'friends'" class="h-full">
-        <div *ngIf="friendsTab === 'list'" class="h-full p-4">
+        <div *ngIf="friendsTab === 'list'" [ngClass]="{'h-full p-4': !isMobileView, 'h-full mobile-padding': isMobileView}">
           <app-friends-list (startPrivateChat)="onStartPrivateChat($event)"></app-friends-list>
         </div>
 
-        <div *ngIf="friendsTab === 'requests'" class="h-full p-4">
+        <div *ngIf="friendsTab === 'requests'" [ngClass]="{'h-full p-4': !isMobileView, 'h-full mobile-padding': isMobileView}">
           <app-friend-requests></app-friend-requests>
         </div>
 
-        <div *ngIf="friendsTab === 'search'" class="h-full p-4">
+        <div *ngIf="friendsTab === 'search'" [ngClass]="{'h-full p-4': !isMobileView, 'h-full mobile-padding': isMobileView}">
           <app-user-search></app-user-search>
         </div>
       </div>
@@ -97,18 +100,18 @@
   <!-- Main Chat Area -->
   <div class="chat-main-area flex-1">
     <!-- Mobile Header -->
-    <div *ngIf="isMobileView" class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
+    <div *ngIf="isMobileView" class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-3 sm:p-4">
       <div class="flex items-center justify-between">
         <button (click)="toggleSidebar()"
           class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
           </svg>
         </button>
-        <h1 class="text-lg font-semibold text-gray-900 dark:text-white">
-          Chat - {{chatMode === 'groups' ? 'Nhóm' : chatMode === 'private' ? 'Riêng tư' : 'Bạn bè'}}
+        <h1 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate mx-2">
+          <span class="hidden sm:inline">Chat - </span>{{chatMode === 'groups' ? 'Nhóm' : chatMode === 'private' ? 'Riêng tư' : 'Bạn bè'}}
         </h1>
-        <div class="w-10"></div>
+        <div class="w-9 sm:w-10"></div>
         <!-- Spacer for centering -->
       </div>
     </div>
