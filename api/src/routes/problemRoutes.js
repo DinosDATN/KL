@@ -65,11 +65,11 @@ router.post('/:id/batch-submit',
   problemController.batchSubmitCode
 );
 
-router.get('/:id/submissions', problemController.getProblemSubmissions);
+router.get('/:id/submissions', authenticateToken, problemController.getProblemSubmissions);
 
-// Assignment dashboard endpoints
-router.get('/dashboard/submissions', problemController.getAllSubmissions);
-router.get('/dashboard/stats', problemController.getSubmissionStats);
+// Assignment dashboard endpoints - require authentication
+router.get('/dashboard/submissions', authenticateToken, problemController.getAllSubmissions);
+router.get('/dashboard/stats', authenticateToken, problemController.getSubmissionStats);
 
 // Async submission handling with middleware
 router.post('/async-submit', 

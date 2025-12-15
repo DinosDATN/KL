@@ -1,15 +1,15 @@
 const express = require("express");
 const userController = require("../controllers/userController");
-const { authenticateToken } = require("../middleware/authMiddleware");
+const { authenticateToken, requireRole } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-// Public user routes (admin only - would need admin middleware in production)
-router.get("/", userController.getAllUsers); // GET /api/v1/users
-router.get("/:id", userController.getUserById); // GET /api/v1/users/:id
-router.post("/", userController.createUser); // POST /api/v1/users
-router.put("/:id", userController.updateUser); // PUT /api/v1/users/:id
-router.delete("/:id", userController.deleteUser); // DELETE /api/v1/users/:id
+// Admin-only user management routes - require authentication and admin role
+router.get("/", authenticateToken, requireRole('admin'), userController.getAllUsers); // GET /api/v1/users
+router.get("/:id", authenticateToken, requireRole('admin'), userController.getUserById); // GET /api/v1/users/:id
+router.post("/", authenticateToken, requireRole('admin'), userController.createUser); // POST /api/v1/users
+router.put("/:id", authenticateToken, requireRole('admin'), userController.updateUser); // PUT /api/v1/users/:id
+router.delete("/:id", authenticateToken, requireRole('admin'), userController.deleteUser); // DELETE /api/v1/users/:id
 
 // Protected profile routes
 router.get("/profile/me", authenticateToken, userController.getProfile); // GET /api/v1/users/profile/me
