@@ -1,0 +1,226 @@
+<!-- About Page -->
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+  <!-- Hero Section -->
+  <section class="relative bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800 dark:from-blue-800 dark:via-purple-800 dark:to-blue-900 text-white py-20">
+    <div class="absolute inset-0 bg-black/20"></div>
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <h1 class="text-4xl md:text-6xl font-bold mb-6 animate-fade-in">
+        Về chúng tôi
+      </h1>
+      <p class="text-xl text-blue-100 dark:text-blue-200 mb-8 max-w-3xl mx-auto leading-relaxed">
+        L-FYS - Nền tảng học lập trình hàng đầu Việt Nam, nơi ước mơ trở thành lập trình viên của bạn thành hiện thực.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+        <button (click)="scrollToSection('mission')" 
+          class="bg-white hover:bg-gray-100 text-blue-600 font-bold py-3 px-8 rounded-full transition-all transform hover:scale-105 shadow-lg">
+          Tìm hiểu thêm
+        </button>
+        <a routerLink="/courses"
+          class="border-2 border-white text-white hover:bg-white hover:text-blue-600 font-bold py-3 px-8 rounded-full transition-all">
+          Khám phá khóa học
+        </a>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- Mission Section -->
+  <section id="mission" class="py-16 bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+          Sứ mệnh của chúng tôi
+        </h2>
+        <p class="text-gray-600 dark:text-gray-300 max-w-3xl mx-auto text-lg leading-relaxed">
+          Chúng tôi tin rằng mọi người đều có thể học lập trình và tạo ra những điều tuyệt vời. 
+          L-FYS được sinh ra để làm cho việc học lập trình trở nên dễ tiếp cận, thú vị và hiệu quả hơn bao giờ hết.
+        </p>
+      </div>
+
+      <div class="grid lg:grid-cols-2 gap-12 items-center">
+        <div>
+          <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+            Tại sao chọn L-FYS?
+          </h3>
+          <div class="space-y-6">
+            <div *ngFor="let feature of features" class="flex items-start space-x-4">
+              <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <i class="text-white text-lg" [class]="'icon-' + feature.icon"></i>
+              </div>
+              <div>
+                <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">{{ feature.title }}</h4>
+                <p class="text-gray-600 dark:text-gray-300">{{ feature.description }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="relative">
+          <div class="bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl p-8 text-white">
+            <h3 class="text-2xl font-bold mb-4">Tầm nhìn 2030</h3>
+            <p class="text-blue-100 mb-6">
+              Trở thành nền tảng giáo dục công nghệ hàng đầu Đông Nam Á, 
+              đào tạo 1 triệu lập trình viên chất lượng cao.
+            </p>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="text-center">
+                <div class="text-3xl font-bold">1M+</div>
+                <div class="text-blue-100 text-sm">Học viên mục tiêu</div>
+              </div>
+              <div class="text-center">
+                <div class="text-3xl font-bold">10+</div>
+                <div class="text-blue-100 text-sm">Quốc gia</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Timeline Section -->
+  <section class="py-16 bg-white dark:bg-gray-800 transition-colors duration-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+          Hành trình phát triển
+        </h2>
+        <p class="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+          Từ một ý tưởng đơn giản đến nền tảng học lập trình hàng đầu Việt Nam
+        </p>
+      </div>
+
+      <div class="relative">
+        <!-- Timeline line -->
+        <div class="absolute left-1/2 transform -translate-x-1/2 w-1 h-full bg-gradient-to-b from-blue-500 to-purple-600 hidden md:block"></div>
+        
+        <div class="space-y-12">
+          <div *ngFor="let milestone of milestones; let i = index" 
+               class="relative flex items-center" 
+               [class.md:flex-row-reverse]="i % 2 === 1">
+            
+            <!-- Timeline dot -->
+            <div class="absolute left-1/2 transform -translate-x-1/2 w-4 h-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full border-4 border-white dark:border-gray-800 hidden md:block z-10"></div>
+            
+            <!-- Content -->
+            <div class="w-full md:w-5/12" [class.md:text-right]="i % 2 === 1">
+              <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+                <div class="flex items-center mb-4" [class.justify-end]="i % 2 === 1">
+                  <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mr-4" [class.mr-0]="i % 2 === 1" [class.ml-4]="i % 2 === 1">
+                    <i class="text-white text-lg" [class]="'icon-' + milestone.icon"></i>
+                  </div>
+                  <div>
+                    <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ milestone.year }}</div>
+                  </div>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">{{ milestone.title }}</h3>
+                <p class="text-gray-600 dark:text-gray-300">{{ milestone.description }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Team Section -->
+  <section class="py-16 bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+          Đội ngũ của chúng tôi
+        </h2>
+        <p class="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+          Những con người tài năng và đam mê đứng sau thành công của L-FYS
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div *ngFor="let member of teamMembers" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group">
+          <div class="relative">
+            <img [src]="member.avatar" [alt]="member.name" class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          </div>
+          
+          <div class="p-6">
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-1">{{ member.name }}</h3>
+            <p class="text-blue-600 dark:text-blue-400 font-medium mb-3">{{ member.role }}</p>
+            <p class="text-gray-600 dark:text-gray-300 text-sm mb-4 leading-relaxed">{{ member.bio }}</p>
+            
+            <!-- Skills -->
+            <div class="mb-4">
+              <div class="flex flex-wrap gap-2">
+                <span *ngFor="let skill of member.skills" 
+                      class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs rounded-full">
+                  {{ skill }}
+                </span>
+              </div>
+            </div>
+            
+            <!-- Social Links -->
+            <div class="flex space-x-3" *ngIf="member.social">
+              <a *ngIf="member.social.github" [href]="member.social.github" target="_blank" 
+                 class="w-8 h-8 bg-gray-200 dark:bg-gray-700 hover:bg-gray-800 dark:hover:bg-gray-600 rounded-full flex items-center justify-center transition-colors">
+                <i class="icon-github text-sm"></i>
+              </a>
+              <a *ngIf="member.social.linkedin" [href]="member.social.linkedin" target="_blank"
+                 class="w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center transition-colors">
+                <i class="icon-linkedin text-sm"></i>
+              </a>
+              <a *ngIf="member.social.email" [href]="'mailto:' + member.social.email"
+                 class="w-8 h-8 bg-green-600 hover:bg-green-700 text-white rounded-full flex items-center justify-center transition-colors">
+                <i class="icon-mail text-sm"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Values Section -->
+  <section class="py-16 bg-white dark:bg-gray-800 transition-colors duration-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+          Giá trị cốt lõi
+        </h2>
+        <p class="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+          Những giá trị định hướng mọi hoạt động và quyết định của chúng tôi
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div *ngFor="let value of values" class="text-center group">
+          <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+            <i class="text-white text-3xl" [class]="'icon-' + value.icon"></i>
+          </div>
+          <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">{{ value.title }}</h3>
+          <p class="text-gray-600 dark:text-gray-300 leading-relaxed">{{ value.description }}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="py-20 bg-gradient-to-r from-blue-600 to-purple-700 dark:from-blue-700 dark:to-purple-800">
+    <div class="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+      <h2 class="text-3xl md:text-4xl font-bold text-white mb-6">
+        Sẵn sàng bắt đầu hành trình học tập?
+      </h2>
+      <p class="text-xl text-blue-100 dark:text-blue-200 mb-8">
+        Tham gia cùng hàng nghìn học viên khác và xây dựng sự nghiệp lập trình của bạn
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a routerLink="/courses"
+          class="bg-white hover:bg-gray-100 text-blue-600 font-bold py-4 px-8 rounded-full transition-all transform hover:scale-105 shadow-lg">
+          Khám phá khóa học
+        </a>
+        <a routerLink="/contact"
+          class="border-2 border-white text-white hover:bg-white hover:text-blue-600 font-bold py-4 px-8 rounded-full transition-all">
+          Liên hệ với chúng tôi
+        </a>
+      </div>
+    </div>
+  </section>
+</div>
