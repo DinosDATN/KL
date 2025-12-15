@@ -37,7 +37,7 @@
               "node_modules/ace-builds/src-noconflict/ext-language_tools.js"
             ],
             "server": "src/main.server.ts",
-            "prerender": true,
+            "prerender": false,
             "ssr": {
               "entry": "server.ts"
             }
