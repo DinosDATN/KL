@@ -423,23 +423,147 @@ Sau khi cấu hình, bạn có thể truy cập:
 - **Frontend**: `http://pdkhang.online`    # 🔄 Thay bằng domain của bạn
 - **API**: `http://api.pdkhang.online/api/v1/health`    # 🔄 Thay bằng API subdomain
 - **phpMyAdmin**: `http://phpmyadmin.pdkhang.online`    # 🔄 Thay bằng subdomain (nếu có)
+cd /var/www/KL/cli
+npm run build
+sudo cp -r dist/cli/browser/* /var/www/html/
+sudo mv /var/www/html/index.csr.html /var/www/html/index.html
+sudo chown -R www-data:www-data /var/www/html/
 
 ## Bước 8: Cấu Hình SSL với Let's Encrypt
 
-### 8.1 Cài đặt SSL certificate
+### 8.1 Kiểm tra trước khi cài SSL
+Đảm bảo tất cả services đang hoạt động:
 ```bash
-sudo certbot --nginx -d your-domain.com -d www.your-domain.com    # 🔄 Thay bằng domain của bạn
+# Kiểm tra PM2 services
+pm2 status
+
+# Kiểm tra Nginx
+sudo nginx -t
+sudo systemctl status nginx
+
+# Test các endpoints
+curl http://pdkhang.online    # 🔄 Thay bằng domain của bạn
+curl http://api.pdkhang.online/api/v1/health    # 🔄 Thay bằng API subdomain
 ```
 
-### 8.2 Tự động gia hạn SSL
+### 8.2 Cài đặt SSL certificate cho tất cả domains
 ```bash
+# Cài SSL cho main domain và API subdomain
+sudo certbot --nginx -d pdkhang.online -d www.pdkhang.online -d api.pdkhang.online    # 🔄 Thay bằng domains của bạn
+
+# Nếu có phpMyAdmin subdomain
+sudo certbot --nginx -d phpmyadmin.pdkhang.online    # 🔄 Tùy chọn
+```
+
+**Lưu ý**: Certbot sẽ tự động:
+- Tạo SSL certificates
+- Cập nhật cấu hình Nginx
+- Redirect HTTP → HTTPS
+- Thiết lập auto-renewal
+
+### 8.3 Kiểm tra SSL hoạt động
+```bash
+# Test HTTPS endpoints
+curl https://pdkhang.online    # 🔄 Thay bằng domain của bạn
+curl https://api.pdkhang.online/api/v1/health    # 🔄 Thay bằng API subdomain
+
+# Kiểm tra SSL certificate info
+sudo certbot certificates
+```
+
+### 8.4 Cập nhật environment cho HTTPS
+Sau khi có SSL, cập nhật các cấu hình để dùng HTTPS:
+
+**API .env:**
+```bash
+nano /var/www/KL/api/.env    # 🔄 Thay KL bằng tên thư mục dự án
+```
+
+Cập nhật:
+```env
+# CORS Configuration
+CLIENT_URL=https://pdkhang.online    # 🔄 Thay bằng domain của bạn
+ALLOWED_ORIGINS=http://localhost:4200,https://pdkhang.online,https://www.pdkhang.online,https://api.pdkhang.online    # 🔄 Thay bằng domains của bạn
+
+# OAuth Callbacks (cập nhật thành HTTPS)
+GOOGLE_CALLBACK_URL=https://pdkhang.online/api/v1/auth/google/callback    # 🔄 Thay bằng domain của bạn
+GITHUB_CALLBACK_URL=https://pdkhang.online/api/v1/auth/github/callback    # 🔄 Thay bằng domain của bạn
+
+# VNPay Return URL
+VNPAY_RETURN_URL=https://pdkhang.online/payment/vnpay-return    # 🔄 Thay bằng domain của bạn
+```
+
+**Angular environment.prod.ts:**
+```bash
+nano /var/www/KL/cli/src/environments/environment.prod.ts    # 🔄 Thay KL bằng tên thư mục dự án
+```
+
+Cập nhật:
+```typescript
+export const environment = {
+  production: true,
+  apiUrl: '/api/v1', // Relative URL - Nginx sẽ proxy
+  apiTimeout: 15000,
+  enableLogging: false
+};
+```
+
+### 8.5 Restart services và rebuild
+```bash
+# Restart API với cấu hình mới
+pm2 restart api-backend
+
+# Rebuild và deploy Angular
+cd /var/www/KL/cli    # 🔄 Thay KL bằng tên thư mục dự án
+npm run build
+sudo cp -r dist/cli/browser/* /var/www/html/
+sudo mv /var/www/html/index.csr.html /var/www/html/index.html 2>/dev/null || true
+sudo chown -R www-data:www-data /var/www/html/
+```
+
+### 8.6 Tự động gia hạn SSL
+```bash
+# Thêm cronjob để tự động gia hạn
 sudo crontab -e
 ```
 
 Thêm dòng:
-```
+```bash
+# Gia hạn SSL certificate mỗi ngày lúc 12:00
 0 12 * * * /usr/bin/certbot renew --quiet
+
+# Reload Nginx sau khi gia hạn (nếu cần)
+5 12 * * * /usr/bin/systemctl reload nginx
 ```
+
+### 8.7 Kiểm tra hoạt động cuối cùng
+Sau khi cài SSL, truy cập:
+- **Frontend**: `https://pdkhang.online`    # 🔄 Thay bằng domain của bạn
+- **API**: `https://api.pdkhang.online/api/v1/health`    # 🔄 Thay bằng API subdomain
+- **phpMyAdmin**: `https://phpmyadmin.pdkhang.online`    # 🔄 Nếu có
+
+### 8.8 Troubleshooting SSL
+Nếu gặp lỗi SSL:
+
+```bash
+# Kiểm tra SSL certificate
+sudo certbot certificates
+
+# Test SSL configuration
+sudo nginx -t
+
+# Xem logs SSL
+sudo tail -f /var/log/letsencrypt/letsencrypt.log
+
+# Renew thủ công nếu cần
+sudo certbot renew --dry-run
+```
+
+**Lỗi thường gặp:**
+- **Domain không resolve**: Kiểm tra DNS records
+- **Port 80/443 bị block**: Kiểm tra firewall
+- **Nginx config lỗi**: Chạy `sudo nginx -t`
+- **Rate limit**: Chờ 1 giờ rồi thử lại
 
 ## Bước 9: Cấu Hình Firewall
 
