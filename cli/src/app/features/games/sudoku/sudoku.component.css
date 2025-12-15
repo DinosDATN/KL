@@ -73,13 +73,56 @@
 @media (max-width: 640px) {
   .grid {
     max-width: 100%;
+    margin: 0 auto;
   }
 
   .grid > div > div {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
+    min-height: 2.5rem;
   }
 
   .grid > div > div > div[class*="grid-cols-3"] {
-    font-size: 0.5rem;
+    font-size: 0.45rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .grid > div > div {
+    font-size: 1rem;
+    min-height: 2.2rem;
+  }
+  
+  .grid > div > div > div[class*="grid-cols-3"] {
+    font-size: 0.4rem;
+  }
+}
+
+/* Mobile scroll improvements */
+@media (max-width: 1024px) {
+  /* Ensure proper scrolling on mobile */
+  .sudoku-container {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  /* Add padding bottom for mobile to ensure content is accessible */
+  .mobile-padding {
+    padding-bottom: 4rem;
+  }
+}
+
+/* Improve touch targets on mobile */
+@media (max-width: 768px) {
+  /* Make buttons more touch-friendly */
+  button {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+  
+  /* Improve grid cell touch targets */
+  .grid > div > div {
+    min-height: 2.75rem;
+    touch-action: manipulation;
   }
 }

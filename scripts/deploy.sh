@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# Simple deploy script
+# Usage: ./deploy.sh
+
+echo "🚀 Starting simple deployment..."
+
+# Navigate to project directory
+cd /var/www/KL
+
+# Pull latest code
+echo "📥 Pulling latest code..."
+git pull origin main
+
+# Update API Backend
+echo "🔄 Updating API Backend..."
+cd api
+npm install --production
+
+# Update AI Service
+echo "🔄 Updating AI Service..."
+cd ../ai
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Build and Deploy Frontend
+echo "🔄 Building and Deploying Frontend..."
+cd ../cli
+npm install
+npm run build
+
+# Copy built files to web directory
+sudo cp -r dist/cli/browser/* /var/www/html/
+sudo mv /var/www/html/index.csr.html /var/www/html/index.html 2>/dev/null || true
+sudo chown -R www-data:www-data /var/www/html/
+
+# Restart services
+echo "🔄 Restarting services..."
+pm2 restart api-backend
+pm2 restart ai-service
+
+# Check service status
+echo "✅ Deployment completed!"
+pm2 status
