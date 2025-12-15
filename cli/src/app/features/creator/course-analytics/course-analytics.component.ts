@@ -45,7 +45,6 @@ export class CourseAnalyticsComponent implements OnInit, OnDestroy {
     this.route.params.pipe(takeUntil(this.destroy$)).subscribe((params) => {
       this.courseId = +params['id'];
       this.loadCourse();
-      this.loadAnalytics();
     });
   }
 
@@ -58,15 +57,20 @@ export class CourseAnalyticsComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.creatorCourseService
       .getMyCourse(this.courseId)
-      .pipe(takeUntil(this.destroy$), finalize(() => this.loading = false))
+      .pipe(takeUntil(this.destroy$), finalize(() => (this.loading = false)))
       .subscribe({
         next: (response) => {
           if (response.success && response.data) {
             this.course = response.data;
+            // Sau khi có course thì mới tính analytics để tránh dữ liệu 0
+            this.loadAnalytics();
           }
         },
         error: () => {
-          this.notificationService.error('Lỗi', 'Không thể tải thông tin khóa học');
+          this.notificationService.error(
+            'Lỗi',
+            'Không thể tải thông tin khóa học'
+          );
         },
       });
   }

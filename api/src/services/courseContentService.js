@@ -212,10 +212,22 @@ class CourseContentService {
    */
   async getCourseEnrollmentStats(courseId) {
     try {
-      const totalEnrollments = await CourseEnrollment.count({
-        where: { course_id: courseId }
-      });
+      // Lấy thông tin khóa học để đồng bộ tổng học viên với cột `students` trong bảng courses
+      const course = await Course.findByPk(courseId);
 
+      if (!course) {
+        return {
+          totalEnrollments: 0,
+          completionRate: 0,
+          averageProgress: 0,
+          statusBreakdown: []
+        };
+      }
+
+      // Tổng học viên thống nhất lấy từ trường `students` của bảng courses
+      const totalEnrollments = parseInt(course.students) || 0;
+
+      // Giữ nguyên các thống kê chi tiết dựa trên bảng enrollments (nếu có)
       const enrollmentsByStatus = await CourseEnrollment.findAll({
         where: { course_id: courseId },
         attributes: [
@@ -232,7 +244,7 @@ class CourseContentService {
         ]
       });
 
-      const completionRate = await CourseEnrollment.count({
+      const completedCount = await CourseEnrollment.count({
         where: {
           course_id: courseId,
           status: 'completed'
@@ -241,7 +253,7 @@ class CourseContentService {
 
       return {
         totalEnrollments,
-        completionRate: totalEnrollments > 0 ? Math.round((completionRate / totalEnrollments) * 100) : 0,
+        completionRate: totalEnrollments > 0 ? Math.round((completedCount / totalEnrollments) * 100) : 0,
         averageProgress: parseFloat(avgProgress?.getDataValue('avg_progress') || 0),
         statusBreakdown: enrollmentsByStatus.map(item => ({
           status: item.status,

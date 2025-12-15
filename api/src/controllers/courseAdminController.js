@@ -653,23 +653,14 @@ class CourseAdminController {
       );
       const deletedCourses = allCourses.filter((c) => c.is_deleted);
 
-      // Get published course IDs
-      const publishedCourseIds = publishedCourses.map((c) => c.id);
+      // Tính tổng học viên dựa trên cột `students` đã lưu trong bảng courses
+      // để thống nhất với số học viên hiển thị ở từng khóa học
+      const totalStudents = publishedCourses.reduce((sum, course) => {
+        const students = parseInt(course.students) || 0;
+        return sum + students;
+      }, 0);
 
-      // Calculate total students from CourseEnrollment table (total enrollment records)
-      // This represents total enrollments across all published courses
-      let totalStudents = 0;
-      if (publishedCourseIds.length > 0) {
-        totalStudents = await CourseEnrollment.count({
-          where: {
-            course_id: {
-              [Op.in]: publishedCourseIds,
-            },
-          },
-        });
-      }
-
-      // Calculate total enrollments (same as total students for consistency)
+      // Đồng bộ: totalEnrollments = tổng học viên (sum theo courses.students)
       const totalEnrollments = totalStudents;
 
       // Calculate total revenue = sum(students * price) for all published courses

@@ -351,6 +351,98 @@ INSERT INTO course_lessons (module_id, title, content, duration, position) VALUE
 (18, 'Object-Oriented Programming in Dart', 'Classes, inheritance in Dart', 50, 2),
 (18, 'Async Programming', 'Future and async/await in Dart', 45, 3);
 
+-- Thêm nhiều lesson chi tiết cho 5 khóa học đầu tiên (khangcreator) với đủ loại document và video
+INSERT INTO course_lessons (module_id, title, content, duration, position, type) VALUES
+-- Khóa 1: Python cơ bản (modules 1-8)
+(1, 'Tài liệu: Tổng quan về cú pháp Python', 'Tài liệu chi tiết giới thiệu cú pháp cơ bản, indent, comment và best practices.', 30, 4, 'document'),
+(1, 'Video: Python overview', 'https://www.youtube.com/watch?v=_uQrJ0TkZlc', 45, 5, 'video'),
+(2, 'Tài liệu: Kiểu dữ liệu nâng cao', 'Giải thích sâu hơn về bool, None, casting và thực hành với ví dụ.', 35, 4, 'document'),
+(2, 'Video: Data types in Python', 'https://www.youtube.com/watch?v=khKv-8q7YmY', 40, 5, 'video'),
+(3, 'Tài liệu: Vòng lặp nâng cao', 'For, while kết hợp break/continue, bài tập thực hành nhỏ.', 30, 4, 'document'),
+(3, 'Video: Control flow in Python', 'https://www.youtube.com/watch?v=6iF8Xb7Z3wQ', 35, 5, 'video'),
+(4, 'Tài liệu: Viết hàm hiệu quả', 'Hướng dẫn viết hàm reusable, docstring, type hints.', 40, 4, 'document'),
+(4, 'Video: Functions in Python', 'https://www.youtube.com/watch?v=NSbOtYzIQI0', 45, 5, 'video'),
+(5, 'Tài liệu: Làm việc với List, Tuple, Dict', 'Ví dụ chi tiết CRUD trên list, tuple, dict và set.', 35, 1, 'document'),
+(5, 'Video: Data structures cơ bản', 'https://www.youtube.com/watch?v=R-HLU9Fl5ug', 40, 2, 'video'),
+(6, 'Tài liệu: OOP trong Python', 'Giới thiệu class, object, inheritance, encapsulation.', 45, 1, 'document'),
+(6, 'Video: Object-Oriented Python', 'https://www.youtube.com/watch?v=JeznW_7DlB0', 50, 2, 'video'),
+(7, 'Tài liệu: Xử lý file và exception', 'Đọc/ghi file, context manager, try/except/finally.', 40, 1, 'document'),
+(7, 'Video: File handling & exceptions', 'https://www.youtube.com/watch?v=Uh2ebFW8OYM', 45, 2, 'video'),
+(8, 'Tài liệu: Quản lý package với pip', 'Cách cài, nâng cấp package và tạo virtualenv.', 30, 1, 'document'),
+(8, 'Video: Virtualenv & packages', 'https://www.youtube.com/watch?v=N5vscPTWKOk', 35, 2, 'video'),
+
+-- Khóa 2: React & Node.js Full Stack (modules 9-16)
+(9, 'Tài liệu: Virtual DOM và rendering', 'Giải thích cơ chế Virtual DOM và re-render trong React.', 30, 4, 'document'),
+(9, 'Video: React in 30 minutes', 'https://www.youtube.com/watch?v=bMknfKXIFA8', 45, 5, 'video'),
+(10, 'Tài liệu: State lifting & composition', 'Pattern nâng cao khi chia component và quản lý state.', 35, 4, 'document'),
+(10, 'Video: React props & state', 'https://www.youtube.com/watch?v=4UZrsTqkcW4', 50, 5, 'video'),
+(11, 'Tài liệu: Hooks phổ biến', 'useState, useEffect, custom hooks với ví dụ thực tế.', 40, 1, 'document'),
+(11, 'Video: React hooks crash course', 'https://www.youtube.com/watch?v=TNhaISOUy6Q', 45, 2, 'video'),
+(12, 'Tài liệu: Routing nâng cao', 'Nested routes, protected routes và lazy loading.', 35, 1, 'document'),
+(12, 'Video: React Router v6', 'https://www.youtube.com/watch?v=Ul3y1LXxzdU', 40, 2, 'video'),
+(13, 'Tài liệu: Xây dựng REST API với Express', 'Cấu trúc dự án Node.js, router, controller, middleware.', 45, 1, 'document'),
+(13, 'Video: Node.js & Express API', 'https://www.youtube.com/watch?v=Oe421EPjeBE', 60, 2, 'video'),
+(14, 'Tài liệu: Kết nối MongoDB', 'Mongoose model, schema, validation và query.', 40, 1, 'document'),
+(14, 'Video: MongoDB + Mongoose', 'https://www.youtube.com/watch?v=bxsemcrY4gQ', 45, 2, 'video'),
+(15, 'Tài liệu: JWT Authentication', 'Giải thích access token, refresh token, bảo mật API.', 45, 1, 'document'),
+(15, 'Video: JWT Auth full example', 'https://www.youtube.com/watch?v=mbsmsi7l3r4', 50, 2, 'video'),
+(16, 'Tài liệu: Triển khai lên production', 'Best practices khi deploy Node/React, logging, monitoring.', 35, 1, 'document'),
+(16, 'Video: Deploy fullstack app', 'https://www.youtube.com/watch?v=Fdf5aTYRW0E', 40, 2, 'video'),
+
+-- Khóa 3: Flutter Development cơ bản (modules 17-24)
+(17, 'Tài liệu: Kiến trúc Flutter', 'Widget tree, rendering pipeline và hot reload.', 30, 4, 'document'),
+(17, 'Video: Flutter for beginners', 'https://www.youtube.com/watch?v=VPvVD8t02U8', 45, 5, 'video'),
+(18, 'Tài liệu: Ngôn ngữ Dart chi tiết', 'Collection, generics, async/await trong Dart.', 40, 4, 'document'),
+(18, 'Video: Dart crash course', 'https://www.youtube.com/watch?v=NrO0CJCbYLA', 45, 5, 'video'),
+(19, 'Tài liệu: Widgets cơ bản', 'Stateless vs Stateful, layout widgets thông dụng.', 35, 1, 'document'),
+(19, 'Video: Flutter widgets 101', 'https://www.youtube.com/watch?v=x0uinJvhNxI', 40, 2, 'video'),
+(20, 'Tài liệu: State management', 'setState, Provider, Riverpod overview.', 40, 1, 'document'),
+(20, 'Video: Flutter state management', 'https://www.youtube.com/watch?v=RS36gBEp8OI', 45, 2, 'video'),
+(21, 'Tài liệu: Navigation & routing', 'Named routes, on-generate-route, deep link.', 35, 1, 'document'),
+(21, 'Video: Flutter navigation', 'https://www.youtube.com/watch?v=ZnevdXDH25Q', 40, 2, 'video'),
+(22, 'Tài liệu: Gọi API trong Flutter', 'Sử dụng http/dio, xử lý lỗi và loading state.', 40, 1, 'document'),
+(22, 'Video: Flutter REST API', 'https://www.youtube.com/watch?v=7dAt-JMSCVQ', 45, 2, 'video'),
+(23, 'Tài liệu: Sử dụng native features', 'Camera, location, permission handling.', 35, 1, 'document'),
+(23, 'Video: Flutter plugins', 'https://www.youtube.com/watch?v=5gGZ5Vq7I9k', 40, 2, 'video'),
+(24, 'Tài liệu: Testing & deployment', 'Widget test, integration test và publish lên store.', 40, 1, 'document'),
+(24, 'Video: Flutter testing & release', 'https://www.youtube.com/watch?v=KjE2IDphA_U', 45, 2, 'video'),
+
+-- Khóa 4: MySQL Database Design (modules 25-32)
+(25, 'Tài liệu: Nguyên lý thiết kế CSDL', 'Phân tích yêu cầu, xác định thực thể và mối quan hệ.', 35, 1, 'document'),
+(25, 'Video: Database design basics', 'https://www.youtube.com/watch?v=ztHopE5Wnpc', 40, 2, 'video'),
+(26, 'Tài liệu: Cài đặt MySQL', 'Hướng dẫn cài đặt MySQL Server, Workbench và cấu hình ban đầu.', 30, 1, 'document'),
+(26, 'Video: Install MySQL', 'https://www.youtube.com/watch?v=u96rVINbAUI', 35, 2, 'video'),
+(27, 'Tài liệu: Ngôn ngữ SQL cơ bản', 'SELECT, INSERT, UPDATE, DELETE với ví dụ.', 40, 1, 'document'),
+(27, 'Video: SQL tutorial', 'https://www.youtube.com/watch?v=HXV3zeQKqGY', 50, 2, 'video'),
+(28, 'Tài liệu: Quan hệ bảng', '1-1, 1-n, n-n, khóa ngoại và ràng buộc.', 35, 1, 'document'),
+(28, 'Video: Table relationships', 'https://www.youtube.com/watch?v=9ylj9NR0Lcg', 40, 2, 'video'),
+(29, 'Tài liệu: Index & tối ưu truy vấn', 'Giải thích index, execution plan và tối ưu query.', 45, 1, 'document'),
+(29, 'Video: MySQL indexing', 'https://www.youtube.com/watch?v=HubezTeEGK4', 50, 2, 'video'),
+(30, 'Tài liệu: Stored procedure & function', 'Khi nào nên dùng SP, function và trigger.', 40, 1, 'document'),
+(30, 'Video: MySQL stored procedures', 'https://www.youtube.com/watch?v=uZ4YpG1o_hI', 45, 2, 'video'),
+(31, 'Tài liệu: Backup & restore', 'mysqldump, restore data, chiến lược backup.', 35, 1, 'document'),
+(31, 'Video: MySQL backup', 'https://www.youtube.com/watch?v=lWMemPN9t6Q', 40, 2, 'video'),
+(32, 'Tài liệu: Tuning hiệu năng', 'Cấu hình server, cache, connection pool.', 40, 1, 'document'),
+(32, 'Video: MySQL performance tuning', 'https://www.youtube.com/watch?v=9hCKq5K8SI8', 45, 2, 'video'),
+
+-- Khóa 5: Machine Learning với Python (modules 33-40)
+(33, 'Tài liệu: Tổng quan Machine Learning', 'Supervised, unsupervised, pipeline cơ bản.', 40, 1, 'document'),
+(33, 'Video: ML overview', 'https://www.youtube.com/watch?v=Gv9_4yMHFhI', 45, 2, 'video'),
+(34, 'Tài liệu: Python cho data science', 'NumPy, pandas, visualisation với matplotlib.', 45, 1, 'document'),
+(34, 'Video: Python for data science', 'https://www.youtube.com/watch?v=LHBE6Q9XlzI', 50, 2, 'video'),
+(35, 'Tài liệu: Thuật toán supervised', 'Linear/Logistic regression, decision tree, kNN.', 45, 1, 'document'),
+(35, 'Video: Supervised learning', 'https://www.youtube.com/watch?v=0Lt9w-BxKFQ', 50, 2, 'video'),
+(36, 'Tài liệu: Thuật toán unsupervised', 'K-means, hierarchical clustering, PCA.', 40, 1, 'document'),
+(36, 'Video: Unsupervised learning', 'https://www.youtube.com/watch?v=5X9i3H_QA3g', 45, 2, 'video'),
+(37, 'Tài liệu: Đánh giá mô hình', 'Train/test split, cross-validation, metrics.', 40, 1, 'document'),
+(37, 'Video: Model evaluation', 'https://www.youtube.com/watch?v=85dtiMz9tSo', 45, 2, 'video'),
+(38, 'Tài liệu: Neural network cơ bản', 'Perceptron, activation function, loss.', 45, 1, 'document'),
+(38, 'Video: Neural networks', 'https://www.youtube.com/watch?v=aircAruvnKk', 50, 2, 'video'),
+(39, 'Tài liệu: Deep Learning với TensorFlow', 'Build model, compile, fit và evaluate.', 45, 1, 'document'),
+(39, 'Video: TensorFlow crash course', 'https://www.youtube.com/watch?v=tPYj3fFJGjk', 55, 2, 'video'),
+(40, 'Tài liệu: Dự án ML thực tế', 'End-to-end project: chuẩn bị dữ liệu, train, deploy.', 50, 1, 'document'),
+(40, 'Video: End-to-end ML project', 'https://www.youtube.com/watch?v=0Lt9w-BxKFQ', 55, 2, 'video');
+
 -- Insert data vào bảng course_languages (60 ngôn ngữ cho các khóa học)
 INSERT INTO course_languages (course_id, language) VALUES
 (1, 'Tiếng Việt'), (1, 'English'),
@@ -443,6 +535,19 @@ INSERT INTO course_reviews (course_id, user_id, rating, comment, helpful, not_he
 (38, 29, 5, 'Web3 course future-oriented và comprehensive. dApps development section outstanding.', 145, 9, TRUE),
 (39, 20, 4, 'Apache Airflow course practical data engineering approach. Workflow orchestration rất systematic.', 67, 10, TRUE),
 (40, 18, 4, 'Figma to Code course bridges design-dev gap effectively. Modern workflow rất practical.', 89, 13, TRUE);
+
+-- Bổ sung thêm đánh giá chi tiết cho 5 khóa học đầu tiên của khangcreator
+INSERT INTO course_reviews (course_id, user_id, rating, comment, helpful, not_helpful, verified) VALUES
+(1, 52, 5, 'Là giảng viên, mình thấy khóa Python này rất phù hợp cho người mới. Nội dung rõ ràng, ví dụ thực tế.', 12, 0, TRUE),
+(1, 51, 4, 'Học xong hiểu được nền tảng Python, nhưng mình muốn thêm phần luyện tập khó hơn.', 8, 1, TRUE),
+(2, 52, 5, 'React & Node.js Full Stack được thiết kế đầy đủ từ frontend đến backend, rất tốt cho lộ trình fullstack.', 15, 0, TRUE),
+(2, 3, 5, 'Project cuối khóa giúp mình build được một app hoàn chỉnh, apply ngay vào đồ án tốt nghiệp.', 10, 1, TRUE),
+(3, 52, 4, 'Flutter course bao quát khá đầy đủ, phần state management có thể tách riêng thành module nâng cao.', 9, 1, TRUE),
+(3, 10, 5, 'Video hướng dẫn rõ ràng, build được app đầu tiên sau vài ngày.', 11, 0, TRUE),
+(4, 52, 5, 'MySQL Database Design rất tốt cho bạn nào muốn làm backend hoặc data engineer.', 13, 0, TRUE),
+(4, 7, 4, 'Phần index và tối ưu truy vấn giúp mình cải thiện hiệu năng hệ thống đáng kể.', 9, 1, TRUE),
+(5, 52, 5, 'Machine Learning với Python có lộ trình rất rõ ràng, từ math cơ bản đến deep learning.', 18, 0, TRUE),
+(5, 9, 4, 'Nội dung nhiều, cần thời gian ôn lại nhưng rất xứng đáng.', 7, 1, TRUE);
 
 -- Insert data vào bảng related_courses (60 khóa học liên quan)
 INSERT INTO related_courses (course_id, related_course_id) VALUES
