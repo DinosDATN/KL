@@ -43,10 +43,10 @@ export class FooterComponent {
     support: {
       title: 'Hỗ trợ',
       links: [
-        { label: 'Trung tâm trợ giúp', href: '/help' },
-        { label: 'FAQ', href: '/faq' },
-        { label: 'Báo lỗi', href: '/report-bug' },
-        { label: 'Yêu cầu tính năng', href: '/feature-request' }
+        { label: 'Trung tâm trợ giúp', href: '/contact' },
+        { label: 'FAQ', href: '/contact' },
+        { label: 'Báo lỗi', href: '/contact' },
+        { label: 'Yêu cầu tính năng', href: '/contact' }
       ]
     }
   };
