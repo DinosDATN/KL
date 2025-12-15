@@ -778,10 +778,8 @@ export class ChatComponent implements OnInit, OnDestroy {
   setChatMode(mode: 'groups' | 'private' | 'friends'): void {
     this.chatMode = mode;
 
-    // Close sidebar on mobile when switching modes
-    if (this.isMobileView) {
-      this.showSidebar = false;
-    }
+    // Don't close sidebar when switching modes - user is navigating within sidebar
+    // Only close sidebar when selecting a room/conversation (handled in onRoomSelected)
   }
 
   setFriendsTab(tab: 'list' | 'requests' | 'search'): void {
