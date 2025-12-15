@@ -97,12 +97,9 @@ export class ChatAiWidgetComponent
     this.detectMobile();
   }
 
-  // private detectMobile(): void {
-  //   this.isMobile = window.innerWidth < 768;
-  // }
   detectMobile(): void {
     if (isPlatformBrowser(this.platformId)) {
-      this.isMobile = window.innerWidth < 768;
+      this.isMobile = window.innerWidth <= 768;
     } else {
       this.isMobile = false;
     }

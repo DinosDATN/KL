@@ -2,10 +2,10 @@
 <button
   *ngIf="isVisible"
   (click)="scrollToTop()"
-  class="fixed z-50 w-14 h-14 bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800 hover:from-blue-700 hover:via-purple-700 hover:to-blue-900 text-white rounded-full shadow-lg hover:shadow-xl transform transition-all duration-300 ease-in-out hover:scale-110 active:scale-95 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50 flex items-center justify-center group animate-fade-in border-2 border-white/20 backdrop-blur-sm"
+  class="fixed z-50 bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800 hover:from-blue-700 hover:via-purple-700 hover:to-blue-900 text-white rounded-full shadow-lg hover:shadow-xl transform transition-all duration-300 ease-in-out hover:scale-110 active:scale-95 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50 flex items-center justify-center group animate-fade-in border-2 border-white/20 backdrop-blur-sm"
   aria-label="Back to top"
   title="Back to top"
-  style="bottom: 100px; right: 24px; width: 64px; height: 64px"
+  [style]="getButtonStyles()"
 >
   <!-- Up Arrow Icon -->
   <svg

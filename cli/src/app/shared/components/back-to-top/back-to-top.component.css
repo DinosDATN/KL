@@ -23,7 +23,7 @@ button:hover {
 /* Responsive adjustments for mobile balance with chatAI */
 @media (max-width: 768px) {
   button {
-    bottom: 50px !important;
+    bottom: 100px !important;
     right: 20px !important;
     width: 56px !important;
     height: 56px !important;
@@ -32,7 +32,7 @@ button:hover {
 
 @media (max-width: 480px) {
   button {
-    bottom: 220px !important;
+    bottom: 100px !important;
     right: 20px !important;
     width: 52px !important;
     height: 52px !important;

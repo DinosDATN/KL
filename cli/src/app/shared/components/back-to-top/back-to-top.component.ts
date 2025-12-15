@@ -1,4 +1,4 @@
-import { Component, HostListener, Inject, PLATFORM_ID, OnDestroy } from '@angular/core';
+import { Component, HostListener, Inject, PLATFORM_ID, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 
 @Component({
@@ -13,7 +13,15 @@ export class BackToTopComponent implements OnDestroy {
   private readonly scrollThreshold = 300;
   private scrollTimeout: any;
   
-  constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
+  constructor(
+    @Inject(PLATFORM_ID) private platformId: Object,
+    private cdr: ChangeDetectorRef
+  ) {}
+  
+  getButtonStyles(): string {
+    // Desktop default - CSS media queries will handle mobile
+    return 'bottom: 152px; right: 24px; width: 64px; height: 64px';
+  }
   
   @HostListener('window:scroll', [])
   onWindowScroll(): void {
@@ -27,6 +35,15 @@ export class BackToTopComponent implements OnDestroy {
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
         this.isVisible = scrollTop > this.scrollThreshold;
       }, 10);
+    }
+  }
+  
+  @HostListener('window:resize', [])
+  onWindowResize(): void {
+    // Force update styles on resize to handle mobile/desktop transitions
+    if (isPlatformBrowser(this.platformId)) {
+      // Force change detection to update styles
+      this.cdr.detectChanges();
     }
   }
   
