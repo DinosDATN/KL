@@ -108,3 +108,8 @@ Thumbs.db
 dist/
 build/
 out/
+
+# Python virtual environment
+venv/
+env/
+.venv/
