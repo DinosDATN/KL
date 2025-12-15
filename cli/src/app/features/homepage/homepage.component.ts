@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { Subject, takeUntil, finalize } from 'rxjs';
 import { HomepageService } from '../../core/services/homepage.service';
 import { ThemeService } from '../../core/services/theme.service';
@@ -50,6 +50,7 @@ export class HomepageComponent implements OnInit, OnDestroy {
   constructor(
     private homepageService: HomepageService,
     public themeService: ThemeService,
+    private router: Router,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
   
@@ -415,5 +416,30 @@ export class HomepageComponent implements OnInit, OnDestroy {
       case 'hard': return 'text-red-600 dark:text-red-400';
       default: return 'text-blue-600 dark:text-blue-400';
     }
+  }
+
+  // Navigation methods
+  navigateToCourse(courseId: number): void {
+    this.router.navigate(['/courses', courseId]);
+  }
+
+  navigateToProblem(problemId: number): void {
+    this.router.navigate(['/problems', problemId]);
+  }
+
+  navigateToAllCourses(): void {
+    this.router.navigate(['/courses']);
+  }
+
+  navigateToAllProblems(): void {
+    this.router.navigate(['/problems']);
+  }
+
+  navigateToRegister(): void {
+    this.router.navigate(['/auth/register']);
+  }
+
+  navigateToAbout(): void {
+    this.router.navigate(['/about']);
   }
 }

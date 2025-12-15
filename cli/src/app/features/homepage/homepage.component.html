@@ -28,11 +28,13 @@
           class="flex flex-col sm:flex-row gap-4 justify-center items-center"
         >
           <button
+            (click)="navigateToAllCourses()"
             class="bg-white hover:bg-gray-100 text-blue-600 font-bold py-3 px-8 rounded-full transition-all transform hover:scale-105 shadow-lg"
           >
             Bắt đầu học ngay
           </button>
           <button
+            (click)="navigateToAbout()"
             class="border-2 border-white text-white hover:bg-white hover:text-blue-600 font-bold py-3 px-8 rounded-full transition-all"
           >
             Xem video giới thiệu
@@ -272,6 +274,7 @@
               </div>
             </div>
             <button
+              (click)="navigateToCourse(course.id)"
               class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors"
             >
               Bắt đầu học
@@ -394,6 +397,7 @@
             </div>
           </div>
           <button
+            (click)="navigateToProblem(problem.id)"
             class="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-semibold py-2 rounded-lg transition-all"
           >
             Giải bài tập
@@ -635,11 +639,13 @@
       </p>
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
         <button
+          (click)="navigateToRegister()"
           class="bg-white hover:bg-gray-100 text-blue-600 font-bold py-4 px-8 rounded-full transition-all transform hover:scale-105 shadow-lg"
         >
           Đăng ký miễn phí
         </button>
         <button
+          (click)="navigateToAllCourses()"
           class="border-2 border-white text-white hover:bg-white hover:text-blue-600 font-bold py-4 px-8 rounded-full transition-all"
         >
           Xem bảng giá
