@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ThemeService } from '../../core/services/theme.service';
+import { ContactService, ContactFormData } from '../../core/services/contact.service';
 
 interface ContactForm {
   name: string;
@@ -86,7 +87,8 @@ export class ContactComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    public themeService: ThemeService
+    public themeService: ThemeService,
+    private contactService: ContactService
   ) {
     this.contactForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2)]],
@@ -106,21 +108,41 @@ export class ContactComponent implements OnInit {
       this.isSubmitting = true;
       this.submitError = '';
 
-      // Simulate API call
-      setTimeout(() => {
-        // In real app, call API service here
-        console.log('Contact form submitted:', this.contactForm.value);
-        
-        this.isSubmitting = false;
-        this.submitSuccess = true;
-        this.contactForm.reset();
-        this.contactForm.patchValue({ category: 'general' });
+      const formData: ContactFormData = this.contactForm.value;
 
-        // Hide success message after 5 seconds
-        setTimeout(() => {
-          this.submitSuccess = false;
-        }, 5000);
-      }, 2000);
+      this.contactService.sendContactForm(formData).subscribe({
+        next: (response) => {
+          this.isSubmitting = false;
+          if (response.success) {
+            this.submitSuccess = true;
+            this.contactForm.reset();
+            this.contactForm.patchValue({ category: 'general' });
+
+            // Hide success message after 5 seconds
+            setTimeout(() => {
+              this.submitSuccess = false;
+            }, 5000);
+          } else {
+            this.submitError = response.message || 'Có lỗi xảy ra khi gửi tin nhắn';
+          }
+        },
+        error: (error) => {
+          this.isSubmitting = false;
+          console.error('Contact form error:', error);
+          
+          if (error.status === 400 && error.error?.errors) {
+            // Handle validation errors
+            const validationErrors = error.error.errors.map((err: any) => err.msg).join(', ');
+            this.submitError = `Dữ liệu không hợp lệ: ${validationErrors}`;
+          } else if (error.status === 429) {
+            this.submitError = 'Quá nhiều yêu cầu. Vui lòng thử lại sau 15 phút.';
+          } else if (error.error?.message) {
+            this.submitError = error.error.message;
+          } else {
+            this.submitError = 'Có lỗi xảy ra khi gửi tin nhắn. Vui lòng thử lại sau.';
+          }
+        }
+      });
     } else {
       // Mark all fields as touched to show validation errors
       Object.keys(this.contactForm.controls).forEach(key => {

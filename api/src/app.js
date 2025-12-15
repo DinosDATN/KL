@@ -48,6 +48,7 @@ const gameRoutes = require("./routes/gameRoutes");
 const rewardRoutes = require("./routes/rewardRoutes");
 const creatorApplicationRoutes = require("./routes/creatorApplicationRoutes");
 const ragPublicDataRoutes = require("./routes/ragPublicDataRoutes");
+const contactRoutes = require("./routes/contactRoutes");
 
 // Create Express app and HTTP server
 const app = express();
@@ -141,6 +142,7 @@ app.use(apiPrefix + "/games", gameRoutes);
 app.use(apiPrefix + "/rewards", rewardRoutes);
 app.use(apiPrefix + "/creator-applications", creatorApplicationRoutes);
 app.use(apiPrefix + "/rag", ragPublicDataRoutes);
+app.use(apiPrefix + "/contact", contactRoutes);
 
 // Admin routes
 app.use(apiPrefix + "/admin/dashboard", dashboardAdminRoutes);
