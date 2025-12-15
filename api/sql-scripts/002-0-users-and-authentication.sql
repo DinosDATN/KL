@@ -53,6 +53,12 @@ INSERT INTO users (name, email, password, avatar_url, role, is_active, is_online
 ('Âm Văn Đức', 'amvanduc@gmail.com', '$2b$10$hash49', 'https://i.pravatar.cc/150?img=49', 'creator', TRUE, FALSE, '2024-01-17 08:10:00', 'premium', '2025-09-30'),
 ('Ớt Thị Em', 'otthiem@gmail.com', '$2b$10$hash50', 'https://i.pravatar.cc/150?img=50', 'user', TRUE, TRUE, '2024-01-20 13:35:00', 'free', NULL);
 
+-- Insert thêm 3 tài khoản test cho khang với mật khẩu đã được bcrypt hash như trên web
+INSERT INTO users (name, email, password, avatar_url, role, is_active, is_online, last_seen_at, subscription_status, subscription_end_date) VALUES
+('khang', 'khang@example.com', '$2b$12$dRaaQtadF1//b.DAYwxGtevBRrfvrmGiAFGy9wXgdicbnJMJIRu76', NULL, 'user', TRUE, FALSE, NOW(), 'free', NULL),
+('khangcreator', 'khangcreator@example.com', '$2b$12$dRaaQtadF1//b.DAYwxGtevBRrfvrmGiAFGy9wXgdicbnJMJIRu76', NULL, 'creator', TRUE, FALSE, NOW(), 'free', NULL),
+('khangadmin', 'khangadmin@example.com', '$2b$12$dRaaQtadF1//b.DAYwxGtevBRrfvrmGiAFGy9wXgdicbnJMJIRu76', NULL, 'admin', TRUE, FALSE, NOW(), 'free', NULL);
+
 -- Insert data vào bảng user_profiles (50 hồ sơ người dùng)
 INSERT INTO user_profiles (user_id, bio, birthday, gender, phone, address, website_url, github_url, linkedin_url, preferred_language, theme_mode, layout, notifications, visibility_profile, visibility_achievements, visibility_progress, visibility_activity) VALUES
 (1, 'Tôi là một lập trình viên đam mê công nghệ và yêu thích học hỏi những điều mới mẻ.', '1995-03-15', 'male', '0901234567', '123 Đường Lê Lợi, Quận 1, TP.HCM', 'https://nguyenvanan.dev', 'https://github.com/nguyenvanan', 'https://linkedin.com/in/nguyenvanan', 'vi', 'light', 'expanded', TRUE, TRUE, TRUE, TRUE, FALSE),
