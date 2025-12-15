@@ -169,29 +169,26 @@ app.use(apiPrefix + "/homepage", homepageRoutes);
 // Alternative homepage routes (for direct access)
 app.use(
   apiPrefix + "/overview",
-  (req, res, next) =>
-    (req.originalUrl = req.originalUrl.replace(
-      "/overview",
-      "/homepage/overview"
-    )),
+  (req, res, next) => {
+    req.url = req.url.replace("/overview", "/homepage/overview");
+    next();
+  },
   homepageRoutes
 );
 app.use(
   apiPrefix + "/leaderboard",
-  (req, res, next) =>
-    (req.originalUrl = req.originalUrl.replace(
-      "/leaderboard",
-      "/homepage/leaderboard"
-    )),
+  (req, res, next) => {
+    req.url = req.url.replace("/leaderboard", "/homepage/leaderboard");
+    next();
+  },
   homepageRoutes
 );
 app.use(
   apiPrefix + "/testimonials",
-  (req, res, next) =>
-    (req.originalUrl = req.originalUrl.replace(
-      "/testimonials",
-      "/homepage/testimonials"
-    )),
+  (req, res, next) => {
+    req.url = req.url.replace("/testimonials", "/homepage/testimonials");
+    next();
+  },
   homepageRoutes
 );
 

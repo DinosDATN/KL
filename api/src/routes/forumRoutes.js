@@ -1,7 +1,7 @@
 const express = require('express');
 const { body } = require('express-validator');
 const ForumController = require('../controllers/forumController');
-const authMiddleware = require('../middleware/authMiddleware');
+const { authenticateToken } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
@@ -61,8 +61,8 @@ router.get('/tags/trending', ForumController.getTrendingTags);
 router.get('/search', ForumController.searchPosts);
 
 // Protected routes (require authentication)
-router.post('/posts', authMiddleware, createPostValidation, ForumController.createPost);
-router.post('/posts/:id/replies', authMiddleware, createReplyValidation, ForumController.createReply);
-router.post('/vote', authMiddleware, voteValidation, ForumController.vote);
+router.post('/posts', authenticateToken, createPostValidation, ForumController.createPost);
+router.post('/posts/:id/replies', authenticateToken, createReplyValidation, ForumController.createReply);
+router.post('/vote', authenticateToken, voteValidation, ForumController.vote);
 
 module.exports = router;

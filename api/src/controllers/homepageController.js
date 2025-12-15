@@ -11,33 +11,66 @@ class HomepageController {
   // Get platform overview statistics
   async getOverview(req, res) {
     try {
-      // Run queries in parallel for better performance
-      const [
-        totalUsers,
-        totalCourses,
-        totalDocuments,
-        totalProblems,
-        totalSubmissions,
-        totalAchievements
-      ] = await Promise.all([
-        User.count({ where: { is_active: true } }),
-        Course.count({ where: { status: 'published', is_deleted: false } }),
-        Document.count({ where: { is_deleted: false } }),
-        Problem.count({ where: { is_deleted: false } }),
-        // This would come from a submissions table, for now use a mock value
-        Promise.resolve(12000),
-        Achievement.count()
-      ]);
+      console.log('Starting getOverview...');
+      
+      // Try each query individually to identify which one is causing issues
+      let totalUsers = 0;
+      let totalCourses = 0;
+      let totalDocuments = 0;
+      let totalProblems = 0;
+      let totalAchievements = 0;
+
+      try {
+        console.log('Counting users...');
+        totalUsers = await User.count({ where: { is_active: true } });
+        console.log('Users count:', totalUsers);
+      } catch (error) {
+        console.error('Error counting users:', error);
+      }
+
+      try {
+        console.log('Counting courses...');
+        totalCourses = await Course.count({ where: { status: 'published', is_deleted: false } });
+        console.log('Courses count:', totalCourses);
+      } catch (error) {
+        console.error('Error counting courses:', error);
+      }
+
+      try {
+        console.log('Counting documents...');
+        totalDocuments = await Document.count({ where: { is_deleted: false } });
+        console.log('Documents count:', totalDocuments);
+      } catch (error) {
+        console.error('Error counting documents:', error);
+      }
+
+      try {
+        console.log('Counting problems...');
+        totalProblems = await Problem.count({ where: { is_deleted: false } });
+        console.log('Problems count:', totalProblems);
+      } catch (error) {
+        console.error('Error counting problems:', error);
+      }
+
+      try {
+        console.log('Counting achievements...');
+        totalAchievements = await Achievement.count();
+        console.log('Achievements count:', totalAchievements);
+      } catch (error) {
+        console.error('Error counting achievements:', error);
+      }
 
       const overview = {
         totalUsers,
         totalCourses,
         totalDocuments,
         totalProblems,
-        totalSubmissions,
+        totalSubmissions: 12000, // Mock value
         totalBadges: totalAchievements,
         totalAchievements
       };
+
+      console.log('Overview result:', overview);
 
       res.status(200).json({
         success: true,

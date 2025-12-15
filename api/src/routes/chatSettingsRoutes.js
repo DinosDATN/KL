@@ -6,11 +6,11 @@ const ChatSettingsController = require('../controllers/chatSettingsController');
 const ChatController = require('../controllers/chatController');
 
 // Middleware
-const authMiddleware = require('../middleware/authMiddleware');
+const { authenticateToken } = require('../middleware/authMiddleware');
 const ChatSettingsValidation = require('../middleware/chatSettingsValidation');
 
 // Apply authentication to all chat routes
-router.use(authMiddleware);
+router.use(authenticateToken);
 
 /**
  * Chat Settings Routes
