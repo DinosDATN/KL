@@ -259,27 +259,36 @@ npm run build
 sudo cp -r dist/cli/* /var/www/html/
 ```
 
-## Bước 7: Cấu Hình Nginx
+## Bước 7: Cấu Hình Nginx và Domain
 
-### 7.1 Tạo file cấu hình Nginx
+### 7.1 Cấu hình DNS Records
+Trước khi cấu hình Nginx, đảm bảo DNS records đã được thiết lập:
+
+**Ví dụ với domain `pdkhang.online`:**
+- **A record**: `pdkhang.online` → `34.45.117.26` (IP VPS)
+- **A record**: `api.pdkhang.online` → `34.45.117.26` (API subdomain)
+- **A record**: `www.pdkhang.online` → `34.45.117.26` (www subdomain)
+
+### 7.2 Tạo file cấu hình Nginx cho main domain
 ```bash
-sudo nano /etc/nginx/sites-available/your-domain.com    # 🔄 Thay your-domain.com bằng domain của bạn
+sudo nano /etc/nginx/sites-available/pdkhang.online    # 🔄 Thay bằng domain của bạn
 ```
 
 Nội dung file:
 ```nginx
 server {
     listen 80;
-    server_name your-domain.com www.your-domain.com;    # 🔄 Thay bằng domain của bạn
-
-    # Frontend (Angular)
+    server_name pdkhang.online www.pdkhang.online;    # 🔄 Thay bằng domain của bạn
+    
+    root /var/www/html;
+    index index.html index.htm;
+    
+    # Serve static files (Angular frontend)
     location / {
-        root /var/www/html;
-        index index.html;
         try_files $uri $uri/ /index.html;
     }
-
-    # API Backend
+    
+    # Proxy API requests to backend
     location /api/ {
         proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
@@ -291,8 +300,8 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
     }
-
-    # Socket.IO
+    
+    # Proxy Socket.IO
     location /socket.io/ {
         proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
@@ -313,19 +322,6 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # phpMyAdmin (tùy chọn, chỉ cho admin)
-    location /phpmyadmin/ {
-        proxy_pass http://localhost:8080/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        
-        # Bảo mật: chỉ cho phép IP admin
-        # allow your-admin-ip;
-        # deny all;
-    }
-
     # File uploads
     location /uploads/ {
         alias /var/www/KL/api/uploads/;    # 🔄 Thay KL bằng tên thư mục dự án
@@ -335,12 +331,98 @@ server {
 }
 ```
 
-### 7.2 Kích hoạt site
+### 7.3 Tạo file cấu hình cho API subdomain
 ```bash
-sudo ln -s /etc/nginx/sites-available/your-domain.com /etc/nginx/sites-enabled/    # 🔄 Thay your-domain.com
-sudo nginx -t
-sudo systemctl reload nginx
+sudo nano /etc/nginx/sites-available/api.pdkhang.online    # 🔄 Thay bằng API subdomain của bạn
 ```
+
+Nội dung file:
+```nginx
+server {
+    listen 80;
+    server_name api.pdkhang.online;    # 🔄 Thay bằng API subdomain của bạn
+    
+    # Proxy all requests to API backend
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+    
+    # Proxy Socket.IO
+    location /socket.io/ {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+```
+
+### 7.4 Tạo file cấu hình cho phpMyAdmin (tùy chọn)
+```bash
+sudo nano /etc/nginx/sites-available/phpmyadmin.pdkhang.online    # 🔄 Thay bằng subdomain của bạn
+```
+
+Nội dung file:
+```nginx
+server {
+    listen 80;
+    server_name phpmyadmin.pdkhang.online;    # 🔄 Thay bằng subdomain của bạn
+    
+    # Proxy to phpMyAdmin container
+    location / {
+        proxy_pass http://localhost:8080/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Bảo mật: chỉ cho phép IP admin (tùy chọn)
+        # allow your-admin-ip;    # 🔄 Thay bằng IP admin
+        # deny all;
+    }
+}
+```
+
+### 7.5 Kích hoạt các sites
+```bash
+# Enable main domain
+sudo ln -s /etc/nginx/sites-available/pdkhang.online /etc/nginx/sites-enabled/    # 🔄 Thay bằng domain của bạn
+
+# Enable API subdomain
+sudo ln -s /etc/nginx/sites-available/api.pdkhang.online /etc/nginx/sites-enabled/    # 🔄 Thay bằng API subdomain
+
+# Enable phpMyAdmin (tùy chọn)
+sudo ln -s /etc/nginx/sites-available/phpmyadmin.pdkhang.online /etc/nginx/sites-enabled/    # 🔄 Thay bằng subdomain
+
+# Xóa default site (tùy chọn)
+sudo rm /etc/nginx/sites-enabled/default
+```
+
+### 7.6 Test và reload Nginx
+```bash
+# Test cấu hình Nginx
+sudo nginx -t
+
+# Reload Nginx nếu test thành công
+sudo systemctl reload nginx
+
+# Kiểm tra status
+sudo systemctl status nginx
+```
+
+### 7.7 Kiểm tra hoạt động
+Sau khi cấu hình, bạn có thể truy cập:
+- **Frontend**: `http://pdkhang.online`    # 🔄 Thay bằng domain của bạn
+- **API**: `http://api.pdkhang.online/api/v1/health`    # 🔄 Thay bằng API subdomain
+- **phpMyAdmin**: `http://phpmyadmin.pdkhang.online`    # 🔄 Thay bằng subdomain (nếu có)
 
 ## Bước 8: Cấu Hình SSL với Let's Encrypt
 
