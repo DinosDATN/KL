@@ -55,10 +55,19 @@ const app = express();
 const server = http.createServer(app);
 
 // Create Socket.IO instance
+const allowedSocketOrigins = [
+  process.env.CLIENT_URL || "http://localhost:4200",
+  "https://pdkhang.online",
+  "https://www.pdkhang.online",
+  "http://localhost:4200",
+  "http://127.0.0.1:4200"
+];
+
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:4200",
+    origin: allowedSocketOrigins,
     methods: ["GET", "POST"],
+    credentials: true, // Allow credentials (cookies, authorization headers)
   },
 });
 
