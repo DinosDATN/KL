@@ -12,8 +12,12 @@ const allowedOrigins = [
 ];
 
 const checkOrigin = (req, res, next) => {
-  // Skip origin check for health endpoint
-  if (req.path === '/health') {
+  // Skip origin check for health endpoint and OAuth callbacks (Google redirects không có Origin)
+  if (
+    req.path === '/health' ||
+    req.path === '/api/v1/auth/google/callback' ||
+    req.path === '/api/v1/auth/google/failure'
+  ) {
     return next();
   }
 
