@@ -2,6 +2,7 @@
 export const environment = {
   production: false,
   apiUrl: '/api/v1', // ✅ Relative URL - will be proxied to http://localhost:3000
+  socketUrl: '', // Empty string = same origin (will use proxy)
   apiTimeout: 10000, // 10 seconds timeout
   enableLogging: true
 };

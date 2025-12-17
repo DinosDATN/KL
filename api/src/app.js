@@ -57,11 +57,12 @@ const server = http.createServer(app);
 // Create Socket.IO instance
 const allowedSocketOrigins = [
   process.env.CLIENT_URL || "http://localhost:4200",
+  process.env.SOCKET_CORS_ORIGIN,
   "https://pdkhang.online",
-  "https://www.pdkhang.online",
+  "https://www.pdkhang.online", 
   "http://localhost:4200",
   "http://127.0.0.1:4200"
-];
+].filter(Boolean); // Remove undefined values
 
 const io = new Server(server, {
   cors: {
@@ -80,14 +81,19 @@ const cookieParser = require('cookie-parser');
 const { checkOrigin } = require('./middleware/originMiddleware');
 
 // ✅ CORS with credentials support for HttpOnly cookies
+const allowedCorsOrigins = [
+  process.env.CLIENT_URL || "http://localhost:4200",
+  process.env.CORS_ORIGIN,
+  "https://pdkhang.online",
+  "https://www.pdkhang.online",
+  "http://localhost:4200",
+  "http://127.0.0.1:4200"
+].filter(Boolean).flatMap(origin => 
+  origin.includes(',') ? origin.split(',').map(o => o.trim()) : [origin]
+);
+
 app.use(cors({
-  origin: [
-    process.env.CLIENT_URL || "http://localhost:4200",
-    "https://pdkhang.online",
-    "https://www.pdkhang.online",
-    "http://localhost:4200",
-    "http://127.0.0.1:4200"
-  ],
+  origin: allowedCorsOrigins,
   credentials: true, // ✅ Important: Allow cookies to be sent
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]

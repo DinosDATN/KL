@@ -97,11 +97,18 @@ export class SocketService {
     console.log('🍪 Using HttpOnly cookie for authentication');
 
     this.currentUser = user;
-    const serverUrl = environment.production
-      ? environment.apiUrl
-      : 'http://localhost:3000';
+    
+    // Determine server URL based on environment
+    let serverUrl: string;
+    if (environment.production) {
+      // Production: use same origin (empty string) or window.location.origin
+      serverUrl = environment.socketUrl || window.location.origin;
+    } else {
+      // Development: use proxy (empty string) or fallback to localhost:3000
+      serverUrl = environment.socketUrl || '';
+    }
 
-    console.log('🌍 Server URL:', serverUrl);
+    console.log('🌍 Server URL:', serverUrl || 'same origin (proxy)');
 
     // ✅ Socket.IO will automatically send cookies with the handshake
     this.socket = io(serverUrl, {

@@ -163,13 +163,20 @@ export class EnhancedSocketService {
     }
 
     this.currentUser = user;
-    const serverUrl = environment.production
-      ? environment.apiUrl
-      : 'http://localhost:3000';
+    
+    // Determine server URL based on environment
+    let serverUrl: string;
+    if (environment.production) {
+      // Production: use same origin (empty string) or window.location.origin
+      serverUrl = environment.socketUrl || window.location.origin;
+    } else {
+      // Development: use proxy (empty string) or fallback to localhost:3000
+      serverUrl = environment.socketUrl || '';
+    }
 
     console.log('🚀 Creating Socket.IO connection...');
     console.log('👤 User:', user.name);
-    console.log('🌍 Server:', serverUrl);
+    console.log('🌍 Server:', serverUrl || 'same origin (proxy)');
 
     const socket = io(serverUrl, {
       // Authentication methods (multiple for compatibility)

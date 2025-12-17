@@ -9,6 +9,16 @@
       "Connection": "keep-alive"
     }
   },
+  "/socket.io": {
+    "target": "http://localhost:3000",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "ws": true,
+    "headers": {
+      "Connection": "upgrade"
+    }
+  },
   "/uploads": {
     "target": "http://localhost:3000",
     "secure": false,
