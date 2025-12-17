@@ -167,7 +167,7 @@
                   <div *ngIf="message.message_type === 'image' && message.file_url" class="mb-2">
                     <img
                       [src]="getFileUrl(message.file_url)"
-                      [alt]="message.file_name || 'Image'"
+                      alt="Hình ảnh"
                       class="max-w-xs rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
                       (click)="openFileInNewTab(message.file_url)"
                     />
@@ -229,7 +229,7 @@
                   </div>
 
                   <!-- Message Text -->
-                  <div *ngIf="message.content" class="break-words">{{ message.content }}</div>
+                  <div *ngIf="message.content && message.content.trim() && message.content !== 'Đã gửi file'" class="break-words">{{ message.content }}</div>
                 </div>
 
                 <!-- Message Actions -->

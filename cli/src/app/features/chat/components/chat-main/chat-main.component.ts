@@ -300,9 +300,14 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
         console.log('✅ File uploaded:', fileData);
 
         // Send message with file
+        // For images, don't send filename as content unless user typed something
+        const messageContent = fileData.type === 'image' 
+          ? (this.newMessage.trim() || '') 
+          : (this.newMessage.trim() || fileData.file_name || '');
+          
         this.chatService.sendMessage(
           this.room.id,
-          this.newMessage.trim() || '',
+          messageContent,
           fileData.type,
           this.replyToMessage?.id,
           fileData.file_url,

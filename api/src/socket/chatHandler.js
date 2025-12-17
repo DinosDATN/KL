@@ -213,10 +213,23 @@ const handleConnection = (io) => {
         }
 
         // Create the message
+        // For images, don't use file_name as content unless user provided content
+        let messageContent;
+        if (content && content.trim()) {
+          messageContent = content.trim();
+          console.log(`📝 Using user content: "${messageContent}"`);
+        } else if (type === 'image') {
+          messageContent = ''; // Empty content for images without user text
+          console.log(`🖼️ Image message with empty content`);
+        } else {
+          messageContent = file_name || "Đã gửi file";
+          console.log(`📁 File message with content: "${messageContent}"`);
+        }
+
         const message = await ChatMessage.create({
           room_id: roomId,
           sender_id: socket.userId,
-          content: content ? content.trim() : file_name || "Đã gửi file",
+          content: messageContent,
           type: type,
           reply_to: replyTo,
           file_url: file_url,
@@ -418,11 +431,21 @@ const handleConnection = (io) => {
         const receiverId = conversation.getOtherParticipant(socket.userId);
 
         // Create the message
+        // For images, don't use file_name as content unless user provided content
+        let messageContent;
+        if (content && content.trim()) {
+          messageContent = content.trim();
+        } else if (message_type === 'image') {
+          messageContent = ''; // Empty content for images without user text
+        } else {
+          messageContent = file_name || "Đã gửi file";
+        }
+
         const message = await PrivateMessage.create({
           conversation_id: conversationId,
           sender_id: socket.userId,
           receiver_id: receiverId,
-          content: content ? content.trim() : (file_name || "Đã gửi file"),
+          content: messageContent,
           message_type: message_type,
           file_url: file_url,
           file_name: file_name,
