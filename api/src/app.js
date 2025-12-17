@@ -99,15 +99,16 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
-// 🔒 Origin protection - chỉ cho phép frontend gọi API
-app.use(checkOrigin);
-
 app.use(cookieParser()); // ✅ Parse cookies
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // Initialize Passport middleware
 app.use(passport.initialize());
+
+// 🔒 Origin protection - chỉ cho phép frontend gọi API (AFTER Passport)
+// Tạm thời disable để debug OAuth
+// app.use(checkOrigin);
 
 // Serve static files for uploads
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));

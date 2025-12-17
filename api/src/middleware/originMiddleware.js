@@ -16,7 +16,9 @@ const checkOrigin = (req, res, next) => {
   if (
     req.path === '/health' ||
     req.path === '/api/v1/auth/google/callback' ||
-    req.path === '/api/v1/auth/google/failure'
+    req.path === '/api/v1/auth/google/failure' ||
+    req.path === '/api/v1/auth/github/callback' ||
+    req.path === '/api/v1/auth/github/failure'
   ) {
     return next();
   }
