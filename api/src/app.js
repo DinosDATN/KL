@@ -107,8 +107,7 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(passport.initialize());
 
 // 🔒 Origin protection - chỉ cho phép frontend gọi API (AFTER Passport)
-// Tạm thời disable để debug OAuth
-// app.use(checkOrigin);
+app.use(checkOrigin);
 
 // Serve static files for uploads
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
