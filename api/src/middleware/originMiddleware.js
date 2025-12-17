@@ -21,6 +21,12 @@ const checkOrigin = (req, res, next) => {
     return next();
   }
 
+  // Allow localhost/server-side requests (no Origin header)
+  const clientIP = req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
+  if (clientIP === '127.0.0.1' || clientIP === '::1' || clientIP === '::ffff:127.0.0.1') {
+    return next();
+  }
+
   const origin = req.get('Origin') || req.get('Referer');
   const userAgent = req.get('User-Agent') || '';
 
