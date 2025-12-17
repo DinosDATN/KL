@@ -75,3 +75,47 @@
 .no-results:hover {
   opacity: 1;
 }
+
+/* Scrollable content styling */
+.scrollable-content {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+.scrollable-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollable-content::-webkit-scrollbar-track {
+  background: rgba(243, 244, 246, 0.5);
+  border-radius: 3px;
+}
+
+.dark .scrollable-content::-webkit-scrollbar-track {
+  background: rgba(55, 65, 81, 0.5);
+}
+
+.scrollable-content::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.7);
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.dark .scrollable-content::-webkit-scrollbar-thumb {
+  background: rgba(107, 114, 128, 0.7);
+}
+
+.scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.9);
+}
+
+.dark .scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.9);
+}
+
+/* Mobile scrolling improvements */
+@media (max-width: 768px) {
+  .scrollable-content {
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  }
+}

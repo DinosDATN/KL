@@ -335,7 +335,7 @@
 .chat-input-fixed {
   flex-shrink: 0;
   position: sticky;
-  bottom: 100;
+  bottom: 0;
   right: 0;
   left: 0;
   z-index: 20;
@@ -557,5 +557,41 @@ textarea:focus-visible {
   .members-sidebar {
     width: 100%;
     left: 0;
+  }
+
+  /* Ensure input area is fully visible on mobile */
+  .chat-input-fixed {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(229, 231, 235, 0.8);
+    box-shadow: 0 -2px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  .dark .chat-input-fixed {
+    background: rgba(31, 41, 55, 0.98);
+    border-top: 1px solid rgba(75, 85, 99, 0.8);
+    box-shadow: 0 -2px 15px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Adjust message container to account for fixed input */
+  .chat-messages-scroll {
+    padding-bottom: 80px; /* Space for fixed input */
+  }
+
+  /* Ensure proper viewport height on mobile */
+  :host {
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile browsers */
+  }
+
+  .chat-main-area {
+    height: 100vh;
+    height: 100dvh;
   }
 }

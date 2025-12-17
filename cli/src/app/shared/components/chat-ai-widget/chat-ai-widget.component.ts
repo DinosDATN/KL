@@ -12,7 +12,9 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router, NavigationEnd } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { filter } from 'rxjs/operators';
 import { ChatAIService } from '../../../core/services/chat-ai.service';
 import { ChatAIMessage } from '../../../core/models/ai.model';
 import { isPlatformBrowser } from '@angular/common';
@@ -38,6 +40,7 @@ export class ChatAiWidgetComponent
   isMobile = false;
   isSoundEnabled = true;
   chatSize: 'normal' | 'large' = 'normal';
+  isVisible = true; // Controls widget visibility
 
   // Chat data
   messages: ChatAIMessage[] = [];
@@ -65,15 +68,18 @@ export class ChatAiWidgetComponent
 
   constructor(
     private chatAIService: ChatAIService,
+    private router: Router,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
   ngOnInit(): void {
     this.detectMobile();
     this.setupSubscriptions();
+    this.setupRouterSubscription();
     this.checkHealthStatus();
     this.loadSettings();
     this.loadChatSize();
+    this.checkCurrentRoute();
   }
 
   ngOnDestroy(): void {
@@ -165,6 +171,33 @@ export class ChatAiWidgetComponent
       isOpenSubscription,
       loadingSubscription
     );
+  }
+
+  private setupRouterSubscription(): void {
+    // Subscribe to router events to detect route changes
+    const routerSubscription = this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe((event: NavigationEnd) => {
+        this.checkRouteVisibility(event.url);
+      });
+
+    this.subscriptions.push(routerSubscription);
+  }
+
+  private checkCurrentRoute(): void {
+    // Check current route on component initialization
+    this.checkRouteVisibility(this.router.url);
+  }
+
+  private checkRouteVisibility(url: string): void {
+    // Hide chatbot on chat page
+    const chatRoutes = ['/chat', '/chat/', '/features/chat'];
+    this.isVisible = !chatRoutes.some(route => url.includes(route));
+    
+    // If chatbot should be hidden and is currently open, close it
+    if (!this.isVisible && this.isOpen) {
+      this.closeChat();
+    }
   }
 
   private checkHealthStatus(): void {

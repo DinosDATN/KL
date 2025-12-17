@@ -70,7 +70,7 @@
   </div>
 
   <!-- Search Results -->
-  <div *ngIf="!loading && searchResults.length > 0" class="space-y-3">
+  <div *ngIf="!loading && searchResults.length > 0" class="space-y-3 max-h-96 overflow-y-auto scrollable-list">
     <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
       Tìm thấy {{searchResults.length}} người dùng
     </p>

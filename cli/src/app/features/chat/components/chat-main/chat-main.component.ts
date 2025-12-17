@@ -618,4 +618,5 @@ export class ChatMainComponent implements OnChanges, AfterViewChecked {
   ): string {
     return reaction.type;
   }
+
 }

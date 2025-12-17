@@ -71,7 +71,7 @@
   </div>
 
   <!-- Friends List -->
-  <div *ngIf="!loading && filteredFriends.length > 0" class="space-y-2">
+  <div *ngIf="!loading && filteredFriends.length > 0" class="space-y-2 max-h-96 overflow-y-auto scrollable-list">
     <div 
       *ngFor="let friendReq of filteredFriends" 
       class="friend-item p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors group"

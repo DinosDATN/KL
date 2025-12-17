@@ -30,15 +30,18 @@
 /* Mobile responsive adjustments */
 @media (max-width: 767px) {
   :host {
-    height: calc(100vh - 60px); /* Smaller header on mobile */
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile browsers */
   }
   
   .chat-container {
-    height: calc(100vh - 60px);
+    height: 100vh;
+    height: 100dvh;
   }
   
   .chat-main-area {
-    height: calc(100vh - 60px);
+    height: 100vh;
+    height: 100dvh;
   }
   
   .chat-sidebar {
@@ -56,6 +59,13 @@
   .chat-sidebar .flex-1 {
     min-width: 0;
     width: 100%;
+  }
+  
+  /* Ensure sidebar lists are scrollable */
+  .chat-sidebar .scrollable-content {
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
   
   /* Mobile-specific padding adjustments */

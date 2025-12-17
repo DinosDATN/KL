@@ -3,6 +3,8 @@
   class="chat-ai-widget"
   [class.mobile]="isMobile"
   [class.desktop]="!isMobile"
+  [class.hidden]="!isVisible"
+  *ngIf="isVisible"
 >
   <!-- Floating Chat Icon -->
   <div

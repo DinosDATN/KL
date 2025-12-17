@@ -55,18 +55,52 @@ button:active {
 }
 
 /* Scrollbar styling */
-::-webkit-scrollbar {
+.scrollable-content {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+.scrollable-content::-webkit-scrollbar {
   width: 6px;
 }
 
-::-webkit-scrollbar-track {
-  @apply bg-gray-100 dark:bg-gray-700;
+.scrollable-content::-webkit-scrollbar-track {
+  background: rgba(243, 244, 246, 0.5);
+  border-radius: 3px;
 }
 
-::-webkit-scrollbar-thumb {
-  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+.dark .scrollable-content::-webkit-scrollbar-track {
+  background: rgba(55, 65, 81, 0.5);
 }
 
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-400 dark:bg-gray-500;
+.scrollable-content::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.7);
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.dark .scrollable-content::-webkit-scrollbar-thumb {
+  background: rgba(107, 114, 128, 0.7);
+}
+
+.scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.9);
+}
+
+.dark .scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.9);
+}
+
+/* Ensure scrollable content has proper height */
+.scrollable-content {
+  min-height: 0;
+  max-height: calc(100vh - 200px); /* Adjust based on header height */
+}
+
+/* Mobile scrolling improvements */
+@media (max-width: 768px) {
+  .scrollable-content {
+    max-height: calc(100vh - 150px);
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  }
 }
