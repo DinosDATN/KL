@@ -247,14 +247,14 @@
                 </span>
                 <span class="flex items-center">
                   <i class="mr-1">👥</i>
-                  {{ formatNumber(course.students) }}
+                  {{ formatNumber(course.students || 0) }}
                 </span>
               </div>
               <div class="flex items-center">
                 <div class="flex text-yellow-400 mr-2">
                   <span
                     *ngFor="
-                      let star of getRatingStars(course.rating);
+                      let star of getRatingStars(course.rating || 0);
                       let i = index
                     "
                     class="text-sm"

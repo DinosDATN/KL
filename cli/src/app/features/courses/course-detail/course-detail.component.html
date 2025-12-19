@@ -95,16 +95,16 @@
               <!-- Rating -->
               <div class="flex items-center gap-2">
                 <div class="flex items-center">
-                  <span *ngFor="let star of generateStarsArray(course.rating); let i = index" 
+                  <span *ngFor="let star of generateStarsArray(course.rating || 0); let i = index" 
                         class="text-yellow-400"
                         [ngClass]="{
-                          'text-yellow-400': i < Math.floor(course.rating),
-                          'text-blue-300': i >= Math.floor(course.rating)
+                          'text-yellow-400': i < Math.floor(course.rating || 0),
+                          'text-blue-300': i >= Math.floor(course.rating || 0)
                         }">
                     ⭐
                   </span>
                 </div>
-                <span>{{ course.rating.toFixed(1) }} ({{ course.students.toLocaleString() }} học viên)</span>
+                <span>{{ (course.rating || 0).toFixed(1) }} ({{ (course.students || 0).toLocaleString() }} học viên)</span>
               </div>
               
               <!-- Level Badge -->
@@ -189,8 +189,8 @@
 
             <!-- Course Curriculum Overview -->
             <div *ngIf="courseModules.length > 0" class="space-y-4">
-              <!-- Start Learning Button -->
-              <div class="text-center mb-8">
+              <!-- Start Learning Button - Only show if enrolled -->
+              <div *ngIf="isEnrolled" class="text-center mb-8">
                 <button 
                   *ngIf="selectedLesson"
                   (click)="selectLesson(selectedLesson)"
@@ -205,12 +205,19 @@
                 <div *ngFor="let module of courseModules; let moduleIndex = index" 
                      class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                   <div class="p-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                      Chương {{ moduleIndex + 1 }}: {{ module.title }}
-                    </h3>
+                    <div class="flex items-center justify-between">
+                      <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        Chương {{ moduleIndex + 1 }}: {{ module.title }}
+                      </h3>
+                      <!-- Show lesson count for enrolled users -->
+                      <span *ngIf="isEnrolled" class="text-sm text-gray-500 dark:text-gray-400">
+                        {{ getModuleLessons(module.id).length }} bài học
+                      </span>
+                    </div>
                   </div>
 
-                  <div class="p-4">
+                  <!-- Show lessons only if enrolled -->
+                  <div *ngIf="isEnrolled" class="p-4">
                     <div class="space-y-3">
                       <div *ngFor="let lesson of getModuleLessons(module.id); let lessonIndex = index"
                            class="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-600 last:border-0">
@@ -243,6 +250,16 @@
                           <i class="icon-play"></i>
                         </button>
                       </div>
+                    </div>
+                  </div>
+
+                  <!-- Show enrollment message for non-enrolled users -->
+                  <div *ngIf="!isEnrolled" class="p-4 bg-gray-50 dark:bg-gray-700/50">
+                    <div class="flex items-center justify-center gap-3 text-gray-500 dark:text-gray-400">
+                      <i class="icon-lock text-lg"></i>
+                      <span class="text-sm font-medium">
+                        Đăng ký khóa học để xem chi tiết các bài học
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -522,7 +539,7 @@
                       <i class="icon-users"></i>
                       Học viên
                     </span>
-                    <span class="text-gray-900 dark:text-white font-medium">{{ course.students.toLocaleString() }}</span>
+                    <span class="text-gray-900 dark:text-white font-medium">{{ (course.students || 0).toLocaleString() }}</span>
                   </div>
                   
                   <div class="flex items-center justify-between text-sm">
@@ -542,7 +559,7 @@
                     </span>
                     <div class="flex items-center gap-1">
                       <span class="text-yellow-500">⭐</span>
-                      <span class="text-gray-900 dark:text-white font-medium">{{ course.rating.toFixed(1) }}</span>
+                      <span class="text-gray-900 dark:text-white font-medium">{{ (course.rating || 0).toFixed(1) }}</span>
                     </div>
                   </div>
                 </div>
@@ -585,6 +602,14 @@
                   (click)="startLearning()"
                   class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg">
                   <i class="fas fa-play-circle"></i> Bắt đầu học
+                </button>
+
+                <!-- Start Learning Button for Non-enrolled Users -->
+                <button 
+                  *ngIf="!isEnrolled && !hasPendingPayment"
+                  (click)="startLearning()"
+                  class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg">
+                  <i class="fas fa-play-circle"></i> Bắt đầu học ngay
                 </button>
                 
                 <!-- Additional Info -->

@@ -229,7 +229,11 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
 
   startLearning(): void {
     if (!this.isEnrolled) {
-      this.onEnrollClick();
+      // Hiển thị thông báo thay vì chuyển trang
+      this.notificationService.warning(
+        'Chưa đăng ký khóa học',
+        'Bạn cần đăng ký khóa học trước khi có thể bắt đầu học. Vui lòng nhấn nút "Đăng ký khóa học" để tiếp tục.'
+      );
       return;
     }
     
@@ -280,7 +284,16 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
   }
 
   selectLesson(lesson: CourseLesson): void {
-    // Navigate to lesson learning page instead of showing inline
+    if (!this.isEnrolled) {
+      // Hiển thị thông báo thay vì chuyển trang
+      this.notificationService.warning(
+        'Chưa đăng ký khóa học',
+        'Bạn cần đăng ký khóa học trước khi có thể xem bài học. Vui lòng nhấn nút "Đăng ký khóa học" để tiếp tục.'
+      );
+      return;
+    }
+    
+    // Navigate to lesson learning page
     this.router.navigate(['/courses', this.course?.id, 'lessons', lesson.id]);
   }
 

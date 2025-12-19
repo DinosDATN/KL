@@ -74,20 +74,20 @@
         <div class="flex items-center">
           <span
             *ngFor="
-              let star of generateStarsArray(course.rating);
+              let star of generateStarsArray(course.rating || 0);
               let i = index
             "
             class="text-yellow-400"
             [ngClass]="{
-              'text-yellow-400': i < Math.floor(course.rating),
-              'text-gray-300 dark:text-gray-600': i >= Math.floor(course.rating)
+              'text-yellow-400': i < Math.floor(course.rating || 0),
+              'text-gray-300 dark:text-gray-600': i >= Math.floor(course.rating || 0)
             }"
           >
             ⭐
           </span>
         </div>
         <span class="text-sm text-gray-600 dark:text-gray-400">
-          {{ course.rating.toFixed(1) }}
+          {{ (course.rating || 0).toFixed(1) }}
         </span>
       </div>
 
@@ -105,7 +105,7 @@
       class="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400 mb-4"
     >
       <i class="icon-users"></i>
-      <span>{{ course.students.toLocaleString() }} học viên</span>
+      <span>{{ (course.students || 0).toLocaleString() }} học viên</span>
     </div>
 
     <!-- Price Section -->
