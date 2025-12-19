@@ -3,8 +3,10 @@ const CourseCoupon = require('../models/CourseCoupon');
 const CouponUsage = require('../models/CouponUsage');
 const Course = require('../models/Course');
 const CourseEnrollment = require('../models/CourseEnrollment');
+const User = require('../models/User');
 const { sequelize } = require('../config/sequelize');
 const vnpayService = require('../services/vnpayService');
+const { notifyNewEnrollment, notifyPaymentConfirmed, notifyNewPayment } = require('../utils/notificationHelper');
 
 class PaymentController {
   /**
@@ -305,6 +307,20 @@ class PaymentController {
             transaction: transactionInner 
           });
 
+          // Gửi thông báo realtime cho creator về học viên mới
+          try {
+            const student = await User.findByPk(userId, {
+              attributes: ['id', 'name', 'email']
+            });
+            
+            if (req.io && student) {
+              await notifyNewEnrollment(req.io, course.instructor_id, course, student, 'paid');
+            }
+          } catch (notificationError) {
+            console.error('Error sending enrollment notification:', notificationError);
+            // Không throw error để không ảnh hưởng đến flow chính
+          }
+
           // Lưu coupon usage nếu có
           if (coupon && discountAmount > 0) {
             await CouponUsage.create({
@@ -577,6 +593,24 @@ class PaymentController {
 
         await transaction.commit();
 
+        // Gửi thông báo realtime cho creator về học viên mới sau khi thanh toán VNPay thành công
+        try {
+          const course = await Course.findByPk(payment.course_id, {
+            attributes: ['id', 'title', 'instructor_id']
+          });
+          
+          const student = await User.findByPk(payment.user_id, {
+            attributes: ['id', 'name', 'email']
+          });
+          
+          if (req.io && course && student) {
+            await notifyNewEnrollment(req.io, course.instructor_id, course, student, 'paid');
+          }
+        } catch (notificationError) {
+          console.error('Error sending VNPay enrollment notification:', notificationError);
+          // Không throw error để không ảnh hưởng đến flow chính
+        }
+
         res.status(200).json({
           success: true,
           message: 'Thanh toán thành công',
@@ -669,6 +703,30 @@ class PaymentController {
       }
 
       await transaction.commit();
+
+      // Gửi thông báo realtime cho học viên về việc xác nhận thanh toán (admin confirm)
+      try {
+        const course = await Course.findByPk(payment.course_id, {
+          attributes: ['id', 'title', 'instructor_id']
+        });
+        
+        const student = await User.findByPk(payment.user_id, {
+          attributes: ['id', 'name', 'email']
+        });
+        
+        if (req.io && course) {
+          // Thông báo cho học viên về việc xác nhận thanh toán
+          await notifyPaymentConfirmed(req.io, payment.user_id, course, payment);
+          
+          // Thông báo cho creator về học viên mới
+          if (student) {
+            await notifyNewEnrollment(req.io, course.instructor_id, course, student, 'paid');
+          }
+        }
+      } catch (notificationError) {
+        console.error('Error sending admin confirmation notifications:', notificationError);
+        // Không throw error để không ảnh hưởng đến flow chính
+      }
 
       res.status(200).json({
         success: true,
@@ -776,13 +834,19 @@ class PaymentController {
 
       await transaction.commit();
 
-      // TODO: Gửi notification cho creator
-      // await createNotification({
-      //   user_id: course.instructor_id,
-      //   type: 'new_payment',
-      //   title: 'Thanh toán mới',
-      //   message: `Có thanh toán mới cho khóa học "${course.title}"`
-      // });
+      // Gửi thông báo realtime cho creator về thanh toán mới
+      try {
+        const student = await User.findByPk(userId, {
+          attributes: ['id', 'name', 'email']
+        });
+        
+        if (req.io && student) {
+          await notifyNewPayment(req.io, course.instructor_id, course, student, payment);
+        }
+      } catch (notificationError) {
+        console.error('Error sending payment notification:', notificationError);
+        // Không throw error để không ảnh hưởng đến flow chính
+      }
 
       res.status(201).json({
         success: true,
@@ -943,13 +1007,24 @@ class PaymentController {
         });
       }
 
-      // TODO: Gửi notification cho học viên
-      // await createNotification({
-      //   user_id: payment.user_id,
-      //   type: 'payment_confirmed',
-      //   title: 'Thanh toán đã được xác nhận',
-      //   message: `Thanh toán cho khóa học "${payment.Course.title}" đã được xác nhận. Bạn có thể bắt đầu học ngay!`
-      // });
+      // Gửi thông báo realtime cho học viên về việc xác nhận thanh toán
+      try {
+        if (req.io) {
+          await notifyPaymentConfirmed(req.io, payment.user_id, payment.Course, payment);
+        }
+        
+        // Gửi thông báo cho creator về học viên mới
+        const student = await User.findByPk(payment.user_id, {
+          attributes: ['id', 'name', 'email']
+        });
+        
+        if (req.io && student) {
+          await notifyNewEnrollment(req.io, creatorId, payment.Course, student, 'paid');
+        }
+      } catch (notificationError) {
+        console.error('Error sending confirmation notifications:', notificationError);
+        // Không throw error để không ảnh hưởng đến flow chính
+      }
 
       await transaction.commit();
 

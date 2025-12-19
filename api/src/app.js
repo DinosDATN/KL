@@ -159,6 +159,12 @@ app.use(apiPrefix + "/creator-applications", creatorApplicationRoutes);
 app.use(apiPrefix + "/rag", ragPublicDataRoutes);
 app.use(apiPrefix + "/contact", contactRoutes);
 
+// Test routes (only in development)
+if (process.env.NODE_ENV === 'development') {
+  const testRoutes = require("./routes/testRoutes");
+  app.use(apiPrefix + "/test", testRoutes);
+}
+
 // Admin routes
 app.use(apiPrefix + "/admin/dashboard", dashboardAdminRoutes);
 app.use(apiPrefix + "/admin/courses", courseAdminRoutes);

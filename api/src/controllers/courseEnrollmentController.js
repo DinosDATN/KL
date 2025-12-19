@@ -3,7 +3,9 @@ const CourseLessonCompletion = require('../models/CourseLessonCompletion');
 const Course = require('../models/Course');
 const CourseModule = require('../models/CourseModule');
 const CourseLesson = require('../models/CourseLesson');
+const User = require('../models/User');
 const courseContentService = require('../services/courseContentService');
+const { notifyNewEnrollment } = require('../utils/notificationHelper');
 const { Op } = require('sequelize');
 
 class CourseEnrollmentController {
@@ -73,6 +75,20 @@ class CourseEnrollmentController {
 
       // Update course student count
       await Course.increment('students', { where: { id: courseId } });
+
+      // Gửi thông báo realtime cho creator về học viên mới đăng ký khóa học miễn phí
+      try {
+        const student = await User.findByPk(userId, {
+          attributes: ['id', 'name', 'email']
+        });
+        
+        if (req.io && student) {
+          await notifyNewEnrollment(req.io, course.instructor_id, course, student, 'free');
+        }
+      } catch (notificationError) {
+        console.error('Error sending enrollment notification:', notificationError);
+        // Không throw error để không ảnh hưởng đến flow chính
+      }
 
       res.status(201).json({
         success: true,

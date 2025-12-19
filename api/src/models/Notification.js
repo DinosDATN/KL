@@ -25,7 +25,10 @@ const Notification = sequelize.define('Notification', {
       'message',
       'system',
       'achievement',
-      'contest'
+      'contest',
+      'new_enrollment',
+      'payment_confirmed',
+      'new_payment'
     ),
     allowNull: false,
     defaultValue: 'system'

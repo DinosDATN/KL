@@ -14,7 +14,10 @@ ADD COLUMN IF NOT EXISTS type ENUM(
   'message',
   'system',
   'achievement',
-  'contest'
+  'contest',
+  'new_enrollment',
+  'payment_confirmed',
+  'new_payment'
 ) NOT NULL DEFAULT 'system' AFTER user_id;
 
 -- Add title column if it doesn't exist
@@ -37,4 +40,4 @@ UPDATE notifications
 SET title = 'Thông báo hệ thống' 
 WHERE title = 'Thông báo';
 
-SELECT 'Notifications table updated successfully' AS status;
+SELECT 'Notifications table updated successfully with new enrollment and payment notification types' AS status;
