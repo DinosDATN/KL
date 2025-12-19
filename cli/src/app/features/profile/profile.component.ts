@@ -6,7 +6,7 @@ import {
   ElementRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import {
   ReactiveFormsModule,
   FormBuilder,
@@ -36,7 +36,16 @@ import {
 } from '../../core/models/user.model';
 import { Course, CourseEnrollment } from '../../core/models/course.model';
 import { Problem, Submission } from '../../core/models/problem.model';
+import { CoursesService } from '../../core/services/courses.service';
 // Removed mock data imports - using real data from API
+
+interface PendingPayment {
+  id: number;
+  amount: number;
+  payment_method: string;
+  created_at: string;
+  Course: Course;
+}
 
 @Component({
   selector: 'app-profile',
@@ -61,6 +70,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   userActivityLogs: UserActivityLog[] = [];
   courseEnrollments: CourseEnrollment[] = [];
   submissions: Submission[] = [];
+  pendingPayments: PendingPayment[] = [];
 
   // UI state
   activeTab: 'overview' | 'activity' | 'achievements' | 'courses' | 'settings' =
@@ -82,8 +92,10 @@ export class ProfileComponent implements OnInit, OnDestroy {
     public themeService: ThemeService,
     private profileService: ProfileService,
     private authService: AuthService,
+    private coursesService: CoursesService,
     private fb: FormBuilder,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {
     this.basicProfileForm = this.createBasicProfileForm();
     this.detailsForm = this.createDetailsForm();
@@ -195,6 +207,16 @@ export class ProfileComponent implements OnInit, OnDestroy {
           this.submissions = profileData.recent_submissions || [];
 
           this.updateForms();
+          
+          // Load pending payments for courses tab
+          this.loadPendingPayments();
+          
+          // Check for fragment to set active tab
+          this.route.fragment.pipe(takeUntil(this.destroy$)).subscribe(fragment => {
+            if (fragment === 'courses') {
+              this.activeTab = 'courses';
+            }
+          });
         },
         error: (error) => {
           this.errorMessage = error.message || 'Failed to load profile';
@@ -662,7 +684,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
     }
   }
 
-  formatDate(dateString: string): string {
+  formatDate(dateString: string | null | undefined): string {
+    if (!dateString) return 'N/A';
     const date = new Date(dateString);
     return date.toLocaleDateString('vi-VN', {
       year: 'numeric',
@@ -735,5 +758,65 @@ export class ProfileComponent implements OnInit, OnDestroy {
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
     }
+  }
+
+  // Load pending payments for courses tab
+  private loadPendingPayments(): void {
+    this.coursesService.getMyPayments('pending')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.pendingPayments = response.data || [];
+        },
+        error: (error) => {
+          console.error('Failed to load pending payments:', error);
+        }
+      });
+  }
+
+  // Utility methods for courses tab
+  formatPrice(price: number): string {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(price);
+  }
+
+  getProgressColor(progress: number): string {
+    if (progress === 0) return 'bg-gray-200';
+    if (progress < 30) return 'bg-red-500';
+    if (progress < 70) return 'bg-yellow-500';
+    return 'bg-green-500';
+  }
+
+  getStatusText(status: string): string {
+    switch (status) {
+      case 'not-started': return 'Chưa bắt đầu';
+      case 'in-progress': return 'Đang học';
+      case 'completed': return 'Hoàn thành';
+      default: return status;
+    }
+  }
+
+  getEnrollmentStatusColor(status: string): string {
+    switch (status) {
+      case 'not-started': return 'text-gray-600 bg-gray-100';
+      case 'in-progress': return 'text-blue-600 bg-blue-100';
+      case 'completed': return 'text-green-600 bg-green-100';
+      default: return 'text-gray-600 bg-gray-100';
+    }
+  }
+
+  // Navigation methods for courses
+  goToCourse(courseId: number): void {
+    this.router.navigate(['/courses', courseId]);
+  }
+
+  startLearning(courseId: number): void {
+    this.router.navigate(['/courses', courseId, 'learn']);
+  }
+
+  refreshCoursesData(): void {
+    this.loadProfile();
   }
 }

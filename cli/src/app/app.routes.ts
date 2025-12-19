@@ -397,6 +397,7 @@ export const routes: Routes = [
           ).then((m) => m.LessonLearningComponent),
         canActivate: [AuthGuard],
       },
+
       {
         path: 'about',
         loadComponent: () =>

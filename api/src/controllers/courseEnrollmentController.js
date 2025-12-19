@@ -1,5 +1,6 @@
 const CourseEnrollment = require('../models/CourseEnrollment');
 const CourseLessonCompletion = require('../models/CourseLessonCompletion');
+const CoursePayment = require('../models/CoursePayment');
 const Course = require('../models/Course');
 const CourseModule = require('../models/CourseModule');
 const CourseLesson = require('../models/CourseLesson');
@@ -48,6 +49,31 @@ class CourseEnrollmentController {
       const coursePrice = course.price || course.original_price || 0;
       
       if (coursePrice > 0) {
+        // Kiểm tra có payment đang pending không
+        const pendingPayment = await CoursePayment.findOne({
+          where: { 
+            user_id: userId, 
+            course_id: courseId,
+            payment_status: 'pending'
+          }
+        });
+
+        if (pendingPayment) {
+          return res.status(400).json({
+            success: false,
+            message: 'You have a pending payment for this course. Please wait for confirmation.',
+            isPending: true,
+            data: {
+              courseId: course.id,
+              courseTitle: course.title,
+              paymentId: pendingPayment.id,
+              paymentMethod: pendingPayment.payment_method,
+              amount: pendingPayment.amount,
+              createdAt: pendingPayment.created_at
+            }
+          });
+        }
+
         // Khóa học có phí - yêu cầu thanh toán
         return res.status(402).json({
           success: false,
@@ -150,11 +176,28 @@ class CourseEnrollmentController {
         where: { user_id: userId, course_id: courseId }
       });
 
+      // Kiểm tra payment đang pending
+      const pendingPayment = await CoursePayment.findOne({
+        where: { 
+          user_id: userId, 
+          course_id: courseId,
+          payment_status: 'pending'
+        },
+        order: [['created_at', 'DESC']]
+      });
+
       res.status(200).json({
         success: true,
         data: {
           isEnrolled: !!enrollment,
-          enrollment: enrollment || null
+          enrollment: enrollment || null,
+          hasPendingPayment: !!pendingPayment,
+          pendingPayment: pendingPayment ? {
+            id: pendingPayment.id,
+            amount: pendingPayment.amount,
+            paymentMethod: pendingPayment.payment_method,
+            createdAt: pendingPayment.created_at
+          } : null
         }
       });
     } catch (error) {

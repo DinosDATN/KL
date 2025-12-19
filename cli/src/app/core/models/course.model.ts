@@ -14,8 +14,8 @@ export interface Course {
   publish_date?: string | null;
   status: 'published' | 'draft' | 'archived';
   revenue: number;
-  students: number;
-  rating: number;
+  students: number | null;
+  rating: number | null;
   description?: string | null;
   level: 'Beginner' | 'Intermediate' | 'Advanced';
   duration?: number | null;
@@ -33,6 +33,7 @@ export interface CourseEnrollment {
   id: number;
   user_id: number;
   course_id: number;
+  enrollment_type?: 'free' | 'paid';
   progress: number;
   status: 'completed' | 'in-progress' | 'not-started';
   start_date?: string | null;

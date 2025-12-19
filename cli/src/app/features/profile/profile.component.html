@@ -418,10 +418,10 @@
           <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-lg font-semibold">Khóa học đang học</h3>
-              <a
-                routerLink="/courses"
+              <button
+                (click)="setActiveTab('courses')"
                 class="text-blue-600 dark:text-blue-400 hover:underline text-sm"
-                >Xem tất cả →</a
+                >Xem tất cả →</button
               >
             </div>
             <div class="grid md:grid-cols-2 gap-6">
@@ -507,38 +507,214 @@
         </div>
 
         <!-- Courses Tab -->
-        <div *ngIf="activeTab === 'courses'" class="grid md:grid-cols-2 gap-6">
-          <div
-            *ngFor="let item of getUserCourses()"
-            class="bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden"
-          >
-            <div
-              class="h-28 bg-gradient-to-r from-blue-500 to-purple-600"
-            ></div>
-            <div class="p-6">
-              <div class="flex items-center justify-between mb-2">
-                <div class="font-semibold text-lg">{{ item.course.title }}</div>
-                <span
-                  class="text-xs px-2 py-1 rounded-full"
-                  [ngClass]="
-                    item.course.is_premium
-                      ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-                      : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
-                  "
-                  >{{ item.course.is_premium ? "Premium" : "Miễn phí" }}</span
-                >
+        <div *ngIf="activeTab === 'courses'" class="space-y-8">
+          
+          <!-- Header with refresh button -->
+          <div class="flex items-center justify-between">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+              Khóa học của tôi
+            </h2>
+            <button 
+              (click)="refreshCoursesData()"
+              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium">
+              <i class="fas fa-sync-alt mr-2"></i>
+              Làm mới
+            </button>
+          </div>
+
+          <!-- Pending Payments Section -->
+          <div *ngIf="pendingPayments.length > 0">
+            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              <i class="fas fa-clock text-yellow-500 mr-2"></i>
+              Đang chờ xác nhận thanh toán ({{ pendingPayments.length }})
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div *ngFor="let payment of pendingPayments" 
+                   class="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 
+                          border-2 border-yellow-200 dark:border-yellow-700 rounded-lg p-6 hover:shadow-lg transition-shadow">
+                
+                <!-- Course Info -->
+                <div class="flex items-start gap-4 mb-4">
+                  <img 
+                    [src]="payment.Course.thumbnail || 'https://placehold.co/80x80?text=Course'"
+                    [alt]="payment.Course.title"
+                    class="w-16 h-16 rounded-lg object-cover"
+                  />
+                  <div class="flex-1">
+                    <h4 class="font-semibold text-gray-900 dark:text-white line-clamp-2">
+                      {{ payment.Course.title }}
+                    </h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      {{ payment.Course.level === 'Beginner' ? 'Cơ bản' : 
+                         payment.Course.level === 'Intermediate' ? 'Trung cấp' : 'Nâng cao' }}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Payment Info -->
+                <div class="space-y-2 mb-4">
+                  <div class="flex justify-between text-sm">
+                    <span class="text-gray-600 dark:text-gray-400">Số tiền:</span>
+                    <span class="font-semibold text-gray-900 dark:text-white">
+                      {{ formatPrice(payment.amount) }}
+                    </span>
+                  </div>
+                  <div class="flex justify-between text-sm">
+                    <span class="text-gray-600 dark:text-gray-400">Phương thức:</span>
+                    <span class="font-medium text-gray-900 dark:text-white">
+                      {{ payment.payment_method === 'bank_transfer' ? 'Chuyển khoản' : payment.payment_method }}
+                    </span>
+                  </div>
+                  <div class="flex justify-between text-sm">
+                    <span class="text-gray-600 dark:text-gray-400">Ngày gửi:</span>
+                    <span class="text-gray-900 dark:text-white">
+                      {{ formatDate(payment.created_at) }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Status Badge -->
+                <div class="flex items-center justify-center gap-2 bg-yellow-100 dark:bg-yellow-900/30 
+                            text-yellow-800 dark:text-yellow-300 py-2 px-4 rounded-lg mb-4">
+                  <i class="fas fa-clock animate-pulse"></i>
+                  <span class="font-medium">Đang chờ xác nhận</span>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex gap-2">
+                  <button 
+                    (click)="goToCourse(payment.Course.id)"
+                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg 
+                           transition-colors text-sm font-medium">
+                    Xem khóa học
+                  </button>
+                </div>
               </div>
-              <div
-                class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden"
-              >
-                <div
-                  class="h-2 bg-gradient-to-r from-green-500 to-blue-600"
-                  [style.width.%]="item.enrollment.progress"
-                ></div>
-              </div>
-              <div class="mt-2 text-xs text-gray-600 dark:text-gray-400">
-                Tiến độ: {{ item.enrollment.progress }}% — Trạng thái:
-                {{ item.enrollment.status }}
+            </div>
+          </div>
+
+          <!-- Enrolled Courses Section -->
+          <div>
+            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              <i class="fas fa-graduation-cap text-blue-500 mr-2"></i>
+              Khóa học đã đăng ký ({{ getUserCourses().length }})
+            </h3>
+            
+            <!-- Empty State -->
+            <div *ngIf="getUserCourses().length === 0 && pendingPayments.length === 0" 
+                 class="text-center py-16">
+              <div class="text-gray-400 dark:text-gray-500 text-6xl mb-4">📚</div>
+              <h4 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                Chưa có khóa học nào
+              </h4>
+              <p class="text-gray-600 dark:text-gray-400 mb-6">
+                Bạn chưa đăng ký khóa học nào. Hãy khám phá các khóa học thú vị!
+              </p>
+              <a href="/courses" 
+                 class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg 
+                        transition-colors font-medium">
+                Khám phá khóa học
+              </a>
+            </div>
+
+            <!-- Courses Grid -->
+            <div *ngIf="getUserCourses().length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div *ngFor="let item of getUserCourses()" 
+                   class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 
+                          overflow-hidden hover:shadow-lg transition-shadow">
+                
+                <!-- Course Thumbnail -->
+                <div class="relative">
+                  <img 
+                    [src]="item.course.thumbnail || 'https://placehold.co/400x200?text=Course'"
+                    [alt]="item.course.title"
+                    class="w-full h-48 object-cover"
+                  />
+                  
+                  <!-- Status Badge -->
+                  <div class="absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-medium"
+                       [ngClass]="getEnrollmentStatusColor(item.enrollment.status)">
+                    {{ getStatusText(item.enrollment.status) }}
+                  </div>
+
+                  <!-- Progress Overlay -->
+                  <div *ngIf="item.enrollment.progress > 0" 
+                       class="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-2">
+                    <div class="flex items-center justify-between text-sm">
+                      <span>Tiến độ: {{ item.enrollment.progress }}%</span>
+                      <div class="w-16 bg-gray-300 rounded-full h-2">
+                        <div class="h-2 rounded-full transition-all duration-300"
+                             [ngClass]="getProgressColor(item.enrollment.progress)"
+                             [style.width.%]="item.enrollment.progress">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Course Content -->
+                <div class="p-6">
+                  <!-- Course Title -->
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
+                    {{ item.course.title }}
+                  </h4>
+
+                  <!-- Course Meta -->
+                  <div class="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    <div class="flex items-center gap-1">
+                      <i class="fas fa-star text-yellow-400"></i>
+                      <span>{{ item.course.rating ? item.course.rating.toFixed(1) : 'N/A' }}</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <i class="fas fa-users"></i>
+                      <span>{{ item.course.students ? item.course.students.toLocaleString() : 'N/A' }}</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <i class="fas fa-clock"></i>
+                      <span>{{ item.course.duration || 'N/A' }}h</span>
+                    </div>
+                  </div>
+
+                  <!-- Enrollment Info -->
+                  <div class="space-y-2 mb-4 text-sm">
+                    <div class="flex justify-between">
+                      <span class="text-gray-600 dark:text-gray-400">Loại:</span>
+                      <span class="font-medium"
+                            [ngClass]="(item.enrollment.enrollment_type || 'free') === 'free' ? 'text-green-600' : 'text-blue-600'">
+                        {{ (item.enrollment.enrollment_type || 'free') === 'free' ? 'Miễn phí' : 'Có phí' }}
+                      </span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-gray-600 dark:text-gray-400">Bắt đầu:</span>
+                      <span class="text-gray-900 dark:text-white">
+                        {{ formatDate(item.enrollment.start_date) }}
+                      </span>
+                    </div>
+                    <div *ngIf="item.enrollment.completion_date" class="flex justify-between">
+                      <span class="text-gray-600 dark:text-gray-400">Hoàn thành:</span>
+                      <span class="text-green-600 dark:text-green-400 font-medium">
+                        {{ formatDate(item.enrollment.completion_date) }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Actions -->
+                  <div class="flex gap-2">
+                    <button 
+                      (click)="startLearning(item.course.id)"
+                      class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg 
+                             transition-colors text-sm font-medium">
+                      {{ item.enrollment.status === 'completed' ? 'Xem lại' : 'Tiếp tục học' }}
+                    </button>
+                    <button 
+                      (click)="goToCourse(item.course.id)"
+                      class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 
+                             text-gray-700 dark:text-gray-300 py-2 px-4 rounded-lg transition-colors text-sm">
+                      Chi tiết
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1164,12 +1340,12 @@
                 </svg>
                 <span>Bạn có thể tạo các khóa học premium</span>
               </div>
-              <a
-                routerLink="/courses"
+              <button
+                (click)="setActiveTab('courses')"
                 class="inline-block mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
               >
                 Xem khóa học của tôi →
-              </a>
+              </button>
             </div>
           </div>
 

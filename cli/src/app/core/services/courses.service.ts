@@ -364,6 +364,20 @@ export class CoursesService {
   }
 
   /**
+   * Get payment status for a course
+   */
+  getPaymentStatus(courseId: number): Observable<any> {
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/payments/courses/${courseId}/payment-status`,
+      { withCredentials: true }
+    ).pipe(
+      timeout(environment.apiTimeout),
+      map(response => response),
+      catchError(error => this.handleError(error, 'Failed to get payment status'))
+    );
+  }
+
+  /**
    * Get my payments
    */
   getMyPayments(status?: string): Observable<any> {

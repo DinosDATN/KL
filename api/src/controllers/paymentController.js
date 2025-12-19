@@ -164,6 +164,31 @@ class PaymentController {
         });
       }
 
+      // Kiểm tra có payment đang pending không
+      const existingPendingPayment = await CoursePayment.findOne({
+        where: { 
+          user_id: userId, 
+          course_id: courseId,
+          payment_status: 'pending'
+        },
+        transaction
+      });
+
+      if (existingPendingPayment) {
+        await transaction.rollback();
+        return res.status(400).json({
+          success: false,
+          message: 'Bạn đã có một thanh toán đang chờ xác nhận cho khóa học này',
+          isPending: true,
+          data: {
+            paymentId: existingPendingPayment.id,
+            amount: existingPendingPayment.amount,
+            paymentMethod: existingPendingPayment.payment_method,
+            createdAt: existingPendingPayment.created_at
+          }
+        });
+      }
+
       let originalAmount = coursePrice;
       let discountAmount = 0;
       let finalAmount = originalAmount;
@@ -1103,6 +1128,70 @@ class PaymentController {
       res.status(500).json({
         success: false,
         message: 'Lỗi khi xử lý hoàn tiền',
+        error: error.message
+      });
+    }
+  }
+
+  /**
+   * Kiểm tra trạng thái thanh toán cho khóa học
+   */
+  async getPaymentStatus(req, res) {
+    try {
+      const { courseId } = req.params;
+      const userId = req.user.id;
+
+      // Kiểm tra enrollment
+      const enrollment = await CourseEnrollment.findOne({
+        where: { user_id: userId, course_id: courseId }
+      });
+
+      // Kiểm tra payment pending
+      const pendingPayment = await CoursePayment.findOne({
+        where: { 
+          user_id: userId, 
+          course_id: courseId,
+          payment_status: 'pending'
+        },
+        order: [['created_at', 'DESC']]
+      });
+
+      // Kiểm tra payment completed
+      const completedPayment = await CoursePayment.findOne({
+        where: { 
+          user_id: userId, 
+          course_id: courseId,
+          payment_status: 'completed'
+        },
+        order: [['created_at', 'DESC']]
+      });
+
+      res.status(200).json({
+        success: true,
+        data: {
+          isEnrolled: !!enrollment,
+          hasPendingPayment: !!pendingPayment,
+          hasCompletedPayment: !!completedPayment,
+          enrollment: enrollment || null,
+          pendingPayment: pendingPayment ? {
+            id: pendingPayment.id,
+            amount: pendingPayment.amount,
+            paymentMethod: pendingPayment.payment_method,
+            createdAt: pendingPayment.created_at
+          } : null,
+          completedPayment: completedPayment ? {
+            id: completedPayment.id,
+            amount: completedPayment.amount,
+            paymentMethod: completedPayment.payment_method,
+            paymentDate: completedPayment.payment_date
+          } : null
+        }
+      });
+    } catch (error) {
+      console.error('Error in getPaymentStatus:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Lỗi khi kiểm tra trạng thái thanh toán',
         error: error.message
       });
     }

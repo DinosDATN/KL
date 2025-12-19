@@ -547,9 +547,29 @@
                   </div>
                 </div>
                 
+                <!-- Pending Payment Status -->
+                <div *ngIf="hasPendingPayment && !isEnrolled" 
+                     class="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-semibold py-4 px-6 rounded-lg shadow-lg">
+                  <div class="flex items-center justify-center gap-2">
+                    <i class="fas fa-clock animate-pulse"></i>
+                    <span>Đang chờ xác nhận thanh toán</span>
+                  </div>
+                  <div class="text-center mt-2 text-sm opacity-90">
+                    <div *ngIf="pendingPayment">
+                      Phương thức: {{ pendingPayment.paymentMethod === 'bank_transfer' ? 'Chuyển khoản' : pendingPayment.paymentMethod }}
+                    </div>
+                    <div *ngIf="pendingPayment">
+                      Số tiền: {{ formatPrice(pendingPayment.amount) }}
+                    </div>
+                    <div class="mt-1 text-xs">
+                      Vui lòng chờ giảng viên xác nhận thanh toán của bạn
+                    </div>
+                  </div>
+                </div>
+
                 <!-- Enrollment Button -->
                 <button 
-                  *ngIf="!isEnrolled"
+                  *ngIf="!isEnrolled && !hasPendingPayment"
                   (click)="onEnrollClick()"
                   [disabled]="isEnrolling"
                   class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 focus:ring-4 focus:ring-blue-500/25 focus:outline-none shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
@@ -562,9 +582,9 @@
                 <!-- Already Enrolled Button -->
                 <button 
                   *ngIf="isEnrolled"
-                  disabled
-                  class="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 shadow-lg opacity-75 cursor-not-allowed">
-                  <i class="fas fa-check-circle"></i> Bạn đã đăng ký khóa học
+                  (click)="startLearning()"
+                  class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg">
+                  <i class="fas fa-play-circle"></i> Bắt đầu học
                 </button>
                 
                 <!-- Additional Info -->

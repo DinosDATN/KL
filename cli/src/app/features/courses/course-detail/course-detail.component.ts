@@ -35,6 +35,8 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
   isEnrolled: boolean = false;
   isEnrolling: boolean = false;
   isAuthenticated: boolean = false;
+  hasPendingPayment: boolean = false;
+  pendingPayment: any = null;
   
   // Review form properties
   reviewRating: number = 0;
@@ -126,14 +128,31 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
   }
 
   checkEnrollmentStatus(courseId: number): void {
+    // Kiểm tra cả enrollment và payment status
     this.coursesService.checkEnrollment(courseId).subscribe({
       next: (response: any) => {
         this.isEnrolled = response.data.isEnrolled;
+        this.hasPendingPayment = response.data.hasPendingPayment || false;
+        this.pendingPayment = response.data.pendingPayment || null;
+        
+        // Log để debug
+        console.log('Enrollment status:', {
+          isEnrolled: this.isEnrolled,
+          hasPendingPayment: this.hasPendingPayment,
+          pendingPayment: this.pendingPayment
+        });
       },
       error: (error) => {
         console.error('Error checking enrollment:', error);
       }
     });
+  }
+
+  // Method để refresh enrollment status (có thể gọi từ các component khác)
+  refreshEnrollmentStatus(): void {
+    if (this.course?.id) {
+      this.checkEnrollmentStatus(this.course.id);
+    }
   }
 
   onEnrollClick(): void {
@@ -145,6 +164,15 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
     }
 
     if (!this.course) return;
+
+    // Kiểm tra nếu đã có payment đang pending
+    if (this.hasPendingPayment) {
+      this.notificationService.info(
+        'Đang chờ xác nhận thanh toán',
+        'Bạn đã có một thanh toán đang chờ xác nhận cho khóa học này. Vui lòng chờ giảng viên xác nhận.'
+      );
+      return;
+    }
 
     // Kiểm tra nếu khóa học có phí
     const coursePrice = this.course.price || this.course.original_price || 0;
@@ -164,13 +192,11 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
       next: (response: any) => {
         this.isEnrolled = true;
         this.isEnrolling = false;
+        this.hasPendingPayment = false; // Reset pending payment status
         this.notificationService.success(
           'Đăng ký thành công',
           'Bạn đã đăng ký khóa học thành công! Bây giờ bạn có thể bắt đầu học hoặc đánh giá khóa học.'
         );
-        // Stay on course detail page after enrollment
-        // User can click "Bắt đầu học" button to start learning
-        // this.startLearning(); // ← Removed: Don't auto-navigate to learning page
       },
       error: (error: any) => {
         this.isEnrolling = false;
@@ -179,8 +205,18 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
           this.router.navigate(['/courses', this.course?.id, 'payment']);
         } else if (error.message.includes('already enrolled')) {
           this.isEnrolled = true;
-          // Stay on course detail page, don't auto-navigate
-          // this.startLearning(); // ← Removed
+          this.hasPendingPayment = false;
+        } else if (error.message.includes('pending payment')) {
+          // Cập nhật trạng thái pending payment
+          this.hasPendingPayment = true;
+          this.notificationService.info(
+            'Đang chờ xác nhận thanh toán',
+            'Bạn đã có một thanh toán đang chờ xác nhận cho khóa học này. Xem chi tiết trong trang cá nhân.'
+          );
+          // Redirect to profile with courses tab after 2 seconds
+          setTimeout(() => {
+            this.router.navigate(['/profile'], { fragment: 'courses' });
+          }, 2000);
         } else {
           this.notificationService.error(
             'Đăng ký thất bại',

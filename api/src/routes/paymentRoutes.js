@@ -27,6 +27,9 @@ router.get('/coupons/active', paymentController.getActiveCoupons);
 // Yêu cầu hoàn tiền
 router.post('/payments/:paymentId/refund', paymentController.requestRefund);
 
+// Kiểm tra trạng thái thanh toán cho khóa học
+router.get('/courses/:courseId/payment-status', paymentController.getPaymentStatus);
+
 // VNPay callback (không cần auth vì từ VNPay gọi về)
 router.get('/vnpay-return', paymentController.vnpayReturn);
 
