@@ -254,6 +254,8 @@ class PaymentController {
       } else if (paymentMethod === 'bank_transfer') {
         // Chuyển khoản ngân hàng - lấy thông tin tài khoản của creator
         const CreatorBankAccount = require('../models/CreatorBankAccount');
+        const { getDefaultBankInfo, getCreatorBankInfo } = require('../config/defaultBankAccount');
+        
         const creatorBankAccount = await CreatorBankAccount.findOne({
           where: { 
             user_id: course.instructor_id,
@@ -267,26 +269,10 @@ class PaymentController {
         
         if (creatorBankAccount && creatorBankAccount.is_verified) {
           // Sử dụng tài khoản của creator
-          bankInfo = {
-            bankName: creatorBankAccount.bank_name,
-            accountNumber: creatorBankAccount.account_number,
-            accountName: creatorBankAccount.account_name,
-            branch: creatorBankAccount.branch,
-            amount: finalAmount,
-            content: `KHOAHOC ${courseId} USER ${userId}`,
-            qrCode: `https://img.vietqr.io/image/${creatorBankAccount.bank_name.split(' ')[0]}-${creatorBankAccount.account_number}-compact2.png?amount=${finalAmount}&addInfo=KHOAHOC%20${courseId}%20USER%20${userId}`
-          };
+          bankInfo = getCreatorBankInfo(creatorBankAccount, finalAmount, courseId, userId);
         } else {
-          // Sử dụng tài khoản mặc định của hệ thống
-          bankInfo = {
-            bankName: 'Ngân hàng TMCP Á Châu (ACB)',
-            accountNumber: '123456789',
-            accountName: 'CONG TY TNHH GIAO DUC TRUC TUYEN',
-            amount: finalAmount,
-            content: `KHOAHOC ${courseId} USER ${userId}`,
-            qrCode: `https://img.vietqr.io/image/ACB-123456789-compact2.png?amount=${finalAmount}&addInfo=KHOAHOC%20${courseId}%20USER%20${userId}`,
-            note: 'Creator chưa cập nhật thông tin tài khoản ngân hàng'
-          };
+          // Sử dụng tài khoản mặc định
+          bankInfo = getDefaultBankInfo(finalAmount, courseId, userId);
         }
 
         return res.status(200).json({
